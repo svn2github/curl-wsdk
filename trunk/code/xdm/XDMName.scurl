@@ -1,0 +1,180 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next
+    {purpose 
+        Represents an XML "Expanded Qualified Name" 
+        containing (namespace, local-name) pair
+    }
+}
+
+{define-class public serializable XDMName
+  field public-get constant namespace:String
+  field public-get constant local-name:String
+  
+  {factory public {default 
+                      namespace:String, 
+                      local-name:String
+                  }:XDMName
+    let key:XDMName = {XDMName.internal namespace, local-name}
+    || instances are interned so pointer-equal? --> value-equal? 
+    let (interned:XDMName, interned?:bool) =
+        {XDMName.interned.get-member-if-exists key} 
+    {return
+        {if interned? then interned
+         else
+            || verify NCName conformance before interning
+            {if not {CC.NCName? local-name} then
+                {xdm-exception 
+                    {lmessage Not a well formed NCName: '{value local-name}'}}}
+            {XDMName.interned.insert key}
+            key}}
+  }
+  let package constant interned:XDMNameSet = {XDMNameSet}
+  
+  {constructor package {internal namespace:String, local-name:String}
+    set self.namespace = namespace
+    set self.local-name = local-name
+  }
+  {factory public implicit {from-String 
+                               name:String,
+                               namespace-context:XDMNamespaceContext = 
+                                   xml-namespace-context
+                           }:XDMName
+    let (namespace:String, local-name:String) =
+        {XDMName.parse-name name, namespace-context}
+    {return {XDMName namespace, local-name}}
+  } 
+  {factory {from-String-internal 
+               name:String,
+               namespace-context:XDMNamespaceContext = 
+                   xml-namespace-context
+           }:XDMName
+    let (namespace:String, local-name:String) =
+        {XDMName.parse-name name, namespace-context}
+    {return {XDMName.internal namespace, local-name}}
+  } 
+  {define-proc inline {parse-name 
+                          name:String,
+                          namespace-context:XDMNamespaceContext
+                      }:(String, String)
+    let d:int = {name.find ':'}
+    {if d < 0 then
+        || default namespace not allowed
+        {return "", name}
+     else
+        let prefix:String = {name.substr 0, d}
+        let local-name:String = {name.tail d + 1}
+        let namespace:String =
+            {if {prefix.equal? "xmlns", ignore-case? = true} then
+                "http://www.w3.org/XML/1998/XMLNS"
+             elseif {prefix.equal? "xml", ignore-case? = true} then
+                "http://www.w3.org/XML/1998/namespace"
+             else
+                {if-non-null 
+                    ns = {namespace-context.get-uri prefix} 
+                 then ns
+                 else
+                    {xdm-exception 
+                        {lmessage No declaration for prefix '{value prefix}'}}
+                }}
+        {return namespace, local-name}}
+  }
+  {method public {equal? other:XDMName}:bool
+    {return self == other}
+  }
+  {method public {compare other:XDMName}:int
+    let d:int = {self.local-name.compare other.local-name, ignore-case? = true}
+    {return 
+        {if d != 0 then d
+         else {self.namespace.compare other.namespace, ignore-case? = true}}}
+  }
+  {method public {to-String}:String
+    {return
+        {XDMName.namestring self.namespace, self.local-name}}
+  }
+  {method public {serialize out:SerializeOutputStream}:void
+    {out.write-class-version 0}
+    {out.write-one self.namespace}
+    {out.write-one self.local-name}
+  }
+  {factory public {object-deserialize in:SerializeInputStream}:XDMName
+    {in.verify-class-version 0}
+    let namespace:String = {deserialize in, String}
+    let local-name:String = {deserialize in, String}
+    {return {XDMName namespace, local-name}}
+  }
+  {method public {object-describe 
+                     out:TextOutputStream, locale:Locale}:void
+    {format 
+        out = out, locale = locale,
+        "[XDMName %s]", {XDMName.namestring self.namespace, self.local-name}}
+  }
+  {define-proc package {namestring namespace:String, local-name:String}:String
+    {return
+        {if namespace == "" then local-name
+         else XDMName.delimiter & namespace & XDMName.delimiter & local-name}}
+  }
+  let public constant delimiter:char = '`'
+  let constant hash-multiplier:int = 8191  
+  
+  || special "flag" names
+  || -- returned by XDMText.xml-name
+  let package constant text-name:XDMName = 
+      {XDMName.internal "", "##text"}
+  || -- used in placeholder XDMDocument.root
+  let package constant empty-name:XDMName = 
+      {XDMName.internal "", "##empty"}
+  
+  || allows making illegal names 
+  || (such as those used by soap-encoding for Array types)
+  {factory public {unchecked 
+                      namespace:String, 
+                      local-name:String
+                  }:XDMName
+    let key:XDMName = {XDMName.internal namespace, local-name}
+    || instances are interned so pointer-equal? --> value-equal? 
+    let (interned:XDMName, interned?:bool) =
+        {XDMName.interned.get-member-if-exists key} 
+    {return
+        {if interned? then interned
+         else
+            {XDMName.interned.insert key}
+            key}}
+  }
+}
+
+|| these can not be class variables
+{define-proc package {XDMName-equal? self:XDMName, other:XDMName}:bool
+    {return
+        self.local-name == other.local-name and
+        self.namespace == other.namespace}
+}
+{define-proc package {XDMName-hash self:XDMName}:int
+    {return
+        {value-hash self.local-name} * XDMName.hash-multiplier 
+        + {value-hash self.namespace}}
+}
+{let package constant XDMNameSet:ClassType =
+    {Set-of XDMName, 
+        key-equality-proc = XDMName-equal?,
+        key-hash-proc = XDMName-hash}
+}
+
+|| for debugging
+||--{define-proc public {xml-names}:XDMNameSet
+||--    {return XDMName.interned}
+||--}

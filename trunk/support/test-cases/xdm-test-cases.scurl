@@ -1,0 +1,127 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.XML-TEST-SUPPORT}
+
+{TestSuite {lmessage XDM Tests},
+    
+    {TestSuite {lmessage Comparison Tests},
+        
+        {BasicXDMTestCase {url "xml-data/AccessingXMLData.xml"}},
+        {BasicXDMTestCase {url "xml-data/RDR.xml"}},
+        {BasicXDMTestCase {url "xml-data/NEWSML.xml"}},
+        {BasicXDMTestCase {url "xml-data/master_def_res.xml"}},
+        {BasicXDMTestCase {url "xml-data/mappoint.wsdl"}},
+        
+        {BasicXDMTestCase {url "xml-data/books.xml"}},
+        {BasicXDMTestCase {url "xml-data/GoogleSearch.wsdl"}},
+        {BasicXDMTestCase {url "xml-data/unit04-japanese.xml"}},
+        {BasicXDMTestCase {url "xml-data/cpm-branding.xml"}},
+        {BasicXDMTestCase {url "xml-data/xmla-config.xml"}},
+        {BasicXDMTestCase {url "xml-data/newreport.xml"}},       
+        {BasicXDMTestCase {url "xml-data/demonhknews.rss1.0.xml"}},
+        {BasicXDMTestCase {url "xml-data/kenn-index.rdf"}},
+        {BasicXDMTestCase {url "xml-data/GlobalWeather.wsdl"}},
+        {BasicXDMTestCase {url "xml-data/WeatherService.wsdl"}}       
+    },
+    {TestSuite {lmessage XPath Tests},
+        
+        {xpath-test-cases "XPath (qdata1.xml)",
+            {url "xml-data/qcases1.scurl"}},
+        {xpath-test-cases "XPath (AccessingXMLData.xml)",
+            {url "xml-data/qcases2.scurl"}}
+    },
+    {TestSuite {lmessage XPath syntax},
+        
+        {TestSuite {lmessage valid syntax},                
+            {XPathValidSyntaxTestCase "//x"},
+            {XPathValidSyntaxTestCase "x.1"},
+            {XPathValidSyntaxTestCase "x-1"},
+            {XPathValidSyntaxTestCase "(x - 1)"},
+            {XPathValidSyntaxTestCase "x-"},
+            {XPathValidSyntaxTestCase "/x"}},
+        
+        {TestSuite {lmessage invalid syntax},
+            || literals
+            {XPathSyntaxTestCase "1x"},
+            {XPathSyntaxTestCase "1e5"},
+            {XPathSyntaxTestCase "1.2.3"},
+            {XPathSyntaxTestCase "1.."},
+            || delimiters
+            {XPathSyntaxTestCase "[]"},
+            {XPathSyntaxTestCase "()"},
+            {XPathSyntaxTestCase "x["},
+            {XPathSyntaxTestCase "x[]"},
+            {XPathSyntaxTestCase "x[]]"},
+            {XPathSyntaxTestCase "x[[]"},
+            || connectors
+            {XPathSyntaxTestCase "///"},
+            {XPathSyntaxTestCase "..."},
+            {XPathSyntaxTestCase ","},
+            || names
+            {XPathSyntaxTestCase "@"},
+            {XPathSyntaxTestCase "a@"},
+            {XPathSyntaxTestCase "a*"},
+            {XPathSyntaxTestCase "*a"},
+            {XPathSyntaxTestCase "**"},
+            {XPathSyntaxTestCase "xml:"},
+            {XPathSyntaxTestCase "xml:b:c"},
+            {XPathSyntaxTestCase ":a"},
+            {XPathSyntaxTestCase "::a"},
+            || axes
+            {XPathSyntaxTestCase "bad-axis::x"},
+            {XPathSyntaxTestCase "child::"},
+            || operators
+            {XPathSyntaxTestCase "(x nand y)"},
+            {XPathSyntaxTestCase "(a and)"},
+            {XPathSyntaxTestCase "(a and or y)"},
+            {XPathSyntaxTestCase |"x || y"|},
+            || functions
+            {XPathSyntaxTestCase "x[foo()]"},
+            {XPathSyntaxTestCase "x[not()]"},
+            {XPathSyntaxTestCase "x[false(x)]"},
+            {XPathSyntaxTestCase "x[not(y,z)]"},
+            {XPathSyntaxTestCase "x[not(,z)]"},
+            {XPathSyntaxTestCase "x[not(y,)]"},
+            || paths
+            {XPathSyntaxTestCase "x/1"},
+            {XPathSyntaxTestCase "x//1"},
+            {XPathSyntaxTestCase "x y"},
+            {XPathSyntaxTestCase "x -1"},
+            {XPathSyntaxTestCase "x/"},
+            {XPathSyntaxTestCase "x,"},
+            || expressions
+            {XPathSyntaxTestCase "1++2"},
+            {XPathSyntaxTestCase "1**2"}},
+        || ---------- 
+        {TestSuite {lmessage valid syntax},  
+            {XPathValidSyntaxTestCase "*"},
+            {XPathValidSyntaxTestCase "."}},
+        || ---------- 
+        {TestSuite.import {url "xdm-unit-tests.scurl"}}
+    },
+    || XDM Change Management
+    || ---------- 
+    {TestSuite {lmessage XDM Change Management},  
+        {XDMSessionTestCase
+            {url "xml-data/wsdk-dguide.rss"},
+            {url "xml-data/log1.csv"}}},
+    || LEGACY
+    || ---------- 
+    {TestSuite.import  || TODO: convert to unit tests
+        {url "xdm-test-applets/test-cases.scurl"}}
+
+}

@@ -1,0 +1,691 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{curl 5.0 package}
+{package COM.CURL.WSDL.WSConnectionService,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/DEV5/WSDK/code/util/WSConnection/s-wsconnection.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/DEV5/WSDK/code/util/WSConnection/s-wsconnection.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public WSConnectionService {inherits WSDLHTTPRPCPostClient}
+
+  {method public {get-database-names}:(_return:#ArrayOfString)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+            },
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                    curl-type = ArrayOfString,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getDatabaseNames",
+            request-operation = {XMLName "http://www.curl.com/data", "getDatabaseNames"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+        }
+    {return
+        responses[0] asa #ArrayOfString
+    }
+  }
+
+
+  {method public {async-get-database-names event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                    curl-type = ArrayOfString,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getDatabaseNames",
+            request-operation = {XMLName "http://www.curl.com/data", "getDatabaseNames"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-database-tables database:#String}:(_return:#ArrayOfString)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                database
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                    curl-type = ArrayOfString,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getDatabaseTables",
+            request-operation = {XMLName "http://www.curl.com/data", "getDatabaseTables"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+        }
+    {return
+        responses[0] asa #ArrayOfString
+    }
+  }
+
+
+  {method public {async-get-database-tables database:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                    curl-type = ArrayOfString,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getDatabaseTables",
+            request-operation = {XMLName "http://www.curl.com/data", "getDatabaseTables"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-fields database:#String, table:#String}:(_return:#RecordFieldSpecs)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                database,
+                table
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"},
+                {XMLName "", "table"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"},
+                    curl-type = RecordFieldSpecs,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getFields",
+            request-operation = {XMLName "http://www.curl.com/data", "getFields"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+        }
+    {return
+        responses[0] asa #RecordFieldSpecs
+    }
+  }
+
+
+  {method public {async-get-fields database:#String, table:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database,
+                table
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"},
+                {XMLName "", "table"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"},
+                    curl-type = RecordFieldSpecs,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getFields",
+            request-operation = {XMLName "http://www.curl.com/data", "getFields"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-data database:#String, query:#String, size-limit:int}:(_return:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                database,
+                query,
+                size-limit
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"},
+                {XMLName "", "query"},
+                {XMLName "", "size_limit"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getData",
+            request-operation = {XMLName "http://www.curl.com/data", "getData"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-get-data database:#String, query:#String, size-limit:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database,
+                query,
+                size-limit
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"},
+                {XMLName "", "query"},
+                {XMLName "", "size_limit"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "getData",
+            request-operation = {XMLName "http://www.curl.com/data", "getData"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {execute database:#String, sql:#ArrayOfString}:(_return:int)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                database,
+                sql
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"},
+                {XMLName "", "sql"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                    curl-type = ArrayOfString,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "execute",
+            request-operation = {XMLName "http://www.curl.com/data", "execute"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+        }
+    {return
+        responses[0] asa int
+    }
+  }
+
+
+  {method public {async-execute database:#String, sql:#ArrayOfString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database,
+                sql
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "database"},
+                {XMLName "", "sql"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                    curl-type = ArrayOfString,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "execute",
+            request-operation = {XMLName "http://www.curl.com/data", "execute"},
+            default-namespace = "http://www.curl.com/data",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = ArrayOfString,
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://www.curl.com/data", "RecordFieldSpec"},
+                curl-type = RecordFieldSpec,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "name"},
+                {XMLName "", "domain"},
+                {XMLName "", "caption"},
+                {XMLName "", "index"},
+                {XMLName "", "nullable"},
+                {XMLName "", "primary_key"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                }
+            },
+            {{Array-of String}
+                "name",
+                "domain",
+                "caption",
+                "index",
+                "nullable",
+                "primary-key"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://www.curl.com/data", "RecordFieldSpec"},
+                        curl-type = RecordFieldSpec
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"},
+                        curl-type = RecordFieldSpecs,
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://localhost/work/services/soap/s-wsconnection.php"}
+    }
+    {construct-super service-location,
+        generated-using-version = "2"    }
+  }
+}
+
+{let public constant ArrayOfString:ClassType = {Array-of String}}
+
+{define-class public open RecordFieldSpec
+
+  field public name:String = ""
+  field public domain:String = ""
+  field public caption:String = ""
+  field public index:String = ""
+  field public nullable:bool
+  field public primary-key:bool
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      name:String = {required-keyword "RecordFieldSpec.name"} asa String,
+      domain:String = {required-keyword "RecordFieldSpec.domain"} asa String,
+      caption:String = {required-keyword "RecordFieldSpec.caption"} asa String,
+      index:String = {required-keyword "RecordFieldSpec.index"} asa String,
+      nullable:bool = {uninitialized-value-for-type bool},
+      primary-key:bool = {uninitialized-value-for-type bool}
+    }
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? domain} then
+        set self.domain = domain}
+    {if {keyword-supplied? caption} then
+        set self.caption = caption}
+    {if {keyword-supplied? index} then
+        set self.index = index}
+    {if {keyword-supplied? nullable} then
+        set self.nullable = nullable}
+    {if {keyword-supplied? primary-key} then
+        set self.primary-key = primary-key}
+  }
+
+}
+
+{let public constant RecordFieldSpecs:ClassType = {Array-of RecordFieldSpec}}
+

@@ -1,0 +1,858 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 package}
+
+{package COM.CURL.WSDK.POCKETSOAP-SUPPORT}
+
+{import * from CURL.DATA-ACCESS.BASE}
+{import public * from CURL.LANGUAGE.REFLECTION}
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.SOAP}
+{import public * from COM.CURL.WSDK.WSDL}
+
+{import * from CURL.GUI.STANDARD}
+
+{import * from COM.CURL.WSDK.RECORDSET-FOR}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+
+{define-proc public {compare-any x:any, y:any}:bool
+    {return
+        {if x == y then true
+         elseif {type-of x} != {type-of y} then false
+         elseif 
+            || some kind of Association-of -- compare each element
+            {({type-of x} asa ClassType
+             ).get-getter "key-type"} != null 
+         then
+            {if x.size != y.size then
+                {return false}}
+            {for xi key i in x do
+                {if not {compare-any xi, y[i]} then
+                    {return false}}}
+            {return true}
+         else
+            let t:Type = {type-of x}
+            {if not t.class? then
+                || primitive: already failed
+                false
+             else
+                {type-switch t
+                 case t:ClassType do
+                    || String: already failed
+                    {if {t.subtype-of? StringInterface} then
+                        {return false}}
+                    || arbitrary class -- compare each field
+                    {for m in {t.get-members filter = ClassMember.field-filter}
+                     do
+                        let f:Field = m asa Field
+                        {if not {compare-any {f.get-value x}, {f.get-value y}}
+                         then
+                            {return false}}}
+                    {return true}
+                 else
+                    {output
+                        {message
+                            Don't know how to compare {value x} and {value y}}}
+                    false}}}}
+}
+{define-proc public {display-any val:any}:Graphic
+    let display-association:{proc-type {any}:Graphic} =
+        {proc {val:any}:Graphic
+            let display:Table = 
+                {Table 
+                    cell-margin = 1px,
+                    border-width = 1px,
+                    border-style = "flat",
+                    border-color = "silver"}
+            let limit:int = 100
+            let n:int = 0
+            let key-type:Type = any
+            {for x key k in val do 
+                {if n == 0 then
+                    set key-type = {type-of k}}
+                {inc n}
+                {if n > limit then
+                    {display.add {row-prototype {skip}, {italic ...More}}}
+                    {break}}
+                {display.add {row-prototype k, {display-any x}}}}
+            {if val.size > 0 then
+                set {display.get-column 0}.width =
+                    {if key-type.primitive? 
+                     then .25in
+                     else 1in}}
+            {return display} 
+        }
+    {return
+        {type-switch {type-of val}
+         case n:NumericType do
+            {if val isa int then val
+             elseif val isa bool then val
+             elseif val isa byte then
+                {format "%02x", val}
+             elseif not {scalar? val} then
+                {format 
+                    {switch 
+                        {type-of val / {unit-value-for-type {type-of val}}}
+                     case double do "%.15g"
+                     case float do "%.6g"
+                     else "%s"},
+                    val}
+             else val}
+         case t:ClassType do
+            {if not t.class? then 
+                val
+                
+             elseif || standard display
+                {t.subtype-of? StringInterface}
+                or {t.subtype-of? DateTime}
+             then
+                val
+                
+             elseif || XDMElement
+                {t.subtype-of? XDMElement}
+             then
+                {XDMTreeControl open? = true, val asa XDMElement}
+                
+             elseif
+                || some kind of Association-of 
+                {t.get-getter "key-type"} != null
+             then
+                let element-type:Type = val.element-type
+                let soap-struct?:bool =
+                    {element-type.package.name.prefix? "COM.CURL.WSDL."}
+                {if soap-struct? then
+                    || display like recordset
+                    let rs-type:ClassType =
+                        {RecordSet-for.construct element-type} asa ClassType
+                    {RecordGrid
+                        width = {add-stretch},
+                        record-source =
+                            {rs-type {splice val}}}
+                 elseif element-type == byte then
+                    || ByteArray: probably an image
+                    let d:#ImageData = null
+                    {try
+                        set d = 
+                            {ImageData.from-stream
+                                {{ByteInputStream-from ByteArray} val asa ByteArray},
+                                || guess the type
+                                "image/gif"}
+                     catch e:Exception do}
+                    {if-non-null d then
+                        let p:Pixmap = d.pixmaps[0]
+                        {Frame
+                            height = p.height * 1px,
+                            width = p.width * 1px,
+                            background =
+                                {FillPattern.from-pixmap p}}
+                     else val}                 
+                 else
+                    || arbitrary association: display each element
+                    {display-association val}}
+                
+             elseif
+                || some kind of FastArray-of
+                {t.get-getter "max-size"} != null
+             then
+                || arbitrary association: display each element
+                {display-association val}
+                
+             else
+                || arbitrary class -- display each public field
+                let fs:{FastArray-of ClassMember} =
+                    {t.get-members filter = ClassMember.field-filter} 
+                let exception?:bool = {t.subtype-of? Exception}
+                let background:FillPattern =
+                    {if exception? then "pink" else "transparent"}
+                {if fs.size == 0 then
+                    || no public fields -- default display
+                    {Frame 
+                        background = background,
+                        val}
+                 else
+                    let display:Table = 
+                        {Table 
+                            background = background,
+                            cell-margin = 1px,
+                            border-width = 1px,
+                            border-style = "flat",
+                            border-color = "silver",
+                            {cell-prototype colspan = 2, {italic {value t}}}}
+                    {for m in fs do
+                        let f:Field = m asa Field
+                        {display.add {row-prototype f.name, {display-any {f.get-value val}}}}}
+                    display}}
+         else val}}
+}
+
+|| A special class to pass to service methods that take no arguments
+{define-class public NoArg}
+
+|| A special class to pass to service methods that take multiple arguments
+{define-class public MultiArg
+  field public args:Arguments
+
+  {constructor public {default ...}
+    set self.args = {new Arguments, ...}
+  }
+}
+
+|| A special class to pass to service methods that take multiple arguments
+{define-class public MultiReturn
+  field public arg:any
+  field public results:{Array-of any}
+
+  {constructor public {default arg:any}
+    set self.arg = arg
+    set self.results = {new {Array-of any}}
+  }
+}
+
+{define-proc public {test-cases cases:RecordSet}
+    {for c in cases do
+        {try
+            let service:Object = c["service"]
+            let t:ClassType = {type-of service} asa ClassType
+            let name:String = c["name"]
+            let m:Method = {non-null {t.get-method name}}
+            let arg:any = c["arg"]
+            let result:any =
+                {type-switch arg
+                 case na:NoArg do
+                    {m.invoke service}
+                 case ma:MultiArg do
+                    {m.invoke service, {splice ma.args}}
+                 case mr:MultiReturn do
+                    {type-switch mr.arg
+                     case ma:MultiArg do
+                        {m.invoke service, {splice ma.args}}
+                     else
+                        {type-switch mr.arg
+                         case arguments:Arguments do
+                            {m.invoke-n service, {splice mr.arg}}
+                         else
+                            {m.invoke-n service, mr.arg}
+                        }
+                    }
+                 else
+                    {m.invoke service, arg}
+                }
+            set c["result"] = result
+            let expected-result =
+                {if-non-null rs = c.record-set then
+                    let (rf, exists?) =
+                        {rs.fields.get-if-exists "expected-result"}
+                    {if exists? then
+                        c["expected-result"]
+                     else
+                        null
+                    }
+                 else
+                    null
+                }
+            set c["match"] =
+                {type-switch arg
+                 case na:NoArg do
+                    {compare-any null, result}
+                 case ma:MultiArg do
+                    {if-non-null result then
+                        {compare-any expected-result, result}
+                     else
+                        false
+                    }
+                 case mr:MultiReturn do
+                    {if-non-null result then
+                        {compare-any expected-result, result}
+                     else
+                        false
+                    }
+                 else
+                    {if-non-null expected-result then
+                        {compare-any expected-result, result}
+                     else
+                        {compare-any arg, result}
+                    }
+                }
+         catch e:Exception do
+            || Handle expected Faults 
+            || NOTE: These handlers are setup for specific cases and should not
+            ||       be expected to report accurately for all fault conditions
+            ||       for all calls of these echo-*-fault methods.
+            {type-switch e
+             case sfe:SOAP-1-1-FaultException do
+                {switch c["name"]
+                 case "echo-empty-fault" do
+                    {if {sfe.fault-string.find-string "EmptyFault"} != -1 then
+                        set c["result"] = sfe.fault-string
+                        set c["match"] = true
+                     else
+                        set c["result"] = sfe
+                        set c["match"] = false
+                    }
+                 case "echo-int-array-fault" do
+                    {if {sfe.fault-string.find-string "IntArrayFault"} != -1
+                     then
+                        set c["result"] = sfe.fault-string
+                        set c["match"] = true
+                     else
+                        set c["result"] = sfe
+                        set c["match"] = false
+                    }
+                 case "echo-string-fault" do
+                    {if {sfe.fault-string.find-string "StringFault"} != -1 then
+                        set c["result"] = sfe.fault-string
+                        set c["match"] = true
+                     else
+                        set c["result"] = sfe
+                        set c["match"] = false
+                    }
+                 case "echo-multiple-faults1" do
+                    {if {sfe.fault-string.find-string "FloatArrayFault"} != -1
+                     then
+                        set c["result"] = sfe.fault-string
+                        set c["match"] = true
+                     else
+                        set c["result"] = sfe
+                        set c["match"] = false
+                    }
+                 case "echo-multiple-faults2" do
+                    {if {sfe.fault-string.find-string "StringArrayFault"} != -1
+                     then
+                        set c["result"] = sfe.fault-string
+                        set c["match"] = true
+                     else
+                        set c["result"] = sfe
+                        set c["match"] = false
+                    }
+                    || TODO: Find out what echo-multiple-faults3 generates
+||--                 case "echo-multiple-faults3" do
+||--                    {if {sfe.fault-string.find-string "???Fault"} != -1 then
+||--                        set c["result"] = sfe.fault-string
+||--                        set c["match"] = true
+||--                     else
+||--                        set c["result"] = sfe
+||--                        set c["match"] = false
+||--                    }
+                 case "echo-multiple-faults4" do
+                    {if {sfe.fault-string.find-string "EnumFault"} != -1 then
+                        set c["result"] = sfe.fault-string
+                        set c["match"] = true
+                     else
+                        set c["result"] = sfe
+                        set c["match"] = false
+                    }
+                 else
+                    {output "Unknown SOAP-1-1-FaultException " & ":" & e}
+                    set c["result"] = e
+                    set c["match"] = false
+                }
+             else
+                {output
+                    "Exception invoking " & c["name"] & ":" & e
+                }
+                set c["result"] = e
+                set c["match"] = false
+            }
+        }
+        {dispatch-events false}
+    }
+}
+
+{define-proc public {get-package-inspection-data
+                        cs:ComponentSelector,
+                        cm:ComponentManifest,
+                        echo-only?:bool = true,
+                        include-async?:bool = false
+                    }:(#ClassType, {Array-of ClassMember})
+
+    let class-type:#ClassType
+    let methods:{Array-of ClassMember} = {new {Array-of ClassMember}}
+
+    {try
+        let pkg:Package = {import-package cs, manifest = cm}
+        let members = {pkg.get-members}
+        {for member in members do
+            {type-switch {member.get-value}
+             case ct:ClassType do
+                {if {ct.subtype-of? WSDLHTTPRPCPostClient} then
+                    || TODO: Come up with something better here?
+                    || There could be several services-eligible classes defined
+                    || in this package. Take a best guess at the class of
+                    || interest by looking for the class' name in the package or
+                    || the location hints.
+                    {if {pkg.name.find-string ct.name} != -1 then
+                        set class-type = ct
+                     else
+                        {if-non-null locations = cs.location-hints then
+                            {for it in locations do
+                                {if {it.name.find-string ct.name} != -1 then
+                                    set class-type = ct
+                                    {break}
+                                }
+                            }
+                        }
+                    }
+                    || Finally, make sure it's set to something
+                    || and hope for the best :-[
+                    {if class-type == null then
+                        set class-type = ct
+                    }
+                    let cmembers =
+                        {ct.get-members filter = ClassMember.method-filter}
+                    {for cmember in cmembers do
+                        {if echo-only? then
+                            {if {cmember.name.find-string "echo"} != -1 then
+                                {if include-async? then
+                                    {if {methods.find cmember} == -1 then
+                                        {methods.append cmember}
+                                    }
+                                 else
+                                    {if {cmember.name.find-string
+                                            "async"} == -1
+                                     then
+                                        {if {methods.find cmember} == -1
+                                         then
+                                            {methods.append cmember}
+                                        }
+                                    }
+                                }
+                            }
+                         else
+                            {if include-async? then
+                                {if {methods.find cmember} == -1 then
+                                    {methods.append cmember}
+                                }
+                             else
+                                {if {cmember.name.find-string "async"} == -1
+                                 then
+                                    {if {methods.find cmember} == -1 then
+                                        {methods.append cmember}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+     catch err:Error do
+        {dump err}
+     catch e:Exception do
+        {dump e}
+    }
+
+    || We know the correct class-type now, so
+    || prune out the methods from other classes.
+    let ret-methods:{Array-of ClassMember} = {new {Array-of ClassMember}}
+    {for meth in methods do
+        {if meth.declaring-class == class-type then
+            {ret-methods.append meth}
+        }
+    }
+    {return class-type, ret-methods}
+}
+
+{define-proc public {get-arg-from-type type:Type, pkg:Package}:any
+
+    let ret-val:any
+
+    || Use non-null-variant to match both nullable and
+    || non-nullable versions of the a given type.
+    {switch type.non-null-variant
+     case bool do
+        set ret-val =
+            {if {{Random}.next-int8} mod 2 == 0 then
+                true
+             else
+                false
+            }
+     case int do
+        set ret-val = 23||{{Random}.next-int8}
+     case double do
+        set ret-val = 2.46||{{Random}.next-float} asa double
+     case float do
+        set ret-val = 1.23f||{{Random}.next-float}
+     case String do
+        set ret-val = "A simple test string."
+     case {Array-of int} do
+        set ret-val = {new {Array-of int}}
+        {for i:int = 0 below 3 do
+            {ret-val.append i}
+        }
+     case {Array-of float} do
+        set ret-val = {new {Array-of float}}
+        {for i:int = 0 below 3 do
+            let f = 1.23f||{{Random}.next-float}
+            {ret-val.append i * f}
+        }
+     case {Array-of String} do
+        set ret-val = {new StringArray}
+        {for i:int = 0 below 3 do
+            {ret-val.append
+                "String " & i & " appended to a test StringArray."}
+        }
+     case {Array-of uint8} do
+        set ret-val = {new {Array-of uint8}}
+        {for i:uint8 = 0xA0 below 0xB0 do
+            {ret-val.append i}
+        }
+||--     case any do
+||--        {output "Z: " & pkg.name}
+||--        {output "   Need to handle " & type}
+     else
+        || Probably a support type
+        || TODO: Prime the procedure with expected support types?
+        ||       Person, Employee, SOAPStruct, {Array-of SOAPStruct}, List
+        ||       Are non-null-variants handled by default?
+||--        let kst = {get-known-support-types}
+        {type-switch type
+         case e:EnumType do
+||--            let enum-type:any = {pkg.lookup "Enum"}
+||--            let enum = {new enum-type}
+            let enum = {new e}
+||--            {dump enum}
+            set ret-val = enum
+         case c:ClassType do
+||--            {dump c}
+||--            {dump c isa ParameterizedType}
+            {if not c isa ParameterizedType then
+                {type-switch c
+                 case a:AnyType do
+                    {dump type}
+                    {dump pkg.name}
+                    || TODO: Get the XDMElement right
+                    set ret-val = {new XDMElement,
+                                      {new XDMName,
+                                          "http://soapinterop.org/",
+                                          "SOAPStruct"
+                                      }
+                                  }
+                    {dump ret-val}
+                 else
+                    let obj = {new {non-null c.non-null-variant}}
+||--                    {dump obj}
+                    {switch {non-null c.non-null-variant}.name
+                     case "SOAPStruct" do
+                        set obj.var-string =
+                            "This is a SOAPStruct member string."
+                        set obj.var-int = 23||{{Random}.next-int8}
+                        set obj.var-float = 1.23f||{{Random}.next-float}
+                     case "SOAPArrayStruct" do
+                        set obj.var-string =
+                            "This is a SOAPArrayStruct member string."
+                        set obj.var-int = 23
+                        set obj.var-float = 1.23f
+                        let sa:StringArray = {new StringArray}
+                        {for i:int = 0 below 3 do
+                            {sa.append "SOAPArrayStruct test string " & i}
+                        }
+                        set obj.var-array = sa
+                     case "SOAPStructStruct" do
+                        set obj.var-string =
+                            "This is a SOAPStructStruct member string."
+                        set obj.var-int = 23
+                        set obj.var-float = 1.23f
+                        let ssc = {pkg.lookup "SOAPStruct"}
+                        {if-non-null ssc then
+                            let ss = {new ssc}
+                            set ss.var-string =
+                                "This is a SOAPStruct member string."
+                            set ss.var-int = 23
+                            set ss.var-float = 1.23f
+                            set obj.var-struct = ss
+                        }
+                     case "Employee" do
+                        let p = {pkg.lookup "Person"}
+||--                        {dump p}
+                        {if-non-null p then
+                            set obj.person = {new p}
+||--                            {dump obj.person}
+                            set obj.person.name = "Name O. Person"
+                            set obj.person.male =
+                                {{Random}.next-int8} mod 2 == 0
+                            || age:double
+                            || id:float
+                        }
+                     case "List" do
+                        let l = {pkg.lookup "List"}
+                        {if-non-null l then
+                            set obj.child = {new l}
+||--                            {dump obj, obj.child, l}
+                        }
+                     case "Person" do
+                        set obj.name = "Name O. Person"
+                        set obj.male = {{Random}.next-int8} mod 2 == 0
+||--                        {dump obj.name}
+                        || age:double
+                        || id:float
+                    }
+                    set ret-val = obj
+                }
+             else
+                || ParameterizedType
+                || TODO: Beware. These need not be Arrays,
+                ||       or even collection types.
+                ||    {Array-of String}
+                ||    {Array-of SOAPStruct}
+                ||    {Array-of {Array-of String}}
+                ||    {Array-of any}
+||--                {output "\n\t" & pkg.name & "." & c & "\n"}
+                let obj = {new {non-null c.non-null-variant}}
+                || Find out what a SOAPStruct is in case obj.element-type is one
+                let DynamicSOAPStructType = {pkg.lookup "SOAPStruct"}
+                let unhandled-type?:bool = false
+                {for i:int = 0 below 3 do
+                    {switch obj.element-type
+                     case String do
+                        let str:String = "Test string " & i
+                        {obj.append str}
+                     case {Array-of String} do
+                        let eobj = {new obj.element-type}
+                        {switch eobj.element-type
+                         case String do
+                            {for i:int = 0 below 3 do
+                                let str:String = "Test string " & i
+                                {eobj.append str}
+                            }
+                        }
+                        {obj.append eobj}
+                     case DynamicSOAPStructType do
+                        let ss = {new DynamicSOAPStructType}
+                        set ss.var-string = "This is a SOAPStruct test string."
+                        set ss.var-int = 23
+                        set ss.var-float = 1.23f
+                        {obj.append ss}
+                     case any do
+                        || TODO: Get the XDMElement right
+                        let eobj = {new XDMElement,
+                                       {new XDMName, "namespace", "local-name"}
+                                   }
+                        {dump eobj}
+                        {obj.append eobj}
+                     else
+                        set unhandled-type? = true
+                    }
+                }
+                {if unhandled-type? then
+                    {output
+                        "~Need to handle Array-of " & obj.element-type & ".\n" &
+                        "  For now, " & obj & " is empty.\n" &
+                        "  Size: " & obj.size & "\n" &
+                        " Package: " & pkg.name
+                    }
+                }
+||--                {dump obj}
+                set ret-val = obj
+            }
+         else
+            {output pkg.name}
+            {output "   Need to handle " & type & " of type " & {type-of type}}
+        }
+    }
+||--    {dump ret-val}
+
+    {return ret-val}
+}
+
+{define-proc public {get-arg
+                        proc-type:Type,
+                        pkg:Package,
+                        name:String,
+                        group:String,
+                        subgroup:String
+                    }:(any, any)
+
+    let ret-val:any
+    let ptype:ProcType = proc-type asa ProcType
+
+    || TODO: Support keyword args (e.g., headers?)
+
+    {switch ptype.num-args
+     case 0 do
+        set ret-val = {new NoArg}
+     case 1 do
+        let arg = ptype.positional-args[0]
+        set ret-val = {get-arg-from-type arg.type, pkg}
+        || Special handling for multiple return values
+        {switch name
+         case "echo-struct-as-simple-types" do
+            set ret-val = {new MultiReturn, ret-val}
+        }
+     else
+        let args:Arguments = {new Arguments}
+        {for arg in ptype.positional-args do
+            {args.append {get-arg-from-type arg.type, pkg}}
+        }
+||--        {output group & ":" & subgroup & ":" & name}
+        {switch group
+         case "GroupD" do
+            {switch subgroup
+             case "DocLit" do
+                set ret-val = {new MultiReturn, args}
+             else
+                set ret-val = {new MultiArg, {splice args}}
+            }
+         case "GroupE" do
+            {switch subgroup
+             case "DocLit" do
+                set ret-val = {new MultiReturn, args}
+             else
+                set ret-val = {new MultiArg, {splice args}}
+            }
+         else
+            set ret-val = {new MultiArg, {splice args}}
+        }
+    }
+
+    || Special handling for expected-results
+    let expected-result:any
+    || NOTE: GroupE/DocLit/BEA/ {echo-struct}
+    ||       GroupD/DocLit/WebMethods/ {echo-struct}
+    ||       GroupD/DocLit/WhiteMesa/ {echo-struct}
+    ||       send and receive multiple values, so need special handling.
+    {switch name
+     case "echo-struct" do
+        {switch group
+         case "GroupD" do
+            {switch subgroup
+             case "DocLit" do
+                set expected-result =
+                    {new FastArray,
+                        ret-val.arg[0],
+                        ret-val.arg[1],
+                        ret-val.arg[2]
+                    }
+            }
+         case "GroupE" do
+            {switch subgroup
+             case "DocLit" do
+                set expected-result =
+                    {new FastArray,
+                        ret-val.arg[0],
+                        ret-val.arg[1],
+                        ret-val.arg[2]
+                    }
+            }
+        }
+     case "echo-struct-as-simple-types" do
+        set expected-result =
+            {new FastArray,
+                ret-val.arg.var-string,
+                ret-val.arg.var-int,
+                ret-val.arg.var-float
+            }
+     case "echo-simple-types-as-struct" do
+        let ss-type = {pkg.lookup "SOAPStruct"}
+        let ss = {new ss-type}
+        {for a key k in ret-val.args do
+            {type-switch a
+             case s:String do
+                set ss.var-string = s
+             case i8:int8 do
+                set ss.var-int = i8
+             case i:int do
+                set ss.var-int = i
+             case f:float do
+                set ss.var-float = f
+            }
+        }
+        set expected-result = ss
+    }
+
+    {return ret-val, expected-result}
+}
+
+{define-class public ServiceDomain {inherits Domain}
+  {constructor public {default}
+  }
+  {getter public {default-value}:any
+    {return null}
+  }
+  {getter public {type}:Type
+    {return WSDLHTTPRPCPostClient}
+  }
+  {method public {compare a:any, b:any}:int
+    let a-name:#String = ({type-of a} asa ClassType).package.name
+    let b-name:#String = ({type-of b} asa ClassType).package.name
+    {if-non-null a-name then
+        {if-non-null b-name then
+            || Compare the names of a & b
+            {return {a-name.compare b-name, ignore-case? = true}}
+         else
+            || Treat null as less than a's name
+            {return -1}
+        }
+     else
+        {if-non-null b-name then
+            || Treat b's name as greater than null 
+            {return 1}
+         else
+            || Treat 2 nulls as being equal
+            {return 0}
+        }
+    }
+  }
+  {method public {format x:any}:String
+    let str:#String = ({type-of x} asa ClassType).package.name
+    {if-non-null str then
+        {return str}
+     else
+        {return {super.format x}}
+    }
+  }
+  {method public {hash x:any}:int
+    {return {super.hash x}}
+  }
+}
+
+{define-proc public {create-path u:Url}
+    {if-non-null u.local-filename then
+        {try
+            {u.parent-dir.url.resolve}
+         catch mfe:MissingFileException do
+            {try
+                {create-Directory
+                    u.parent-dir.url,
+                    create-missing-parents? = true
+                }
+             catch e:Exception do
+                {popup-message e}
+            }
+        }
+     else
+        {popup-message "The target url must represent a local file."}
+    }
+}
+
+{define-proc public {write-wsdl 
+                        w:WSDL, 
+                        package-name:String,
+                        group:String,
+                        subgroup:String,
+                        loc:Url}:void
+    {create-path loc}
+    {with-open-streams 
+        out = {write-open loc} 
+     do
+        {format out = out, |"
+{curl 5.0 package}
+{package COM.CURL.WSDL.%s, group = "%s", subgroup = "%s"}
+"|, 
+            package-name, group, subgroup}
+        {w.dump-client-stubs out}}
+}

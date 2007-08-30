@@ -1,0 +1,95 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 manifest}
+{delegate-to COM.CURL.WSDK.SUPPORT, location = "../../manifest.mcurl"}
+||**************************************************
+|| package declarations
+||**************************************************
+
+{component package COM.CURL.WSDL.DelayedStockQuote,
+    wsdl = "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl",
+    location = {url "DelayedStockQuote.scurl"}
+}
+{component package COM.CURL.WSDL.GoogleSearchAPI,
+    wsdl = "http://api.google.com/GoogleSearch.wsdl",
+    location = {url "GoogleSearchAPI.scurl"}
+}
+{component package COM.CURL.WSDL.TerraService,
+    wsdl = "http://terraservice.net/TerraService.asmx?WSDL",
+    location = {url "TerraService.scurl"}
+}
+{component package COM.CURL.WSDL.TranslationEngine,
+    wsdl = "http://www.webservicex.com/TranslateService.asmx?WSDL",
+    location = {url "TranslationEngine.scurl"}
+}
+{component package COM.CURL.WSDL.WSConnection,
+    wsdl = "file:///c:/Inetpub/wwwroot/dev/WSDK/support/test-cases/wsdl-services/s-wsconnection.wsdl",
+    location = {url "WSConnection.scurl"}
+}
+{component package COM.CURL.WSDL.AmazonSearch,
+    wsdl = "http://soap.amazon.com/schemas3/AmazonWebServices.wsdl",
+    location = {url "AmazonSearch.scurl"}
+}
+{component package COM.CURL.WSDL.BNPriceWS,
+    wsdl = "http://www.abundanttech.com/webservices/bnprice/bnprice.wsdl",
+    location = {url "BNPriceWS.scurl"}
+}
+{component package COM.CURL.WSDL.ISBNInformation,
+    wsdl = "http://www.webservicex.com/isbn.asmx?WSDL",
+    location = {url "ISBNInformation.scurl"}
+}
+
+{component package COM.CURL.WSDL.PowerQuote,
+    wsdl = "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx?wsdl",
+    location = {url "PowerQuote.scurl"}
+}
+{component package COM.CURL.WSDL.StockQuote2,
+    wsdl = "http://www.webservicex.com/stockquote.asmx?WSDL",
+    location = {url "StockQuote2.scurl"}
+}
+{component package COM.CURL.WSDL.StockQuotesWebService,
+    wsdl = "http://www.gama-system.com/webservices/stockquotes.asmx?wsdl",
+    location = {url "StockQuotesWebService.scurl"}
+}
+
+{component package COM.CURL.WSDL.DailyDilbert,
+    location = {url "DailyDilbert.scurl"}
+}
+||--{component package COM.CURL.WSDL.EODData,
+||--    location = {url "EODData.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.StrikeIronReal-TimeStockQuotesAdvanced,
+||--    location = {url "StrikeIronReal-TimeStockQuotesAdvanced.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.StrikeIronHistoricalStockQuotes,
+||--    location = {url "StrikeIronHistoricalStockQuotes.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.XigniteRealTime,
+||--    location = {url "XigniteRealTime.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.DelayedStockQuote,
+||--    location = {url "DelayedStockQuote.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.HistoricalStockQuotes,
+||--    location = {url "HistoricalStockQuotes.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.StockQuote,
+||--    location = {url "StockQuote.scurl"}
+||--}
+||--{component package COM.CURL.WSDL.StockServices,
+||--    location = {url "StockServices.scurl"}
+||--}

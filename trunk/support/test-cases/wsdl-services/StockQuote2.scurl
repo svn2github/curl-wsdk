@@ -1,0 +1,132 @@
+{curl 5.0 package}
+{package COM.CURL.WSDL.StockQuote2,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/wsdk-source/support/test-cases/wsdl-services/StockQuote2.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/wsdk-source/support/test-cases/wsdl-services/StockQuote2.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public StockQuote {inherits WSDLHTTPRPCPostClient}
+
+  {doc-next 
+    {details 
+      Get Stock quote for a company Symbol
+    }
+  }
+  {method public {get-quote symbol:String}:(get-quote-result:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                symbol
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.webserviceX.NET/", "symbol"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.webserviceX.NET/", "GetQuoteResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://www.webserviceX.NET/GetQuote",
+            request-operation = {XMLName "http://www.webserviceX.NET/", "GetQuote"},
+            response-operation = {XMLName "http://www.webserviceX.NET/", "GetQuoteResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Get Stock quote for a company Symbol
+    }
+  }
+  {method public {async-get-quote symbol:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                symbol
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.webserviceX.NET/", "symbol"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.webserviceX.NET/", "GetQuoteResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://www.webserviceX.NET/GetQuote",
+            request-operation = {XMLName "http://www.webserviceX.NET/", "GetQuote"},
+            response-operation = {XMLName "http://www.webserviceX.NET/", "GetQuoteResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    {return builtin-soap-type-mapper,
+        builtin-soap-element-name-to-xml-type-mapper,
+        builtin-soap-xml-type-to-curl-type-mapper,
+        builtin-soap-curl-type-to-xml-type-mapper,
+        builtin-soap-xml-type-to-element-name-mapper
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://www.webservicex.com/stockquote.asmx"}
+    }
+    {construct-super service-location,
+        generated-using-version = "2"
+    }
+  }
+}
+

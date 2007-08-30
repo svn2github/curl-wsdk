@@ -1,0 +1,1869 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| Defined in this file...
+|| Classes:
+||     XMLName
+||     XMLToken (abstract)
+||         XMLStartDocument
+||         XMLEndDocument
+||         XMLStartElement
+||         XMLAttribute
+||         XMLEndElement
+||         XMLCharacters
+||     StreamContentHandler
+||     XMLInputStream
+||     XMLOutputStream
+||     OutputNamespaceSupport
+||     OutputNamespaceContext
+||     InputNamespaceSupport
+||     InputNamespaceContext
+
+|| The purpose of these classes in this file is to aid in processing of
+|| SOAP messages. The reason some of the classes are public is to
+|| allow users to write custom marshalers and unmarshalers for complex types.
+|| The classes are currently implemented to support enough XML
+|| for the purpose of processing SOAP messages.
+
+{doc-next
+    {purpose Container for an XML element or attribute name and
+        its namespace URI.
+    }
+    {for-example
+        {paragraph Consider the following XML fragment:
+            {paragraph paragraph-left-indent=.3inch,
+                |"<element1 xmlns:namespace1="www.microsoft.com">"|
+                {br}
+                |"    <element2 namespace1:attribute1="value1" />"|
+                {br}
+                |"</element1>"|
+            }
+            {paragraph The {ctext XMLName}
+                for the elements and attributes
+                will contain:
+                {paragraph paragraph-left-indent=.3inch,
+                    {docref XMLStartElement}: element1
+                    {itemize
+                        {item |"namespace = """|}
+                        {item |"local-name = "element1""|}
+                    }
+
+                    {docref XMLStartElement}: element2
+                    {itemize
+                        {item |"namespace = """|}
+                        {item |"local-name = "element2""|}
+                    }
+
+                    {docref XMLAttribute}: attribute1
+                    {itemize
+                        {item |"namespace = "www.microsoft.com""|}
+                        {item |"local-name = "attribute1""|}
+                    }
+
+                    {docref XMLEndElement}: element2
+                    {itemize
+                        {item |"namespace = """|}
+                        {item |"local-name = """|}
+                    }
+
+                    {docref XMLEndElement}: element1
+                    {itemize
+                        {item |"namespace = """|}
+                        {item |"local-name = "element1""|}
+                    }
+                }
+            }
+            {paragraph Additional comments:
+
+                Elements and attributes in XML can be labeled with a namespace prefix
+                ({quote namespace1} in the example).  The prefix is used in XML as
+                shorthand for a namespace URI.
+                When XML is read by {docref XMLInputStream}, all names are stored
+                in the {ctext XMLName} with the appropriate namespace URI rather
+                than the prefix.
+                When XML is written by {docref XMLOutputStream}, namespace/prefix
+                attributes are added to the appropriate start element tags,
+                and the prefixes are written with the names, i.e. "prefix:name".
+            }
+        }
+    }
+    {notes
+        This class is used by the {docref XMLAttribute},
+        {docref XMLStartElement}, and {docref XMLEndElement} classes.
+
+        This class also can be used to write namespace-qualified
+        attribute values.
+    }
+}
+{let public constant XMLName:ClassType = 
+    XDMName
+}
+||--{define-class final public XMLName
+||--  {doc-next
+||--    {purpose Holds the URI of the namespace for this element or attribute.
+||--        Contains an empty string if the element or attribute is not
+||--        namespace-qualified.
+||--    }
+||--  }
+||--  field public constant namespace:String
+||--  {doc-next
+||--    {purpose Holds the unprefixed text name of this element or attribute.}
+||--  }
+||--  field public constant local-name:String
+||--
+||--  {doc-next
+||--    {purpose Creates an instance of {ctext XMLName} to hold an XML
+||--        element or attribute.
+||--    }
+||--    {parameter namespace,
+||--        The namespace URI of the element or attribute.
+||--    }
+||--    {parameter local-name,
+||--        The unprefixed name of the element or attribute.
+||--    }
+||--  }
+||--  {factory public {default 
+||--                      namespace:String, 
+||--                      local-name:String
+||--                  }:XMLName
+||--    let key:XMLName = {XMLName.internal namespace, local-name}
+||--    || instances are interned so pointer-equal? --> value-equal? 
+||--    let (interned:XMLName, interned?:bool) =
+||--        {XMLName.interned.get-member-if-exists key} 
+||--    {return
+||--        {if interned? then interned
+||--         else
+||--            {XMLName.interned.insert key}
+||--            key}}
+||--  }
+||--  let package constant interned:XMLNameSet = {XMLNameSet}
+||--  
+||--  {constructor package {internal namespace:String, local-name:String}
+||--    set self.namespace = namespace
+||--    set self.local-name = local-name
+||--  }
+||--
+||--  {method public {equal? other:XMLName}:bool
+||--    {return self == other}
+||--  }
+||--
+||--  {method public {object-describe-for-debugging
+||--                     out:TextOutputStream, locale:Locale
+||--                 }:void
+||--    {format
+||--        out = out, locale = locale, "%y, %y", self.namespace, self.local-name
+||--    }
+||--  }
+||--}
+||--
+||--|| these can not be class variables
+||--{define-proc package {XMLName-equal? self:XMLName, other:XMLName}:bool
+||--    {return
+||--        self.local-name == other.local-name and
+||--        self.namespace == other.namespace}
+||--}
+||--{define-proc package {XMLName-hash self:XMLName}:int
+||--    {return
+||--        {bit-xor
+||--            {value-hash self.local-name},
+||--            {value-hash self.namespace}}}
+||--}
+||--{let package constant XMLNameSet:ClassType =
+||--    {Set-of XMLName, 
+||--        key-equality-proc = XMLName-equal?,
+||--        key-hash-proc = XMLName-hash}
+||--}
+
+{doc-next
+    {purpose Container for an attribute of an XML element.}
+    {details
+        Consists of the attribute's {ctext name} and its {ctext value}.
+        The {ctext name} is an {docref XMLName}, and the {ctext value}
+        is either a {docref String} or an {docref XMLName}.
+
+        The attribute declarations of a start tag are contained
+        in {ctext XMLAttribute}s that follow the {docref XMLStartElement}
+        in an {docref XMLInputStream} and an {docref XMLOutputStream}.
+
+        The {ctext value} of an {ctext XMLAttribute} returned by 
+        {docref XMLInputStream} will always be of type {docref String}.
+        {ctext XMLAttribute}s passed to {docref XMLOutputStream} may
+        have {ctext value}s of type {docref String} or {docref XMLName}.
+        The default constructor creates an {ctext XMLAttribute} with
+        a {ctext value} of type {docref String}. Use the 
+        {ctext qname-value} constructor to create an {ctext XMLAttribute}
+        with a {ctext value} of type {docref XMLName}.
+
+        Namespace attribute declarations are automatically handled
+        by {docref XMLInputStream} and {docref XMLOutputStream} and are
+        not passed as {docref XMLAttribute}s. Namespace
+        prefixes are resolved by {docref XMLInputStream} and stored in the 
+        {docref XMLName} of each
+        {docref XMLToken} that uses the namespace.  When the {docref XMLToken}s
+        are output by an {docref XMLOutputStream}, the namespace attributes are
+        generated and attached to the appropriate start element tags.
+
+        The {docref XMLInputStream} and {docref XMLOutputStream} classes do not
+        guarantee the order in which the attributes are read or written.
+    }
+}
+{define-class final public XMLAttribute {inherits XMLToken}
+
+  {doc-next
+    {purpose Holds the {docref XMLName} for the name of the attribute.}
+  }
+  field public constant name:XMLName
+
+  {doc-next
+    {purpose Holds the value of this attribute as a {docref String}
+        or {docref XMLName}.
+    }
+    {details
+        {docref XMLInputStream} always creates {ctext XMLAttribute}s with
+        this field as a {docref String}, but {docref XMLOutputStream}
+        will correctly process {ctext XMLAttribute}s
+        with this field as an {docref XMLName} or an array of
+        {docref XMLName}s.
+  
+        {docref XMLInputStream} will fill in {param xml-name-values} with
+        a {docref XMLName} or an array of {docref XMLName}s that is the
+        same as the {param value} looked up in the relevant name spaces,
+        if appropriate.
+    }
+  }
+  || value is either a String or an XMLName or an {Array-of XMLName}
+  field public constant value:Object
+
+  {doc-next
+    {purpose
+        Holds the value of this attribute as a {docref XMLName}.
+    }
+    {details
+        {docref XMLInputStream} always creates {ctext XMLAttribute}s with
+        {param value} as a {docref String}, but if that {docref String} looks
+        like it contains one or more valid {docref XMLName}s then
+        {docref XMLInputStream} will also set this field to an
+        array of {docref XMLName}s.  If {param value}
+        is an {docref XMLName} or an array of {docref XMLName}s, then
+        this should be an array containing the same {docref XMLName}s.
+    }
+    {notes
+        {docref XMLOutputStream} will do the proper namespace management to
+        write out the {docref XMLName}s as the attribute's value, but it
+        ignores this field and only uses the {param value}.
+    }
+  }
+  field public constant xml-name-values:#{Array-of XMLName}
+
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLAttribute} whose {ctext value} is
+        a {docref String}.
+    }
+    {parameter name,
+        The name of the {ctext XMLAttribute} as an {docref XMLName}.
+    }
+    {parameter value,
+        The value of the {ctext XMLAttribute} as a {docref String}.
+    }
+    {parameter xml-name-values,
+        The value of the {ctext XMLAttribute} as an array of {docref XMLName}s,
+        if {param value} might really be one or more {docref XMLName}s.
+    }
+  }
+  {constructor public {default
+                          name:XMLName,
+                          value:String,
+                          xml-name-values:#{Array-of XMLName} = null
+                      }
+    set self.name = name
+    set self.value = value
+    set self.xml-name-values = xml-name-values
+  }
+
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLAttribute} whose {ctext value} is
+        an {docref XMLName}.
+    }
+    {details
+        This constructor allows the creation of an attribute value with a namespace
+        prefix.  This constructor will also set {param xml-name-values} to
+        an array with {param value} in it.
+    }
+    {parameter name,
+        The name of the {ctext XMLAttribute} as an {docref XMLName}.
+    }
+    {parameter value,
+        The value of the {ctext XMLAttribute} as an {docref XMLName}.
+    }
+  }
+  {constructor public {qname-value name:XMLName, values:XMLName}
+    set self.name = name
+    set self.value = values
+    set self.xml-name-values = {new {Array-of XMLName}, values}
+  }
+
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLAttribute} whose {ctext value} is
+        an array of {docref XMLName}s.
+    }
+    {details
+        This constructor allows the creation of an attribute value with a namespace
+        prefix.  This constructor will also set {param xml-name-values} to
+        {param values}
+    }
+    {parameter name,
+        The name of the {ctext XMLAttribute} as an {docref XMLName}.
+    }
+    {parameter values,
+        The value of the {ctext XMLAttribute} as an array of {docref XMLName}s.
+    }
+  }
+  {constructor public {with-xml-name-values
+                          name:XMLName,
+                          values:{Array-of XMLName}
+                      }
+    set self.name = name
+    set self.value =
+        {if values.size == 1 then
+            values[0]
+         else
+            values
+        }
+    set self.xml-name-values = values
+  }
+
+  {method public {object-describe
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale,
+        "\{XMLAttribute %s, \"%s\"\}", ||""
+        self.name, self.value
+    }
+  }
+
+  {method public {object-describe-for-debugging
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale, "%s, %y", self.name, self.value}
+  }
+
+}
+
+{doc-next
+    {purpose Abstract base class for the logical pieces of an XML document.}
+
+    {notes
+        Non-abstract subclasses include
+        {docref XMLStartDocument},
+        {docref XMLStartElement},
+        {docref XMLAttribute},
+        {docref XMLCharacters},
+        {docref XMLEndElement},
+        and {docref XMLEndDocument}.
+    }
+}
+{define-class sealed abstract public XMLToken
+  {method public sealed {object-describe
+                            out:TextOutputStream, locale:Locale
+                        }:void
+    {format out = out, locale = locale,
+        "\{%s\}", ||""
+        {type-of self}
+    }
+  }
+}
+
+{doc-next
+    {purpose Empty {docref XMLToken} used to mark the start of an
+        XML document.
+    }
+}
+{define-class final public XMLStartDocument {inherits XMLToken}
+}
+
+{doc-next
+    {purpose Empty {docref XMLToken} used to mark the end of an XML document.}
+}
+{define-class final public XMLEndDocument {inherits XMLToken}
+}
+
+{doc-next
+    {purpose Container to hold the closing tag of an XML element.}
+}
+{define-class final public XMLEndElement {inherits XMLToken}
+  {doc-next
+    {purpose
+        When an {ctext XMLEndElement} is generated by an
+        {docref XMLInputStream}, this field will always contain the
+        {docref XMLName} of the matching {docref XMLStartElement}.
+
+        When an {ctext XMLEndElement} is generated by an end user,
+        this field may be {ctext null}.
+    }
+  }
+  field public constant element:#XMLName
+
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLEndElement}.
+    }
+    {parameter element,
+        Optional {docref XMLName} parameter to name the element being
+        ended.  The default is {ctext null}.  When creating an {ctext
+        XMLEndElement} for use in an {docref XMLOutputStream}, it is
+        not necessary to supply this parameter, because the {docref
+        XMLOutputStream} can automatically match up this {ctext
+        XMLEndElement} with the corresponding {docref
+        XMLStartElement}.
+    }
+  }
+  {constructor public {default element:#XMLName = null}
+    set self.element = element
+  }
+
+  {method public {object-describe-for-debugging
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale, "%s", self.element}
+  }
+}
+
+{doc-next
+    {purpose
+        Container to hold the text contents of an XML element.
+        Does not contain the attributes associated with this element.
+    }
+    {notes
+        {docref XMLInputStream} may or may not provide a {docref XMLCharacters}
+        between a {docref XMLStartElement} and a {docref XMLEndElement} if
+        there is no non-whitespace text between them in the XML document.
+    }
+}
+{define-class final public XMLCharacters {inherits XMLToken}
+  {doc-next
+    {purpose
+        Contains the text data in an XML element.
+    }
+    {for-example
+        Consider the following XML fragment:
+
+        |"<element attribute="value">"|
+        {br}
+        |"    Data"|
+        {br}
+        |"</element>"|
+
+        The {ctext characters} field will contain
+        the text string {quote Data}, with carriage-return and line-feed characters
+        before and after it.
+    }
+  }
+  field public constant characters:String
+
+  {doc-next
+    {purpose
+        Holds the value of this {docref XMLCharacters} as a {docref XMLName}.
+    }
+    {details
+        {docref XMLInputStream} always creates {ctext XMLCharacters} with
+        {param characters}, but if that {docref String} looks like it
+        could be one or more valid {docref XMLName}s then
+        {docref XMLInputStream} will also set this field to a non-empty
+        array of {docref XMLName}s.
+    }
+  }
+  field public constant xml-name-values:#{Array-of XMLName}
+
+  {doc-next
+    {purpose Constructs an instance of {ctext XMLCharacters}.}
+    {parameter characters,
+        Text data for this element.
+    }
+  }
+  {constructor public {default
+                          characters:StringInterface,
+                          xml-name-values:#{Array-of XMLName} = null
+                      }
+    set self.characters = {characters.to-String}
+    set self.xml-name-values = xml-name-values
+  }
+
+  {method public {object-describe
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale,
+        "\{XMLCharacters \"%s\"\}", ||""
+        self.characters
+    }
+  }
+
+  {method public {object-describe-for-debugging
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale, "%y", self.characters}
+  }
+}
+
+{doc-next
+    {purpose Container to hold the start tag of an XML element.
+        Contains the name of the element.
+    }
+    {notes
+        The attribute declarations of a start tag are contained
+        in {docref XMLAttribute}s that follow the {ctext XMLStartElement}
+        in an {docref XMLInputStream} and an {docref XMLOutputStream}.
+    }
+}
+{define-class final public XMLStartElement {inherits XMLToken}
+  {doc-next
+    {purpose
+        The name (an {docref XMLName}) of the element being started.
+    }
+  }
+  field public constant element:XMLName
+
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLStartElement}.
+    }
+    {parameter element,
+        The element name as an {docref XMLName}.
+    }
+  }
+  {constructor public {default
+                          element:XMLName
+                      }
+    set self.element = element
+  }
+
+  {method public {object-describe
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale,
+        "\{XMLStartElement \"%s\"\}", ||""
+        self.element
+    }
+  }
+
+  {method public {object-describe-for-debugging
+                     out:TextOutputStream, locale:Locale
+                 }:void
+    {format out = out, locale = locale, "%s", self.element}
+  }
+}
+
+
+{doc-next
+    {purpose Parse XML stream into array of XMLToken
+        for use by XMLInputStream}
+    {details
+        The method of this class are called by SAXParser
+        as it processes an XML file.
+        They are not intended for public consumption.
+    }
+}
+|| ?? should we be filling in the default namespace on elements that
+||    have no namespace ??
+
+|| Why are the docstrings for the methods of StreamContentHandler
+|| marked as unadvertised? -- Because the class and its methods
+|| are only intended for
+|| use by XMLInputStream. XMLInputStream uses
+|| SAXParser and sets SAXParser to call StreamContentHandler.
+|| ContentHandler, the event interface of the SAX Parser has
+|| public methods. But we won't want the method of StreamContentHandler
+|| to show up in the API Viewer.
+
+
+{define-class package final StreamContentHandler {inherits ContentHandler}
+
+  || array that holds the result of parsing the XML stream
+  field private constant events:{Array-of XMLToken}
+
+  || buffer characters because SAX parser is allowed to split
+  || character data into multiple characters events.
+  field private constant char-buffer:StringBuf = {StringBuf}
+  field private constant split-buf:StringBuf = {StringBuf}
+
+  field private constant namespace-support:InputNamespaceSupport
+  field private seen-first-start-prefix-for-element?:bool
+  field private seen-first-end-prefix-for-element?:bool
+
+  {define-proc package inline {white-space? c:char}:bool
+    {return c == '\u0020' or c == '\u000A' or c == '\u0009' or c == '\u000D' }
+  }
+
+  {doc-next
+    {purpose constructor}
+    {parameter events,
+        StreamContentHandler appends the
+        parser events onto this array.
+    }
+  }
+  {constructor package {default events:{Array-of XMLToken},
+                           namespace-support:#InputNamespaceSupport = null
+                       }
+    set self.events = events
+    set self.namespace-support = 
+        {if-non-null namespace-support then
+            namespace-support 
+         else
+            {new InputNamespaceSupport}
+        }
+    set self.seen-first-start-prefix-for-element? = false
+    set self.seen-first-end-prefix-for-element? = false
+  }
+
+  {doc-next
+    {purpose append XMLCharacters if non-whitespace
+        characters are in buffer}
+  }
+  {method private {check-characters}:void
+    {if not self.char-buffer.empty? then
+        {for c in self.char-buffer do
+            {if not {StreamContentHandler.white-space? c} then
+                let cs:String = {self.char-buffer.to-String}
+                {self.events.append
+                    {XMLCharacters
+                        cs,
+                        xml-name-values = {self.string-to-xml-values cs}
+                    }
+                }
+                {break}
+            }
+        }
+        {self.char-buffer.clear}
+    }
+  }
+
+  {doc-next {unadvertised}}
+  {method public {start-document}:void
+    || Don't really need to do this, since characters outside of the root
+    || element are illegal.
+    {self.check-characters}
+    {self.events.append {new XMLStartDocument}}
+  }
+
+
+  {doc-next {unadvertised}}
+  {method public {end-document}:void
+    || Don't really need to do this, since characters outside of the root
+    || element are illegal.
+    {self.check-characters}
+    {self.events.append {new XMLEndDocument}}
+  }
+
+
+
+  {doc-next {unadvertised}}
+  || convert a start element event from SAXParser
+  || into a XMLStartElement
+  {method public {start-element
+                     namespace:String,
+                     local-name:String,
+                     q-name:String,
+                     atts:Attributes}:void
+    set self.seen-first-start-prefix-for-element? = false
+    {self.check-characters}
+    {self.events.append
+        {new XMLStartElement,
+            {new XMLName, namespace, local-name}
+        }
+    }
+    let num-atts:int = {atts.get-length}
+    {for i=0 below num-atts do
+        || eliminate namespace declaration attributes
+        let uri:String={non-null {atts.get-uri i}}
+        let local-name:String={non-null {atts.get-local-name i}}
+        {if uri == "" and 
+            (local-name == "xmlns" or {local-name.prefix? "xmlns:"}) ||""
+         then
+            || don't include namespace declaration attribute
+         else
+            let string-value:String = {non-null {atts.get-value i}}
+            {self.events.append
+                {new XMLAttribute,
+                    {new XMLName,
+                        uri,
+                        local-name
+                    },
+                    string-value,
+                    xml-name-values = {self.string-to-xml-values string-value}
+                }
+            }
+        }
+    }
+  } || method start-element
+
+  {let private non-xml-name-chars:CharClass =
+    {value
+        let wcharclass:WCharClass = {new WCharClass}
+        {wcharclass.add-range '\u0000', '\u0008'}
+        {wcharclass.add-range '\u000E', '\u001F'}
+||--        {wcharclass.add "!\"#$%&\u0027()*+,/;<=>?@[\\]^\{\|\}~\u007F"}
+        || intentionally accepting illegal '[]' because of 
+        || soapenc:arrayType abomination
+        {wcharclass.add "!\"#$%&\u0027()*+,/;<=>?@\\^\{\|\}~\u007F"}
+        {new CharClass, wcharclass}
+    }
+  }
+
+  {method private {string-to-xml-values string:String}:#{Array-of XMLName}
+    || see if value has anything that can't be in a name in XML
+    {if {string.find-char-class StreamContentHandler.non-xml-name-chars} >= 0
+     then
+        {return null}
+    }
+    ||
+    let ret-array:{Array-of XMLName} = {new {Array-of XMLName}}
+    let constant split-buf:StringBuf = self.split-buf
+    let constant string-size:int = string.size
+    {for c key i in string do
+        let constant white-space?:bool = {StreamContentHandler.white-space? c}
+        {if not white-space?  then
+            {split-buf.append c}
+        }
+        || if is white-space character or is last character
+        || (then flush last set of non-white space characters if any)
+        {if (white-space? or i == (string-size - 1)) then
+            {if not split-buf.empty? then
+                let (value-uri:String, value-local-name:String) =
+                    {self.namespace-support.lookup-string
+                        {if split-buf.size == string-size then
+                            string
+                         else
+                            {split-buf.to-String}
+                        }
+                    }
+                {ret-array.append {XMLName.unchecked value-uri, value-local-name}}
+                {split-buf.clear}
+            }
+        }
+    }
+    {return ret-array}
+  }
+
+
+  {doc-next {unadvertised}}
+  {method public {end-element
+                     namespace:String,
+                     local-name:String,
+                     q-name:String}:void
+    set self.seen-first-end-prefix-for-element? = false
+    {self.check-characters}
+    {self.events.append
+        {new XMLEndElement,
+            element={new XMLName, namespace, local-name}}}
+  }
+
+
+  {doc-next {unadvertised}}
+  {method public {characters
+                     ch:StringBuf,
+                     start:int,
+                     length:int
+                 }:void
+    {self.char-buffer.write-one-string ch, start = start, length = length}
+
+  } || method characters
+
+
+  {doc-next {unadvertised}}
+  {method public {start-prefix-mapping
+                     prefix:String,
+                     uri:String}:void
+    || do nothing
+    {if not self.seen-first-start-prefix-for-element? then
+        set self.seen-first-start-prefix-for-element? = true
+        {self.namespace-support.push-context}
+    }
+    {self.namespace-support.add-prefix prefix, uri}
+  }
+
+
+  ||  End the scope of a prefix-URI mapping.
+  {doc-next {unadvertised}}
+  {method public {end-prefix-mapping
+                     prefix:String
+                 }:void
+    || do nothing
+    {if not self.seen-first-end-prefix-for-element? then
+        set self.seen-first-end-prefix-for-element? = true
+        {self.namespace-support.pop-context}
+    }
+  }
+
+  {doc-next {unadvertised}}
+  {method public {ignorable-whitespace
+                     ch:StringBuf,
+                     start:int,
+                     length:int
+                 }:void
+    || do nothing
+  }
+
+
+  {doc-next {unadvertised}}
+  {method public {processing-instruction
+                     target:String,
+                     data:#String}:void
+    || Processing Instructions are no allowed in SOAP
+    || see section 3 of SOAP 1.1 & 1.2
+
+    || do nothing
+  } || method processing-instruction
+
+
+  {doc-next {unadvertised}}
+  {method public {skipped-entity name:String}:void
+    || do nothing
+  }
+
+  {doc-next {unadvertised}}
+  {method public {set-document-locator
+                     locator:Locator
+                 }:void
+    || never called -- Re: P13141
+    || do nothing
+  }
+
+}
+
+
+{let package constant line-ending:String = "\r\n"}
+
+|| reuse SAXParser object since it is  expensive to construct
+{let package cached-SAXParser-object:#SAXParser = null}
+
+{doc-next
+    {purpose Reads and parses a {docref TextInputStream} containing XML.}
+    {details
+        The input XML is parsed into {docref XMLToken}s,
+        which are available for sequential reading via the public methods.
+
+        Namespaces are handled appropriately: for storage in {docref XMLToken}s,
+        namespace prefixes are replaced with the appropriate namespace
+        URI, and namespace attributes are removed.
+
+        The {docref SAXParser} is used to read the XML.
+
+        This class is customized for use with SOAP.
+        Not all XML capability is supported.  For example,
+        processing instructions are not supported, since
+        they are not allowed in SOAP messages.
+    }
+}
+
+{define-class final public XMLInputStream
+  {inherits {BufferedInputStream-of XMLToken}}
+
+  || A sequence of XMLTokens representing the 
+  || XML in underlying stream
+  field private tokens:#{Array-of XMLToken}
+
+  || current index into tokens array
+  field private token-index:int
+
+  field private _origin-url:#Url
+  
+  || bypassing parser
+  {constructor package {from-Tokens tokens:{Array-of XMLToken}}
+    set self.tokens = tokens
+    set self.token-index = 0
+  }
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLInputStream}.
+    }
+    {details
+        Only well-formed XML is accepted; the
+        constructor will throw a {docref SAXParseException}
+        on ill-formed XML.
+    }
+    {parameter tis,
+        A {docref TextInputStream} containing the XML to read.
+    }
+  }
+  {factory public {default tis:TextInputStream}:XMLInputStream
+    let is:InputSource = {new InputSource, character-stream = tis}
+    {if-non-null origin-url = tis.origin-url then
+        {is.set-system-id origin-url.name}
+    }
+    {return
+        {XMLInputStream.from-InputSource is, origin-url = tis.origin-url}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Constructs an instance of {ctext XMLInputStream}.
+    }
+    {details
+        Only well-formed XML is accepted; the
+        constructor will throw a {docref SAXParseException}
+        on ill-formed XML.
+    }
+    {parameter input-source,
+        A {docref InputSource} pointing to or containing the XML to read.
+    }
+    {parameter origin-url,
+        The {docref Url} that the XML was loaded from, to be used for
+        resolving relative {docref Url}s, error messages and for implementing
+        {docref InputStream-of.origin-url}.  This is only needed if
+        {param input-source} has no {ctext system-id}.
+    }
+  }
+  {constructor public {from-InputSource
+                          input-source:InputSource,
+                          origin-url:#Url = null
+                      }
+    set self.tokens = {new {Array-of XMLToken}}
+    {if origin-url != null then
+        set self._origin-url = origin-url
+    }
+    {if self._origin-url == null then
+        {if-non-null system-id = {input-source.get-system-id} then
+            {if {abs-url? system-id} then
+                set self._origin-url = {abs-url system-id}
+            }
+        }
+    }
+    || use SAXParser to parse the XML in the input Stream
+    let parser:SAXParser = 
+        {if-non-null cached-parser = cached-SAXParser-object then
+            set cached-SAXParser-object = null
+            {cached-parser.clear}
+            cached-parser
+         else
+            {new SAXParser}
+        }
+
+    || our ContentHandler that converts SAX parse events
+    || into an array of XMLTokens
+    let handler:StreamContentHandler =
+        {new StreamContentHandler, {non-null self.tokens}}
+    {parser.set-content-handler handler}
+    {parser.set-feature
+        "http://curl.com/sax/features/handler-parameter-reuse", true}
+
+    || do the parse (closes underlying stream)
+    {parser.parse input-source}
+    
+    set cached-SAXParser-object = parser
+    set self.token-index = 0
+  }
+
+  {doc-next
+    {purpose This method is not supported for this class.}
+  }
+  {getter public {read-buffer-data-size}:int
+    {error {lmessage Method 'read-buffer-data-size' 
+               not supported in {value self}}}
+||--    {unsupported-error self, "read-buffer-data-size"}
+  }
+
+  || Inherits doc-string from BufferedInputStream-of
+  {getter public {open?}:bool
+    {return self.tokens != null}
+  }
+
+  {doc-next
+    {purpose
+        Forgets the {docref XMLToken}s created by parsing
+        the input provided during construction.
+    }
+  }
+  {method public {close}:void
+    set self.tokens = null
+  }
+
+  {getter public {origin-url}:#Url
+    {self._verify-open}
+    {return self._origin-url}
+  }
+  {method package {_verify-open}:void
+    {if not self.open? then
+        {error {lmessage Stream {value self} is not open}}}
+  }
+
+  || Inherits doc-string from BufferedInputStream-of
+  {method public {unread-one e:XMLToken}:void
+    {self._verify-open}
+    {if self.token-index > 0 then
+        set self.token-index=self.token-index - 1
+     else
+        {error {localize "unread past beginning of file"}}
+    }
+  }
+
+  {doc-next
+    {purpose
+        This method returns the next {docref XMLToken} in the input
+        stream.
+    }
+    {details
+        This is the main method for accessing the parsed XML.
+
+        An error occurs if the XML stream is not open.
+    }
+    {return-vals
+        There are two return values: the first is an {docref XMLToken} containing
+        the next token in the input stream. The second is a {docref bool}, set to
+        {ctext true} if EOF has been reached, and {ctext false} otherwise.
+        The token is not valid if the second (end-of-file) return parameter is
+        {ctext true}.
+    }
+  }
+  {method public {read-one}:(val:XMLToken, eof?:bool)
+    {self._verify-open}
+    let constant tokens:{Array-of XMLToken} = {non-null self.tokens}
+    let constant token-index:int = self.token-index
+    {if token-index >= tokens.size then
+        || for now, return end document instead of null
+        {return {new XMLEndDocument}, true}
+     else
+        set self.token-index = token-index + 1
+        {return tokens[token-index], false}
+    }
+  }
+}
+
+
+{doc-next
+    {purpose Handles namespace processing for XMLOutputStream}
+    {details
+        XMLOutputStream performs the automatic generation
+        of namespace prefixes and namespace attribute
+        declarations (that associate namespace prefixes
+        with namespace URIs) as a convenience to its user.
+        Its users deals with {ctext XMLName}s containing
+        namespace URIs and local names and need not 
+        be concerned about namespace prefixes.
+        A OutputNamespaceSupport object is created per XML document.
+        This is a piece of the support for automatic
+        generation of the namespace prefixes and namespace
+        attribute declarations.
+        A OutputNamespaceSupport object is created per XML 
+        document.
+        The OutputNamespaceSupport object contains a stack of
+        OutputNamespaceContext objects.
+        A new OutputNamespaceContext object is pushed on the stack
+        for every start element encountered,
+        and a OutputNamespaceContext object is popped from the stack
+        when an end element is encountered.
+        The top of stack is the "current context"
+        The scope of namespace declaration is a OutputNamespaceContext --
+        from a start element that contains the namespace
+        declaration to the corresponding end element.
+    }
+}
+|| Similar to OutputNamespaceSupport in SAX parser
+
+{define-class final package OutputNamespaceSupport
+
+  || the stack of OutputNamespaceContext objects.
+  field package constant context-stack:{Array-of OutputNamespaceContext}
+
+  || prefix-count is used for namespace prefix generation
+  || so that prefixes are
+  || unique in the XML document. They only need
+  || to be unique within the scope of an element,
+  || but making them unique in the document
+  || increases readability.
+  field private prefix-count:int
+
+  {doc-next
+    {purpose create OutputNamespaceSupport object and
+        create empty current OutputNamespaceContext}
+  }
+  {constructor package {default}
+    set self.context-stack =
+        {new {Array-of OutputNamespaceContext}, {new OutputNamespaceContext}}
+    set self.prefix-count=0
+  }
+
+  {doc-next
+    {purpose Create a new context inheriting the current}
+  }
+  {method package {push-context}:void
+    {if not self.context-stack.empty? then
+        let top:OutputNamespaceContext = {self.context-stack.top-of-stack}
+        set top.level-count = top.level-count + 1
+     else
+        {self.context-stack.push {new OutputNamespaceContext}}
+    }
+  }
+
+  {doc-next
+    {purpose Pop current context restoring previous}
+  }
+  {method package {pop-context}:void
+    let top:OutputNamespaceContext = {self.context-stack.top-of-stack}
+    let level-count:int = top.level-count
+    {if level-count > 1 then
+        set top.level-count = level-count - 1
+     else
+        {self.context-stack.pop}
+    }
+  }
+
+  {doc-next
+    {purpose Convert XMLName into XML qualified name}
+    {parameter name,
+        the XMLName}
+    {parameter namespace-attributes,
+        If new namespace prefix is needed, the
+        attribute declaration for the prefix is
+        added to namespace-attributes.
+    }
+    {return-vals
+        the XML qualified name}
+    {details
+        A XML qualified name is a String containing the namespace prefix
+        and the local name separated by ":".
+    }
+  }
+  || OutputNamespaceContext.process-name does the real work.
+  || OutputNamespaceSupport keeps track of the "current context"
+  || and keeps track of prefix-count so namespace prefixes
+  || are unique in the generated XML document.
+  || See OutputNamespaceContext.process-name for a detailed description
+  || of the arguments.
+  {method package {process-name
+                      name:XMLName,
+                      namespace-attributes:#{Array-of String},
+                      is-attribute-name?:bool = false
+                  }:String
+    let (qualified-name:String, prefix-generated?:bool) =
+        {{self.context-stack.top-of-stack}.process-name
+            name,
+            namespace-attributes,
+            self.prefix-count,
+            self,
+            is-attribute-name? = is-attribute-name?
+        }
+    {if prefix-generated? then
+        set self.prefix-count = self.prefix-count + 1
+    }
+    {return qualified-name}
+  }
+
+    || returns true if user definition is new
+  {method package {user-prefix-definition?
+                      attribute:XMLAttribute
+                  }:bool
+    {return
+        {{self.context-stack.top-of-stack}.user-prefix-definition?
+            attribute,
+            self
+        }
+    }
+  }
+
+  {method package {clone-top-level}:void
+    let top:OutputNamespaceContext = {self.context-stack.top-of-stack}
+    {dec top.level-count}
+    {self.context-stack.push
+        {new OutputNamespaceContext, parent = top}
+    }
+  }
+}
+
+{doc-next
+    {purpose Namespace handling for XMLOutputStream}
+    {details
+        The {ctext OutputNamespaceContext} class is the inner class
+        for automatic generation of namespace prefixes and
+        namespace attribute declarations. The {ctext OutputNamespaceContext}
+        class is used by {docref XMLOutputStream}.
+    }
+}
+{define-class final package OutputNamespaceContext
+
+  {doc-next
+    {purpose associates namespace URIs with their prefixes}
+    {details
+        In XML documents, namespace qualified names are
+        represented by a namespace prefix followed by
+        a colon (:) followed by the local name.
+        A namespace attribute declaration associates
+        the namespace prefix with the namespace URI.
+        The namespace-to-prefix hash table contains 
+        the association between namespace URIs and 
+        namespace prefixes for this OutputNamespaceContext.
+    }
+  }
+  field private namespace-to-prefix:{HashTable-of String, String}
+
+  field package level-count:int
+
+  {doc-next
+    {purpose
+        some canned prefixes to make generated XML more readable
+    }
+  }
+  let package constant canned-prefixes:{HashTable-of String, String} =
+      {new {HashTable-of String, String},
+        "http://schemas.xmlsoap.org/soap/envelope/", "SOAP-ENV", ||""
+        "http://schemas.xmlsoap.org/soap/encoding/", "SOAP-ENC", ||""
+        "http://www.w3.org/1999/XMLSchema-instance", "xsi", ||""
+        "http://www.w3.org/1999/XMLSchema", "xsd" ||""
+      }
+
+  {doc-next
+    {purpose create an empty OutputNamespaceContext}
+  }
+  {constructor package {default parent:#OutputNamespaceContext = null}
+    set self.namespace-to-prefix =
+        {if-non-null parent then
+            {parent.namespace-to-prefix.clone}
+         else
+            {new {HashTable-of String, String}}
+        }
+    set self.level-count = 1
+  }
+
+  {doc-next
+    {purpose
+        Return the prefixed name corresponding to a {docref XMLName}.
+    }
+
+    {parameter name,
+        The {ctext XMLName}
+    }
+    {parameter namespace-attributes,
+        If there is no namespace prefix for the namespace URI,
+        this method will append a namespace attribute declaration
+        associating the namespace URI with a prefix to this array.
+    }
+    {parameter prefix-count,
+        An integer passed in by caller to ensure all prefixes
+        within a XML document are unique.
+    }
+    {return-vals,
+        The prefixed name corresponding to {ctext name}
+        and a boolean indicating whether the prefix-count
+        was used in namespace prefix generation.
+    }
+    {details
+        An {ctext XMLName} consists of a namespace URI and a
+        local-name. A prefixed name is namespace prefix followed
+        by ":" followed by local name. Namespace attribute
+        declarations
+        associate the namespace prefix with the namespace URI.
+    }
+  }
+  {method package {process-name
+                      name:XMLName,
+                      namespace-attributes:#{Array-of String},
+                      prefix-count:int,
+                      namespace-support:OutputNamespaceSupport,
+                      is-attribute-name?:bool = false
+                  }:(String, bool)
+
+    || if namespace is empty, return the local-name
+    {if name.namespace == "" then
+        {return name.local-name, false}
+     elseif is-attribute-name? and name.namespace == "xmlns" then ||""
+        {return name.namespace & ':' & name.local-name, false} ||""
+    }
+    let prefix-generated?:bool=false
+    let (prefix:String, prefix-found?:bool) =
+        {self.namespace-to-prefix.get-if-exists name.namespace}
+    {if not prefix-found? or prefix == "" and is-attribute-name? then
+        || copy ourselves if we are sharing table
+        {if self.level-count > 1 then
+            {namespace-support.clone-top-level}
+            {return
+                {{namespace-support.context-stack.top-of-stack}.process-name
+                    name, namespace-attributes, prefix-count, namespace-support,
+                    is-attribute-name? = is-attribute-name?
+                }
+            }
+        }
+        let new-prefix:String=
+        || check whether namespace URI is in canned-prefixes table
+        {if {OutputNamespaceContext.canned-prefixes.key-exists? name.namespace} then
+            OutputNamespaceContext.canned-prefixes[name.namespace]
+         else
+            || generate a namespace prefix using prefix-count
+            set prefix-generated?=true
+            || generate a prefix incorporating the prefix-count
+            {format "NS%d", prefix-count} ||""
+        }
+        || add to hash-table
+        set self.namespace-to-prefix[name.namespace]=new-prefix
+        || append the namespace attribute declaration
+        {namespace-attributes.append
+            "xmlns:" & new-prefix & "=\""  & name.namespace & "\""} ||""
+        set prefix = new-prefix
+    }
+    {return
+        || the prefixed name
+        {if prefix.empty? then
+            ""
+         else
+            self.namespace-to-prefix[name.namespace] & ":"
+        } &
+        name.local-name,
+        || and whether prefix-count was used
+        prefix-generated?
+    }
+  }
+
+    || returns true if user definition is new
+  {method package {user-prefix-definition?
+                      attribute:XMLAttribute,
+                      namespace-support:OutputNamespaceSupport
+                  }:bool
+    {if (attribute.name.local-name == "xmlns" or ||""
+         {attribute.name.local-name.prefix? "xmlns:"} or ||""
+         attribute.name.namespace == "xmlns") and ||""
+        attribute.value isa String
+     then
+        let constant uri:String = attribute.value asa String
+        let (s:String, found?:bool) =
+            {self.namespace-to-prefix.get-if-exists uri}
+        {if found? then
+            {return false}
+        }
+        || copy ourselves if we are sharing table
+        {if self.level-count > 1 then
+            {namespace-support.clone-top-level}
+            {return
+                {{namespace-support.context-stack.top-of-stack}.
+                  user-prefix-definition?
+                    attribute,
+                    namespace-support
+                }
+            }
+        }
+        let constant name:XMLName = attribute.name
+        let new-prefix:String = 
+            {if name.local-name == "xmlns" then ||""
+                ""
+             elseif {attribute.name.local-name.prefix? "xmlns:"} then ||""
+                {name.local-name.tail "xmlns:".size} ||""
+             else || attribute.name.namespace == "xmlns" ||""
+                name.local-name
+            }
+        set self.namespace-to-prefix[uri] = new-prefix
+    }
+    {return true}
+  }
+}
+
+{define-class final package InputNamespaceSupport
+
+  || the stack of InputNamespaceContext objects.
+  field package constant context-stack:{Array-of InputNamespaceContext}
+
+  {constructor package {default}
+    set self.context-stack =
+        {new {Array-of InputNamespaceContext}, {new InputNamespaceContext}}
+  }
+
+  {method package {push-context}:void
+    {if not self.context-stack.empty? then
+        let top:InputNamespaceContext = {self.context-stack.top-of-stack}
+        set top.level-count = top.level-count + 1
+     else
+        {self.context-stack.push {new InputNamespaceContext}}
+    }
+  }
+
+  {method package {pop-context}:void
+    let top:InputNamespaceContext = {self.context-stack.top-of-stack}
+    let level-count:int = top.level-count
+    {if level-count > 1 then
+        set top.level-count = level-count - 1
+     else
+        {self.context-stack.pop}
+    }
+  }
+
+  {method package {clone-top-level}:void
+    let top:InputNamespaceContext = {self.context-stack.top-of-stack}
+    {dec top.level-count}
+    {self.context-stack.push
+        {new InputNamespaceContext, parent = top}
+    }
+  }
+
+  {method package {add-prefix
+                      prefix:String,
+                      uri:String
+                  }:void
+    let top:InputNamespaceContext = {self.context-stack.top-of-stack}
+    {if top.level-count > 1 then
+        {self.clone-top-level}
+        set top = {self.context-stack.top-of-stack}
+    }
+    {top.add-prefix prefix, uri}
+  }
+
+  {method package {lookup-string
+                      string:String
+                  }:(uri:String, local-name:String)
+    {return
+        {{self.context-stack.top-of-stack}.lookup-string
+            string
+        }
+    }
+  }
+}
+
+{define-class final package InputNamespaceContext
+  field private prefix-to-namespace:{HashTable-of String, String}
+
+  field package level-count:int
+
+  {constructor package {default parent:#InputNamespaceContext = null}
+    set self.prefix-to-namespace =
+        {if-non-null parent then
+            {parent.prefix-to-namespace.clone}
+         else
+            {new {HashTable-of String, String}}
+        }
+    set self.level-count = 1
+  }
+
+  {method package {add-prefix
+                      prefix:String,
+                      uri:String
+                  }:void
+    {self.prefix-to-namespace.set prefix, uri}
+  }
+
+  {method package {lookup-string
+                      string:String
+                  }:(uri:String, local-name:String)
+    let prefix-end:int = {string.find ':'}
+    let prefix:String = 
+        {if prefix-end < 0 then
+            || try the default namespace (which has no prefix)
+            ""
+         else
+            {string.substr 0, prefix-end}
+        }
+
+    || never used for attribute names right now...
+    |#
+    {if is-attribute-name? and prefix.empty? then
+        {return null, string}
+    }
+    #|
+
+    let (uri:String, found?:bool) =
+        {self.prefix-to-namespace.get-if-exists prefix}
+    {if found? then
+        {return
+            uri,
+            {if prefix-end < 0 then
+                string
+            else
+                {string.tail prefix-end + 1}
+            }
+        }
+     else
+        {return "", string}
+    }
+  }
+}
+
+{doc-next
+    {purpose
+        Used to generate a SOAP XML document. This class obviates the
+        need for manual formatting and string handling.
+    }
+    {details
+        Writes user-supplied {docref XMLToken}s to a user-supplied
+        {docref TextOutputStream}.
+
+        Namespaces are handled appropriately: a namespace prefix is generated for each
+        namespace, and appended to the appropriate elements
+        and attributes.  The namespace attribute is inserted on the element that owns it.
+
+        There is no guarantee that the output of this class will be well-formed
+        XML.  The correctness of the output is dependent on the {docref XMLToken}s
+        created by the user and supplied to this class.
+
+        This class is customized for use with SOAP.
+        Not all XML capability is supported.  For example,
+        processing instructions are not supported, since they are not
+        allowed in SOAP messages.
+    }
+}
+{define-class final public XMLOutputStream
+  {inherits {OutputStream-of XMLToken}}
+  let private constant amp-lt-gt-char-class:CharClass = "&<>" ||""
+  let private constant quote-amp-lt-char-class:CharClass = "\"&<" ||""
+
+  || underlying output stream
+  field private tos:#TextOutputStream
+
+  || object that handles automatic generation of
+  || namespace prefixes and namespace attribute declarations
+  field private constant ns:OutputNamespaceSupport
+
+  || indicates whether it's ok to insert line ending
+  || line endings are inserted for readability of generated
+  || output
+  field private line-ending-ok?:bool
+
+  || Keeps track of element names for XMLEndElements
+  || as a convenience to the caller. 
+  || Caller supplies element name on XMLStartElement
+  || but need not supply it on XMLEndElement because
+  || it's remembered here.
+  field private constant element-stack:{Array-of XMLName}
+
+  || start element and its attributes are written separately.
+  || When true, this indicates we haven't get written 
+  || closing ">" of start element
+  field private start-element-in-progress?:bool
+
+  {doc-next
+    {purpose Constructs an instance of {ctext XMLOutputStream}.}
+    {parameter tos,
+        User-supplied {docref TextOutputStream} to which the XML is
+        to be written.
+    }
+  }
+  {constructor public {default tos:TextOutputStream}
+    set self.tos = tos
+    set self.ns = {new OutputNamespaceSupport}
+    set self.line-ending-ok? = true
+    set self.element-stack = {new {Array-of XMLName}}
+    set self.start-element-in-progress? = false
+  }
+
+  {doc-next
+    {purpose Used to check whether the {docref TextOutputStream} that the
+        user supplied to the constructor is open.
+    }
+    {return-vals
+        Returns {ctext true} once the {ctext XMLOutputStream}
+        has been created, and until
+        the {docref TextOutputStream} has been closed explicitly
+        via the {ctext close} method.
+    }
+  }
+  {getter public {open?}:bool
+    {return self.tos != null}
+  }
+  
+  {method package {_verify-open}:void
+    {if not self.open? then
+        {error {lmessage Stream {value self} is not open}}}
+  }
+
+  {getter public {origin-url}:#Url
+    {self._verify-open}
+    {return {non-null self.tos}.origin-url}
+  }
+
+  || inherits docstring from OutputStream-of
+  {method public {flush
+                     non-blocking?:bool=false,
+                     allow-short-write?:bool=false
+                 }:void
+    {self._verify-open}
+    {{non-null self.tos}.flush
+        non-blocking?=non-blocking?,
+        allow-short-write?=allow-short-write?
+    }
+  }
+
+  || escapes all <>&"' characters in str argument
+  || with predefined entities -- see section 4.6 of
+  || XML 1.0 (Second Edition) 
+  || returns a StringBuf
+  {define-proc package {escape str:String}:StringBuf
+    let sb:StringBuf={new StringBuf}
+    {for c:char in str do
+        {switch c
+         case '<' do
+            {sb.concat "&lt;"} ||""
+         case '&' do
+            {sb.concat "&amp;"} ||""
+         case '\"' do
+            {sb.concat "&quot;"} ||""
+         case '\'' do
+            {sb.concat "&apos;"} ||""
+         case '>' do
+            {sb.concat "&gt;"} ||""
+         else
+            {sb.append c}
+        }
+    }
+    {return sb}
+  }
+
+  {doc-next
+    {purpose Closes the {docref TextOutputStream} that the user
+        supplied to the constructor.
+    }
+  }
+  {method public {close}:void
+    {if-non-null tos = self.tos then
+        set self.tos = null
+        {tos.close}
+    }
+  }
+
+  || we can't write the closing ">" of start element
+  || until we have written  all its attributes.
+  || This method gets called when we have.
+  {method private {finish-start-element-in-progress}:void
+    {self._verify-open}
+    {if self.start-element-in-progress? then
+        set self.start-element-in-progress?=false
+        {{non-null self.tos}.write-one '>'}
+        set self.line-ending-ok?=true
+    }
+  }
+
+
+  {doc-next
+    {purpose
+        Writes the contents of the user-supplied {docref XMLToken}
+        in XML format to
+        the {docref TextOutputStream} supplied to the constructor.
+    }
+    {notes
+        Use a sequence of {ctext write-one} calls to generate a valid SOAP
+        message, passing in first an {docref XMLStartDocument},
+        followed by various {docref XMLStartElement}s and
+        {docref XMLEndElement}s as needed, and finishing with
+        an {docref XMLEndDocument}.  Standard SOAP
+        verbiage will be added automatically
+        (e.g., the version attribute on the starting xml tag).
+    }
+    {parameter obj,
+        An {docref XMLToken} to be written to the stream as XML text.
+    }
+  }
+  {method public {write-one obj:XMLToken}:void
+    {self._verify-open}
+    let constant tos:TextOutputStream = {non-null self.tos}
+
+    {type-switch obj
+
+     case start-document:XMLStartDocument do
+        || TODO: handle encoding and standalone
+        {tos.write-one-string "<?xml version=\"1.0\" ?>"} ||""
+
+     case end-document:XMLEndDocument do
+        {if self.element-stack.size != 0 then
+            {error {localize "missing XMLEndElements in XMLOutputStream"}}
+        }
+        || write a line ending
+        {tos.write-one-string line-ending}
+
+     case start-element:XMLStartElement do
+        {self.finish-start-element-in-progress}
+
+        || XML start element has the form:
+        || <element-name attribute-declarations>
+
+        {self.element-stack.push start-element.element}
+        {self.ns.push-context}
+        
+        || holds namespace attribute declarations
+        let namespace-attributes:{Array-of String}={new {Array-of String}}
+        
+        || convert element name to prefixed name
+        let prefixed-name:String={self.ns.process-name
+                                     start-element.element,
+                                     namespace-attributes
+                                 }
+        {if self.line-ending-ok? then
+            {tos.write-one-string line-ending}
+        }
+        
+        {tos.write-one '<'}
+        || write "prefixed" version of element name
+        {tos.write-one-string prefixed-name}
+
+        || handle the namespace attribute declarations generated
+        || by process-name calls
+        {for namespace-attribute:String in namespace-attributes do
+            {tos.write-one ' '}
+            {tos.write-one-string namespace-attribute}
+        }
+
+        set self.start-element-in-progress?=true
+
+     case attribute:XMLAttribute do
+        {if not self.start-element-in-progress? then
+            {error {localize "write of XMLAttribute does not follow XMLStartElement or XMLAttribute"}}
+        }
+        {if not {self.ns.user-prefix-definition? attribute} then
+            {return}
+        }
+
+        || holds namespace attribute declarations
+        let namespace-attributes:{Array-of String}={new {Array-of String}}
+
+        || attributes have form of: name="value".
+        let prefixed-name:String =
+            {self.ns.process-name
+                attribute.name,
+                namespace-attributes,
+                is-attribute-name? = true
+            }
+        {tos.write-one ' '}
+        {tos.write-one-string prefixed-name}
+        {tos.write-one-string "=\""}
+        {type-switch attribute.value
+         case xn:XMLName do
+            set prefixed-name =
+                {self.ns.process-name xn, namespace-attributes}
+            {tos.write-one-string prefixed-name}
+         case xns:{Array-of XMLName} do
+            {for xn key i in xns do
+                set prefixed-name =
+                    {self.ns.process-name xn, namespace-attributes}
+                {if i > 0 then
+                    {tos.write-one ' '}
+                }
+                {tos.write-one-string prefixed-name}
+            }
+         case str:String do
+            || <&" characters need to be escaped
+            {if {str.find-char-class XMLOutputStream.quote-amp-lt-char-class}
+                == -1
+             then
+                || no characters need to escaped
+                {tos.write-one-string str}
+             else
+                || str contains characters that need to be escaped
+                {tos.write-one-string {XMLOutputStream.escape str}}
+            }
+         else
+            {error
+                {lformat
+                    "Unexpected Type for value field: %1!s! (%2!s!)",
+                    attribute.value,
+                    {type-of attribute.value},
+                    comment = "The first parameter is the value of the " &
+                        "problem field, the second is the type of the field"
+                }
+            }
+        }
+        || closing quote for attribute value
+        {tos.write-one '\"'}
+
+        || handle the namespace attribute declarations generated
+        || by process-name calls
+        {for namespace-attribute:String in namespace-attributes do
+            {tos.write-one ' '}
+            {tos.write-one-string namespace-attribute}
+        }
+
+
+     case end-element:XMLEndElement do
+        {if self.element-stack.size <= 0 then
+            {error {localize "tag on XMLEndElement can not match any XMLStartElement " &
+                "tag because there are no unmatched XMLStartElement tags left."}
+            }
+        }
+        let constant matching-element:XMLName = {self.element-stack.pop}
+        || a little error checking, if name was supplied in XMLEndElement,
+        || it must match name in XMLStartElement.
+        {if-non-null end-element-element = end-element.element then
+            {if end-element-element != matching-element then
+                {error {lformat
+                           "tag on XMLEndElement '%1!s!' does not match " &
+                           "corresponding XMLStartElement tag '%2!s!'.",
+                           end-element-element,
+                           matching-element
+                       }
+                }
+            }
+        }
+
+        {if self.start-element-in-progress? then
+            set self.start-element-in-progress? = false
+            {tos.write-one-string " />"}
+            set self.line-ending-ok? = true
+         else  || start-element was done, need to write out a full close element
+            {if self.line-ending-ok? then
+                {tos.write-one-string line-ending}
+            }
+            let prefixed-name:String =
+                {self.ns.process-name matching-element, null}
+            {tos.write-one-string "</"}
+            {tos.write-one-string prefixed-name}
+            {tos.write-one '>'}
+            set self.line-ending-ok?=true
+        }
+        {self.ns.pop-context}
+
+     case char-data:XMLCharacters do
+        let constant characters:StringInterface =
+            {if-non-null xml-name-values = char-data.xml-name-values then
+                || FIXME can we remove this limitation? by saving all characters'
+                || until XMLEndElement, and dumping out name-space attribtues
+                {if not self.start-element-in-progress? then
+                    {error {localize "write of XMLCharacters with XMLName does not follow XMLStartElement or XMLAttribute"}}
+                }
+
+                let constant namespace-attributes:{Array-of String} =
+                    {new {Array-of String}}
+                let constant processed-value-buf:StringBuf = {new StringBuf}
+                {for xml-name in xml-name-values do
+                    let processed-value:String = 
+                        {self.ns.process-name xml-name, namespace-attributes}
+                    {if not processed-value-buf.empty? then
+                        {processed-value-buf.append ' '}
+                    }
+                    {processed-value-buf.concat processed-value}
+                }
+                || handle the namespace attribute declarations generated
+                || by process-name calls
+                {for namespace-attribute:String in namespace-attributes do
+                    {tos.write-one ' '}
+                    {tos.write-one-string namespace-attribute}
+                }
+                processed-value-buf
+             else
+                char-data.characters
+            }
+        {self.finish-start-element-in-progress}
+
+        || character content
+        || <& characters need to be escaped; 
+        || substring ]]> needs to be escaped as well -- so 
+        || we'll always escape >
+        {if {characters.find-char-class XMLOutputStream.amp-lt-gt-char-class}
+            == -1
+         then
+            {tos.write-one-string characters}
+         else
+            {tos.write-one-string 
+                {XMLOutputStream.escape {characters.to-String}}
+            }
+        }
+        set self.line-ending-ok?=false
+    }
+  }
+
+}

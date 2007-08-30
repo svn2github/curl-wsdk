@@ -1,0 +1,81 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{doc-next
+    {purpose
+        This class is a data structure that holds the data returned
+        from the web services, allowing the application to treat the
+        data as a Curl object.
+    }
+}
+{define-class public open BookDemoBookInfo
+  field protected _data:any
+
+  || The service which generated this data
+  field public service:#String
+
+  || From LookyBookService's BookInfo and BookInfoVendorprice
+  field public isbn:#String
+  field public title:#String
+  field public author:#String
+  field public pubdate:#String
+  field public publisher:#String
+  field public format:#String
+  field public img-url:#String
+  field public timestamp:#String
+||--  field public vendorprice:#BookInfoVendorprice
+  field public vendor-name:#String
+  field public vendor-site-url:#String
+  field public vendor-price-prefix:#String
+  field public vendor-price:#String
+
+  {constructor public {default}}
+
+  {getter public open {data}:any
+    {return self._data}
+  }
+
+  {doc-next
+    {purpose
+        Handles the response from the ISBN service.
+    }
+    {parameter
+        val,
+        Any {docref any} that holds the data returned by the ISBN service.
+    }
+  }
+  {setter public open {data val:any}:void
+    set self._data = val
+  }
+
+  {doc-next
+    {purpose
+        Converts {ctext self} to a {docref RecordData}.
+    }
+  }
+  {method public open {to-RecordData}:RecordData
+    let rd:RecordData = {new RecordData,
+                            isbn = self.isbn,
+                            title = self.title,
+                            author = self.author,
+                            img-url = self.img-url,
+                            vendor-name = self.vendor-name,
+                            service = self.service,
+                            vendor-price = self.vendor-price,
+                            vendor-site = self.vendor-site-url
+                        }
+    {return rd}
+  }
+}

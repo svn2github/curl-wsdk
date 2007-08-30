@@ -1,0 +1,82 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{DeploySpecs  
+    caption = {lmessage deploy WSDK},
+    
+    || duplicate source tree  
+    || --------------------                      
+    || -- code (copy)
+    {DeploySpec  
+        "code/project.cprj",
+        "deploy-code",
+        "wsdk-source/code"
+    },
+    || -- support (copy)
+    {DeploySpec
+        "support/project.cprj",
+        "deploy", 
+        "wsdk-source/support"
+    },
+    || -- tools (copy)
+    {DeploySpec
+        "tools/project.cprj",
+        "deploy", 
+        "wsdk-source/tools"
+    },
+    || incorporate test framework 
+    || --------------------
+    {DeploySpec
+        "../ADK/tests/CurlUnit/project.cprj",
+        "deploy", 
+        "wsdk-source/support/CurlUnit"
+    },
+    
+    || build library (pcurl)
+    || -------------------- 
+    {DeploySpec  
+        "code/project.cprj",
+        "deploy",
+        "wsdk-source/lib/WSDK"
+    },
+    
+    || documentation {copy + docs)
+    || -------------------- 
+    {DeploySpec 
+        "code/project.cprj",
+        "deploy-docs",
+        "docs-install/WSDK"
+    },
+    || duplicate for translation
+    {DeployCopy
+        "docs-install/WSDK/docs/en",
+        "docs-install/WSDK/docs/ja",
+        from-source? = false
+    },
+    
+    || README material {copy)
+    || -------------------- 
+    {DeployAction
+        caption = {lmessage copy README.txt},
+        {proc {self:DeployAction,
+               source-root:Url,
+               target-root:Url}:void
+            {copy 
+                {source-root.concat "README.txt"},
+                {target-root.concat "README.txt"},
+                error-if-exists? = false} 
+        }}
+}

@@ -1,0 +1,778 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next ||=== XDMTreeModel
+    {purpose 
+        Adapter allowing for {docref XDMNode} hierarchies
+        or {docref XDMNodeSet} collections
+        to function as a {docref TreeModel} for {docref XDMTreeControl}}.
+    {details
+        For {docref XDMNode}s contained in {docref-abbr XDMDocument.modifiable?}
+        {docref XDMDocument}s, the {ctext XDMTreeModel} follows
+        {docref XDMEvent}s and updates accordingly.}
+}
+{define-class public XDMTreeModel {inherits XDMConsumer, TreeModel}
+  || TODO: 'model' property
+  || - should be superclass of XDMNode, XDMNodeSet
+  || - or maybe XDMNodeSet should convert into XDMFragment
+  {constructor {internal
+                   root:#XDMTreeNode,
+                   read-only?:bool = false}
+    {construct-super.TreeModel root = root, read-only? = read-only?}
+  }
+  {doc-next ||=== XDMTreeModel.default
+    {purpose 
+        Create this {ctext XDMTreeModel}.
+        {parameter root, the {docref XDMNode}  
+            representing the root of this model.}
+        {parameter read-only?, indicates whether modification is allowed.}}
+  }
+  {factory public implicit {default 
+                               node:#XDMNode,
+                               read-only?:bool = false
+                           }:XDMTreeModel
+    let root:#XDMNode =
+        {type-switch node
+         case doc:XDMDocument do doc.root
+         else node}
+    {return 
+        {XDMTreeModel.internal
+            read-only? = read-only?,
+            {XDMTreeNode root}}}
+  }
+  {doc-next ||=== XDMTreeModel.from-XDMNodeSet
+    {purpose 
+        Create this {ctext XDMTreeModel}.
+        {parameter root, the {docref XDMNodeSet}  
+            representing the root of this model.}
+        {parameter read-only?, indicates whether modification is allowed.}}
+  }
+  {factory public implicit {from-XDMNodeSet 
+                               nodes:#XDMNodeSet
+                           }:XDMTreeModel
+    {return 
+        {XDMTreeModel.internal
+            read-only? = true,
+            {XDMTreeNode.from-XDMNodeSet nodes}}}
+  }
+  || enforce XDM root
+  {getter public {root}:#XDMTreeNode
+    {return super.root asa #XDMTreeNode}
+  }
+  {setter public {root val:#TreeNode}:void
+    {type-switch val
+     case root:#XDMTreeNode do
+        {if root != self.root then
+            {self.disconnect-event-handler self.document}
+            set super.root = root
+            {self.note-tree-model-change  
+                {TreeModelChange  
+                    node = root,
+                    TreeModelChangeType.bulk-changes}}
+            {self.connect-event-handler self.document}}
+     else
+        {xdm-exception {message Not XDMTreeNode: {value val}}}}
+  }
+  || change management
+  {doc-next ||=== XDMTreeModel.document
+    {purpose 
+        The {docref XDMDocument} containing the root of this model, if any.}
+  }
+  {getter protected {document}:#XDMDocument
+    let document:#XDMDocument = null
+    {if-non-null root = self.root then
+        {type-switch root.node-data
+         case x:XDMNode do
+            {if-non-null doc = x.document 
+             then 
+                set document = doc}}}    
+    {return document}
+  }
+  {method protected {note-xdm-event e:XDMEvent}:void
+    {type-switch e
+     case e:XDMNodeRemoved do
+        let n:XDMTreeNode = self[e.node]
+        {n.refresh-children}
+        {self.note-tree-model-change
+            {TreeModelChange 
+                TreeModelChangeType.children-changed}}
+     case e:XDMNodeAdded do
+        {if-non-null p = e.node.parent then
+            let n:XDMTreeNode = self[p]
+            {n.refresh-children}
+            {self.note-tree-model-change 
+                {TreeModelChange node = n,
+                    TreeModelChangeType.children-changed}}}
+     case e:XDMNodeModified do
+        let n:XDMTreeNode = self[e.node]
+        {self.note-tree-model-change
+            {TreeModelChange node = n,
+                TreeModelChangeType.node-changed}}
+     else 
+        {if-non-null n = self.root then
+            {n.refresh-children}
+            {self.note-tree-model-change
+                {TreeModelChange node = n,
+                    TreeModelChangeType.bulk-changes}}}
+    }  
+  }
+  || model accessors
+  {doc-next ||=== XDMTreeModel.get
+    {purpose 
+        Returns the {docref XDMTreeNode} corresponding
+        to the specifed {docref XDMNode}.}
+  }
+  {method public {get x:XDMNode}:XDMTreeNode
+    {if-non-null n = {self.get-if-exists x} then
+        {return n}
+     else
+        {throw {KeyNotFoundException obj = self, key = x, 
+                   {message Key '{value x}' not found}}}}
+  }
+  {doc-next ||=== XDMTreeModel.get-if-exists
+    {purpose 
+        Returns the {docref XDMTreeNode} corresponding
+        to the specifed {docref XDMNode}, if it exists.}
+  }
+  {method public {get-if-exists x:XDMNode}:#XDMTreeNode
+    || model and XDM structure are isomorphic
+    || locate by recursive descent from common ancestor
+    {return
+        || start from root
+        {if-non-null root = self.root then
+            {if x == root.node-data then
+                root
+             else
+                || check parent (or document)
+                let p:#XDMNode = x.parent
+                {if p == null and not x isa XDMDocument then
+                    set p = x.document}
+                {if-non-null p then
+                    || find parent in model
+                    {if-non-null tnode = {self.get-if-exists p} then
+                        || find matching child
+                        {type-switch x
+                         case x:XDMAttribute do
+                            {for n in tnode do
+                                {type-switch n
+                                 case n:XDMTreeNode do
+                                    || return child matching attribute
+                                    {if x == n.node-data then
+                                        {return n}}}}
+                         else
+                            {for n in tnode do
+                                {type-switch n
+                                 case n:XDMTreeNode do
+                                    || return child matching node
+                                    {if x == n.node-data then
+                                        {return n}}}}}
+                        || child not in model
+                        null
+                     else || parent not in model
+                        null}
+                 else || no parent: not in model
+                    null}}
+         else || empty model
+            null}
+    }}
+}
+{doc-next ||=== XDMTreeNode
+    {purpose 
+        A {docref TreeNode} representing an {docref XDMNode}.}
+}
+{define-class public XDMTreeNode {inherits LazyTreeNode}
+  {constructor {internal node:any}
+    {construct-super node-data = node}
+  }
+  {doc-next ||=== XDMTreeNode.default
+    {purpose 
+        Create this {ctext XDMTreeNode}.
+        {parameter node, the {docref XDMNode}  
+            representing the root of this model.}}
+  }
+  {factory public implicit {default node:#XDMObject}:XDMTreeNode
+    {return {XDMTreeNode.internal node}}
+  }
+  {doc-next ||=== XDMTreeNode.from-XDMNodeSet
+    {purpose 
+        Create this {ctext XDMTreeNode}.
+        {parameter xs, the {docref XDMNodeSet}  
+            representing the root of this model.}}
+  }
+  {factory public implicit {from-XDMNodeSet xs:#XDMNodeSet}:XDMTreeNode
+    {return {XDMTreeNode.internal xs}}
+  }
+  {method protected {compute-children 
+                        children:{Array-of TreeNode}, 
+                        init?:bool
+                    }:void
+    {children.clear}
+    {type-switch self.node-data
+     case n:XDMElement do
+        || namespaces
+        {if-non-null ds = n.namespace-declarations then
+            {if not ds.empty? then
+                || sort in canonical order
+                || TODO: eliminate when namespace-declarations does this
+                let ks:StringArray = {StringArray}                
+                {for k in {ds.get-prefixes} do 
+                    {ks.append k}}
+                {ks.sort}
+                {for k in ks do
+                    {self.append-internal children,
+                        {XDMTreeNode 
+                            {ds.get-declaration k}}}}
+            }}
+        || attributes
+        {if-non-null atts = n.attributes then
+            {if not atts.empty? then
+                || sort in canonical order
+                || TODO: eliminate when XDMAttributes does this
+                let ks:{Array-of XDMName} = {{Array-of XDMName}}                
+                {for key k in atts do 
+                    {ks.append k}}
+                {ks.sort comparison-proc =
+                    {proc {x:XDMName, y:XDMName}:bool
+                        {return {x.compare y} <= 0}}}
+                {for k in ks do
+                    {self.append-internal children,
+                        {XDMTreeNode 
+                            {non-null {n.get-attribute k}}}}}
+            }}
+        || children
+        {for x in n.children do
+            {self.append-internal children, {XDMTreeNode x}}}
+     case xs:XDMNodeSet do
+        {for x in {xs.to-Iterator} do
+            {self.append-internal children, {XDMTreeNode x}}}            
+    }
+    {if not init? then
+        {self.notify-change 
+            TreeModelChangeType.children-changed}}
+  }
+  {getter public {has-children?}:bool
+    {return 
+        {type-switch self.node-data
+         case e:XDMElement do
+            not e.children.empty? 
+            or 
+            ({if-non-null a = e.attributes then
+                 not a.empty?
+              else false}
+             or 
+             {if-non-null a = e.namespace-declarations then
+                 not a.empty?
+              else false})
+         case xs:XDMNodeSet do
+            not xs.empty?
+         else false}}
+  }
+  {method {append-internal children:{Array-of TreeNode}, n:TreeNode}:void
+    set n.parent = self
+    {children.append n}
+  }
+}
+{doc-next ||=== XDMTreeControl
+    {purpose 
+        An implementation of {docref TreeControl} specialized
+        for display of XML hierarchies 
+        using the {docref XDMTreeModel} adapter.}
+    {details
+        Provides a standard visual representation of the XML hierarchy.
+        The colors used to indicate different kinds of content
+        can be customized using {docref XDMTreeControl.color-map}.
+        Allows constituent nodes to be categorized
+        by assignment of a 'catgeory' {ctext String}.
+        The colors used to highlight selected and categorized nodes
+        can be customized using {docref XDMTreeControl.background-map}.
+    }
+}
+{define-class public XDMTreeControl {inherits TreeControl}
+  field _xdm-text-breakable?:bool = false
+  {doc-next ||=== XDMTreeControl.xdm-text-breakable?
+    {purpose 
+        Specifies whether text contained in {docref XDMTreeItem} labels
+        can be broken over multiple lines.}
+    {details
+        Normally, the {docref text-breakable?} property of
+        {docref TreeItem}s in a {docref TreeControl} 
+        is forced to be {ctext false}.
+        This property counteracts that behavior.}
+  }
+  {getter public {xdm-text-breakable?}:bool
+    {return self._xdm-text-breakable?}
+  }
+  {setter public {xdm-text-breakable? val:bool}:void
+    {if self._xdm-text-breakable? != val then
+        set self._xdm-text-breakable? = val
+        {type-switch self.ui-object
+         case ui:TreeControlUI do
+            {ui.note-tree-model-change
+                {TreeModelChange TreeModelChangeType.bulk-changes}}}}
+  }
+  field item-arguments:#Arguments
+  {doc-next ||=== XDMTreeControl.default
+    {purpose 
+        Create this {ctext XDMTreeControl}.
+        {parameter data-model, 
+            the {docref XDMTreeModel} to be displayed.}
+        {parameter open?, 
+            specifies whether the root node should be expanded.}
+        {parameter tree-item-creation-proc, 
+            "factory" procedure for creating {docref TreeItem}s}
+        {parameter item-arguments, 
+            allows specification of common parameters for {docref TreeItem}s,
+            such as {docref EventHandler}s.}
+        {parameter xdm-text-breakable?, 
+            specifies {docref-abbr XDMTreeControl.xdm-text-breakable?}}
+        {parameter ...,
+            the rest arguments are passed on to {docref TreeControl}.}}
+  }
+  {constructor public {default
+                          data-model:XDMTreeModel,
+                          open?:bool = false,
+                          tree-item-creation-proc:{proc-type {TreeNode}:TreeItem} = 
+                              XDMTreeItem.default,
+                          item-arguments:#Arguments = null,
+                          xdm-text-breakable?:bool = false,
+                          ...}
+    set self._xdm-text-breakable? = xdm-text-breakable?
+    || note common arguments for items
+    set self.item-arguments = item-arguments
+    {construct-super
+        data-model = data-model,
+        tree-item-creation-proc = tree-item-creation-proc,
+        {splice ...}}
+    || convenience parameter
+    {if open? then
+        {if-non-null root = data-model.root then
+            {self.expand-node root}}}
+  }
+  {doc-next ||=== XDMTreeControl.refresh-nodes
+    {purpose
+        Request regeneration of {docref TreeItem} 
+        for each displayed {docref TreeNode}}
+  }
+  {method public {refresh-nodes}:void
+    let tm:TreeModel = self.data-model
+    {self.walk-nodes 
+        {proc {n:TreeNode}:bool
+            {tm.note-tree-model-change 
+                {TreeModelChange node = n,
+                    TreeModelChangeType.node-changed}}
+            {return false}}}
+  }
+  || display categorization
+  || --------------------
+  field constant categories:{HashTable-of XDMTreeNode, String} =
+      {{HashTable-of XDMTreeNode, String}}
+  {doc-next ||=== XDMTreeControl.set-category
+    {purpose 
+        Assigns a "category" {ctext String} to the specified
+        {docref XDMTreeNode}.}
+    {details
+        The visual display of different categories is governed
+        by {docref XDMTreeControl.background-map}.}
+  }
+  {method public {set-category subject:XDMTreeNode, category:String}:void
+    set self.categories[subject] = category
+    {self.note-category-changed subject}
+  }
+  {doc-next ||=== XDMTreeControl.get-category
+      {purpose 
+        Returns the "category" {ctext String} assigned to the specified
+        {docref XDMTreeNode}, if any.}
+  }
+  {method public {get-category subject:XDMTreeNode}:#String
+    {return {self.categories.get-if-exists subject}}
+  }
+  {doc-next ||=== XDMTreeControl.clear-categories
+    {purpose 
+        Clears all "category" {ctext String}s.}
+  }
+  {method public {clear-categories category:#String = null}:void
+    let predicate:{proc-type {#String}:bool} =
+        {if-non-null category then
+            {proc {k:#String}:bool
+                {return k == category}}
+         else
+            {proc {k:#String}:bool
+                {return true}}}
+    let categories:{HashTable-of XDMTreeNode, String} = 
+        {self.categories.filter-clone predicate}
+    {for k key node in categories do
+        {self.categories.remove node}
+        {self.note-category-changed node}}
+  }
+  {method {note-category-changed subject:XDMTreeNode}:void
+    || should call refresh on item (in cell) for node
+    || but that's private to StandardTreeControlUI,
+    || so instead just indicate that model changed
+    {type-switch self.ui-object
+     case ui:TreeControlUI do
+        {ui.note-tree-model-change
+            {TreeModelChange node = subject,
+                TreeModelChangeType.node-changed}}}
+  }
+  {doc-next ||=== XDMTreeControl.background-map
+    {purpose 
+        Governs the {docref background} {docref FillPattern} used to
+        display different categories.}
+    {details
+        The predefined category {monospace "selected"} is used
+        for display of currently selected nodes 
+        (maintained in the {docref TreeControl.selection} collection).
+        The category {monospace "highlight"} is also predefined.
+        Additional categories can be added, corresponding
+        to those assigned by {docref-abbr XDMTreeControl.set-catagory}.}
+  }
+  field public constant background-map:{HashTable-of String, FillPattern} =
+      {{HashTable-of String, FillPattern}
+        "selected", {FillPattern.from-string "wheat"},
+        "highlight", {FillPattern.from-string "pink"}
+      }
+  {doc-next ||=== XDMTreeControl.get-background
+    {purpose 
+        Returns the {docref background} {docref FillPattern} used to
+        display the specified "category" {ctext String}, if any.}
+  }
+  {method public {get-background category:#String}:#FillPattern
+    {return
+        {if-non-null category then
+            {self.background-map.get-if-exists category}
+         else null}}
+  }
+  {doc-next ||=== XDMTreeControl.color-map
+    {purpose 
+        Governs the {docref color} {docref FillPattern} used to
+        display different kinds of {docref XDMNode} content.}
+    {details
+        The following keys are used:
+        {itemize
+            {item {ctext "element-name"} {em-dash} 
+                the {docref XDMElement.qualified-name}}
+            {item {ctext "text"} {em-dash} 
+                the {docref XDMText.content}}
+            {item {ctext "attribute-name"} {em-dash} 
+                the {docref XDMAttribute.qualified-name}}
+            {item {ctext "attribute"} {em-dash} 
+                the {docref XDMAttribute.value}}
+            {item {ctext "document"} {em-dash} 
+                the {docref XDMDocument}}
+            {item {ctext "processing-instruction"} {em-dash} 
+                the {docref XDMProcessingInstruction.target}}
+            {item {ctext "nodeset"} {em-dash} 
+                the {docref XDMNodeSet} icon}
+        }}
+  }
+  field public constant color-map:{HashTable-of String, FillPattern} =
+      {{HashTable-of String, FillPattern}
+        "element-name", {FillPattern.from-string "purple"},
+        "text", {FillPattern.from-string "black"},
+        "attribute-name", {FillPattern.from-string "blue"},
+        "attribute", {FillPattern.from-string "green"},
+        "document", {FillPattern.from-string "navy"},
+        "processing-instruction", {FillPattern.from-string "maroon"},
+        "nodeset", {FillPattern.from-string "orange"}
+      }
+  {doc-next ||=== XDMTreeControl.get-color
+    {purpose 
+        Returns the {docref color} {docref FillPattern} used to
+        display the specified kind of {docref XDMNode} content, if any.}
+  }
+  {method public {get-color category:#String}:FillPattern
+    {return
+        {if-non-null category then
+            {self.color-map.get-if-exists category}
+         else self.color}}
+  }
+}
+{doc-next ||=== XDMTreeItem
+    {purpose 
+        An implementation of {docref DefaultTreeItem} used by 
+        {docref XDMTreeControl}}
+}
+{define-class public XDMTreeItem {inherits DefaultTreeItem}
+  {doc-next ||=== XDMTreeItem.default
+    {purpose 
+        Create this {docref DefaultTreeItem} with specified arguments.}
+  }
+  {constructor public {internal node:TreeNode, ...}
+    {construct-super node,
+        icon = {XDMTreeIcon},
+        valign = "origin",
+        {splice ...}}
+    {self.icon.refresh}
+  }
+  {doc-next ||=== XDMTreeItem.default
+    {purpose 
+        Create this {docref DefaultTreeItem}.}
+  }
+  {factory public implicit {default n:TreeNode}:XDMTreeItem
+    {return {XDMTreeItem.internal n}}
+  }
+  {setter public {control c:#TreeControl}:void
+    set super.control = c
+    || supply common arguments
+    {type-switch c
+     case c:XDMTreeControl do
+        {if-non-null args = c.item-arguments then
+            || TODO: what about multiple calls?
+            {self.process-rest-args {splice args}}}}
+  }
+  {doc-next ||=== XDMTreeItem.get-background
+    {purpose 
+        Returns the {docref background} {docref FillPattern} used to
+        display the specified "category" {ctext String}, if any.}
+    {details
+        See {docref XDMTreeControl.background-map}.}
+  }
+  {method public {get-background category:#String}:#FillPattern
+    {return
+        {type-switch self.control 
+         case c:XDMTreeControl do
+            {c.get-background category}
+         else null}}
+  }
+  {doc-next ||=== XDMTreeItem.get-color
+    {purpose 
+        Returns the {docref color} {docref FillPattern} used to
+        display the specified kind of {docref XDMNode} content, if any.}
+    {details
+        See {docref XDMTreeControl.background-map}.}
+  }
+  {method public {get-color category:#String}:FillPattern
+    {return
+        {type-switch self.control 
+         case c:XDMTreeControl do
+            {c.get-color category}
+         else self.color}}
+  }
+  || standard display
+  || --------------------
+  {method public {get-label}:any
+    let subject:any = self.node.node-data
+    || NOTE: DefaultTextItem forces this false
+    let xdm-text-breakable?:bool = 
+        {type-switch self.control
+         case c:XDMTreeControl do
+            c.xdm-text-breakable?
+         else false}
+    let label:Graphic =
+        {type-switch subject
+         case t:XDMText do
+            let color:FillPattern = {self.get-color "text"}
+            {paragraph
+                text-breakable? = xdm-text-breakable?,
+                paragraph-right-indent = 2em,
+                color = color,
+                {small {value t.content}}}
+         case d:XDMNamespaceDeclaration do
+            let name-color:FillPattern = {self.get-color "attribute-name"}
+            let color:FillPattern = {self.get-color "attribute"}
+            {text color = color, font-weight = "bold",
+                {text color = name-color, {value d.prefix}} 
+                {small {value d.namespace}}}
+         case a:XDMAttribute do
+            {self.assure-attribute-prefix a}
+            let name-color:FillPattern = {self.get-color "attribute-name"}
+            let color:FillPattern = {self.get-color "attribute"}
+            {text color = color,
+                {text color = name-color, {value a.qualified-name}} 
+                {small {value a.value}}}
+         case e:XDMElement do
+            {self.assure-element-prefix e}
+            let color:FillPattern = {self.get-color "element-name"}
+            {text color = color, {value e.qualified-name}}
+         case doc:XDMDocument do
+            let color:FillPattern = {self.get-color "document"}
+            {italic color = color, XDMDocument}
+         case xs:XDMNodeSet do
+            {small {italic XDMNodeSet}}
+         case p:XDMProcessingInstruction do
+            let color:FillPattern = {self.get-color "text"}
+            let name-color:FillPattern = {self.get-color "processing-instruction"}
+            {text color = color,
+                {text color = name-color, {value p.qualified-name}} 
+                {small {value p.data}}}
+         case n:XDMNode do
+            {underline {value n}}            
+         else ""
+        }
+    set label.vorigin = 
+        {type-switch subject
+         case t:XDMText do "origin"
+         else "center"}
+    {return label}
+  }
+  || synthesize prefix declarations when necessary for display
+  {method {assure-element-prefix e:XDMElement}:void
+    let ns:String = e.namespace
+    let need-declarations?:bool = 
+        ((not ns.empty? and 
+          {e.find-matching-prefix ns} == null)
+         || check attributes eagerly here 
+         || avoids modifying TreeNode children during iteration
+         or {self.need-attribute-declarations? e})
+    {if need-declarations? then
+        {e.generate-namespace-declarations
+            include-descendants? = false}}
+  }
+  {method {need-attribute-declarations? e:XDMElement}:bool
+    {if-non-null as = e.attributes then
+        {for key k in as do
+            let ns:String = k.namespace 
+            {if (not ns.empty? and 
+                 {e.find-matching-prefix ns} == null) then
+                {return true}}}}
+    {return false}
+  }
+  {method {assure-attribute-prefix a:XDMAttribute}:void
+    let ns:String = a.namespace
+    {if-non-null e = a.parent then
+        let need-declarations?:bool = 
+            (not ns.empty? and 
+             {e.find-matching-prefix ns} == null)
+        {if need-declarations? then
+            {e.generate-namespace-declarations
+                include-descendants? = false}}}
+  }  
+  || display specialization
+  || --------------------
+  || NOTE: can't call super implementation, because
+  || - it uses a private field, and undocumented prefs settings
+  || - but the default implementation doesnt work well
+  || - with item specific colors (which shadow its setting)
+  {method protected {modify-for-selected selected?:bool}:void
+    {if-non-null parent = self.parent then
+        {if selected? then
+            {if-non-null pattern = {self.get-background "selected"} then
+                set parent.background = pattern
+             else
+                {unset parent.background}}
+         else
+            {unset parent.background}}}
+  }
+  || display categorization
+  || --------------------
+  field _category:#String
+  {doc-next ||=== XDMTreeItem.category
+    {purpose 
+        The "category" {ctext String} assigned this 
+        {docref XDMTreeItem.node}, if any.}
+    {details
+        See {docref XDMTreeControl.set-category}.}
+  }
+  {getter public {category}:#String
+    {return
+        {type-switch self.node
+         case n:XDMTreeNode do
+            {type-switch self.control
+             case c:XDMTreeControl do
+                {c.get-category n}
+             else null}
+         else null}}
+  }
+  {doc-next ||=== XDMTreeItem.modify-for-category
+    {purpose 
+        Modify this object visually to indicate the state of its 
+        {docref XDMTreeItem.category} property.}
+  }
+  {method public {modify-for-category}:void
+    {if-non-null pattern = {self.get-background self.category} then
+        set self.background = pattern
+     else
+        {unset self.background}}
+  }
+  {method public {refresh}:void
+    {if self._category != self.category then
+        {self.modify-for-category}
+        set self._category = self.category}
+    {super.refresh}
+  }
+}
+{doc-next ||=== XDMTreeIcon
+    {purpose 
+        An implementation of {docref DefaultFrameTreeIcon} used by 
+        {docref XDMTreeControl}}
+}
+{define-class public XDMTreeIcon {inherits DefaultFrameTreeIcon}
+  field current?:bool = false
+  {method public {refresh}:void
+    {if not self.current? then
+        {self.create-icon}
+        set self.current? = true}
+    set self.color = self.icon-color
+  }
+  {nonlocal-option public font-size:any
+    || update when font-size changes
+    {self.create-icon}
+  }
+  {method {create-icon}:void
+     let size:Distance = 
+        {self.any-to-Distance self.font-size,
+            for-font-size? = true,
+            convert-font-relative-values? = true} * 0.6
+    let small-size:Distance = size * 0.8
+    let color:FillPattern = self.icon-color
+    let icon:Graphic =        
+        {if color != FillPattern.transparent then
+            {type-switch self.subject
+             case e:XDMElement do
+                {RegularPolygonGraphic
+                    sides = 4,
+                    angle = 45deg, 
+                    horigin = "center",
+                    width = size,
+                    height = size}
+             else
+                {EllipticalArcGraphic
+                    horigin = "center",
+                    width = small-size,
+                    height = small-size}}
+         else 
+            {Fill width = 0pt}} 
+    {self.add replace? = true, icon}
+  }
+  {getter {icon-color}:FillPattern
+    {return
+        {type-switch self.subject
+         case e:XDMElement do
+            {self.get-color "element-name"}
+         case a:XDMAttribute do
+            {self.get-color "attribute-name"}
+         case xs:XDMDocument do
+            {self.get-color "document"}
+         case xs:XDMNodeSet do
+            {self.get-color "nodeset"}
+         case xs:XDMProcessingInstruction do
+            {self.get-color "processing-instruction"}
+         else FillPattern.transparent}}
+  }
+  {getter {subject}:any
+    {return
+        {if-non-null item = self.item then
+            item.node.node-data
+         else null}}
+  }
+  {method {get-color category:#String}:FillPattern
+    {return
+        {type-switch self.item 
+         case c:XDMTreeItem do
+            {c.get-color category}
+         else self.color}}
+  }
+}

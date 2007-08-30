@@ -1,0 +1,565 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 applet}
+
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{chapter
+    index= {HeadingIndex primary-key="WSDK Web Services"},
+    WSDK Web Services
+}
+{paragraph
+    Web services allow resources to be delivered as XML documents
+    using internet transport protocols, such as HTTP.    
+    This chapter describes WSDK support for the SOAP messaging protocol,
+    and WSDL service descriptors.
+    
+} 
+{summary 
+    The WSDK provides a simple way to use web services in Curl applets.
+    Each service is mapped to a Curl class, 
+    and each operation to a method in the service class.
+    {itemize
+        {item Process the WSDL file}
+        {item Invoke the service}
+    }
+}
+
+{heading level = 2,
+    Using a Web Service
+}
+{paragraph
+    Suppose your application needs to display delayed stock quotes.
+    There are several sample web services for that purpose.
+    We'll use a service available from 
+    {link href = {url "http://www.xmethods.com"}, www.xmethods.com}
+}
+{heading level = 3,
+    Process the WSDL file
+}
+{paragraph
+    The WSDL file describes the web service, using the 
+    {link href = {url "http://www.w3.org/TR/wsdl"},
+    Web Services Description Language},
+    in terms of ports, operations and messages.
+    The operations usually have bindings for
+    {link href = {url "http://www.w3.org/TR/2000/NOTE-SOAP-20000508/ "}, 
+    SOAP}. 
+    These definitions refer to datatypes, defined using 
+    {link href = {url "http://www.w3.org/TR/xmlschema-1"},
+    XML Schema Structures} and 
+    {link href = {url "http://www.w3.org/TR/xmlschema-2"},
+    XML Schema Datatypes}
+    
+    Use the {bold WSDL Services} IDE tool
+    to generate a Curl web service package from the WSDL file. 
+    The generated code provides a service class which calls the SOAP bindings for a  
+    web service described by a WSDL file.
+    
+    The {bold WSDL Services} IDE tool can be installed in the Curl IDE 
+    with the Tools>Configure Editors 
+    command using the editor description file 
+    {monospace color = "purple", tools/wsdl/editor-info.txt}
+    provided-with your WSDK distribution.
+    
+    The web service package can also be generated programmaticallly
+    using {docref generate-wsdl-code}.
+
+    {code-box
+        {curl-code
+            {curl 5.0 applet}
+            {applet manifest = "manifest.mcurl"}
+            {import * from COM.CURL.WSDK.WSDL}
+
+            {generate-wsdl-code
+                {url "DelayedStockQuote.wsdl"}
+            }
+        }}
+
+    A service package for
+    {link href = {url "examples/DelayedStockQuote.wsdl"}, DelayedStockQuote.wsdl}
+    has already been generated.
+    
+    You can use this example to regenerate that package, 
+    or try generating code for other WSDL files.
+    
+    See {link href = {url "#details"}, below} 
+    for details on the structure of the generated curl code.
+}
+
+{privilege-note}
+
+{x-example-ref 
+    title = "Generating WSDL code",
+    {url "examples/ex-generate-service-package.curl"}
+}
+
+{heading level = 3,
+    Invoke the Service
+}
+{paragraph    
+    Once the service package has been generated,
+    it can be added to your project,
+    and used in your application.
+    
+    {itemize
+        {item Add the service package to the project manifest}
+        {item Import the service package}
+        {item Instantiate the service object}
+        {item Call its methods}
+    }
+    
+    Web service packages, classes and methods 
+    can be used like any other Curl components.
+    This service contains a single method,
+    {ctext get-quote}, which accepts a ticker symbol,
+    and returns the delayed quote as a float.    
+
+    {code-box
+        {curl-code
+            {curl 5.0 applet}
+            {applet manifest = "manifest.mcurl"}
+            || import the service package
+            {import * from COM.CURL.WSDL.DelayedStockQuote}
+            {value
+                || instantiate the service
+                let service:Net-xmethods-services-stockquote-StockQuoteService = 
+                    {Net-xmethods-services-stockquote-StockQuoteService}
+                let symbol:String = "IBM"
+                || call the method
+                let quote:float = {service.get-quote symbol}
+                || use the result
+                {paragraph
+                    The quote for {value symbol} is {value quote}
+                }}
+        }}
+    
+    A typical application would obtain inputs from existing data,
+    or GUI controls, get results from the web service,
+    and display the results.  Here's a simple quote form:
+}
+
+{x-example-ref 
+    title = "Calling SOAP Web Service",
+    {url "examples/ex-invoke-stock-quote.curl"}
+}
+
+{heading level = 2,
+    Sample Applets
+}
+{heading level = 3,
+    Google Search
+}
+{paragraph
+    This {link href = {url "examples/google/start.curl"}, example} uses the 
+    {link href = {url "http://www.google.com/apis/"}, Google Search Service}.
+    The {link href = {url "curl://edit/" & {url "examples/google/project.cprj"}.name},
+    project file} contains the implementation.    
+    
+    {Frame background = "beige",
+        {paragraph
+            {bold NOTE:} Use of the service requires a license key.  
+            The sample application contains a key that you can use
+            for a few tests while you're getting your own key.}}
+    
+    The example simply issues a search request, 
+    and presents the result in a scrollable, sortable grid.    
+    This simple example illustrates several issues which frequently arise
+    in the development of rich client applications.
+    
+    {itemize
+        {item developing a higher level API}
+        {item working with recordsets}
+        {item asynchronous calls}
+    }
+    
+    Processing the {link href = {url "examples/google/GoogleSearch.wsdl"}, WSDL file}
+    yields a service class including the method 
+    {monospace do-google-search}, which is used
+    to request search results.
+    
+    {code-box
+        {curl-code
+            {method public {do-google-search 
+                               key:#String, 
+                               q:#String, 
+                               start:int, 
+                               max-results:int, 
+                               filter:bool, 
+                               restrict:#String, 
+                               safe-search:bool, 
+                               lr:#String, 
+                               ie:#String, 
+                               oe:#String
+                           }:(return-parameter:#GoogleSearchResult)
+            }}}    
+    
+    The positional parameters correspond to search options,
+    and are required.  It would be more natural in Curl
+    for such options to be keyword parameters, with default values,
+    so you may choose to provide a wrapper that does so.
+    
+    The result is a {monospace GoogleSearchResult}, which has
+    a {monospace result-elements} field, containing
+    an {ctext {Array-of ResultElement}}.  It is common
+    for "result sets" to be represented as arrays of structures.
+    Classes corresponding to these datatypes are created
+    by {docref generate-wsdl-code}, and can be seen using
+    the Definitions pane in the IDE.
+    
+    A natural presentation for this kind of data is to use a {docref RecordGrid}.
+    The conversion from an array of classes to a recordset is straightforward,
+    and is encapsulated in the {docref RecordSet-for} class.
+    
+    {code-box
+        {curl-code
+            {define-proc {google-search 
+                             query:String,
+                             start:int = 0,
+                             max-results:int = 10,                
+                             filter?:bool = false,
+                             restrict:#String = null,
+                             safe-search?:bool = false,
+                             language-restrict:#String = null,
+                             input-encoding:#String = null,
+                             output-encoding:#String = null         
+                         }:(RecordSet, GoogleSearchResult)
+                
+                || get the results (most they allow at a time is 10)
+                let result:GoogleSearchResult =
+                    {non-null
+                        {gss.do-google-search
+                            gss-key, query,
+                            start, {min 10, max-results},
+                            filter?, restrict, safe-search?, language-restrict, 
+                            input-encoding, output-encoding}}
+                
+                || construct recordset
+                let result-recordset:RecordSet =
+                    {{RecordSet-for ResultElement} 
+                        {splice result.result-elements}}
+                
+                || return
+                {return result-recordset, result}
+            }}}
+    
+    This gives an 
+    {link href = {url "examples/ex-google-search.curl"}, 
+    immediate visualization} of the results,
+    which may then be customized using standard Curl techniques.
+    
+    The service API is constructed to allow accumulation of results incrementally, 
+    from the (possibly very large) set of results, 
+    using the {monospace start} and {monospace max-results} parameters.
+    However, it will return no more than 10 at a time.
+    
+    (Calling it with more will yield a SOAP Fault.    
+    {small {monospace SOAP-1-1-FaultException: 
+    {br}SOAP 1.1 Fault (Server): 
+    {br} Exception from service object: 
+    maxResults must be 10 or less.}})
+
+    The client application can easily make multiple calls,
+    and accumulate more results into the results collection.
+    This suggests asynchronous processing, so that 
+    the application is immediately responsive,
+    while the complete response is being obtained behind the scenes.
+    
+    A {docref WSDLHTTPRPCPostClient} always contains asynchronous 
+    versions of each service method, in this case:
+    
+    {code-box
+        {curl-code
+            {method public {async-do-google-search 
+                               key:#String, 
+                               q:#String, 
+                               start:int, 
+                               max-results:int, 
+                               filter:bool, 
+                               restrict:#String, 
+                               safe-search:bool, 
+                               lr:#String, 
+                               ie:#String, 
+                               oe:#String, 
+                               event-handler:EventHandler, ...:EventHandler
+                           }:SOAPHTTPRPCPostAsyncWorker
+            }}}
+    
+    This allows the results to be processed when they become available
+    (or for requests to be cancelled after some delay).
+    
+    {code-box
+        {curl-code
+            {on e:SOAPHTTPRPCPostAsyncEvent do
+                {if-non-null responses = e.responses then
+                    let next:GoogleSearchResult = 
+                        responses[0] asa GoogleSearchResult
+                    || append results to recordset
+                    let n:int = next.result-elements.size
+                    {if n > 0 then
+                        {for element in next.result-elements do
+                            {result-recordset.append element}}}
+                }}}}
+}
+
+{heading level = 2, destination-name = "details", 
+    Web Service Package details
+}
+{paragraph
+    The {docref COM.CURL.WSDK.WSDL} package provides tools
+    for generating Curl code representing services
+    described by a WSDL file.
+    
+    The {docref COM.CURL.WSDK.SOAP} package 
+    provides support for making SOAP calls over HTTP.
+    The generated service code uses these facilities.
+    
+    This table shows the correspondence between
+    elements of the WSDL definition and the Curl equivalent.
+    
+    {Table
+        columns = 4,
+        cell-margin = 1px,
+        font-size = 8pt,
+        background = "beige",
+        cell-border-width = 1px, cell-border-color = "wheat",
+        {row-prototype 
+            {bold WSDL},
+            {italic example},
+            {bold Curl},
+            {italic example}},
+        {row-prototype 
+            {text service},
+            {xml-node <service name="GoogleSearchService">},
+            {text package},
+            {ctext COM.CURL.WSDL.GoogleSearchService}},
+        {row-prototype 
+            {text port},
+            {xml-node <service name="GoogleSearchServicePort">},
+            {text class},
+            {curl-code {define-class GoogleSearchService ...}}},
+        {row-prototype 
+            {text operation},
+            {xml-node <operation name="doSpellingSuggestion">},
+            {text method},
+            {curl-code {method {do-spelling-suggestion ...}}}},
+        {row-prototype 
+            {text input},
+            {xml-node <message name="doSpellingSuggestion">{br}
+                \ <part name="key" type="xsd:string"/>{br}
+                \ <part name="phrase" type="xsd:string"/>{br}
+                </message>},
+            {text argument},
+            {curl-code key:String, phrase:String}},
+        {row-prototype 
+            {text output},
+            {xml-node <message name="doSpellingSuggestion">{br}
+                \ <part name="return" type="xsd:string"/>{br}
+                </message>},
+            {text return value},
+            {curl-code :(String)}},
+        {row-prototype 
+            {text primitive type},
+            {xml-node xsd:boolean},
+            {text type},
+            {curl-code bool}},
+        {row-prototype 
+            {text complexType},
+            {xml-node <xsd:complexType name="DirectoryCategory">},
+            {text type},
+            {curl-code {define-class DirectoryCategory ...}}}
+    }
+    
+    Usually each service contains a single port,
+    in which case there will be a single service class,
+    named for the service.  When there is more than one port,
+    there will be a class for each, named for the port.
+    
+    Different languages have different requirements for names,
+    and different naming conventions. When web service definitions
+    are internalized into Curl, legal Curl names, following
+    standard Curl conventions are used.  Thus, for example,
+    the operation {monospace doSpellingSuggestion} becomes
+    {monospace do-spelling-suggestion}.
+    
+    Each operation corresponds to a method on the service class,
+    with arguments corresponding to input message definitions,
+    and return values corresponding to output message definitions.
+    
+    SOAP messages can contain headers.
+    When headers are specified, input headers are represented
+    as keyword arguments, and output headers as additional
+    return values.
+    
+    SOAP web services can signal errors using Fault messages.
+    These result in Curl {docref SOAP-1-1-FaultException} exceptions,
+    which contain the Fault contents.
+    
+    The Curl service class also contains an asynchronous version
+    of each service method.  Like all Curl async IO operations,
+    it returns an {docref AsyncWorker} subclass,
+    and also accepts Event handlers which allow the 
+    caller to react to responses when they are available
+    and to control further processing.
+    
+    WSDL / SOAP definitions specify datatypes using XML Schema.
+    Equivalent Curl types are used in method signatures.
+    Standard primitives are mapped directly.
+    Where complex types are defined (e.g. structures, arrays,
+    enumerated values) the corresponding Curl type
+    is defined in the service package.
+    Where an arbitrary type ({xml-node xs:any}) is specified, 
+    the curl type is {docref XDMElement}.    
+    
+    {paragraph
+        The following table shows the supplied mapping between
+        XML Schema primitive and derived simple datatypes 
+        and the corresponding Curl language datatypes.
+        
+        For some infrequently used types that do not have direct
+        equivalents as standard Curl types, {docref XMLSimpleValue} is used.
+        This gives access to the underlying String value,
+        and the ascribed XML Schema datatype.
+    }
+
+    {Table
+        columns = 2,
+        font-size = 8pt,
+        background = "beige",
+        {bold XML Type}, {bold Curl Type},
+        {xml-node xs:string}, {docref String},
+        {xml-node xs:boolean}, {docref bool},
+        {xml-node xs:int}, {docref int32},
+        {xml-node xs:double}, {docref double},
+        {xml-node xs:float}, {docref float},
+        {xml-node xs:long}, {docref int64},
+        {xml-node xs:short}, {docref int16},
+        {xml-node xs:byte}, {docref int8},
+        {xml-node xs:base64Binary}, {docref {Array-of byte}},
+        {xml-node xs:hexBinary}, {docref {Array-of byte}},
+        {cell colspan = 2, {hrule}},
+        {xml-node xs:unsignedShort}, {docref uint16},
+        {xml-node xs:unsignedByte}, {docref uint8},
+        {xml-node xs:integer}, {docref int64},
+        {xml-node xs:positiveinteger}, {docref int64},
+        {xml-node xs:negativeinteger}, {docref int64},
+        {xml-node xs:nonPositiveinteger}, {docref int64},
+        {xml-node xs:nonNegativeinteger}, {docref int64},
+        {xml-node xs:unsignedInt}, {docref uint64},
+        {xml-node xs:unsignedLong}, {docref uint64},
+        {cell colspan = 2, {hrule}},
+        {xml-node xs:decimal}, {docref double},
+        {xml-node xs:dateTime}, {docref DateTime},
+        {xml-node xs:date}, {docref DateTime.date#factory},
+        {xml-node xs:anyURI}, {docref Url},
+        {xml-node xs:QName}, {docref XDMName},
+        {cell colspan = 2, {hrule}},
+        {xml-node xs:time}, {docref XMLSimpleValue},
+        {xml-node xs:duration}, {docref XMLSimpleValue},
+        {xml-node xs:gYear}, {docref XMLSimpleValue},
+        {xml-node xs:gYearMonth}, {docref XMLSimpleValue},
+        {xml-node xs:gMonth}, {docref XMLSimpleValue},
+        {xml-node xs:gMonthDay}, {docref XMLSimpleValue},
+        {xml-node xs:Day}, {docref XMLSimpleValue},
+        {xml-node xs:normalizedString}, {docref XMLSimpleValue},
+        {xml-node xs:token}, {docref XMLSimpleValue},
+        {xml-node xs:language}, {docref XMLSimpleValue},
+        {xml-node xs:Name}, {docref XMLSimpleValue},
+        {xml-node xs:NCName}, {docref XMLSimpleValue},
+        {xml-node xs:ENTITY}, {docref XMLSimpleValue},
+        {xml-node xs:ENTITIES}, {docref XMLSimpleValue},
+        {xml-node xs:NMTOKEN}, {docref XMLSimpleValue},
+        {xml-node xs:NMTOKENS}, {docref XMLSimpleValue},
+        {xml-node xs:ID}, {docref XMLSimpleValue},
+        {xml-node xs:IDREF}, {docref XMLSimpleValue},
+        {xml-node xs:IDREFS}, {docref XMLSimpleValue}
+    }
+    
+    Types specified in response messages using an {xml-node xsi:type}
+    attribute will be used while processing responses.
+    Also, responses containing "multiref" values
+    (using {xml-node id} and {xml-node ref} attributes)
+    can be processed.
+    
+    WSDL / SOAP definitions allow for a variety of formats
+    ({monospace document/literal}, 
+    {monospace rpc/literal}, 
+    {monospace rpc/encoded}),
+    specified using binding attributes.
+    These formats are handled internally by the
+    {docref COM.CURL.WSDK.SOAP} package.
+    
+    The WSDL / SOAP specifications are complex
+    The variety of possible formats presents an
+    interoperability challenge, when different endpoints
+    use different conventions.  Refer to the 
+    {link href = {url "http://www.ws-i.org/deliverables/workinggroup.aspx?wg=basicprofile"},
+    WS-I Basic Profile} for interoperability guidelines.
+    
+    See {link href = {url "wsdk-interop.curl"},
+    WSDK Web Services Interoperability} document
+    for discussion of WSDK conventions and interoperability issues.
+    
+    The WSDL file defines a specific url where the 
+    web service is required.  When the service is also
+    under development, it may be necessary to relocate it.
+    The service classes, 
+    which derive from {docref WSDLHTTPRPCPostClient},
+    provide a property, 
+    {docref-abbr WSDLHTTPRPCPostClient.service-location}
+    for overriding the defined service location.
+    This can be specified using the {ctext service-location}
+    keyword argument on the service class constructor.
+    
+    SOAP messages are communicated using XML.
+    The actual request and response XML messages
+    can be useful for diagnosing web service problems.    
+    When {docref WSDLHTTPRPCPostClient.trace-stream}
+    is set (to a {docref TextOutputStream}), 
+    the contents of the messages will be logged
+    to the specified stream. To log to the IDE Output pane
+    (or the Curl Console), use the standard output stream
+    returned by {docref get-stdout}.
+        
+    You can also use the IDE 
+    {link href = {uguide.merge "http-monitor.curl"}, HTTP Monitor}.
+}
+
+{x-example-ref 
+    title = "Tracing SOAP Web Service",
+    {url "examples/ex-trace-stock-quote.curl"}
+}
+
+||--{TODO
+||--    What could go wrong
+||--    {itemize
+||--        {item projects, manifests and packages}
+||--        {item SOAP Faults}
+||--        {item service availability}
+||--        {item failures}
+||--        {item tracing}
+||--        {item headers and license keys}
+||--    }
+||--}
+
+|| ====================
+
+{curl-copyright}
+

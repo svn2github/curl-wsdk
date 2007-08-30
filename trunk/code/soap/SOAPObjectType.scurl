@@ -1,0 +1,489 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| lots of things take these and edit them...
+|| This keeps track of the various type information about a value as
+|| the code figures out how to convert it to or from XML.
+
+{doc-next
+    {purpose
+        Immutable class that holds information about the type of a
+        SOAP object.  May be only partially filled in.
+    }
+}
+{define-class public open SOAPObjectType
+
+  {doc-next
+    {purpose
+        The XML element name of this object type.  (Eg. element as
+        declared in an XML Schema based on some data type.)
+        (Eg.
+        {code {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "string"}})
+        Can be {ctext null}, meaning that this information is unknown for
+        this type.
+    }
+  }
+  field public constant element-name:#XMLName
+
+  {doc-next
+    {purpose
+        XML type of this object type.  (Eg.
+        {code {new XMLName, SOAPTypeMapper.xml-schema-uri, "string"}})
+        Can be {ctext null}, meaning that this information is unknown for
+        this type.
+    }
+  }
+  field public constant xml-type:#XMLName
+
+  {doc-next
+    {purpose
+        Curl type of this object type. (Eg. {ctext String})
+        Can be {ctext null}, meaning that this information is unknown for
+        this type.
+    }
+  }
+  field public constant curl-type:#Type
+
+  {doc-next
+    {purpose
+        Indicates if this object type is legal for multiple reference or
+        not.  Things which are multiple reference can have ids and
+        be referenced more than once in a SOAP message.
+        Generally object type things are multiple reference legal and
+        basic types are not.
+    }
+  }
+  field public constant multiple-reference:SOAPTypeMultipleReference
+
+  {doc-next
+    {purpose
+        Indicates if this object type can be "nil" in the SOAP message.
+    }
+  }
+  field public constant nillable?:bool
+
+  {doc-next
+    {purpose
+        Construct a {docref SOAPObjectType} with certain values.
+    }
+    {parameter element-name,
+        The XML element name of this object type.  (Eg. element as
+        declared in an XML Schema based on some data type.)
+        (Eg.
+        {code {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "string"}})
+        Can be {ctext null}, meaning that this information is unknown for
+        this type.
+    }
+    {parameter xml-type,
+        XML type of this object type.  (Eg.
+        {code {new XMLName, SOAPTypeMapper.xml-schema-uri, "string"}})
+        Can be {ctext null}, meaning that this information is unknown for
+        this type.
+    }
+    {parameter curl-type,
+        Curl type of this object type. (Eg. {ctext String})
+        Can be {ctext null}, meaning that this information is unknown for
+        this type.
+    }
+    {parameter multiple-reference,
+        Indicates if this object type is legal for multiple reference or
+        not.  Things which are multiple reference can have ids and
+        be referenced more than once in a SOAP message.
+        Generally object type things are multiple reference legal and
+        basic types are not.
+    }
+    {parameter nillable?,
+        Indicates if this object type can be "nil" in the SOAP message.
+    }
+  }
+  {factory public {default 
+                      element-name:#XMLName = null,
+                      xml-type:#XMLName = null,
+                      curl-type:#Type = null,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          SOAPTypeMultipleReference.unknown,
+                      nillable?:bool = false
+                  }:SOAPObjectType
+    || instances are interned so pointer-equal? --> value-equal? 
+    let key:SOAPObjectType = 
+        {SOAPObjectType.internal 
+            element-name = element-name, 
+            xml-type = xml-type, 
+            curl-type = curl-type,
+            multiple-reference = multiple-reference, 
+            nillable? = nillable?}   
+    let (interned:SOAPObjectType, interned?:bool) =
+        {SOAPObjectType.interned.get-member-if-exists key} 
+    {return
+        {if interned? then interned
+         else
+            {SOAPObjectType.interned.insert key}
+            key}}
+  }
+
+  {constructor package {internal
+                          element-name:#XMLName = null,
+                          xml-type:#XMLName = null,
+                          curl-type:#Type = null,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown,
+                          nillable?:bool = false
+                      }
+    set self.element-name = element-name
+    set self.xml-type = xml-type
+    set self.curl-type = curl-type
+    set self.multiple-reference = multiple-reference
+    set self.nillable? = nillable?
+  }
+
+  let package constant interned:SOAPObjectTypeSet = {SOAPObjectTypeSet}
+
+  {doc-next
+    {purpose
+        Create a new {docref SOAPObjectType} based on the field
+        values of an existing one, with some of the fields changed.
+    }
+    {parameter object-type,
+        The {docref SOAPObjectType} that provides the default
+        values for the new {docref SOAPObjectType} being created.
+    }
+    {notes
+        See {docref SOAPObjectType.default} for descriptions of the
+        other parameters, which, if specified override the values
+        in {param object-type}.
+    }
+  }
+  {constructor public {clone-with
+                          object-type:SOAPObjectType,
+                          element-name:#XMLName = null,
+                          xml-type:#XMLName = null,
+                          curl-type:#Type = null,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown,
+                          nillable?:bool = false
+                      }
+    set self.element-name =
+        {if {keyword-supplied? element-name} then
+            element-name
+         else
+            object-type.element-name
+        }
+    set self.xml-type =
+        {if {keyword-supplied? xml-type} then
+            xml-type
+         else
+            object-type.xml-type
+        }
+    set self.curl-type =
+        {if {keyword-supplied? curl-type} then
+            curl-type
+         else
+            object-type.curl-type
+        }
+    set self.multiple-reference =
+        {if {keyword-supplied? multiple-reference} then
+            multiple-reference
+         else
+            object-type.multiple-reference
+        }
+    set self.nillable? =
+        {if {keyword-supplied? nillable?} then
+            nillable?
+         else
+            object-type.nillable?
+        }
+  }
+
+  {doc-next
+    {purpose
+        Take a {docref SOAPObjectType}, and see if it has fields
+        which are missing and can be filled in.
+        First, if the {docref SOAPObjectType.xml-type} is missing,
+        ask the {docref SOAPElementNameToXMLTypeMapper} if it can supply
+        a new {docref SOAPObjectType} with a {docref SOAPObjectType.xml-type}
+        figured out based on the {docref SOAPObjectType.element-name}.
+        Second, if the {docref SOAPObjectType.curl-type} is missing, or
+        equal to {docref any}, ask the {docref SOAPXMLTypeToCurlTypeMapper}
+        if it can supply a new {docref SOAPObjectType} with a
+        {docref SOAPObjectType.curl-type}
+        figured out based on the {docref SOAPObjectType.xml-type}.
+    }
+    {parameter type,
+        {docref SOAPObjectType} to check and either return if no
+        further information can be filled in, otherwise use it as a
+        basis for the new one.
+    }
+  }
+  {factory public {fill-in-from-element-name-mapper
+                      type:SOAPObjectType,
+                      element-name-to-xml-type:#SOAPElementNameToXMLTypeMapper,
+                      xml-type-to-curl-type:#SOAPXMLTypeToCurlTypeMapper
+                  }:SOAPObjectType
+    {if type.element-name != null and type.xml-type == null then
+        {if-non-null element-name-to-xml-type then
+            set type = {element-name-to-xml-type.element-name-to-xml-type type}
+        }
+    }
+    {if type.xml-type != null and
+        (type.curl-type == null or type.curl-type == any)
+     then
+        {if-non-null xml-type-to-curl-type then
+            set type = {xml-type-to-curl-type.xml-type-to-curl-type type}
+        }
+    }
+    {return type}
+  }
+
+  {doc-next
+    {purpose
+        Take a {docref SOAPObjectType}, and see if it has fields
+        which are missing and can be filled in.
+        First, if the {docref SOAPObjectType.xml-type} is missing,
+        ask the {docref SOAPCurlTypeToXMLTypeMapper} if it can supply
+        a new {docref SOAPObjectType} with a {docref SOAPObjectType.xml-type}
+        figured out based on the {docref SOAPObjectType.curl-type}.
+        Second, if the {docref SOAPObjectType.element-name} is missing,
+        ask the {docref SOAPXMLTypeToElementNameMapper}
+        if it can supply a new {docref SOAPObjectType} with a
+        {docref SOAPObjectType.element-name}
+        figured out based on the {docref SOAPObjectType.xml-type}.
+    }
+    {parameter type,
+        {docref SOAPObjectType} to check and either return if no
+        further information can be filled in, otherwise use it as a
+        basis for the new one.
+    }
+  }
+  {factory public {fill-in-from-curl-type-mapper
+                      type:SOAPObjectType,
+                      curl-type-to-xml-type:#SOAPCurlTypeToXMLTypeMapper,
+                      xml-type-to-element-name:#SOAPXMLTypeToElementNameMapper
+                  }:SOAPObjectType
+    {if type.curl-type != null and type.xml-type == null then
+        {if-non-null curl-type-to-xml-type then
+            set type = {curl-type-to-xml-type.curl-type-to-xml-type type}
+        }
+    }
+    {if type.xml-type != null and type.element-name == null then
+        {if-non-null xml-type-to-element-name then
+            set type = {xml-type-to-element-name.xml-type-to-element-name type}
+        }
+    }
+    {return type}
+  }
+
+
+  {doc-next
+    {purpose
+        Take a {docref SOAPObjectType}, and see if it has fields
+        which are missing and can be filled in
+        if the {docref SOAPObjectType.curl-type}
+        is some kind of array.
+    }
+    {parameter type,
+        {docref SOAPObjectType} to check and either return if no
+        further information can be filled in, otherwise use it as a
+        basis for the new one.
+    }
+  }
+  {factory public {fill-in-for-array-type 
+                      type:SOAPObjectType,
+                      curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper = 
+                          builtin-soap-curl-type-to-xml-type-mapper
+                  }:SOAPObjectType        
+    {return
+        {if-non-null type.xml-type then
+            || already filled in
+            type
+         else
+            let array-type?:bool =
+                {type-switch type.curl-type
+                 case curl-type:ParameterizedType do
+                    (curl-type.template.name == "Array-of" or
+                     curl-type.template.name == "Array-2-of" or
+                     {type-isa-FastArray? curl-type}) ||== curl-type.array?)
+                 else 
+                    false
+                }
+            {if array-type? then
+                || marshaler will figure out the xml-type if possible
+                let constant array-marshaler:SOAPArrayMarshaler =
+                    {SOAPArrayMarshaler
+                        type,
+                        curl-type-to-xml-type = curl-type-to-xml-type
+                    }
+                array-marshaler.type
+             else
+                || not array type
+                type
+            }
+        }
+    }
+  }
+  
+  {method public open {clone}:SOAPObjectType
+    {return {new SOAPObjectType.clone-with, self}}
+  }
+
+||--  {getter hidden open {hidden-object-hash-secure}:int
+||--    {return
+||--        {bit-xor
+||--            {if-non-null element-name = self.element-name then
+||--                element-name.hidden-object-hash-secure
+||--             else
+||--                0x1000
+||--            },
+||--            {if-non-null xml-type = self.xml-type then
+||--                xml-type.hidden-object-hash-secure
+||--             else
+||--                0x2000
+||--            },
+||--            {if-non-null curl-type = self.curl-type then
+||--                curl-type.hidden-object-hash-secure
+||--             else
+||--                0x4000
+||--            },
+||--            {value-hash self.multiple-reference},
+||--            {value-hash self.nillable?}
+||--        }
+||--    }
+||--  }
+||--
+||--  {method hidden open {hidden-object-equal?-secure other:#Object}:bool
+||--    {return
+||--        {type-switch other
+||--         case type:SOAPObjectType do
+||--            self.hidden-object-hash-secure == type.hidden-object-hash-secure and
+||--            self.element-name == type.element-name and
+||--            self.xml-type == type.xml-type and
+||--            self.curl-type == type.curl-type and
+||--            self.multiple-reference == type.multiple-reference and
+||--            self.nillable? == type.nillable?
+||--         else
+||--            false
+||--        }
+||--    }
+||--  }
+}
+
+{define-proc package {SOAPObjectType-hash self:SOAPObjectType}:int
+    {return
+        {bit-xor
+            {if-non-null element-name = self.element-name then
+                {value-hash element-name}
+             else
+                0x1000
+            },
+            {if-non-null xml-type = self.xml-type then
+                {value-hash xml-type}
+             else
+                0x2000
+            },
+            {if-non-null curl-type = self.curl-type then
+                {value-hash curl-type}
+             else
+                0x4000
+            },
+            {value-hash self.multiple-reference},
+            {value-hash self.nillable?}
+        }
+    }
+}
+
+{define-proc package {SOAPObjectType-equal? 
+                         self:SOAPObjectType, 
+                         other:SOAPObjectType
+                     }:bool
+    {return
+        self.element-name == other.element-name and
+        self.xml-type == other.xml-type and
+        self.curl-type == other.curl-type and
+        self.multiple-reference == other.multiple-reference and
+        self.nillable? == other.nillable?
+    }
+}
+
+{let package constant SOAPObjectTypeSet:ClassType =
+    {Set-of SOAPObjectType, 
+        key-equality-proc = SOAPObjectType-equal?,
+        key-hash-proc = SOAPObjectType-hash}
+}
+
+
+|| This is used for marshaling values that can be multi-reference style
+|| objects, i.e. they may have an id so that other things can reference
+|| them by id, or they may have an href to another object (instead of
+|| having actual inline contents.)
+{doc-next
+    {purpose
+        Represents information in a {docref SOAPObjectType} as to if an
+        object type can be multiply referenced, and used to indicate
+        if a given field is currently being written out as a reference
+        or as the actual value.
+    }
+    {details
+        Possible values are:
+        {itemize
+            {item
+                unknown{em-dash}Means that it is unknown if this object type
+                can be multiply referenced, or when a parameter to a call,
+                that the caller has no opinion on if something should be
+                an instance or a reference.
+            }
+            {item
+                single{em-dash}Means that this object type may not be
+                multiply referenced, and when a parameter to a call,
+                that there should be no tagging for referencing, and
+                no referencing.
+            }
+            {item
+                multiple{em-dash}Means that this object type may be
+                multiply referenced, and when a parameter to a call,
+                that referencing can be used, but no opinion is specified
+                as to where something should be an instance or a reference.
+            }
+            {item
+                multiple-instance{em-dash}Only used as a parameter to a call,
+                and in that case, means that the item must be done as
+                an instance in this case (but should be referencable by later
+                things.)
+            }
+            {item
+                multiple-reference{em-dash}Only used as a parameter to a call,
+                and in that case, means that the item must be done as
+                a reference in this case (but may have been already written
+                as an instance, or may be written as an instance later.)
+            }
+        }
+    }
+    {notes
+        This appears as a field in {docref SOAPObjectType}, and is used
+        most commonly with the {docref SOAPTypeMapper.marshal} call.
+    }
+}
+{define-enum public SOAPTypeMultipleReference
+    unknown,
+    single,
+    multiple,
+    || only used for marshal, means that this item is multiple referenced,
+    || and this is the actual instance of it right here.
+    multiple-instance,
+    || only used for marshal, means that this item is multiple referenced,
+    || but right now only a reference (and not the actual contents) should
+    || be written out.  When "multiple" is passed to marshal routines it will
+    || be equivilent to this.
+    multiple-reference
+}

@@ -1,0 +1,935 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+
+|| TODO: XDMElement should always marshal ...
+|| TODO: why does 'any' test display w params?
+|| - doclit convention is different for returns than params ?
+|| - would XDMNode be better
+|| - when is xsi:type used w doc ?
+
+|| TODO: fuller coverage
+|| - primitives
+|| - arrays - both WSDL patterns
+|| - repeating elements
+|| - structs
+|| - nillable
+|| - cardinality
+|| - attributes
+|| - restrictions
+|| - extensions
+|| - using types
+|| - using elements
+|| - anonymous
+|| - using groups
+|| - =====
+|| - namespaces
+|| - imports
+|| - headers
+|| - faults
+
+{TestSuite {lmessage WSDL Echo Tests},
+
+    || primitives
+    || ----------
+    {TestSuite {lmessage primitives},
+        
+        {WSDLEchoTestCases "int", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:integer'/>
+</xs:simpleType>"|,
+            {stringify
+                1}
+        },            
+        {WSDLEchoTestCases "bool", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:boolean'/>
+</xs:simpleType>"|,
+            {stringify
+                true}
+        },            
+        {WSDLEchoTestCases "double", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:double'/>
+</xs:simpleType>"|,
+            {stringify
+                12.3}
+        },            
+        {WSDLEchoTestCases "String", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:string'/>
+</xs:simpleType>"|,
+            {stringify
+                "foo"}
+        },            
+        {WSDLEchoTestCases "EmptyString", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:string'/>
+</xs:simpleType>"|,
+            {stringify
+                ""}
+        },            
+        {WSDLEchoTestCases "NullString", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:string'/>
+</xs:simpleType>"|,
+            {stringify
+                null}
+        },             
+        {WSDLEchoTestCases "dateTime", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:dateTime'/>
+</xs:simpleType>"|,
+            {stringify
+                {DateTime "2005-11-01 12:34"}}
+        }, 
+        {WSDLEchoTestCases "date", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:date'/>
+</xs:simpleType>"|,
+            {stringify
+                {DateTime.date "2005-11-01"}}
+        },            
+        {WSDLEchoTestCases "time", |"
+<xs:simpleType name='test'>
+ <xs:restriction base='xs:time'/>
+</xs:simpleType>"|,
+            {stringify
+                {{XMLSimpleValue-for "time"} "12:34"}}
+        }           
+    },
+
+    || structs
+    || ----------
+    {TestSuite {lmessage structs},
+        
+        {WSDLEchoTestCases "Struct", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1"}}
+        },            
+        {WSDLEchoTestCases "StructN", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1"}}
+        },            
+        {WSDLEchoTestCases "StructN=null", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = null}}
+        },            
+        {WSDLEchoTestCases "Struct01", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' minOccurs='0' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1"}}
+        },            
+        {WSDLEchoTestCases "Struct11", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' minOccurs='1' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1"}}
+        },            
+        {WSDLEchoTestCases "Struct01N", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' minOccurs='0' maxOccurs='1' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1"}}
+        },            
+        {WSDLEchoTestCases "Struct11N", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' minOccurs='1' maxOccurs='1' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1"}}
+        },            
+        {WSDLEchoTestCases "AnonymousType", |"
+<xs:element name='Foo'>
+ <xs:complexType>
+  <xs:sequence>
+   <xs:element name='ID' type='xs:string'/> 
+  </xs:sequence>
+ </xs:complexType>
+</xs:element>
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element ref='Foo'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords foo = {Foo.from-keywords id = "001"}}}
+        }
+    }, 
+    || nullable primitives
+    || ----------
+    {TestSuite {lmessage nullable primitives},
+        
+        {WSDLEchoTestCases "Struct01", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:int' minOccurs='0' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = 1}}
+        },            
+        {WSDLEchoTestCases "Struct11N", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:int' minOccurs='1' maxOccurs='1' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = 1}}
+        },
+        {WSDLEchoTestCases "Struct11N", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:int' minOccurs='1' maxOccurs='1' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords}}
+        },
+        {WSDLEchoTestCases "Struct01=null", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:int' minOccurs='0' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords}}
+        },            
+        {WSDLEchoTestCases "Struct11N=null", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:int' minOccurs='1' maxOccurs='1' nillable='true'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords}}
+        },
+        {WSDLEchoTestCases "StructEnum", |"
+<xs:simpleType name='Status'>
+ <xs:restriction base='xs:string'>
+  <xs:enumeration value='a'/>
+  <xs:enumeration value='b'/>
+  <xs:enumeration value='c'/>
+ </xs:restriction>
+</xs:simpleType>
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='status' type='Status' minOccurs='0' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords status = "a"}}
+        },
+        {WSDLEchoTestCases "StructEnum=null", |"
+<xs:simpleType name='Status'>
+ <xs:restriction base='xs:string'>
+  <xs:enumeration value='A'/>
+  <xs:enumeration value='B'/>
+  <xs:enumeration value='C'/>
+ </xs:restriction>
+</xs:simpleType>
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='status' type='Status' minOccurs='0' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords}}
+        }
+    },
+   
+    || more arrays
+    || ----------
+    {TestSuite {lmessage more arrays},
+        {WSDLEchoTestCases "ArrayElement", |"
+<xs:complexType name="ArrayOfX">
+  <xs:sequence>
+    <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+  </xs:sequence>
+</xs:complexType>>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}}
+        },
+        {WSDLEchoTestCases "AnonymousArrayElement", |"
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElement", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+   <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
+        },
+        || ~~~~~~~~~~
+        {WSDLEchoTestCases "ArrayElementNullable", |"
+<xs:complexType name="ArrayOfX">
+  <xs:sequence>
+    <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+  </xs:sequence>
+</xs:complexType>>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}}
+        },
+        {WSDLEchoTestCases "AnonymousArrayElementNullable", |"
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementNullable", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+   <!-- <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>   -->   
+   <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}}
+        }
+    },
+   
+    || arrays
+    || ----------
+    {TestSuite {lmessage arrays},
+        
+        {WSDLEchoTestCases "SimpleArray", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {StringArray "a", "b"}}
+        },
+        {WSDLEchoTestCases "StructArray", |"
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='ID' type='xs:string' minOccurs='0' maxOccurs='1'/> 
+ </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="Foo" type="t:Foo" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {{Array-of Foo} {Foo.from-keywords id = "1"}}}
+        },
+        {WSDLEchoTestCases "OptionalElement", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="1" name="x" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = "X"}}
+        },
+        {WSDLEchoTestCases "RepeatedElement", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int"/>
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string"/>
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementEmpty", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {StringArray}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementNull", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = null}}
+        },
+        {WSDLEchoTestCases "RepeatedElementBmid", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="1" maxOccurs="1" name="z" type="xs:int" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {StringArray "a", "b"}, z = 2}}
+        },
+        {WSDLEchoTestCases "RepeatedElementMidEmpty", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="1" maxOccurs="1" name="z" type="xs:int" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = {StringArray}, z = 2}}
+        },
+        {WSDLEchoTestCases "RepeatedElementMIDNull", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="1" maxOccurs="1" name="z" type="xs:int" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = null, z = 2}}
+        },
+        {WSDLEchoTestCases "RepeatedElements", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {StringArray "a", "b"}, 
+                    y = {StringArray "c", "d"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElements", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {StringArray "a", "b"}, 
+                    y = {StringArray "c", "d"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementsEmptyFirst", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {StringArray}, 
+                    y = {StringArray "c", "d"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementsEmptySecond", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {StringArray "a", "b"}, 
+                    y = {StringArray}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementsEmptyBoth", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {StringArray}, 
+                    y = {StringArray}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementsNullFirst", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = null, 
+                    y = {StringArray "c", "d"}}}
+        },
+        {WSDLEchoTestCases "RepeatedElementsNullSecond", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {StringArray "a", "b"}, 
+                    y = null}}
+        },
+        {WSDLEchoTestCases "RepeatedElementsNullBoth", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = null, 
+                    y = null}}
+        },
+        {WSDLEchoTestCases "RepeatedStructElement", |"
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+</xs:complexType> 
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, x = 
+                    {{Array-of Foo} 
+                        {Foo.from-keywords name = "a"}, 
+                        {Foo.from-keywords name = "b"}}}}
+        },
+        {WSDLEchoTestCases "RepeatedStructElements", |"
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+</xs:complexType> 
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="Foo" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {{Array-of Foo} 
+                            {Foo.from-keywords name = "a"}, 
+                            {Foo.from-keywords name = "b"}}, 
+                    y = {{Array-of Foo} 
+                            {Foo.from-keywords name = "c"}, 
+                            {Foo.from-keywords name = "c"}}}}
+        },
+        {WSDLEchoTestCases "RepeatedStructElementsNullFirst", |"
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+</xs:complexType> 
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="Foo" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = null, 
+                    y = {{Array-of Foo} 
+                            {Foo.from-keywords name = "c"}, 
+                            {Foo.from-keywords name = "c"}}}}
+        },
+        {WSDLEchoTestCases "RepeatedStructElementsNullLast", |"
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+</xs:complexType> 
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="Foo" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = {{Array-of Foo} 
+                            {Foo.from-keywords name = "a"}, 
+                            {Foo.from-keywords name = "b"}}, 
+                    y = null}}
+        },
+        {WSDLEchoTestCases "RepeatedStructElementsNullBoth", |"
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+</xs:complexType> 
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="Foo" />
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords q = 1, 
+                    x = null, 
+                    y = null}}
+        }
+    },
+    || nil array elements
+    || ----------
+    {TestSuite {lmessage nil array elements},
+        
+        {WSDLEchoTestCases "array", |"
+<xs:complexType name="test">
+ <xs:sequence>
+  <!--<xs:element name="errors" type="tns:Error" nillable="true" minOccurs="0" maxOccurs="unbounded"/>-->     
+  <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>     
+  <xs:element name="id" type="xs:string" nillable="true"/>
+  <xs:element name="success" type="xs:boolean"/>
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords 
+                    errors = {{Array-of #String} "ERROR"}, 
+                    id = "001", 
+                    success = false}}
+        },
+        {WSDLEchoTestCases "empty array", |"
+<xs:complexType name="test">
+ <xs:sequence>
+  <!--<xs:element name="errors" type="tns:Error" nillable="true" minOccurs="0" maxOccurs="unbounded"/>-->     
+  <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>     
+  <xs:element name="id" type="xs:string" nillable="true"/>
+  <xs:element name="success" type="xs:boolean"/>
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords 
+                    errors = {{Array-of #String}}, 
+                    id = "001", 
+                    success = true}}
+        },
+        {WSDLEchoTestCases "null array", |"
+<xs:complexType name="test">
+ <xs:sequence>
+  <!--<xs:element name="errors" type="tns:Error" nillable="true" minOccurs="0" maxOccurs="unbounded"/>-->     
+  <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>     
+  <xs:element name="id" type="xs:string" nillable="true"/>
+  <xs:element name="success" type="xs:boolean"/>
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords 
+                    errors = null,
+                    id = "001", 
+                    success = true}}
+        }
+    },
+    || attributes
+    || ----------
+    {TestSuite {lmessage attributes},
+        
+        {WSDLEchoTestCases "attribute", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+ <xs:attribute name='ID' type='xs:string'/> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1", name = "foo"}}
+        },            
+        {WSDLEchoTestCases "attribute-ref", |"
+<xs:attribute name='ID' type='xs:string'/> 
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+ <xs:attribute ref='ID'/> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1", name = "foo"}}
+        },            
+        {WSDLEchoTestCases "attribute-ref-t", |"
+<xs:attribute name='ID' type='xs:string'/> 
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+ <xs:attribute ref='t:ID'/> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1", name = "foo"}}
+        },            
+        {WSDLEchoTestCases "attribute-ref-tt", |"
+<xs:attribute name='ID' type='xs:string'/> 
+<xs:complexType name='Foo'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+ <xs:attribute ref='t:ID'/> 
+</xs:complexType> 
+<xs:complexType name='Bar'>
+ <xs:sequence>
+  <xs:element name='Name' type='xs:string'/> 
+ </xs:sequence>
+ <xs:attribute ref='t:ID'/> 
+</xs:complexType> 
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:element name='foo' type='Foo'/> 
+  <xs:element name='bar' type='Bar'/> 
+ </xs:sequence> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords
+                    foo = {Foo.from-keywords id = "1", name = "x"},
+                    bar = {Bar.from-keywords id = "1", name = "y"}}}
+        }
+    },            
+
+    || simpleContent
+    || ----------
+    {TestSuite {lmessage simpleContent},
+        
+        {WSDLEchoTestCases "simpleContent", |"
+<xs:complexType name='test'>
+ <xs:simpleContent>
+  <xs:extension base='xs:string'/> 
+ </xs:simpleContent>
+ <xs:attribute name='ID' type='xs:string'/> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1", content = "foo"}}
+        },            
+        {WSDLEchoTestCases "simpleContentList", |"
+<xs:simpleType name='Foo'>
+ <xs:list>
+   <xs:simpleType>
+     <xs:restriction base='xs:string'>
+       <xs:enumeration value='A'/>
+       <xs:enumeration value='B'/>
+       <xs:enumeration value='C'/>
+     </xs:restriction>
+   </xs:simpleType>
+ </xs:list>
+</xs:simpleType>
+<xs:complexType name='test'>
+ <xs:simpleContent>
+  <xs:extension base='Foo'/> 
+ </xs:simpleContent>
+ <xs:attribute name='ID' type='xs:string'/> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1", content = {Foo "A", "B"}}}
+        },            
+        {WSDLEchoTestCases "simpleContentEmptyList", |"
+<xs:simpleType name='Foo'>
+ <xs:list>
+   <xs:simpleType>
+     <xs:restriction base='xs:string'>
+       <xs:enumeration value='A'/>
+       <xs:enumeration value='B'/>
+       <xs:enumeration value='C'/>
+     </xs:restriction>
+   </xs:simpleType>
+ </xs:list>
+</xs:simpleType>
+<xs:complexType name='test'>
+ <xs:simpleContent>
+  <xs:extension base='Foo'/> 
+ </xs:simpleContent>
+ <xs:attribute name='ID' type='xs:string'/> 
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords id = "1", content = {Foo}}}
+        }
+    },            
+
+    |# TODO: reinstate when XDMElement marshaling works
+
+    || any
+    || ----------
+    {TestSuite {lmessage any},
+        
+        {WSDLEchoTestCases "any", |"
+<xs:complexType name='test'>
+ <xs:sequence>
+  <xs:any/> 
+ </xs:sequence>
+</xs:complexType>"|,
+            {stringify
+                {XDMElement "foo", "X"}}
+        }
+    },            
+
+    || restrictions
+    || ----------
+    {TestSuite {lmessage restrictions},
+        
+        {WSDLEchoTestCases "EmptyStruct1", |"
+<xs:complexType name='test'>
+ <xs:sequence/>
+</xs:complexType>"|,
+            {stringify
+                {Test.from-keywords}}
+        },            
+        {WSDLEchoTestCases "EmptyStruct2", |"
+<xs:complexType name='test'/>"|,
+            {stringify
+                {Test.from-keywords}}
+        },  
+        {WSDLEchoTestCases "EmptyRestriction", |"
+<xs:complexType name='Foo'/>
+<xs:complexType name='test'>
+ <xs:complexContent>
+  <xs:restriction base='Foo'/>
+ </xs:complexContent>
+</xs:complexType>"|,
+            {stringify
+                {XDMElement "Test"}}
+        },
+        {WSDLEchoTestCases "EmptyRestriction2", |"
+<xs:complexType name='test'>
+ <xs:complexContent>
+  <xs:restriction base='xs:anyType'/>
+ </xs:complexContent>
+</xs:complexType>"|,
+            {stringify
+                {XDMElement "Test"}}
+        }
+    },#|
+    
+    || lists
+    || ----------
+    {TestSuite {lmessage lists},
+        
+        {WSDLEchoTestCases "ListEnum", |"
+<xs:simpleType name='Theme'>
+  <xs:restriction base='xs:string'>
+    <xs:enumeration value='A'/>
+    <xs:enumeration value='B'/>
+    <xs:enumeration value='C'/>
+  </xs:restriction>
+</xs:simpleType>
+<xs:simpleType name='test'>
+ <xs:list itemType='Theme'/>
+</xs:simpleType>"|,
+            {stringify
+                {{Array-of Theme} Theme.a, Theme.b}}
+        },
+        {WSDLEchoTestCases "AnonymousListEnum", |"
+<xs:simpleType name='test'>
+ <xs:list>
+   <xs:simpleType>
+     <xs:restriction base='xs:string'>
+       <xs:enumeration value='A'/>
+       <xs:enumeration value='B'/>
+       <xs:enumeration value='C'/>
+     </xs:restriction>
+   </xs:simpleType>
+ </xs:list>
+</xs:simpleType>"|,
+            {stringify
+                {StringArray "A", "B"}}
+        }
+    }
+}
+

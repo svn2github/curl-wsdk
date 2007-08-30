@@ -1,0 +1,319 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| XDM Search API
+|| ====================
+
+{doc-next ||=== XDMPath
+    {purpose Specifies an XML path expression.}
+    {details 
+        Path expressions use the XPath language,
+        where clauses separated by slashes represent steps
+        along axes from the subject node.
+        {itemize
+            {item {bold axes}
+                {itemize
+                    {item {ctext /} {em-dash} 
+                        the children of the current node}
+                    {item {ctext //} {em-dash} 
+                        the current node and all its descendants}
+                    {item {ctext .} {em-dash} 
+                        the current node}
+                    {item {ctext ..} {em-dash} 
+                        the parent of the current node}
+                    {item {ctext @} {em-dash} 
+                        the attributes of the current node}
+                    {item {ctext /ancestor::} {em-dash} 
+                        the ancestors of the current node}
+                    {item {ctext /ancestor-or-self::} {em-dash} 
+                        the current node and its ancestors}
+                    {item {ctext /descendant::} {em-dash} 
+                        the descendants of the current node}
+                    {item {ctext /descendant-or-self::} {em-dash} 
+                        the current node and its descendants}
+                }}
+            {item {bold selectors}
+                {itemize
+                    {item {ctext *} {em-dash} 
+                        any element}
+                    {item {ctext {metavar name}} {em-dash} 
+                        elements with specified name and no namespace}
+                    {item {ctext {metavar namespace}:{metavar name}} {em-dash}
+                        elements with specified namespace and name}
+||--                    {item {ctext *:{metavar name}} {em-dash}
+||--                        elements with any namespace and specifed name}
+||--                    {item {ctext {metavar namespace}:*} {em-dash}
+||--                        elements with spcified namespace and any name}
+                }}
+            {item {bold predicates} of the form
+                [{metavar path-expression}]
+                can filter the results af each step.
+                The path expression is evaluated relative to each selected node.
+            }
+            {item {bold operators}, using XPath semantics
+                {itemize
+                    {item {monospace and, or} {em-dash} 
+                        boolean operations}
+                    {item {monospace =, !=} {em-dash} 
+                        equality comparisons}
+                    {item {monospace <, <=, =>, >} {em-dash} 
+                        order comparisons}
+                    {item {monospace +, -, *, div, mod} {em-dash} 
+                        arithmetic operations}
+                    {item {monospace \|} {em-dash} 
+                        set operations}
+                }}
+            {item {bold functions} {em-dash}
+                functions defined by XPath 1.0
+                
+                {italic Not implemented in this release:}
+                {itemize
+                    {item {monospace id}}
+                    {item {monospace lang}}
+                    {item {monospace substring} third argument is required}
+                }}
+            {item {bold literals} {em-dash}
+                {monospace String}, {monospace double}.}
+        }}
+}
+{define-class public abstract XDMPath
+  
+  {doc-next ||=== XDMPath.source
+    {purpose 
+        The source XPath expression.}
+  }
+  {getter public abstract {source}:String
+  }
+  
+  {doc-next ||=== XDMPath.search
+    {purpose 
+        Apply this {ctext XDMPath} expression to an {docref XDMNode}.}
+    {return-vals
+        An {docref XDMNodeSet} containing the result of the search.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XDMNodeSet.as-String}}
+            {item {docref-abbr XDMNodeSet.as-node}}
+            {item {docref-abbr XDMNodeSet.as-double}}
+            {item {docref-abbr XDMNodeSet.as-bool}}
+        }}
+  }
+  {method public abstract {search subject:XDMNode}:XDMNodeSet
+  }
+  
+  {doc-next ||=== XDMPath.evaluate
+    {purpose 
+        Evaluate this {ctext XDMPath} expression for an {docref XDMNode}.}
+    {return-vals
+        An {docref XPathValue} containing the value of the expression.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XDMNodeSet.as-String}}
+            {item {docref-abbr XDMNodeSet.as-node}}
+            {item {docref-abbr XDMNodeSet.as-double}}
+            {item {docref-abbr XDMNodeSet.as-bool}}
+        }}
+  }
+  {method public abstract {evaluate subject:XDMNode}:XPathValue
+  } 
+  
+  {doc-next ||=== XDMPath.default
+    {purpose 
+        Create an {ctext XDMPath} from the specified XPath {ctext String}
+        {parameter query, the XPath 1.0 expression},
+        {parameter ..., keyword arguments can specify prefix declarations 
+            for namespaces to be used in the path expression,
+            as for {docref with-namespace-declarations}} 
+    }
+    {throws
+        Invalid syntax is indicated by an {docref XDMPathException}.
+    }
+    {usage
+        The {docref xpath} macro can be used to create an {ctext XDMPath} object.
+        When the expression is a compile-time constant,
+        this allows invalid syntax to be reported as a {docref SyntaxError},
+        with reference to the invalid source expression.
+    }
+  }
+  {factory public implicit {default query:String, ...}:XDMPath
+    {return
+        {StandardXDMPath query, {splice ...}}}
+  }
+  {doc-next ||=== XDMPath.from-node
+    {purpose
+        Returns an {ctext XDMPath} expression from the root 
+        to the specified node.}
+  }
+  {define-proc public {from-node subject:XDMNode}:String
+    let out:StringBuf = {StringBuf}
+    let ps:{Array-of XDMNode} = {{Array-of XDMNode} subject}
+    {for p in {subject.get-ancestors} do
+        {ps.append p}}
+    let node-position:{proc-type {XDMNode}:int} =
+        {proc {e:XDMNode}:int
+            let n:int = 0
+            {if-non-null p = e.parent then
+                {for x in p.children do
+                    {if x == e then {break}
+                     elseif x.xmlname == e.xmlname then {inc n}}}}
+            {return n}}
+    let path-step:{proc-type {String, int}:String} =
+        {proc {s:String, n:int}:String
+            {return
+                {if true ||n > 0 
+                 then {format "%s[%d]", s, n + 1}
+                 else s}}}
+    {for i = 2 to ps.size do
+        let p:XDMNode = ps[ps.size - i]
+        {if not out.empty? then
+            {out.append '/'}}
+        let s:String =
+            {type-switch p
+             case e:XDMElement do
+                {path-step e.qualified-name, {node-position e}}
+             case a:XDMAttribute do
+                "@" & a.qualified-name
+             case t:XDMText do
+                {path-step "text()", {node-position t}}
+             case t:XDMProcessingInstruction do
+                || TODO: account for name
+                {path-step "processing-instruction()", {node-position t}}
+             else "?"}
+        {out.concat s}}
+    {return 
+        {if out.empty? 
+         then "."
+         else {out.to-String}}}
+  }
+}
+
+{doc-next ||=== xpath
+    {purpose
+        Macro form for creating an {docref XDMPath}.
+    }
+    {syntax
+        The "xpath" macro uses the following syntax:
+        {ctext
+            {xpath
+                [{metavar prefix} = {metavar "namespace"}
+                 [, {metavar prefix} = {metavar "namespace"}]*]
+                {metavar xpath-expression}
+            }
+        }}
+}
+{define-syntax public {xpath                           
+                          ?keyword-args:{comma-sequence ?:identifier = ?:{literal String}}
+                          ?:{optional ,}
+                          ?path:expression}
+    {syntax-switch path
+     case {pattern               
+              ?src:{literal String}} do
+        
+        || literal expression: can parse now
+        || - so it gets compile-time errors
+        let query:String = src.value asa String
+        || keyword args are prefix declarations
+        let args:Arguments = {Arguments}
+        {for b in {keyword-args.parse-keywords BOS} do
+            let k:String = (b.name asa Identifier).name
+            let x:String = (b.value asa Literal).value asa String
+            {args.append keyword = k, x}}
+        let namespace-context:XDMNamespaceContext =
+            {extend-namespace-context
+                context = {XDMNamespaceContext},
+                {splice args}}
+        || parse the path expression
+        {try
+            {XDMSearchParser 
+                source-location = src,
+                namespace-context= namespace-context,
+                query}
+         catch e:Exception do
+            {src.parse-error e.message}}
+        || it will reparse at runtime
+        || - but just once, because its cached
+     else
+        || computed expression: parse at runtime
+        || - verify argument type
+        let t:Type = {syntax-env.type-of path}
+        {if t == any or {t.subtype-of? StringInterface} then
+            || OK
+         else
+            {path.parse-error {message Not a String}}}
+    }
+    || generated code
+    let maybe-comma:CurlSource =
+        {if keyword-args.size == 0  
+         then {EmptySource}
+         else {Operator OperatorKind.Comma}}
+    {return 
+        {expand-template 
+            {XDMPath ?keyword-args ?maybe-comma ?path}
+        }}
+}
+
+||--{doc-next || === xdm-search
+||--    {purpose
+||--        Applies a path expression to a XML Document Model node
+||--        {parameter ..., keyword arguments can specify prefix declarations 
+||--            for namespaces to be used in the path expression,
+||--            as for {docref with-namespace-declarations}}
+||--        {parameter subject, the {docref XDMNode} to be searched}
+||--        {parameter path, the {docref XDMPath} expression}   }
+||--    
+||--    {notes
+||--        {italic
+||--        This is a preliminary version of a new feature. 
+||--        It is not yet in final form, and are subject to revision.}}
+||--}
+{define-syntax public 
+    deprecated {xdm-search
+                   ?keyword-args:{comma-sequence ?:identifier = ?:{literal String}}
+                   ?:{optional ,}
+                   ?subject:expression,
+                   ?path:expression}    
+    || generated code
+    let maybe-comma:CurlSource =
+        {if keyword-args.size == 0  
+         then {EmptySource}
+         else {Operator OperatorKind.Comma}}
+    {return 
+        {expand-template 
+            {{xpath ?keyword-args ?maybe-comma ?path}.search ?subject}
+        }}
+}
+||--{doc-next || === xdm-search-proc
+||--    {purpose
+||--        Defines a precedure to apply a path expresssion to
+||--        and XML Document Model node.
+||--        {parameter query, the path expression}
+||--        {parameter ..., the rest arguments can specify prefix declarations 
+||--            for namespaces to be used in the path expression,
+||--            as for {docref with-namespace-declarations}}}
+||--    {details see {docref xdm-search}}
+||--    {return-vals the procedure}
+||--}
+{define-proc public 
+    deprecated {xdm-search-proc 
+                   query:String,
+                   ... || namespace context
+               }:{proc-type {XDMNode}:XDMNodeSet}     
+    let p:XDMPath = {XDMPath query, ...}
+    {return 
+        {proc {subject:XDMNode}:XDMNodeSet
+            {return {p.search subject}}}
+    }
+}

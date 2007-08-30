@@ -1,0 +1,280 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| Purpose:
+|| Implementation of CURL.IDE.EDITOR-INTERFACE.EditorInterface for the WSDK.
+|| 
+{define-class public final WSDLLabInterface {inherits EditorInterface}
+
+  field surge-lab:#SurgeLabInterface
+
+  field _wsdl-generation:#WSDLGeneration = null
+
+  {method public {initialize
+                     surge-lab-interface:SurgeLabInterface
+                 }:void
+    set self.surge-lab = surge-lab-interface
+  }
+
+  {method public {show-editor}:void
+    || If there is currently no editor visible, then create one.  
+    || Otherwise, just raise the one that already exists.
+    {self.wsdl-generation.show}
+  }
+  {getter {wsdl-generation}:WSDLGeneration
+    {if self._wsdl-generation == null then
+        set self._wsdl-generation = {WSDLGeneration.from-surge-lab self}}
+    {return {non-null self._wsdl-generation}}
+  }
+
+  {method public {open-url url:Url}:void
+||--    {self.show-editor}
+||--    {try
+||--        {self.wsdl-generation.do-load url}
+||--     catch e:UserCanceledException do
+||--        || We get here if the user read and dismissed a dialog telling
+||--        || him/her that the operation could not proceed successfully.
+||--        || If that is the case, we just exit without having opened the
+||--        || file.  The dialog that the user already saw serves as the
+||--        || user's notification of this occurrence.
+||--    }
+  }
+
+  || This method is called by the IDE when it wants to know what files are 
+  || open in the editor.  The editor always says it doesn't have any files open.
+  {method public {get-open-files}:{Iterator-of EditorFileInfo}
+    let files:{Array-of EditorFileInfo} = {{Array-of EditorFileInfo}}
+    {return {files.to-Iterator}}
+  }
+
+  {method public {get-file-contents
+                     url:Url
+                 }:(valid?:bool, editor-contents:EditorFileContents)
+    {return false, {uninitialized-value-for-type EditorFileContents}}
+  }
+
+  {method public {save-open-files}:(saved-ok?:bool)
+    {return {self.wsdl-generation.save-open-files}}
+  }
+
+  {method public {shutdown}:bool
+    {if-non-null wg = self._wsdl-generation then
+        {if true then ||{wg.shutdown} then
+            set self._wsdl-generation = null
+            {return true}
+         else
+            {return false}
+        }
+    }
+    {return true}
+  }
+
+  {method public {project-closing
+                     project:ProjectInterface
+                 }:(continue-closing?:bool)
+    {return true}
+  }
+
+  || Forwarding APIs to Surge Lab
+
+  {method {project-for-url
+              url:Url,
+              strict?:bool = false
+          }:#ProjectInterface
+    {return
+        {if-non-null surge-lab = self.surge-lab then
+            {surge-lab.project-for-url url, strict? = strict?}
+         else
+            null
+        }
+    }
+  }
+  
+  {method {current-project}:#ProjectInterface
+    {return
+        {if-non-null surge-lab = self.surge-lab then
+            {surge-lab.current-project}
+         else
+            null
+        }
+    }
+  }
+
+  {method {project-for-url-or-current
+              url:#Url
+          }:#ProjectInterface
+    {if-non-null url then
+        {if-non-null project = {self.project-for-url url} then
+            {return project}
+        }
+    }
+    {return {self.current-project}}
+  }
+
+  {method {get-file-api-version
+              url:#Url
+          }:VersionNumber
+    {return
+        {if-non-null surge-lab = self.surge-lab then
+            {surge-lab.get-file-api-version url}
+         else
+            || If there's no Surge Lab connected to us, then just return
+            || the current Curl version.
+            {curl-version-number.n-clone n = 2}
+        }
+    }
+  }
+
+  {method {can-check-out?
+              url:Url
+          }:bool
+    {if-non-null surge-lab = self.surge-lab then
+        {if-non-null
+            project = {surge-lab.project-for-url url, strict? = true}
+         then
+            {return {project.can-check-out? url}}
+        }
+    }
+    {return false}
+  }
+
+  {method {check-out
+              url:Url
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {if-non-null
+            project = {surge-lab.project-for-url url, strict? = true}
+         then
+            {project.check-out url}
+        }
+    }
+  }
+
+  || Surge Lab operations
+
+  {method {open-in-surge-lab-editor
+              url:Url,
+              line:int = -1
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.open-in-surge-lab-editor url, line = line}
+     else
+        || do what this does ...
+||--        {link href = {url "curl://edit/" & url.name}, {value url.filename}}
+    }
+  }
+
+  {method {run-url
+              url:Url
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.run-url url}
+    }
+  }
+
+  {method {display-documentation
+              query:String = ""
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.display-documentation query = query}
+    }
+  }
+
+  {method {display-documentation-url
+              url:Url
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.display-documentation-url url}
+    }
+  }
+
+  {method {display-documentation-api
+              query:String,
+              doc-tree:String = "",
+              version:VersionNumber = {curl-version-number.n-clone n = 2}
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.display-documentation-api
+            query, doc-tree = doc-tree, version = version
+        }
+    }
+  }
+
+  {method {show-main-window}:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.show-main-window}
+    }
+  }
+
+  {method {get-preference
+              pref-key:String
+          }:(value:String, found?:bool)
+    {if-non-null surge-lab = self.surge-lab then
+        {return {surge-lab.get-preference pref-key}}
+     else
+        {return {uninitialized-value-for-type String}, false}
+    }
+  }
+
+  {method {set-preference
+              pref-key:String,
+              pref-value:String
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.set-preference pref-key, pref-value}
+    }
+  }
+
+  || Editor Synchronization operations
+
+  {method {get-newest-file-contents
+              url:Url
+          }:(valid?:bool, file-contents:EditorFileContents)
+    {if-non-null surge-lab = self.surge-lab then
+        {return {surge-lab.get-newest-file-contents url}}
+     else
+        {return false, {uninitialized-value-for-type EditorFileContents}}
+    }
+  }
+
+  {method {notify-file-closed
+              url:Url,
+              file-contents:EditorFileContents
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.notify-file-closed url, file-contents}
+    }
+  }
+  
+  {method {prompt-before-closing?
+              url:Url
+          }:bool
+    {if-non-null surge-lab = self.surge-lab then
+        {return {surge-lab.prompt-before-closing? url}}
+     else
+        {return true}
+    }
+  }
+
+  {method {notify-file-name-changed
+              old-url:Url,
+              new-url:Url
+          }:void
+    {if-non-null surge-lab = self.surge-lab then
+        {surge-lab.notify-file-name-changed old-url, new-url}
+    }
+  }
+}

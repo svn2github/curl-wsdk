@@ -1,0 +1,562 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 applet}
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{chapter
+    index = {HeadingIndex primary-key="WSDK XML Document Model"},
+    WSDK XML Document Model
+}
+{summary
+    XML (Extensible Markup Language) is widely used 
+    as a representation for structured data.
+    
+    The WSDK XML Document Model allows XML structures
+    to be internalized as Curl objects for further processing:
+    {itemize
+        {item object methods}
+        {item path expressions}
+        {item data binding}
+        {item elaboration}
+    }
+}
+
+{heading level = 2,
+    XML Document Model
+}
+{paragraph
+    {heading level = 3, Creation}
+
+    Use {docref build-xml} to create XML document models from XML resources.
+    These may be specified as {docref Url}, {docref String}, 
+    {docref TextInputStream} or {docref ByteInputStream}.
+    The result is an {docref XDMDocument} containing an XML structure tree
+    composed of {docref XDMNode}s ({docref XDMElement}, {docref XDMText} 
+    or {docref XDMProcessingInstruction}).
+
+    The {docref build-xml} function uses the standard Curl {docref SAXParser}
+    and has corresponding keyword arguments.
+
+    In addition to the XML standard, it supports vocabularies of
+    XML Base (for specifying base-url) and of XML Include
+    (for including subordinate content). 
+
+    By default, all whitespace is included in the model.
+    Significant whitespace (as declared by xml:space,
+    or by the DTD, if parser validation is enabled)
+    is always preserved.  Use the preserve-whitespace?
+    argument to control the rest.
+    
+    {x-example-ref 
+        title = "XML Input",
+        {url "examples/ex-build-xml.curl"}
+    }
+    
+    || TODO: LATER factory methods
+
+
+    XDM structures can also be created programmatically,
+    using positional and keyword arguments:
+    
+    {x-example-ref 
+        title = "XML Creation -- RSS2",
+        {url "examples/ex-create-rss2.curl"}
+    }
+
+    || ====================
+    {heading level = 3, Model}
+
+    The resultant object represents the XML stucture 
+    as a hierarchy of {docref XDMNode}s, which can be accessed
+    and manipulated using their public API
+
+    || TODO: more popular methods
+
+    {itemize 
+        {item {docref XDMNode.children}}
+        {item {docref XDMNode.get-text}}
+        {item {docref XDMElement.get-attribute-value}}
+        {item {docref XDMAttributes.get}}
+        {item {docref XDMText.content}}
+        {item {docref XDMElement.get-elements}}
+        {item {docref XDMElement.walk-children}}
+        {item {docref XDMElement.find-matching-prefix}}
+        {item {docref XDMElement.find-matching-namespace}}
+        
+        {item {docref XDMElement.append}}
+        {item {docref XDMElement.remove-child}}
+        {item {docref XDMNode.detach}}
+        {item {docref XDMElement.add-attribute}}
+        {item {docref XDMElement.remove-attribute}}
+        {item {docref XDMAttributes.set}}        
+        {item {docref XDMElement.set-namespace-declaration}}
+    }
+
+    || ====================
+    {heading level = 3, Namespaces}
+
+    XML vocabularies avoid name conflicts by qualifying
+    names with a namespace URI. [XMLNames]
+    Qualified names are expressed in XML source
+    in abbreviated form based on prefix declarations.
+    Curl uses {docref XDMName} to represent a qualified name
+    defined by a {docref-abbr XDMName.namespace} and 
+    {docref-abbr XDMName.local-name}.
+    A single unique {docref XDMName} is used for each name,
+    so that they can be safely used as keys,
+    in comparisons, and so forth.
+
+    When XML files are parsed, prefix declarations are
+    automatically processed, and appropriate XDMNames created.
+    The namespace declarations can be accessed programmatically
+    if necessary (e.g. when an attribute value needs to be resolved
+    as a qualified name).
+
+    {docref XDMName} has an implicit factory allowing automatic conversion
+    from strings. When the input string has a prefix,
+    it is resolved using a "global" applet namespace context.
+    This can be temporarily extended using {docref with-namespace-declarations}
+    or permanently extended using {docref extend-namespace-context}.
+    
+    {x-example-ref 
+        title = "XML Creation -- RSS1",
+        {url "examples/ex-create-rss1.curl"}
+    }
+
+    || ====================
+    {heading level = 3, Output and Display}
+
+    You can write XML source using the {docref-abbr XDMNode.to-XML} method,
+    and control indentation of the resultant characters.
+    
+    The standard implementations of {docref XDMNode} are {docref serializable}.
+
+    XDM structures can be displayed graphically using a {docref XDMTreeControl}.
+    The {docref COM.CURL.WSDK.XML-DISPLAY} package also provides
+    {docref XDMTreeModel} and {docref XDMTreeNode} adapters so that
+    {docref XDMNode} hierarchies can work with {docref TreeControl.data-model}.
+    
+    This {link href = {url "examples/ex-tree-0.curl"}, example} 
+    shows a simple XML content display.
+    See the {link href = {url "curl://edit/" & {url "examples/ex-tree-0.curl"}.name},
+    source code} for the implementation. 
+    
+    Output and display of {docref XDMElement}s uses declared prefixes
+    to represent XML names.  If a prefix declaration is missing
+    (because of programmatic manipulation, for example),
+    one will be synthesized, so well formed XML will result.
+    You can use {docref XDMElement.generate-namespace-declarations} 
+    for this purpose.
+    
+    {x-example-ref 
+        title = "XML Creation -- RSS1 namespace declarations",
+        {url "examples/ex-create-rss1-without.curl"}
+    }
+    
+    || ====================
+    {heading level = 3, Processing}
+
+    Once an XML resource is internalized as a
+    Curl XML Document Model, it can be processed in
+    a variety of ways:
+
+    {itemize
+        {item object methods}
+        {item path expressions}
+        {item data binding}
+        {item elaboration}
+    }
+
+    || ====================
+    {heading level = 3, Processing XML with methods}
+
+    Use XDM API to navigate the structure, and obtain data
+    
+    {code-box
+        {curl-code
+            let cs:XDMElements = {model.get-elements xmlname = "rss:channel"}
+            let ts:XDMElements = {cs[0].get-elements xmlname = "rss:title"}
+            let title:String = {ts[0].get-text}
+            {DisplayFrame value = title}
+        }}
+    
+    {x-example-ref
+        title = "XML Processing with methods",
+        {url "examples/ex-process-rss.curl"}
+    }
+
+    || ====================
+    {heading level = 3, Path Expressions}
+
+    It is often more concise to use reference paths
+    to locate data items in XML structures.
+
+    Use {docref XDMNode.search} to apply a path expression to an {docref XDMNode}.
+        
+    {code-box
+        {curl-code
+            let title:String = {model.select-any "rss:Channel/rss:title"} asa String
+            {DisplayFrame value = title}
+        }}
+
+    This approach allows for a clearer distinction between
+    the document structure, and the processing.
+    
+    Path expressions conform to the {ctext XPath 1.0} standard,
+    and are represented as {docref XDMPath} objects.
+
+    The result of a path expression may be a nodeset,
+    or an atomic value (text, number or boolean).
+    Clear rules are defined for conversion between
+    these data types.  These conversions are provided
+    by accessors on {docref XDMNodeSet}.
+    
+    {x-example-ref
+        title = "XML Processing with path expressions",
+        {url "examples/ex-query-rss.curl"}
+    }
+    
+    This {link href = {url "examples/ex-path.curl"}, XPath example} 
+    lets you perform XPath searches on an XML document,
+    and view the results.
+    
+    See the {link href = {url "curl://edit/" & {url "examples/ex-path.curl"}.name},
+    source code} for the implementation. 
+
+    || ====================
+    {heading level = 3, Data Binding}
+
+    The standard Curl data binding architecture allows
+    properties of Curl visual presentation objects
+    to be connected (bound) to values from a data source
+    addressed by a selector.
+
+    This linkage is bidirectional: the properties are
+    refreshed whenever the source data changes;
+    modified properties (typically the value of a GUI control)
+    can be used to update the data source.
+
+    For XML resources,  architecture is provided by
+    {docref XDMDataBindingContext}, using path expressions as selectors.
+
+    {code-box
+        {curl-code
+            {TextDisplay {bind value to "rss:Channel/rss:title"}}
+        }}
+
+    This reinforces the model / view distinction
+    obtained through use of path expressions
+    by the addition of coordination functionality,
+    yielding a declarative MVC pattern.
+    
+    Use {docref XDMForm} as a graphical container for displays
+    containing visual elements bound to XML content.
+
+    Binding selector path expressions are evaluated relative
+    to a context node, by default the root of the 
+    specified XDM model.  {docref XDMDataBindingContext} properties
+    are used to specify the context node, first using a path,
+    then an index into the path.
+
+    {itemize 
+        {item {docref-abbr XDMDataBindingContext.model}}
+        {item {docref-abbr XDMDataBindingContext.context-path}}
+        {item {docref-abbr XDMDataBindingContext.context-nodeset}}
+        {item {docref-abbr XDMDataBindingContext.current-index}}
+        {item {docref-abbr XDMDataBindingContext.context-node}}
+        {item {docref-abbr XDMDataBindingContext.format-spec}}
+    }
+    
+    {docref XDMDataBindingContext} provides methods and commands for
+    navigation through the context nodeset.    
+    {docref XDMDataBindingNavigationPanel} is a default 
+    display for those commands.
+
+    {privilege-note}
+    
+    {x-example-ref 
+        title = {message XML Data Binding RSS},
+        {url "examples/ex-data-binding-rss.curl"}
+    }    
+    
+    This {link href = {url "examples/ex-tree-1.curl"}, settings example} 
+    shows how an application could store user preferences 
+    ("settings") in an XML format.
+    It uses XML data binding for a simple style dialog
+    governing display settings for a document display.
+    
+    See the {link href = {url "curl://edit/" & {url "examples/ex-tree-1.curl"}.name},
+    applet source code} 
+    and the {link href = {url "curl://edit/" & {url "examples/display-support.scurl"}.name},
+    support code}
+    for the implementation. 
+    
+    Data binding can also be used for XML requests and responses from web services.
+    This example illustrates a simple form to communicate with  
+    a delayed stock quote service available from 
+    {link href = {url "http://www.xmethods.com"}, www.xmethods.com}.
+    
+    {x-example-ref 
+        title = {message XML Request},
+        {url "examples/ex-stock-quote.curl"}
+    }    
+
+    The request could also be made asynchronously.
+    
+    {x-example-ref 
+        title = {message XML Asynchronous Request},
+        {url "examples/ex-stock-quote-async.curl"}
+    }    
+      
+    || ====================
+    {heading level = 3, Change Management}
+    
+    Changes to {docref XDMNode}s are managed by the containing {docref XDMDocument}.
+    A {docref-abbr XDMDocument.modifiable?} {docref XDMDocument} reports
+    changes to its contents by firing {docref XDMEvent}s at itself.
+    Use {docref StandardXDMDocument.batch-events?} to consolidate
+    multiple events.
+    
+    Thus {docref XDMTreeModel} and {docref XDMDataBindingContext}
+    will refresh based on changes in their subject document.    
+    
+    This {link href = {url "examples/ex-change-management.curl"}, 
+    change management example} demonstrates how documents
+    fire events in response to changes.  Several programmatic changes
+    are initiated by the applet.  You can select and edit nodes
+    to cause additional changes.
+
+    {x-example-ref 
+        title = {message XMLDocument Change Management},
+        {url "examples/ex-change-management.curl"}
+    }
+
+    || ====================
+    {heading level = 3, Elaboration}
+
+    XML elaboration allows an entire XML structure 
+    to be systematically transformed into native Curl objects.  
+    A mapping is defined associating element names with 
+    elaboration expressions which produce Curl content.
+
+    {preliminary
+        The {docref COM.CURL.WSDK.XML-ELABORATION} package contains 
+        preliminary versions of new features. 
+        These features are not yet in final form, 
+        and are subject to revision.
+    }
+
+    {code-box
+        {curl-code
+            let e:XMLElaboration =
+                {xml-elaboration
+                    {"channel" VBox}
+                    {"item" TextFlowBox}
+                    {"title" Frame}
+                    {"rss" {version:String = "", channel:any}:Graphic
+                        || just return the channel, ignoring the version
+                        channel}
+                }
+            {e.elaborate model}
+        }}
+
+    There are two ways (elaboration modes) by which
+    XDM content is made available to the elaboration expression.
+    The mode is determined by the expression syntax.
+
+    {italic mapping XML content to curl arguments}
+
+    When the expresion syntax contains an argument signature,
+    contents are mapped to arguments as follows
+    {itemize
+        {item attributes map to keyword arguments}
+        {item children map to positional arguments}
+        {itemize
+            {item text maps to String}
+            {item element according to its elaboration}
+        }
+    }
+
+    When the expression syntax is a class name,
+    contents are mapped as above, and supplied
+    to the default constructor
+    
+    By default, the xmlname is not supplied to the expression.
+    When the first positional argument is of type {docref XDMName},
+    the xmlname is available. This is useful for the default
+    mapping, specified using the wildcard {monospace "*"} as a name.
+
+    {italic direct access to XDM element}
+
+    When the argument signature has a single {docref XDMElement} argument,
+    the elaboration expression can access it directly.
+    In this case, of course, it is responsible for
+    processing the children.
+    
+    {x-example-ref 
+        title = "XML Elaboration -- RSS presentation",
+        {url "examples/ex-elaborate-rss.curl"}
+    }
+    
+    The {docref xml-elaboration} macro is a simple way to define
+    this mapping from {docref XDMName} to elaboration expression.
+    {docref XmlElaboration} object can also be created programmatically
+
+    || tag-mode
+    || attribute-mode
+    || preserve-whitespace
+
+    Some special prototype objects can be used to direct
+    processing of subordinate elements:
+    {itemize
+        {item {docref XmlVoidPrototype}}
+        {item {docref XmlKeywordPrototype}}
+        {item {docref GenericKeywordPrototype}}
+        {item {docref GenericArgumentsPrototype}}
+    }
+    
+    {x-example-ref 
+        title = "XML Elaboration -- RSS data",
+        {url "examples/ex-elaborate-rss-data.curl"}
+    }
+
+    || ====================
+    {heading level = 3, Conformance}
+    
+    XML syntax is defined by  {link href = {url "http://www.w3.org/TR/REC-xml/"},
+    Extensible Markup Language (XML) 1.0} and
+    {link href = {url "http://www.w3.org/TR/REC-xml-names/"},
+    Namespaces in XML}.
+
+    The Curl XML Document Model represents all the information items
+    (as defined in {link href = {url "http://www.w3.org/TR/xml-infoset/"},
+    XML Information Set}) pertaining to the XPath Data Model.
+
+    Thus, it provides no visibility to "serialization details"
+    (like quoting, character escaping, comments) nor to
+    DTD specifics (like external entities).
+
+    In addition, it adheres to specifications for    
+    {link href = {url "http://www.w3.org/TR/xmlbase/"},
+    XML Base} and
+    {link href = {url "http://www.w3.org/TR/xinclude/"},
+    XML Inclusions (XInclude) Version 1.0}
+    (except for fragment references using XPointer).
+    
+    The path language it adheres to the specification for     
+    {link href = {url "http://www.w3.org/TR/xpath"},
+    XML Path Language (XPath) Version 1.0}.
+
+    || ====================
+    {heading level = 3, Compatibility}
+    
+    This section summarizes how WSDK XML Document Model functionality
+    compares to that which was provided by the Curl Starter Kit (CSK).
+    (using package {ctext COM.CURL.CSK.XML}).
+    
+    The WSDK provides a wider range of functionality, including
+    
+    {itemize
+        {item namespace support}
+        {item support for ProcessingInstruction and Document}
+        {item change management}
+        {item display using tree control}
+        {item XPath support}
+        {item data binding support}
+    }
+    
+    Of course, existing applications can continue to use
+    the CSK version 4.0 XML functionality, but for new applications,
+    or applications which would benefit from the additional capabilities,
+    use of the WSDK is recommended.
+    
+    Some correspondences between the CSK XML API with the WSDK XML API:
+    
+    {itemize
+        {item document model
+            {paragraph CSK: 
+                {ctext XmlNode}, 
+                {ctext XmlContentNode}, {ctext XmlCharacterNode}
+            }
+            {paragraph WSDK:
+                {docref XDMNode},
+                {docref XDMElement}, {docref XDMText}, {docref XDMAttribute},
+                {docref XDMDocument}, {docref XDMProcessingInstruction}
+            }
+        }
+        {item element name
+            {paragraph CSK:
+                {ctext XmlNode.tag} returned the {monospace local-name}
+            }
+            {paragraph WSDK:
+                {docref XDMNode.xmlname} returns a {docref XDMName}
+                which provides access to {monospace local-name} and {monospace namespace};
+                or use 
+                {docref XDMNode.local-name},
+                {docref XDMNode.namespace},
+                {docref XDMNode.qualified-name}
+            }
+        }
+        {item construction
+            {paragraph CSK:
+                {ctext elaborate-xml} with {ctext default-action} unspecified
+            }
+            {paragraph WSDK:
+                {docref build-xml}
+            }
+        }
+        {item display
+            {paragraph CSK:
+                {ctext display-xml-node} or {ctext display-document}
+            }
+            {paragraph WSDK:
+                {docref XDMTreeControl}
+            }
+        }
+        {item path language
+            {paragraph CSK:
+                {ctext XmlElement.get} provided limited support for
+                "reference path" searches, using a nonstandard syntax
+            }
+            {paragraph WSDK:
+                {docref XDMNode.search} or {docref XDMPath.search}
+                support path expression conforming to the XPath 1.0 specufucation.
+            }
+        }
+        {item elaboration
+            {paragraph CSK:
+                {ctext elaborate-xml} with {ctext default-action}
+                (usually using {ctext xml-dispath-function})
+            }
+            {paragraph WSDK:
+                to build document models using specialized
+                subclasses of {docref XDMNode}, use {docref GenericXDMBuilder};
+                to apply a systematic conversion to a document model,
+                use {docref xml-elaboration}
+            }
+        }
+    }
+    
+}
+
+|| ====================
+
+{curl-copyright}
+

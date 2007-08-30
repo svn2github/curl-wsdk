@@ -1,0 +1,125 @@
+{curl 5.0 package}
+{package COM.CURL.WSDL.DelayedStockQuote,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/DEV5/WSDK/code/docs/en/dguide/examples/DelayedStockQuote.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/DEV5/WSDK/code/docs/en/dguide/examples/DelayedStockQuote.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+  {doc-next 
+    {details 
+      net.xmethods.services.stockquote.StockQuote web service
+    }
+  }
+{define-class public Net-xmethods-services-stockquote-StockQuoteService {inherits WSDLHTTPRPCPostClient}
+
+  {method public {get-quote symbol:#String}:(result:float)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                symbol
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "symbol"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "Result"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "float"},
+                    curl-type = float
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "urn:xmethods-delayed-quotes#getQuote",
+            request-operation = {XMLName "urn:xmethods-delayed-quotes", "getQuote"},
+            default-namespace = "urn:xmethods-delayed-quotes",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+        }
+    {return
+        responses[0] asa float
+    }
+  }
+
+
+  {method public {async-get-quote symbol:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                symbol
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "symbol"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "Result"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "float"},
+                    curl-type = float
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "urn:xmethods-delayed-quotes#getQuote",
+            request-operation = {XMLName "urn:xmethods-delayed-quotes", "getQuote"},
+            default-namespace = "urn:xmethods-delayed-quotes",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    {return builtin-soap-type-mapper,
+        builtin-soap-element-name-to-xml-type-mapper,
+        builtin-soap-xml-type-to-curl-type-mapper,
+        builtin-soap-curl-type-to-xml-type-mapper,
+        builtin-soap-xml-type-to-element-name-mapper
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://38.102.129.128:9090/soap"}
+    }
+    {construct-super service-location,
+        generated-using-version = "2"
+    }
+  }
+}
+

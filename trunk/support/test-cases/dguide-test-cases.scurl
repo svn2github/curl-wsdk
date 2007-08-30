@@ -1,0 +1,86 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{import * from CURL.LANGUAGE.SOURCE}
+
+{value
+    || generate files from dguide TOC
+    let locs:UrlArray = {UrlArray}
+    let contents-loc:Url = 
+        {url "../../code/docs/en/dguide/_contents.scurl"}
+    || get first prefix expression, 
+    || ignoring comments and whitespace
+    let contents:#Prefix = null
+    {with-open-streams 
+        in = {read-open contents-loc}
+     do
+        let srcs:CurlSourceTextInputStream =
+            {CurlSourceTextInputStream in}
+        {for src in {srcs.to-Iterator} do
+            let s:CurlSource = src
+            {type-switch src
+             case src:Prefix do
+                set contents = src 
+                {break}}
+        }}    
+    let parse-locs:{proc-type {CurlSource}:void} =
+        {proc {src:CurlSource}:void    
+            {syntax-switch src, must-match? = true
+             case {pattern
+                      {node 
+                          || title: ignore
+                          ?:{literal String},
+                          || null or url
+                          ?maybe-loc:expression
+                          || member nodes
+                          ?:{optional ,}
+                          ?rest:verbatim}
+                  } do
+                || collect non-null url
+                {syntax-switch maybe-loc
+                 case {pattern {url ?loc:{literal String}}} do
+                    let val:String = loc.value asa String
+                    {locs.append {contents-loc.merge val}}
+                    || unwrap examples
+                    {if {val.prefix? "generic-example.curl?"} then
+                        {locs.append {contents-loc.merge {val.tail 21}}}
+                    }}
+                || recurse on member nodes
+                {syntax-switch rest, must-match? = true
+                 case {pattern ?nodes:{comma-sequence {node ?:tokens}}} do
+                    {for node in nodes do
+                        {parse-locs node}}}
+            }}
+    {if-non-null contents then
+        {parse-locs contents}}
+    || generate suite
+    let suite:TestSuite = 
+        {TestSuite {lmessage WSDK dguide pages},
+            || "guard" test first
+            {test-case "IDE precondition",
+                {if not {package-available? "CURL.IDE.DOCUMENTATION"} then
+                    {TestCondition.terminate message = "IDE unavailable"}}}
+        }
+    {for loc in locs do
+        let name:String= 
+        {if loc.query.empty? 
+         then loc.filename
+         else loc.query}
+        {suite.add 
+            {AppletTestCase loc, 
+                name = name}}
+    }
+    suite
+}

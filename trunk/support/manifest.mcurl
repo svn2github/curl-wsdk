@@ -22,8 +22,10 @@
     location = "../code/manifest.mcurl"}
 
 {delegate-to COM.CURL.CDU,
-||--    location = "../../CDU/code/manifest.mcurl"
-    location = "../../../CDU/trunk/code/manifest.mcurl"
+||--    || use with adjacent CDU repository
+||--    location = "../../../CDU/trunk/code/manifest.mcurl"
+    || use with svn:externals
+    location = "../lib/CDU/manifest.mcurl"
 }
 
 || utility packages

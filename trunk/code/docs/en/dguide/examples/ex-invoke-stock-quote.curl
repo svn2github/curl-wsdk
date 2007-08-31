@@ -17,10 +17,10 @@
 {applet manifest = "../manifest.mcurl"}
 
 || import the service package
-{import * from COM.CURL.WSDL.DelayedStockQuote}
+{import * from COM.CURL.WSDL.PowerQuote}
 || instantiate the service class
-{let service:Net-xmethods-services-stockquote-StockQuoteService = 
-    {Net-xmethods-services-stockquote-StockQuoteService}
+{let service:DelayedStockQuote = 
+    {DelayedStockQuote}
 }
 || use the service
 {heading level = 3,Delayed Stock Quote Web Service}
@@ -38,15 +38,17 @@
             {on ValueFinished at c:ComboBox do
                 {with-busy-cursor
                     let symbol:String = c.value
-                    || call the service
-                    let quote:float = {service.get-quote symbol}
-                    {if quote < 0 then
+                    || call the service, using test license key
+                    let license-key:String = "0"
+                    let quote-data:QuoteData = {service.get-quote symbol, license-key}
+                    {if quote-data.quote-error then
                         || unknown symbol
                         {quote-display.unset-value} 
                         {popup-message
                             {message Unknown symbol: {bold {value symbol}}}}
                      else
                         || display the result
+                        let quote:double = quote-data.last-trade-amount
                         set quote-display.value = {String quote}
                         || remember user selections
                         {if {c.find symbol} < 0 then

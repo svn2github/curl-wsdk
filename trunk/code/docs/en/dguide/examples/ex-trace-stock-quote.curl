@@ -16,11 +16,12 @@
 {curl 5.0 applet}
 {applet manifest = "../manifest.mcurl"}
 || import the service package
-{import * from COM.CURL.WSDL.DelayedStockQuote}
+{import * from COM.CURL.WSDL.PowerQuote}
+|| instantiate the service class
 {value
     || instantiate the service
-    let service:Net-xmethods-services-stockquote-StockQuoteService = 
-        {Net-xmethods-services-stockquote-StockQuoteService}
+    let service:DelayedStockQuote = 
+        {DelayedStockQuote}
     || display elements
     let quote-display:TextDisplay = {TextDisplay width = 1in}
     let trace-buffer:StringBuf = {StringBuf}
@@ -36,9 +37,12 @@
                 || clear trace output and display
                 {trace-buffer.clear}
                 {trace-display.unset-value}
-                || call the method
-                let quote:float = {service.get-quote c.value}
+                let symbol:String = c.value
+                || call the method, using test license key
+                let license-key:String = "0"
+                let quote-data:QuoteData = {service.get-quote symbol, license-key}
                 || display the result
+                let quote:double = quote-data.last-trade-amount
                 set quote-display.value = {String quote}
                 || display the trace
                 set trace-display.value = {trace-buffer.to-String}

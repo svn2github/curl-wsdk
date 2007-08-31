@@ -111,6 +111,10 @@
     {out.write-one self.namespace}
     {out.write-one self.local-name}
   }
+  {api-version-switch
+   case"6.0" do
+    {define-serialization allow-factory? = true}
+  }
   {factory public {object-deserialize in:SerializeInputStream}:XDMName
     {in.verify-class-version 0}
     let namespace:String = {deserialize in, String}

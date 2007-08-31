@@ -40,11 +40,10 @@
     || incorporate test framework 
     || --------------------
     {DeploySpec
-        "../ADK/tests/CurlUnit/project.cprj",
+        "lib/CDU/project.cprj",
         "deploy", 
-        "wsdk-source/support/CurlUnit"
+        "wsdk-source/lib/CDU"
     },
-    
     || build library (pcurl)
     || -------------------- 
     {DeploySpec  
@@ -67,13 +66,21 @@
         from-source? = false
     },
     
-    || README material {copy)
+    || BOLIERPLATE material {copy)
     || -------------------- 
     {DeployAction
-        caption = {lmessage copy README.txt},
+        caption = {lmessage copy BOLIERPLATE},
         {proc {self:DeployAction,
                source-root:Url,
                target-root:Url}:void
+            {copy 
+                {source-root.concat "LICENSE"},
+                {target-root.concat "LICENSE"},
+                error-if-exists? = false}
+            {copy 
+                {source-root.concat "NOTICE"},
+                {target-root.concat "NOTICE"},
+                error-if-exists? = false} 
             {copy 
                 {source-root.concat "README.txt"},
                 {target-root.concat "README.txt"},

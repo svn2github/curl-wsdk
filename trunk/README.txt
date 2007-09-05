@@ -18,51 +18,17 @@
 WSDK Release 1.0.5 for Curl API Version 5.0. 
 ====================
 
-This directory contains the 1.0.4 release of the Curl
+This directory contains the 1.0.5 release of the Curl
 Web Services Software Development Kit (WSDK)
 
-The Curl Web Services SDK (WSDK) provides the technologies necessary 
+The Curl Web Services SDK (WSDK) provides the technologies necessary
 for building applications in Curl that make use of web services.
-Utilities are provided for auto-generation of code, data binding 
-sources to Records and RecordSets, and binding XML elements using XPath.
+Utilities are provided for auto-generation of code, working directly
+with XML Document Model, and binding XML elements using XPath.
 
 To install the WSDK, unzip the distribution onto your machine.
 
 The following sections describe the included material in more detail
-
-- Directories	
-- Known Issues  
-- Changes
-
-INSTALLATION
-============
-
-To install the WSDK, unzip the distribution onto your machine, then run
-the install.dcurl (linux-install.curl on Linux) applet found at the root of the
-distribution. The distribution is organized into directories, or modules,
-which each serve a specific purpose (described in detail in DIRECTORIES, below).
-Installation copies files from the distribution to a directory under the
-target location you choose using the installation applet. There will be a
-CurlInc directory under the target with a product directory named for the
-product name and version under that. For example, a WSDK release 1.0 installation
-will be installed into a directory named
-
-<target>/CurlInc/WSDK1.0.
-
-Only the WSDK modules you choose to install will be copied to the target
-directory. Note that the applet deletes and overwrites any existing directory
-of the same name, so any pre-existing data will be lost. To avoid the loss of
-data rename any previous installation directories. Note, also, that the install
-applet requires privilege.
-NOTE: The installation applet goes to some length to provide uninstall
-functionality and to manage dependencies. There are several files that will be
-installed which should not be touched. In general it is recommended that you not
-modify files in the install tree. If you do make changes, its possible your
-installation may become unsupportable and require a reinstall.
-It is also recommended that you use the uninstallers provided if you ever need
-to remove this product. The uninstaller is named uninstall.dcurl
-(linux-uninstall.curl on Linux) and is found in the product directory under
-CurlInc.
 
 
 DIRECTORIES

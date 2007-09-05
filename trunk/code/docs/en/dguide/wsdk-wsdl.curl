@@ -48,7 +48,7 @@
 {paragraph
     Suppose your application needs to display delayed stock quotes.
     There are several sample web services for that purpose.
-    We'll use a service available from 
+    We'll use a service mentioned at
     {link href = {url "http://www.xmethods.com"}, www.xmethods.com}
 }
 {heading level = 3,
@@ -89,12 +89,12 @@
             {import * from COM.CURL.WSDK.WSDL}
 
             {generate-wsdl-code
-                {url "DelayedStockQuote.wsdl"}
+                {url "PowerQuote.wsdl"}
             }
         }}
 
     A service package for
-    {link href = {url "examples/DelayedStockQuote.wsdl"}, DelayedStockQuote.wsdl}
+    {link href = {url "examples/PowerQuote.wsdl"}, PowerQuote.wsdl}
     has already been generated.
     
     You can use this example to regenerate that package, 
@@ -137,15 +137,18 @@
             {curl 5.0 applet}
             {applet manifest = "manifest.mcurl"}
             || import the service package
-            {import * from COM.CURL.WSDL.DelayedStockQuote}
+            {import * from COM.CURL.WSDL.PowerQuote}
             {value
                 || instantiate the service
-                let service:Net-xmethods-services-stockquote-StockQuoteService = 
-                    {Net-xmethods-services-stockquote-StockQuoteService}
+                let service:DelayedStockQuote = 
+                    {DelayedStockQuote}
+                || call the service method, using test license key
                 let symbol:String = "IBM"
-                || call the method
-                let quote:float = {service.get-quote symbol}
+                let license-key:String = "0"
+                let quote-data:QuoteData =
+                    {service.get-quote symbol, license-key}
                 || use the result
+                let quote::double = quote-data.last-trade-amount
                 {paragraph
                     The quote for {value symbol} is {value quote}
                 }}

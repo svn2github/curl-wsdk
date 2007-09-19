@@ -232,19 +232,6 @@
                  ...}:Visual
     let display:Graphic = 
         {example-ref title = title, href, ...}
-    || this workaround prevents a bad interaction 
-    || between TreeControl and TextEditPanel which
-    || would result in disabling cut/copy/paste context menu
-    {for-each-graphic 
-        {proc {g:Graphic}:void
-            {type-switch g
-             case g:TextEditPanel do
-                || consume right click, so TreeControl ignores it
-                {g.add-event-handler
-                    {on e:PointerPress do
-                        {if e.button == right-button then
-                            {e.consume}}}}}},
-        display}
     {return
         {text-width-display 
             {expandable

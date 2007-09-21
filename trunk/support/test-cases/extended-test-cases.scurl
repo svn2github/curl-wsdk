@@ -14,22 +14,11 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{TestSuite {lmessage WSDK Tests},
-    
-    || test context info
-||--    {CurlUnitTestCase.suite CurlUnitTestContext},
-    
-    || experimenting with "guard" tests
-    || TODO: how cancel "parent" suite ?
-||--    {CurlUnitTestCase.suite {ConnectionPreconditions "localhost"}},
-||--    {CurlUnitTestCase.suite {ConnectionPreconditions "www.google.com"}},
+{TestSuite {lmessage WSDK Extended Tests},
     
     {TestSuite.import {url "msxml-test-cases.scurl"}},
     
     {TestSuite.import {url "extended-wsdl-test-cases.scurl"}}||,
-    
-    || repeat context info at end
-||--    {CurlUnitTestCase.suite CurlUnitTestContext}    
 
 }
 

@@ -1,0 +1,204 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+
+{TestSuite {lmessage WSDL Echo Tests Additional},
+    || ==============================
+    {TestSuite {lmessage nullable primitive arrays},
+        || more arrays
+        || ----------
+        {TestSuite {lmessage more arrays},
+            {WSDLEchoTestCases "ArrayElementNullable", |"
+<xs:complexType name="ArrayOfInt">
+  <xs:sequence>
+    <xs:element name="x" type="xs:int" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" type="ArrayOfInt" minOccurs="1" maxOccurs="1"/>
+  </xs:sequence>
+</xs:complexType>>"|,
+                {stringify
+                    {Test.from-keywords q = 1, x = {ArrayOfInt 1, null}}}
+            },
+            {WSDLEchoTestCases "AnonymousArrayElementNullable", |"
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="x" type="xs:int" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>>"|,
+                {stringify
+                    {Test.from-keywords q = 1, x = {{Array-of {Nullable int}} 10, null}}}
+            },
+            {WSDLEchoTestCases "RepeatedElementNullable", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+   <xs:element name="x" type="xs:int" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, x = {{Array-of {Nullable int}} 10, null}}}
+            }
+        },
+        || arrays
+        || ----------
+        {TestSuite {lmessage arrays},
+            {WSDLEchoTestCases "RepeatedElementsNullFirst", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:int" nillable="true" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:int" nillable="true" />
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, 
+                        x = null, 
+                        y = {{Array-of {Nullable int}} 10, null}}}
+            },
+            {WSDLEchoTestCases "RepeatedElementsNullSecond", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:int" nillable="true" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:int" nillable="true" />
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, 
+                        x = {{Array-of {Nullable int}} 10, null}, 
+                        y = null}}
+            },
+            {WSDLEchoTestCases "RepeatedElementsNullBoth", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:int" nillable="true" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:int" nillable="true" />
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, 
+                        x = null, 
+                        y = null}}
+            }
+        }
+    },
+    || ==============================
+    {TestSuite {lmessage nullable arrays},
+        || more arrays
+        || ----------
+        {TestSuite {lmessage more arrays},
+            {WSDLEchoTestCases "ArrayElementNullable", |"
+<xs:complexType name="ArrayOfX">
+  <xs:sequence>
+    <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+  </xs:sequence>
+</xs:complexType>>"|,
+                {stringify
+                    {Test.from-keywords q = 1, x = {ArrayOfX "a", null}}}
+            },
+            {WSDLEchoTestCases "AnonymousArrayElementNullable", |"
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>>"|,
+                {stringify
+                    {Test.from-keywords q = 1, x = {{Array-of #String} "a", null}}}
+            },
+            {WSDLEchoTestCases "RepeatedElementNullable", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+   <!-- <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>   -->   
+   <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, x = {{Array-of #String} "a", null}}}
+            }
+        },
+        
+        || arrays
+        || ----------
+        {TestSuite {lmessage arrays},
+            {WSDLEchoTestCases "RepeatedElementsNullFirst", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, 
+                        x = null, 
+                        y = {StringArray "c", "d"}}}
+            },
+            {WSDLEchoTestCases "RepeatedElementsNullSecond", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, 
+                        x = {StringArray "a", "b"}, 
+                        y = null}}
+            },
+            {WSDLEchoTestCases "RepeatedElementsNullBoth", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+ </xs:sequence>
+</xs:complexType>"|,
+                {stringify
+                    {Test.from-keywords q = 1, 
+                        x = null, 
+                        y = null}}
+            }
+        }
+    }
+}

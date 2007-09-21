@@ -204,14 +204,7 @@
                 {self.location.merge "manifest.mcurl"}}}}
   }
   || enforce preconditions: network connected
-  || TODO: how induce failure / warning
   || TODO: should really be per service - some may be local
-||--  {method public {run result:TestResult}:void
-||--    {if {network-disconnected?} then
-||--        {error {message Canceled {value self.name}}}
-||--     else
-||--        {super.run result}}
-||--  }
   {define-proc {load sloc:Url}:RecordSet
     let rs:RecordSet =         
         {CsvRecordSet sloc,
@@ -681,34 +674,52 @@
   || spec
   field public-get constant xsd-type-source:StringInterface
   field public-get constant request-value-source:StringInterface
+  || variants  
+  field public-get constant accept-encoding:#String = null
+  field public service-location:Url
   
   {constructor public {default
                           name:String,
                           xsd-type-source:StringInterface,
-                          request-value-source:StringInterface}
+                          request-value-source:StringInterface,
+                          accept-encoding:#String = null,
+                          || TODO: make this more relocatable
+                          service-location:Url = 
+                              {url "http://localhost/SERVER/soap-services/echo-soap.php"}
+                      }
     set self.xsd-type-source = xsd-type-source
     set self.request-value-source = request-value-source
+    set self.accept-encoding = accept-encoding
+    set self.service-location = service-location
     {construct-super name}
   }
   {method public {generate-tests}:void
+    let accept-encoding:#String = self.accept-encoding
+    let service-location:Url = self.service-location
     {self.add
         {WSDLEchoTestCase self.name & " doc_lit",
             self.xsd-type-source,
             self.request-value-source,
             document? = true,
-            literal? = true}}
+            literal? = true,
+            accept-encoding = accept-encoding,
+            service-location = service-location}}
     {self.add
         {WSDLEchoTestCase self.name & " rpc_lit",
             self.xsd-type-source,
             self.request-value-source,
             document? = false,
-            literal? = true}}
+            literal? = true,
+            accept-encoding = accept-encoding,
+            service-location = service-location}}
     {self.add
         {WSDLEchoTestCase self.name & " rpc_enc",
             self.xsd-type-source,
             self.request-value-source,
             document? = false,
-            literal? = false}}
+            literal? = false,
+            accept-encoding = accept-encoding,
+            service-location = service-location}}
   }
 }
 {define-class public WSDLEchoTestCase {inherits TestCase}
@@ -719,6 +730,7 @@
   || variants
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
+  field public-get constant accept-encoding:#String = null
   field public service-location:Url
   
   {constructor public {default
@@ -729,7 +741,7 @@
                           || variants
                           literal?:bool = true,
                           document?:bool = true,
-                          || TODO: make this more relocatable
+                          accept-encoding:#String = null,
                           service-location:Url = 
                               {url "http://localhost/SERVER/soap-services/echo-soap.php"}
                       } 
@@ -737,7 +749,9 @@
     set self.request-value-source = request-value-source
     set self.filename = filename
     set self.literal? = literal?
+    set self.accept-encoding = accept-encoding
     set self.document? = document?
+    set self.accept-encoding = accept-encoding
     set self.service-location = service-location
     {construct-super name}
   } 
@@ -795,6 +809,8 @@
     let service:WSDLHTTPRPCPostClient = 
         {with-compiler-directives allow-any-calls? = true do
             {service-class} asa WSDLHTTPRPCPostClient}
+    {if-non-null accept-encoding = self.accept-encoding then
+        set service.accept-encoding = accept-encoding}
     set self.trace-output = {StringBuf}
     set service.soap-caller.trace-stream = self.trace-output
     || invoke service

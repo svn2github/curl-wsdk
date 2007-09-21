@@ -20,11 +20,14 @@
 
     {TestSuite.import
         {url "wsdl-echo-test-cases.scurl"}},
+    {TestSuite.import
+        {url "wsdl-echo-test-cases-additional.scurl"}},
     
     {TestSuite {lmessage WS-I interop sample},
+        || precondition
+        {test-host-accessible-guard "soap.systinet.net:6060"},
         {WSDLGenerationTestSuite
             {url "wsdl-services/WS-I/services.csv"}},
-        
         {WSDLServiceMethodTestCase
             service-location = 
                 {url "http://soap.systinet.net:6060/WSI/RetailerService"},
@@ -233,6 +236,13 @@
     
     {WSDLGenerationTestSuite
         {url "wsdl-services/x-services.csv"}},
-    {WSDLServicesTestSuite
-        {url "wsdl-services/x-methods.csv"}}
+
+    {TestSuite "WSDL methods",
+        || precondition
+        || NOTE: using google as proxy for arbitrary host
+        {test-host-accessible-guard "www.google.com"},
+        || TODO: guard by service inside suite; needs host in csv
+        {WSDLServicesTestSuite
+            {url "wsdl-services/x-methods.csv"}}
+    }
 }

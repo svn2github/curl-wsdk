@@ -62,6 +62,11 @@
                                 {if not {compare-internal xi, y[i]} then
                                     {return false}}}
                             {return true}
+                         elseif
+                            || some Nullable variant
+                            {t.name.prefix? |"{Nullable"|}
+                         then
+                            x.value-as-any == y.value-as-any
                          else
                             || arbitrary class -- compare each field
                             || NOTE: this is dangerous, only public fields accessible

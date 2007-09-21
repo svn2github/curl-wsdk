@@ -29,14 +29,22 @@
     
     || configuration info
     {test-case "IDE available",
-        let ide-available?:bool = 
+        let available?:bool = 
             {package-available? "CURL.IDE.DOCUMENTATION"}
         {TestCondition.succeed message = 
-            {String ide-available?}}
+            {String available?}}
     },
     || "guard" test info
-    {test-host-accessible "www.google.com"},
+    {test-case "Google available",
+        let available?:bool = 
+            {host-available? "www.google.com"}
+        {TestCondition.succeed message = 
+            {String available?}}
+    },
+||--    {TestSuite "Web Availability",
+||--        {test-host-accessible-guard "www.google.com"}},
     
+    || WSDK test suites
     {ManifestTestSuite.from-name "COM.CURL.WSDK"},
     {ManifestTestSuite 
         {import-manifest {url "../manifest.mcurl"}}},
@@ -46,7 +54,8 @@
     {TestSuite.import {url "dguide-test-cases.scurl"}},
     {TestSuite.import {url "xdm-test-cases.scurl"}},
     {TestSuite.import {url "wsdl-test-cases.scurl"}},
-    {TestSuite.import {url "wsdl-samples/test-cases.scurl"}},
+    || NOTE: excluded because xmethods service is defunct
+||--    {TestSuite.import {url "wsdl-samples/test-cases.scurl"}},
 
     || repeat context info at end
     {TestSuite.import {url "context.scurl"}}

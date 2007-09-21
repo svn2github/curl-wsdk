@@ -19,13 +19,23 @@
  *
  */
 
-// TODO: gzhandler
-header( "Content-type: text/xml" );
-
 $HTTP_RAW_POST_DATA = 
 isset($GLOBALS['HTTP_RAW_POST_DATA'])
   ? $GLOBALS['HTTP_RAW_POST_DATA'] : '';
 
-echo $HTTP_RAW_POST_DATA;
+$do_gzip = false;
+$encodings = array();
+if (isset($_SERVER['HTTP_ACCEPT_ENCODING'])) {
+  $encodings = explode(',', strtolower(preg_replace("/\s+/", "", $_SERVER['HTTP_ACCEPT_ENCODING'])));
+  if (in_array('gzip', $encodings))
+    $do_gzip = true;
+}
 
+header("Content-type: text/xml");
+if ($do_gzip) {
+  header("Content-Encoding: gzip");
+  echo gzencode($HTTP_RAW_POST_DATA, 9, FORCE_GZIP);
+} else {
+  echo $HTTP_RAW_POST_DATA;
+}
 ?>

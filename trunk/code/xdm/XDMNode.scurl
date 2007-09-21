@@ -84,10 +84,12 @@
   {method public {detach}:void
     {if-non-null p = self._parent then
         {self.assure-modifiable}
-        {self.trigger-xdm-event {XDMNodeRemoved p, self}}
         set self._parent = null
         set self.document = null
         {p.remove-child self}
+        || NOTE: use parent because detached node has no document
+        {(p asa StandardXDMElement).trigger-xdm-event
+            {XDMNodeRemoved p, self}}
      else
         {if-non-null doc = self.document then
             || TODO: handle ProcessingInstruction

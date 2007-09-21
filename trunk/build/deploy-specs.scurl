@@ -37,13 +37,6 @@
         "deploy", 
         "wsdk-source/tools"
     },
-    || incorporate test framework 
-    || --------------------
-    {DeploySpec
-        "lib/CDU/project.cprj",
-        "deploy", 
-        "wsdk-source/lib/CDU"
-    },
     || build library (pcurl)
     || -------------------- 
     {DeploySpec  
@@ -51,7 +44,6 @@
         "deploy",
         "wsdk-source/lib/WSDK"
     },
-    
     || documentation {copy + docs)
     || -------------------- 
     {DeploySpec 
@@ -65,7 +57,22 @@
         "docs-install/WSDK/docs/ja",
         from-source? = false
     },
-    
+    || incorporate test framework 
+    || --------------------
+    {DeploySpec
+        "lib/CDU/project.cprj",
+        "deploy", 
+        "wsdk-source/lib/CDU"
+    },
+    || clean source control directories
+    || --------------------
+    {DeployAction
+        caption = {lmessage clean .svn},
+        {proc {self:DeployAction,
+               source-root:Url,
+               target-root:Url}:void
+            {clean-svn-directories target-root}
+        }},
     || BOILERPLATE material {copy)
     || -------------------- 
     {DeployAction

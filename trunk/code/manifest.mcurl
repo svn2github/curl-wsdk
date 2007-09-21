@@ -17,30 +17,58 @@
 {curl 5.0 manifest}
             
 {manifest COM.CURL.WSDK,
-    version = "1.0.5",
-    resync-as-of = {utc-date-time "2007-06-29 01:55:29.100999 +0000"}
-}{component package COM.CURL.WSDK.SOAP,
+    version = "1.0.5"}
+
+|| core modules
+|| --------------------
+{component package COM.CURL.WSDK.SOAP,
     location = "soap/load.scurl"
-}{component package COM.CURL.WSDK.WSDL,
+}
+{component package COM.CURL.WSDK.WSDL,
     location = "wsdl/load.scurl"
-}{component package COM.CURL.WSDK.XML-DOCUMENT-MODEL,
+}
+{component package COM.CURL.WSDK.XML-DOCUMENT-MODEL,
     location = "xdm/load.scurl"
-}{component package COM.CURL.WSDK.XML-QUERY-FUNCTIONS,
+}
+{component package COM.CURL.WSDK.XML-QUERY-FUNCTIONS,
     location = "xdm-query/function-defs.scurl"
-}{component package COM.CURL.WSDK.XML-ELABORATION,
+}
+{component package COM.CURL.WSDK.XML-ELABORATION,
     location = "xdm-elaboration/load.scurl"
-}{component package COM.CURL.WSDK.XML-DISPLAY,
+}
+
+|| utility packages
+|| --------------------
+{component package COM.CURL.WSDK.XML-DISPLAY,
     location = "util/xdm-display/load.scurl"
-}{component package COM.CURL.WSDK.RECORDSET-FOR,
+}
+{component package COM.CURL.WSDK.RECORDSET-FOR,
     location = "util/recordset-for/load.scurl"
-}{component package COM.CURL.WSDK.WS-CONNECTED-RECORDSET,
+}
+{component package COM.CURL.WSDK.WS-CONNECTED-RECORDSET,
     location = "util/WSConnection/load.scurl"
-}{component package COM.CURL.WSDL.WSConnectionService,
+}
+
+|| web services
+|| --------------------
+{component package COM.CURL.WSDL.WSConnectionService,
     location = "util/WSConnection/WSConnectionService.scurl"
-}{component directory docs,
+}
+
+|| documentation
+|| --------------------
+{component directory docs,
     location = "docs"
-}{component directory resources,
+}
+
+|| localization
+|| --------------------
+{component directory resources,
     location = "resources"
-}{component file project.cprj,
+}
+
+|| project itself
+|| --------------------
+{component file project.cprj,
     location = "project.cprj"
 }

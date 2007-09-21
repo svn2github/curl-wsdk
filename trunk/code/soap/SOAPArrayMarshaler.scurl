@@ -474,7 +474,29 @@
         || write out each element...
         || FIXME 2d should be ok with Array-2-of, but Nd? 2d with Array-of Array-of?
         {with-compiler-directives allow-any-calls? = true do
-            {for v in value do
+            
+            let needs-nullability?:bool =
+                self.element-type.nillable? and self.element-type.curl-type.null-variant == null
+
+            || paranoia
+            let has-nullability?:bool =
+                || assuming Array-of
+                {type-switch value.element-type
+                 case pt:ParameterizedType do
+                    pt.template == Nullable
+                 else false}
+            set needs-nullability? =
+                needs-nullability? and has-nullability?
+            
+            {for vv in value do
+                || deal with nullable primitives
+                let v:any =
+                    {if needs-nullability? then
+                        || a Nullable variant
+                        vv.value-as-any
+                     else
+                        vv}
+                
                 let has-wrapper?:bool = v isa XDMElement
                 let needs-wrapper?:bool = not has-wrapper?
                 {if needs-wrapper? then
@@ -883,6 +905,12 @@
             set element-curl-type = element-type.curl-type
         }
     }
+    || unwrap Nullable primitive
+    {type-switch element-curl-type
+     case pt:ParameterizedType do
+        {if pt.template == Nullable then
+            set element-curl-type = pt.positional-type-parameters[0].parameter asa Type}}
+         
     {if left-over-string == null and
         {SOAPArrayMarshaler.curl-type-dimensions
             {non-null element-curl-type}

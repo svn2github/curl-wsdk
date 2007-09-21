@@ -1437,14 +1437,26 @@
             {buf.concat "\{Array-of "}
         }
     }
-    {if self.element.nillable? then
-        {if self.element.type.nullable? then
-            {buf.concat "#"}
-         else
-            || TODO: deal with nullable primitive .. ick
+    || element type
+    let nullable-primitive?:bool =
+        {type-switch self.element.type
+         case e:WSDLSchemaPrimitiveType do
+            e.curl-primitive-type? and self.element.nillable?
+         else false}
+    {if nullable-primitive? then
+        {buf.concat |"{Nullable "|}
+        {buf.concat self.element.type.ref-name}
+        {buf.concat |"}"|}
+     else
+        || normal type
+        {if self.element.nillable? then
+            {if self.element.type.nullable? then
+                {buf.concat "#"}
+            }
         }
+        {buf.concat self.element.type.ref-name}
     }
-    {buf.concat self.element.type.ref-name}    
+    
     {for i:int = 0 to top-dimension do
         let constant d:int = self.dimensions[i]
         {for j = 0 below d do

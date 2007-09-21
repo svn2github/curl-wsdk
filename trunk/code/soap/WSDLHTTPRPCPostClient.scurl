@@ -81,6 +81,37 @@
   {setter public open {trace-stream val:#TextOutputStream}:void
     set self.soap-caller.trace-stream = val
   }
+  
+  {doc-next  ||== WSDLHTTPRPCPostClient.accept-encoding
+    {purpose
+        Specifies "Accept-Encoding" HTTP header to be used for requests.
+    }
+    {details
+        This can be used to request compressed responses from the server.
+        These compression formats are supported for responses:
+        {itemize
+            {item {monospace gzip} using {docref CompressionFormat}.gzip}
+            {item {monospace deflate} using {docref CompressionFormat}.zlib}
+        }
+    }
+  }
+  {getter public open {accept-encoding}:String
+    {return 
+        {if-non-null headers = self.soap-caller.request-http-headers then
+            let (enc:String, enc?:bool) = 
+                {headers.get-if-exists "Accept-Encoding"}
+            {if enc? then enc else ""}
+         else ""}}
+  }
+  {setter public open {accept-encoding val:String}:void
+    {if-non-null headers = self.soap-caller.request-http-headers then
+        set headers["Accept-Encoding"] = val
+     else
+        set self.soap-caller.request-http-headers =
+            {HttpRequestHeaders
+                "Accept-Encoding", val}
+    }
+  }
 
   {method public abstract open {register-types
                                }:(type-mapper:SOAPTypeMapper,

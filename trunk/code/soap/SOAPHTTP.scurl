@@ -762,6 +762,7 @@
             argument-names,
             argument-types,
             encoding,
+            repeating-elements = repeating-elements,
             write-type-attribute? = write-type-attribute?,
             ||scheme-instance-namespace = scheme-instance-namespace,
             write-encoding-attribute? = write-encoding-attribute?,
@@ -991,6 +992,12 @@
         
         || check HTTP content-type
         {self.verify-mime-type bis}
+    }
+    
+    || accept compressed data
+    {type-switch bis
+     case _bis:HttpByteInputStream do
+        set bis = {zstream-for _bis}
     }
     
     || FIXME: allow for some sort of monitoring of data received...
@@ -1397,4 +1404,25 @@
     || seems to have already been closed
 ||--    {super.{ByteInputStream-from {Array-of byte}}.close}
   }
+}
+{define-proc package {zstream-for in:HttpByteInputStream}:ByteInputStream
+    let (enc:String, enc?:bool) = 
+        {in.response-headers.get-if-exists "Content-Encoding"}
+    {return
+        {if enc? then 
+            {switch enc
+             case "gzip"do
+                {InflateByteInputStream in,
+                    compression-format = CompressionFormat.gzip}
+             case "deflate" do
+                {InflateByteInputStream in,
+                    compression-format = CompressionFormat.zlib}
+             else
+                || unrecognized encoding: hope for the best
+                in
+            }
+         else
+            in
+        }
+    }
 }

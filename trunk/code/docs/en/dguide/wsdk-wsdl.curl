@@ -532,6 +532,18 @@
     keyword argument on the service class constructor.
     
     SOAP messages are communicated using XML.
+    
+    When messages are large, using compression may be desirable.
+    The HTTP {monospace Accept-Encoding} header is recognized
+    by compression capable services. 
+    The service classes, 
+    which derive from {docref WSDLHTTPRPCPostClient},
+    provide a property, 
+    {docref-abbr WSDLHTTPRPCPostClient.accept-encoding}
+    which can be used to specify that header.
+    The default value, {ctext null}, indicates no
+    {monospace Accept-Encoding} header.
+    
     The actual request and response XML messages
     can be useful for diagnosing web service problems.    
     When {docref WSDLHTTPRPCPostClient.trace-stream}

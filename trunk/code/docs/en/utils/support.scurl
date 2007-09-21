@@ -198,6 +198,33 @@
         {for g in b.graphical-children do
             {for-each-graphic f, g}}}
 }
+{define-proc {prelude-line? line:StringBuf}:bool
+    {return
+        || herald comment prefix
+        {line.prefix? |"|||"|} or
+        || whitespace
+        {line.trim-clone}.empty?
+    }
+}
+{define-proc {strip-prelude-lines
+                 buf:StringBuf,
+                 prelude-line?:{proc-type {StringBuf}:bool}
+             }:void
+    {with-open-streams in = {buf.to-InputStream} do
+        || read each line
+        {while true do
+            let pos:int64 = {in.tell}
+            || check if prelude
+            let skip?:bool =
+                {if-non-null line = {in.read-line} then
+                    {prelude-line? line}
+                 else false}
+            || until beyond prelude or done
+            {if not skip? then
+                {buf.remove 0, length = pos asa int}
+                {break}}}}
+    
+}
 || example references
 || --------------------
 {define-proc public {example-ref
@@ -212,6 +239,8 @@
                                 manifest = manifest},
                         ...
                     }:Graphic
+    let buf:StringBuf = {read-from loc}
+    {strip-prelude-lines buf, prelude-line?}
     let result:any = 
         {try
             {evaluate 
@@ -219,7 +248,7 @@
                 package = package,
                 {format "\{example title = %w,\n %s\}",
                     title,
-                    {read-from loc}}}
+                    buf}}
          catch e:Exception do
             {paragraph
                 Error in {bold {value loc}}:{br}                

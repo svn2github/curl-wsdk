@@ -37,15 +37,16 @@
 {import * from COM.CURL.WSDK.XML-TEST-SUPPORT}
 
 || NOTE: used as a guard for MSXML availability
-{define-class public MSXMLBasicTest {inherits TestCase}
-  {constructor public {default name:String}
-    {construct-super name}
-  }
-  {method public {test-MSXML-available}:void
-    let which:String = "MSXML2.DOMDocument.4.0"
-    let msxml:ActiveXObject = {ActiveXObject ProgId = which}
-    {TestCondition.succeed message = which}
-  }
+{define-proc public {test-MSXML-available}:TestCase
+    {return
+        {test-case "test-MSXML-available",
+            let which:String = "MSXML2.DOMDocument.5.0"
+            {try
+                let msxml:ActiveXObject = {ActiveXObject ProgId = which}
+             catch e:Exception do
+                {TestCondition.terminate message =
+                    {lmessage MSXML unavailable: {value which}}}}
+        }}
 }
 
 || TODO:
@@ -267,6 +268,8 @@
     {self.generate-tests}
   }
   {method public {generate-tests}:void   
+    {self.add
+        {test-MSXML-available}}
     {try
         {for loc in self.locations do
             {self.add
@@ -289,7 +292,6 @@
   {method public {set-up}:void
   }
   {method public {tear-down}:void
-    {dump "tear-down"}
     {for loc in self.locations do
         || TODO: this is too eager
         {msxml-documents[loc].destroy}}

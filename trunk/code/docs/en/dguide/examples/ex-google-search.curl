@@ -61,8 +61,7 @@
     || return
     {return result-recordset, result}
 }
-
-{value
+{try
     let query:String = "Curl Surge"
     let (rs:RecordSet, result:GoogleSearchResult) =
         {google-search query}
@@ -77,5 +76,10 @@
             {RecordGridColumn "url", width = 2in},
             {RecordGridColumn "snippet", width = 3in},
             record-source = rs}
+    }
+ catch e:HttpException do
+    {paragraph
+        Unable to connect to {bold Google Search Web Service}:        
+        {pre color = "red", {value e}}
     }
 }

@@ -116,6 +116,13 @@ The following changes have been made,
  - SOAP responses containing structures with unspecified primitives
   are now supported
 
+ - SOAP responses containing arrays with unspecified primitives
+  are now supported
+
+ - compressed responses may be requested from SOAP services
+
+ - XDM change management corrected for XDMNode.detach
+
  - RecordSet-for change notifications (using RecordSetEvent)
   are now correctly issued.
 
@@ -124,6 +131,8 @@ The following changes have been made,
  - minor changes for release 6.0 consistency
 
  - experimental XHTML and CSS packages no longer included
+
+ - samples using defunct services have been replaced or excluded
 
 
 WSDK 1.0.4 CHANGES

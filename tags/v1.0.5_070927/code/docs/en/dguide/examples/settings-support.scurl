@@ -1,0 +1,289 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| display settings dialog
+|| --------------------
+{define-class public XDMTreeStyleDialog {inherits XDMForm}
+  field subject:XDMTreeControl
+  {constructor public {default 
+                          subject:XDMTreeControl,
+                          ...}
+    set self.subject = subject
+    let display:Graphic = {self.create-display}
+    {construct-super ...}
+    {self.add display}
+    || force registration of bindings
+    {self.prepare-bindings}
+  }
+  {method {create-display}:Graphic
+    {return
+        {VBox
+            {TabContainer
+                {TabPane 
+                    label = {message General},
+                    {Table columns = 2,
+                        
+                        {cell-prototype colspan = 2,
+                            {bold Text Options}},
+                        
+                        {text Font Size},
+                        {DropdownList 8, 10, 12, 14, 20,
+                            {bind value to "tree-style/font-size",
+                                {format x:XDMNodeSet as x.as-int},
+                                {parse x:int as {String x}}},
+                            vorigin = 70%,
+                            width = .5in,
+                            {on ValueFinished at c:DropdownList do
+                                set self.subject.font-size = c.value}},
+                        
+                        {text Text Breakable?},
+                        {DropdownList true, false,
+                            width = .75in,
+                            {bind value to "tree-style/text-breakable",
+                                {format x:XDMNodeSet as {as-bool x}},
+                                {parse x:bool as {String x}}},
+                            vorigin = 70%,
+                            {on ValueFinished at c:DropdownList do
+                                set self.subject.xdm-text-breakable? = c.value}},
+                        
+                        {cell-prototype colspan = 2,
+                            {bold Tree Control}},
+                        
+                        {text Indentation},
+                        {DropdownList 0.8, 1.0, 1.25, 1.5, 2.0,
+                            {bind value to "tree-style/indentation",
+                                {format x:XDMNodeSet as x.as-double},
+                                {parse x:int as {String x}}},
+                            width = .75in,
+                            vorigin = 70%,
+                            {on ValueFinished at c:DropdownList do
+                                set self.subject.indentation = c.value * 1em}},
+                        
+                        {text Display Root},
+                        {CheckButton label = "",
+                            {bind value to "tree-style/display-root",
+                                {format x:XDMNodeSet as {as-bool x}},
+                                {parse x:bool as {String x}}},
+                            {on ValueFinished at c:CheckButton do
+                                set self.subject.display-root? = c.value}},
+                        
+                        {text Display Toggle Buttons},
+                        {CheckButton label = "",
+                            {bind value to "tree-style/display-toggle-buttons",
+                                {format x:XDMNodeSet as {as-bool x}},
+                                {parse x:bool as {String x}}},
+                            {on ValueFinished at c:CheckButton do
+                                set self.subject.display-toggle-buttons? = c.value}},
+                        
+                        {text Tree Connector},
+                        {CheckButton label = "",
+                            {bind value to "tree-style/display-tree-connector",
+                                {format x:XDMNodeSet as {as-bool x}},
+                                {parse x:bool as {String x}}},
+                            {on ValueFinished at c:CheckButton do
+                                set self.subject.tree-connector-width = 
+                                    {if c.value 
+                                     then 1px 
+                                     else 0px}}}
+                    }},
+                {TabPane
+                    label = {message Colors},
+                    {Table columns = 2,
+                        
+                        {cell-prototype colspan = 2,
+                            {bold Tree Colors}},
+                        
+                        {text Element Name},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/color/element-name"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.color-map["element-name"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        
+                        {text Text},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/color/text"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.color-map["text"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        
+                        {text Attribute Name},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/color/attribute-name"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.color-map["attribute-name"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        
+                        {text Attribute},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/color/attribute"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.color-map["attribute"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        
+                        {text Processing Instruction},
+                        {MyColorDropdown
+                            {bind value to "tree-style/color/processing-instruction"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.color-map["processing-instruction"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        
+                        {text Processing Instruction},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/color/nodeset"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.color-map["nodeset"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        
+                        {cell-prototype colspan = 2,
+                            {bold Tree Backgrounds}},
+                        
+                        {text Selected},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/background/selected"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.background-map["selected"] = c.value
+                                || force refresh selection
+                                let selected:{Set-of TreeNode} =
+                                    {self.subject.selection.nodes.clone}
+                                {self.subject.select-nothing}
+                                {for n in selected do
+                                    {self.subject.select-nodes additive? = true, n}}
+                            }},
+                        
+                        {text Highlight},
+                        {MyColorDropdown 
+                            {bind value to "tree-style/background/highlight"},
+                            {on ValueFinished at c:ColorDropdown do
+                                set self.subject.background-map["highlight"] = c.value
+                                {self.subject.refresh-nodes}}},
+                        {Fill}
+                    }}
+            },
+            {HBox
+                margin = 3pt,
+                spacing = 6pt,
+                {Fill},
+                {CommandButton
+                    label = "Reset",
+                    {on Action at c:CommandButton do
+                        {c.data-binding-context.refresh}
+                        {self.apply-styles}
+                    }},
+                {CommandButton
+                    label = "Cancel",
+                    {on Action at c:CommandButton do
+                        {c.data-binding-context.refresh}
+                        {self.apply-styles}
+                        {self.close Dialog.cancel}}},
+                {CommandButton
+                    label = "OK",
+                    {on Action at c:CommandButton do
+                        {c.data-binding-context.update}
+                        {self.close Dialog.ok}}}
+            }
+        }}
+  }
+  {method {apply-styles}:void
+    {for b in self.registered-bindings do
+        {type-switch b.target
+         case c:ValueControl do
+            {switch b.property-name
+             case "value" do
+                {c.handle-event {ValueFinished}}
+            }}}
+  }
+  {method public {prepare-bindings}:void
+    || the controls in the TabContainer don't get registered
+    || until it is attached, so their bindings are not available
+    || this forces the registration
+    let hack:View = {View width = 6in, height = 6in}
+    {hack.add self}
+  }
+}
+|| helper functions
+|| --------------------
+{define-proc {as-bool x:XDMNodeSet}:bool
+    {return
+        {if-non-null n = x.as-XDMNode? then
+            {n.get-text} == "true"
+         else false}}
+}
+
+|| simple color chooser
+|| --------------------
+{let constant standard-color-names:StringArray =
+    {StringArray
+        "aqua",
+        "beige",
+        "black",
+        "blue",
+        "brown",
+        "cyan",
+        "fuchsia",
+        "gray",
+        "green",
+        "lime",
+        "magenta",
+        "maroon",
+        "navy",
+        "olive",
+        "orange",
+        "pink",
+        "purple",
+        "red",
+        "silver",
+        "teal",
+        "wheat",
+        "white",
+        "yellow"
+    }
+}
+{let constant standard-colors:{HashTable-of Pixel, String} =
+    {value
+        let standard-colors:{HashTable-of Pixel, String} =
+            {{HashTable-of Pixel, String}}
+        {for c in standard-color-names do
+            let p:Pixel =
+                {{FillPattern.from-string c}.to-Pixel}
+            set standard-colors[p] = c}
+        standard-colors}
+}
+{define-proc {color-string c:FillPattern}:String
+    let p:Pixel = {c.to-Pixel}
+    let (name:String, name?:bool) = {standard-colors.get-if-exists p}
+    {return 
+        {if name? then name
+         else
+            {format "#%02X%02X%02X",
+                p.red-as-uint8, p.green-as-uint8, p.blue-as-uint8}}}
+}
+{let constant color-dropdown-colors:StringArray =
+    {StringArray
+        {splice {ColorDropdown}.data-model},
+        "beige",
+        "maroon",
+        "pink",
+        "#EEEEFF"
+    }
+}
+{define-class public MyColorDropdown {inherits ColorDropdown}
+  {constructor public {default ...}
+    {construct-super 
+        color-array = color-dropdown-colors,
+        ...}
+  }
+}

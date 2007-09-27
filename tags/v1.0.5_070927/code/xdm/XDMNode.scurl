@@ -1,0 +1,203 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public abstract serializable StandardXDMNode 
+  {inherits XDMNode}
+  field private _parent:#XDMElement
+  
+  {constructor public {default}
+    {construct-super}
+  }
+
+  {getter public {parent}:#XDMElement
+    {return self._parent}
+  }
+  {setter protected {parent parent:#XDMElement}:void
+    || NOTE: change management by 'detach'
+    {if parent != self._parent then
+        {if self._parent != null then
+            {self.detach}}
+        set self._parent = parent
+        {if-non-null parent then
+            set self.document = parent.document
+        }
+    }
+  }
+
+  {getter public {namespace}:String    
+    {return self.xmlname.namespace}    
+  }
+
+  {getter public {local-name}:String
+    {return self.xmlname.local-name}
+  }
+
+  {getter public {qualified-name}:String
+    let prefix:String = self.prefix
+    {return
+        {if prefix.empty? then
+            self.local-name
+         else
+            let qname:StringBuf = {StringBuf prefix}
+            {qname.concat ":"}
+            {qname.concat self.local-name}            
+            {qname.to-String}
+        }
+    }
+  }
+
+  {method public {get-root}:XDMNode      
+    {return 
+        {if-non-null parent = self.parent then
+            {if-non-null doc = self.document then
+                doc.root 
+             else
+                {self.parent.get-root}
+            }
+         else
+            self
+        }
+    }
+  }
+
+  {method public {search path:XDMPath}:XDMNodeSet
+    {return {path.search self}}
+  }
+
+  {method public {evaluate path:XDMPath}:XPathValue
+    {return {path.evaluate self}}
+  }
+  
+  {method public {detach}:void
+    {if-non-null p = self._parent then
+        {self.assure-modifiable}
+        set self._parent = null
+        set self.document = null
+        {p.remove-child self}
+        || NOTE: use parent because detached node has no document
+        {(p asa StandardXDMElement).trigger-xdm-event
+            {XDMNodeRemoved p, self}}
+     else
+        {if-non-null doc = self.document then
+            || TODO: handle ProcessingInstruction
+            || - this assumes root document
+            {self.assure-modifiable}
+            {self.trigger-xdm-event {XDMNodeRemoved doc, self}}
+            set self.document = null
+            || NOTE: using placeholder because not nullable, per XML Infoset  
+            set doc.root = {XDMElement XDMName.empty-name}
+        }
+    }    
+  }
+
+  {method public {walk-ancestors
+                     thunk:{proc-type {XDMNode}:void}
+                 }:void
+    {if self.parent == null then {return}}
+    {thunk {non-null self.parent}}
+    {self.parent.walk-ancestors thunk}
+  }
+
+  {method public {get-ancestors}:{Array-of XDMElement}
+    let array:{Array-of XDMElement} =
+        {new {Array-of XDMElement}}
+    {if self.parent == null then {return array}}
+    {array.push {non-null self.parent}}
+    {array.splice {self.parent.get-ancestors}, 1}
+    {return array}
+  }
+
+  {method public {find-ancestor
+                     thunk:{proc-type {XDMElement}:bool}
+                 }:#XDMElement
+    {if self.parent == null then {return null}}
+    {if {thunk {non-null self.parent}} then {return self.parent}}
+    {return {self.parent.find-ancestor thunk}}
+  }
+
+  {getter public {root?}:bool
+    {return self.parent == null}
+  }
+
+  {getter public {children}:{Sequence-of XDMNode}
+    {return StandardXDMNode.empty-nodes}
+  }
+  let package constant empty-nodes:{Array-of XDMNode} =
+      {EmptyXDMNodes}
+
+  || NOTE: default implementation for non-element nodes
+  {getter public {document}:#XDMDocument
+    {return 
+        {if-non-null p = self.parent 
+         then p.document
+         else null}}
+  }
+
+  || NOTE: default implementation for non-element nodes
+  {setter protected {document document:#XDMDocument}:void
+    {if-non-null p = self.parent then
+        set p.document = document}
+  }  
+  
+  || change management
+  || --------------------
+  {getter public {modifiable?}:bool
+    {return
+        {type-switch self.document 
+         case doc:StandardXDMDocument do doc.modifiable?
+         else true}}
+  }
+  
+  {method protected {trigger-xdm-event e:XDMEvent}:void
+    {type-switch self.document 
+     case doc:StandardXDMDocument do 
+        {doc.trigger-xdm-event e}}
+  }
+  
+  {method public {assure-modifiable}:void
+    {if not self.modifiable? then
+        {throw {XDMNotModifiableException self}}}
+  }
+
+}
+
+{define-class package EmptyXDMNodes 
+  {inherits {Array-of XDMNode}}
+  {constructor package {default}
+    {construct-super efficient-size = 0}
+  }  
+  {method public {append x:XDMNode}:void
+    {self.operation-not-allowed}
+  }
+  {method public {concat x:{Sequence-of XDMNode}}:void
+    {self.operation-not-allowed}
+  }
+  {method public {splice x:{Sequence-of XDMNode}, i:int}:void
+    {self.operation-not-allowed}
+  }
+  {method public {insert x:XDMNode, i:int}:void
+    {self.operation-not-allowed}
+  }
+  {method public {push x:XDMNode}:void
+    {self.operation-not-allowed}
+  }
+  {setter public {efficient-size val:int}:void
+    {self.operation-not-allowed}
+  }
+  {method package {operation-not-allowed}:never-returns
+    {xdm-exception {lmessage Modification not allowed: {value self}}}
+  }
+}

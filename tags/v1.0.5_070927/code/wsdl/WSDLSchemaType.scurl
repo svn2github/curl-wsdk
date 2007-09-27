@@ -1,0 +1,2122 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| contains the classes:
+|| WSDLSchemaType
+|| WSDLSchemaPlaceholderType  
+|| WSDLSchemaElementPlaceholderType  
+|| WSDLSchemaAttributePlaceholderType 
+|| WSDLSchemaPrimitiveType
+|| WSDLSchemaAliasType
+|| WSDLSchemaClassType
+|| WSDLSchemaArrayType
+|| WSDLSchemaEnumType 
+|| WSDLSchemaXMLDocumentType 
+|| WSDLSchemaUnionType
+|| WSDLSchemaListType
+
+
+
+{define-class public abstract open WSDLSchemaType
+  field public constant xml-name:#XMLName
+
+  {constructor public {default xml-name:#XMLName}
+    set self.xml-name = xml-name
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+  }
+
+  {method package {dump out:TextOutputStream}:void
+  }
+
+  {getter package abstract {ref-name}:String
+  }
+
+  {getter package abstract {nullable?}:bool
+  }
+
+  {getter package abstract {multiple-reference}:SOAPTypeMultipleReference
+  }
+
+  || assumes standardly named mapper variables were already created
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {return null}
+  }
+
+  {method package {soap-object-type-string
+                      tab-level:int = 0,
+                      element-name:#XMLName = null,
+                      nillable?:bool = self.nullable?,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          self.multiple-reference
+                  }:String
+    {return
+        {WSDLSchemaType.soap-object-type-code-string
+            tab-level = tab-level,
+            element-name = element-name,
+            xml-type = self.xml-name,
+            curl-type = self.ref-name,
+            nillable? = nillable?,
+            multiple-reference = multiple-reference
+        }
+    }
+  }
+
+  {method package {concat-sub-types a:{HashTable-of WSDLSchemaType, #XMLName}}:void
+  }
+
+  {define-proc public {xml-name-to-curl-code xml-name:XMLName}:String
+    {return
+        {format
+            |"{%s %s, "%s"}"|,
+            || SOAPENC Array types are not legal XML names
+            {if {xml-name.local-name.find '\['} >= 0
+             then "XMLName.unchecked" 
+             else "XMLName"},
+            {switch xml-name.namespace
+             case SOAPTypeMapper.xml-schema-uri do
+                "SOAPTypeMapper.xml-schema-uri"
+             case SOAPTypeMapper.xml-schema-instance-uri do
+                "SOAPTypeMapper.xml-schema-instance-uri"
+             case SOAPTypeMapper.soap-1-1-encoding-uri do
+                "SOAPTypeMapper.soap-1-1-encoding-uri"
+             else
+                {format |""%s""|, xml-name.namespace}
+            },
+            xml-name.local-name
+        }
+    }
+  }
+
+  {define-proc public {soap-marshaler-regster-code name:String}:String
+    {return
+        {format
+            "        \{%s.register\n" &
+            "            type-mapper = type-mapper,\n" &
+            "            element-name-to-xml-type-mapper = element-name-to-xml-type,\n" &
+            "            xml-type-to-curl-type-mapper = xml-type-to-curl-type,\n" &
+            "            curl-type-to-xml-type-mapper = curl-type-to-xml-type,\n" &
+            "            xml-type-to-element-name-mapper = xml-type-to-element-name\n" &
+            "        \}\n",
+            name
+        }
+    }
+  }
+
+  {define-proc public {soap-object-type-code-string
+                         tab-level:int = 0,
+                         element-name:#XMLName = null,
+                         xml-type:#XMLName = null,
+                         curl-type:#String = null,
+                         multiple-reference:SOAPTypeMultipleReference = 
+                             SOAPTypeMultipleReference.unknown,
+                         nillable?:bool = false
+                     }:String
+    let constant tabs:String = {String.repeat-char ' ', tab-level}
+    let constant buf:StringBuf = {new StringBuf}
+    let n-arg:int = 0
+    {format out = buf, "%s\{SOAPObjectType", tabs}
+    {if-non-null element-name then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    element-name = %s",
+            tabs,
+            {WSDLSchemaType.xml-name-to-curl-code element-name}
+        }
+    }
+    {if-non-null xml-type then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    xml-type = %s",
+            tabs,
+            {WSDLSchemaType.xml-name-to-curl-code xml-type}
+        }
+    }
+    {if-non-null curl-type then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    curl-type = %s",
+            tabs,
+            curl-type
+        }
+    }
+    {if multiple-reference != SOAPTypeMultipleReference.unknown then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    multiple-reference = SOAPTypeMultipleReference.%s",
+            tabs,
+            multiple-reference.name
+        }
+    }
+    {if nillable? then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    nillable? = %s",
+            tabs,
+            {if nillable? then "true" else "false"}
+        }
+    }
+    {format out = buf, "\n%s\}", tabs}
+    {return {buf.to-String}}
+  }
+
+}
+
+
+{define-class package WSDLSchemaPlaceholderType {inherits WSDLSchemaType}
+  field public constant qname:XMLName
+  field public constant node:WSDLDOMNode
+
+  {constructor package {default
+                           xml-name:#XMLName,
+                           qname:XMLName,
+                           node:WSDLDOMNode
+                       }
+    {construct-super xml-name}
+    set self.qname = qname
+    set self.node = node
+  }
+
+  {getter package {ref-name}:String
+    {self.unexpected-placeholder-type}
+  }
+
+  {getter package {nullable?}:bool
+    {self.unexpected-placeholder-type}
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {self.unexpected-placeholder-type}
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {self.unexpected-placeholder-type}
+  }
+
+  {method package {soap-object-type-string
+                      tab-level:int = 0,
+                      element-name:#XMLName = null,
+                      nillable?:bool = false,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          SOAPTypeMultipleReference.unknown
+                  }:String
+    {self.unexpected-placeholder-type}
+  }
+
+  {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}
+                  }:void
+    {self.unexpected-placeholder-type}
+  }
+
+  {method public open {resolve-type names:WSDLNameTable}:WSDLSchemaType
+    let constant (type:Object, found?:bool) =
+        {names.get-if-exists self.qname}
+    {if not found? then
+        || remove symbol-space prefix
+        let name:String = self.qname.local-name
+        set name = {name.tail {name.find ':'} + 1}                    
+        {wsdl-exception node = self.node,
+            {hlmessage Unable to find type 
+                '{WSDL.format-name name = name, self.node}'.}
+        }
+    }
+    {return type asa WSDLSchemaType}
+  }
+  
+  {method package {unexpected-placeholder-type}:never-returns
+    {wsdl-exception 
+        {hlmessage Unexpected placeholder type 
+            '{WSDL.format-name name = self.xml-name, self.node}'.}}
+  }
+}
+
+{define-class package WSDLSchemaElementPlaceholderType
+  {inherits WSDLSchemaPlaceholderType}
+
+  {constructor package {default
+                           xml-name:#XMLName,
+                           element-qname:XMLName,
+                           node:WSDLDOMNode
+                       }
+    {construct-super xml-name, element-qname, node}
+  }
+
+  {method public open {resolve-type names:WSDLNameTable}:WSDLSchemaType
+    let constant (element:Object, found?:bool) =
+        {names.get-if-exists self.qname}
+    {if not found? then
+        || remove symbol-space prefix
+        let name:String = self.qname.local-name
+        set name = {name.tail {name.find ':'} + 1}                    
+        {wsdl-exception node = self.node,
+            {hlmessage Unable to find element type 
+                '{WSDL.format-name name = name, self.node}'.}
+        }
+    }
+    {return (element asa WSDLSchemaElement).type}
+  }
+}
+
+{define-class package WSDLSchemaAttributePlaceholderType
+  {inherits WSDLSchemaPlaceholderType}
+
+  {constructor package {default
+                           xml-name:#XMLName,
+                           attribute-qname:XMLName,
+                           node:WSDLDOMNode
+                       }
+    {construct-super xml-name, attribute-qname, node}
+  }
+
+  {method public open {resolve-type names:WSDLNameTable}:WSDLSchemaType
+    let constant (attribute:Object, found?:bool) =
+        {names.get-if-exists self.qname}
+    {if not found? then
+        || remove symbol-space prefix
+        let name:String = self.qname.local-name
+        set name = {name.tail {name.find ':'} + 1}                    
+        {wsdl-exception node = self.node,
+            {hlmessage Unable to find attribute type 
+                '{WSDL.format-name name = name, self.node}'.}
+        }
+    }
+    {return (attribute asa WSDLSchemaAttribute).type}
+  }
+}
+
+
+{define-class public open WSDLSchemaPrimitiveType {inherits WSDLSchemaType}
+  field public curl-type-name:String
+  field private _nullable?:bool
+  field private _multiple-reference:SOAPTypeMultipleReference
+
+  {constructor public {default
+                          xml-name:XMLName,
+                          curl-type-name:String,
+                          nullable?:bool,
+                          multiple-reference:SOAPTypeMultipleReference
+                      }
+    {construct-super xml-name}
+    set self.curl-type-name = curl-type-name
+    set self._nullable? = nullable?
+    set self._multiple-reference = multiple-reference
+  }
+
+  {getter package {ref-name}:String
+    {return self.curl-type-name}
+  }
+
+  {getter package {nullable?}:bool
+    {return self._nullable?}
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {return self._multiple-reference}
+  }
+
+  {method package {soap-object-type-string
+                      tab-level:int = 0,
+                      element-name:#XMLName = null,
+                      nillable?:bool = self.nullable?,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          self.multiple-reference
+                  }:String
+    || call it normally, but without multiple-reference or
+    || element-name, those will be properly defaulted
+    {return
+        {if multiple-reference == self.multiple-reference then
+            {WSDLSchemaType.soap-object-type-code-string
+                tab-level = tab-level,
+                xml-type = self.xml-name,
+                curl-type = self.ref-name,
+                nillable? = nillable?
+            }
+         else
+            {WSDLSchemaType.soap-object-type-code-string
+                tab-level = tab-level,
+                xml-type = self.xml-name,
+                curl-type = self.ref-name,
+                nillable? = nillable?,
+                multiple-reference = multiple-reference
+            }
+        }
+    }
+  }
+  
+  {getter package {curl-primitive-type?}:bool
+    {return 
+        {WSDLSchemaPrimitiveType.curl-primitive-types.member? 
+            self.curl-type-name}}
+  }
+    
+  let package constant curl-primitive-types:{Set-of String} =
+      {{Set-of String}
+        "bool",
+        "double",
+        "float",
+        "int",
+        "int16",
+        "int64",
+        "int8",
+        "uint16",
+        "uint8"
+      }
+}
+
+
+{define-class public open WSDLSchemaAliasType {inherits WSDLSchemaType}
+  field public type:WSDLSchemaType
+  field private constant _ref-name:String
+  field public constant use-type-attribute?:bool
+  field public constant override-multiple-reference?:bool
+  field public constant override-multiple-reference:SOAPTypeMultipleReference
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:WSDLSchemaType,
+                          curl-namer:WSDLCurlNamer,
+                          use-type-attribute?:bool = true,
+                          override-multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }
+    {construct-super xml-name}
+    set self.type = type
+    set self._ref-name =
+        {if-non-null xml-name = self.xml-name then
+            {curl-namer.get-curl-name xml-name, curl-type = "class"}
+        else
+            self.type.ref-name
+        }
+    set self.use-type-attribute? = use-type-attribute?
+    set self.override-multiple-reference? =
+        {keyword-supplied? override-multiple-reference}
+    set self.override-multiple-reference = override-multiple-reference
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {type-switch self.type
+     case pt:WSDLSchemaPlaceholderType do
+        set self.type = {pt.resolve-type names}
+    }
+  }
+
+  {getter package {ref-name}:String
+    {return self._ref-name}
+  }
+
+  {getter package {nullable?}:bool
+    {return self.type.nullable?}
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    let constant out:StringBuf = {new StringBuf}
+    || add it...
+    {if-non-null xml-name = self.xml-name then
+        {format out = out,
+            "    \{do\n" &
+            "        let constant alias-marshaler:SOAPAliasMarshaler =\n" &
+            "            \{SOAPAliasMarshaler\n" &
+            "%s,\n" &
+            "%s,\n" &
+            "                use-type-attribute? = %s\n" &
+            "            \}\n%s" &
+            "    \}\n",
+            {self.soap-object-type-string
+                tab-level = 16,
+                element-name = element-name
+            },
+            {self.type.soap-object-type-string
+                tab-level = 16,
+                element-name = element-name,
+                multiple-reference =
+                    {if self.multiple-reference ==
+                        SOAPTypeMultipleReference.multiple or
+                        self.type.multiple-reference ==
+                        SOAPTypeMultipleReference.multiple
+                     then
+                        SOAPTypeMultipleReference.multiple
+                     else
+                        self.type.multiple-reference 
+                    }
+            },
+            {if self.use-type-attribute? then
+                "true"
+              else
+                "false"
+            },
+            {WSDLSchemaType.soap-marshaler-regster-code "alias-marshaler"}
+        }
+    }
+
+    let constant destination-type-string:#String =
+        {self.type.register-type-code}
+    {return
+        {if-non-null destination-type-string then
+            out & destination-type-string
+         else
+            {out.to-String}
+        }
+    }
+  }
+
+  {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
+    {self.type.concat-sub-types h}
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {return
+        {if self.override-multiple-reference? then
+            self.override-multiple-reference
+         else
+            self.type.multiple-reference
+        }
+    }
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    let constant ref-name:String = self.ref-name
+    let constant type-ref-name:String = self.type.ref-name
+    {if ref-name != type-ref-name then
+        {format out = out,
+            "\{let public constant %s:Type = %s\}\n\n",
+            ref-name,
+            type-ref-name
+        }
+    }
+  }
+
+}
+
+
+{define-class public open WSDLSchemaClassType {inherits WSDLSchemaType}
+  field public constant elements:{Array-of WSDLSchemaElement}
+  field public constant attributes:{Array-of WSDLSchemaAttribute}
+  field private content-type:#WSDLSchemaType 
+  field private _multiple-reference:SOAPTypeMultipleReference
+  field private _multiple-reference-set?:bool
+  field private constant _ref-name:String
+  field private constant wsdl:WSDL
+  field private _parent-class:#WSDLSchemaType
+  field private _choice?:bool
+  field public-get protected-set abstract?:bool
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          elements:{Array-of WSDLSchemaElement},
+                          wsdl:WSDL,
+                          attributes:#{Array-of WSDLSchemaAttribute} = null,
+                          parent-class:#WSDLSchemaType = null,
+                          choice?:bool = false,
+                          abstract?:bool = false,
+                          content-type:#WSDLSchemaType = null
+                      }
+    || TEST
+    {if xml-name == null then
+        {output {message WARNING: anonymous WSDLSchemaClassType}}
+    }
+    {construct-super xml-name}
+    set self.elements = elements
+    set self.attributes = 
+        {if-non-null attributes then 
+            attributes
+         else 
+            {{Array-of WSDLSchemaAttribute}}
+        }
+    set self._multiple-reference = SOAPTypeMultipleReference.unknown
+    set self._multiple-reference-set? = false
+    set self._choice? = choice?
+    set self.abstract? = abstract?
+    set self.wsdl = wsdl
+    set self._ref-name =
+        {if-non-null xml-name = self.xml-name then
+            {wsdl.curl-namer.get-curl-name xml-name, curl-type = "class"}
+         else
+            "any"
+        }
+    set self._parent-class = parent-class
+    || NOTE: mutually exclusive with 'parent-class'
+    || - this induces a 'content' field
+    || - when structure is "finalized" after 'resolve-types'
+    set self.content-type = content-type
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    || avoid cycles
+    {if-non-null name = self.xml-name then
+        {if {names.seen.member? name} then
+            {return}
+         else
+            {names.seen.insert name}
+        }
+    }
+    || resolve "base" types
+    {if-non-null pc = self._parent-class then
+        {type-switch pc
+         case pt:WSDLSchemaPlaceholderType do
+            set self._parent-class = {pt.resolve-type names}
+        }
+    }
+    {if-non-null t = self.content-type then
+        {type-switch t
+         case pt:WSDLSchemaPlaceholderType do
+            set self.content-type = {pt.resolve-type names}
+        }
+    }
+    || resolve attribute types
+    || TODO: move to WSAPT/WSPAG .resolve-type
+    {for a key i in self.attributes do
+        {type-switch a
+         case pa:WSDLSchemaAttributePlaceholderType do
+            let constant (att:Object, found?:bool) =
+                {names.get-if-exists pa.qname}
+            {type-switch att
+             case pa:WSDLSchemaAttributePlaceholderType do
+                || this will note unresolved "type"
+                {pa.resolve-types names}
+             case ra:WSDLSchemaAttribute do
+                set self.attributes[i] = ra
+                {ra.resolve-types names}
+            }
+         case pag:WSDLSchemaPlaceholderAttributeGroup do
+            let constant (attg:Object, found?:bool) =
+                {names.get-if-exists pag.reference-qname}
+            {type-switch attg
+             case pag:WSDLSchemaPlaceholderAttributeGroup do
+                || this will note unresolved "type"
+                {pag.resolve-types names}
+             case rag:WSDLSchemaAttributeGroup do
+                set self.attributes[i] = rag
+                {rag.resolve-types names}
+            }
+         else
+            {a.resolve-types names}
+        }
+    }
+    || resolve element types
+    {if-non-null self.content-type then
+        || verify no elements
+        {if not self.elements.empty? then
+            {wsdl-exception
+                {hlmessage complexType with simpleContent
+                    should not have any elements}}
+        }
+     else
+        || resolve elements
+        || TODO: move to WSAEPT/WSPEG .resolve-type
+        {for e key i in self.elements do
+            {type-switch e
+             case pe:WSDLSchemaElementPlaceholderType do
+                let constant (element:Object, found?:bool) =
+                    {names.get-if-exists pe.qname}
+                {type-switch element
+                 case pe:WSDLSchemaElementPlaceholderType do
+                    || this will note unresolved "type"
+                    {pe.resolve-types names}
+                 case re:WSDLSchemaElement do
+                    set self.elements[i] = re
+                    {re.resolve-types names}
+                }
+             case peg:WSDLSchemaPlaceholderElementGroup do
+                let constant (grp:Object, found?:bool) =
+                    {names.get-if-exists peg.reference-qname}
+                {type-switch grp
+                 case peg:WSDLSchemaPlaceholderElementGroup do
+                    || this will note unresolved "type"
+                    {peg.resolve-types names}
+                 case reg:WSDLSchemaElementGroup do
+                    set self.elements[i] = reg
+                    {reg.resolve-types names}
+                }
+             else
+                {e.resolve-types names}
+            }
+        }
+    }
+  }
+
+  {getter package {ref-name}:String
+    {return self._ref-name}
+  }
+
+  {getter package {nullable?}:bool
+    {return true}
+  }
+  || used for simpleContent
+  {getter package {content-field-xml-name}:XMLName
+    {return
+        {XMLName 
+            {if-non-null n = self.xml-name 
+             then n.namespace 
+             else ""},
+            "content"}
+    }
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    {if-non-null xml-name = self.xml-name then
+        {if self._choice? or {WSDL.elements-has-choice? self.elements} then
+            {self.dump-choice out}
+         else
+            {self.dump-non-choice out}
+        }
+    }
+  }
+
+  {method private {dump-choice out:TextOutputStream}:void
+    {if-non-null xml-name = self.xml-name then
+        let constant ref-name:String = self.ref-name
+        {format out = out,
+            "\{let constant public %s:ClassType =\n" &
+            "    \{HashTable-of XMLName, any\}\n" &
+            "\}\n\n",
+            ref-name
+        }
+    }
+  }
+
+  {method private {dump-non-choice out:TextOutputStream}:void
+    {if-non-null xml-name = self.xml-name then
+
+        || resolve possible group and use that as the element list to work with
+        let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+            {WSDL.flatten-elements self.elements}
+        let fa:{Array-of WSDLSchemaAttribute} =
+            {WSDL.flatten-attributes self.attributes}
+        
+        || both elements and attributes use fields
+        let fm:{Array-of WSDLSchemaMember} =
+            {{Array-of WSDLSchemaMember}}
+        
+        {if-non-null type = self.content-type then
+            || simpleContent: synthesize 'content' field    
+            {fm.append
+                || hack alert: using fake element            
+                {WSDLSchemaElement 
+                    self.content-field-xml-name,
+                    type,
+                    self.wsdl.top-node}}
+         else
+            || complexConetnt: use specified elements
+            {for e in fe do
+                {fm.append e}
+            }
+        }
+        || specified attributes
+        {for a in fa do
+            {fm.append a}
+        }
+
+        let constant ref-name:String = self.ref-name
+        {format out = out, "\{define-class public %sopen %s\n", 
+            {if self.abstract? then "abstract " else ""},
+            ref-name}
+        {if-non-null pc = self.parent-class then
+            {format out = out, "  \{inherits %s\}\n", pc.ref-name}
+        }
+        let constant element-scope-string:String = self.ref-name & '.'
+
+        let constant field-curl-names:{Array-of String} =
+            {new {Array-of String}}
+        let constant field-curl-types:{Array-of String} =
+            {new {Array-of String}}
+        let constant field-curl-prims:{Array-of bool} =
+            {new {Array-of bool}}
+        
+        {for e in fm do
+            let constant e-ref-name:String = e.type.ref-name
+            let constant fname:String = 
+                {self.wsdl.curl-namer.get-curl-name
+                    {non-null e.xml-name},
+                    scope = element-scope-string,
+                    curl-type = "field"
+                }
+            let fval?:bool = false
+            let constant (fnillable?:bool, foptional?:bool) =
+                {type-switch e
+                 case e:WSDLInternalSchemaElement do
+                    (e.nillable?, e.min-occurs == 0)
+                 else (false, false)}
+            let constant ftype:String = 
+                {if not e.type.nullable? then
+                    e-ref-name
+                 elseif fnillable? or foptional? then
+                    "#"& e-ref-name
+                 else
+                    set fval? = true
+                    e-ref-name
+                }
+            let constant fval:String = 
+                {if fval? then
+                    {if e-ref-name == "String" then
+                        "\"\""
+                     else
+                        {format "\{uninitialized-value-for-type %s\}",
+                            e-ref-name}
+                    }
+                 else 
+                    ""
+                }
+            let constant fprimitive?:bool = 
+                {type-switch e.type
+                 case t:WSDLSchemaEnumType do 
+                    true
+                 case t:WSDLSchemaPrimitiveType do 
+                    || TODO: could probably be not t.nullable? and t.curl-type-name != "any"
+                    t.curl-primitive-type?
+                 else
+                    false}
+            let constant needs-nullability?:bool = 
+                fprimitive? and (fnillable? or foptional?)
+                
+            {field-curl-names.append fname}
+            {field-curl-types.append ftype}
+            {field-curl-prims.append fprimitive?}
+            || property defininition
+            {if needs-nullability? then
+                || nullable wrapper
+                {format out = out, "\n  field package _%s:\{Nullable %s\} = null", 
+                    fname, ftype}
+                {format out = out, 
+                    "\n  \{getter public \{%s\}:%s" &
+                    "\n    \{return self._%s.value-or-default\}" &
+                    "\n  \}", 
+                    fname, ftype, fname}
+                {format out = out, 
+                    "\n  \{setter public \{%s val:%s\}:void" &
+                    "\n    set self._%s = val" &
+                    "\n  \}", 
+                    fname, ftype, fname}
+                {format out = out, 
+                    "\n  \{getter public \{%s-specified?\}:bool" &
+                    "\n    \{return self._%s.value?\}" &
+                    "\n  \}", 
+                    fname, fname}
+                {format out = out, 
+                    "\n  \{method public \{unset-%s\}:void" &
+                    "\n    set self._%s = null" &
+                    "\n  \}", 
+                    fname, fname}
+             else
+                || simple field
+                {format out = out, "\n  field public %s:%s", 
+                    fname, ftype}
+                {if not fval.empty? then
+                    {format out = out, " = %s", fval}}
+            }
+        }
+        {out.write-one '\n'}
+        
+        || default constructor
+        || -- required for SOAP unmarshaling
+        {out.write-one-string "  \{constructor public \{default\}\n"}
+        {out.write-one-string "  \}\n"}
+        
+        || convenient constructor
+        {out.write-one-string "  \{constructor public \n"}
+        {out.write-one-string "    \{from-keywords"}
+        || -- arguments
+        {for fname key i in field-curl-names do
+            let ftype:String = field-curl-types[i]
+            let fprimitive?:bool = field-curl-prims[i]
+            let fdef?:bool = fprimitive? or {ftype.prefix? "#"}
+            let fval:String = 
+                {if fdef? then
+                    {format "\{uninitialized-value-for-type %s\}", ftype}
+                 else
+                    {format "\{required-keyword \"%s.%s\"\} asa %s",
+                        ref-name, fname, ftype}}
+            {if i > 0 then {out.write-one-string ","}}
+            {format out = out, "\n      %s:%s = %s", fname, ftype, fval}
+        }
+        || -- rest args
+        {if-non-null self.parent-class then
+            {if not field-curl-names.empty? then 
+                {out.write-one-string ","}
+            }
+            {format out = out, "\n      ..."}
+        } 
+        {out.write-one-string "\n    \}\n"}
+        || -- initializations
+        {for fname in field-curl-names do
+            {format out = out, "    \{if \{keyword-supplied? %s\} then\n", fname}
+            {format out = out, "        set self.%s = %s\}\n", fname, fname}
+        }
+        || -- superclass
+        {if-non-null pc = self.parent-class then
+            {format out = out,
+                "    \{construct-super.%s.from-keywords \{splice ...\}\}\n", 
+                pc.ref-name}
+        }
+        {out.write-one-string "  \}\n"}
+
+        {out.write-one-string "\n\}\n\n"}
+    }
+  }
+
+  {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
+    {if-non-null pc = self.parent-class then
+        let constant (element-name:#XMLName, found?:bool) =
+            {h.get-if-exists pc}
+        {if not found? then
+            {h.set pc, null}
+            {pc.concat-sub-types h}
+        }
+    }
+    {if-non-null t = self.content-type then
+        let constant (element-name:#XMLName, found?:bool) =
+            {h.get-if-exists t}
+        {if not found? then
+            {h.set t, null}
+            {t.concat-sub-types h}
+        }
+    }
+    || resolve possible group and use that as the element list to work with
+    let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+        {WSDL.flatten-elements self.elements}
+    {for e in fe do
+        || add our element types, but only if there is not already
+        || an entry for them which has an element name.
+        let constant (element-name:#XMLName, found?:bool) =
+            {h.get-if-exists e.type}
+        {if not found? or element-name == null then
+            {h.set e.type, e.xml-name}
+            {if not found? then
+                {e.type.concat-sub-types h}
+            }
+        }
+    }
+    let fa:{Array-of WSDLSchemaAttribute} =
+        {WSDL.flatten-attributes self.attributes} 
+    {for a in fa do
+        let constant (name:#XMLName, found?:bool) =
+            {h.get-if-exists a.type}
+        {if not found? or name == null then
+            {h.set a.type, a.xml-name}
+            {if not found? then
+                {a.type.concat-sub-types h}
+            }
+        }
+    }
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {return
+        {if-non-null xml-name = self.xml-name then
+            {if self._choice? or {WSDL.elements-has-choice? self.elements} then
+                {self.register-type-code-choice element-name = element-name}
+             else
+                {self.register-type-code-non-choice element-name = element-name}
+            }
+         else
+            null
+        }
+    }
+  }
+
+  {method private {register-type-code-choice
+                      element-name:#XMLName = null
+                  }:#String
+    {if-non-null xml-name = self.xml-name then
+        let constant out:StringBuf = {new StringBuf}
+        let constant all-elements:{Array-of WSDLSchemaElement} =
+            self.all-elements-clone
+        || write out marshaler class variable
+        {format out = out,
+            "    \{do\n" &
+            "        let constant soap-named-fields-marshaler:SOAPNamedFieldsMarshaler =\n" &
+            "        \{SOAPNamedFieldsMarshaler\n" &
+            "%s,\n" &
+            "            field-types =\n" &
+            "                \{\{Array-of #SOAPObjectType\}",
+            {self.soap-object-type-string
+                tab-level = 12, element-name = element-name
+            }
+        }
+        {for e key i in all-elements do
+            {out.write-one-string 
+                {if i == 0
+                 then "\n"
+                 else ",\n"}}
+            {out.write-one-string
+                {if-non-null e-xml-name = e.xml-name then
+                    {e.type.soap-object-type-string
+                        tab-level = 20,
+                        element-name = e-xml-name,
+                        nillable? =
+                            e isa WSDLInternalSchemaElement and
+                            (e asa WSDLInternalSchemaElement).nillable?
+                    }
+                 else
+                    {e.type.soap-object-type-string
+                        tab-level = 20,
+                        nillable? =
+                            e isa WSDLInternalSchemaElement and
+                            (e asa WSDLInternalSchemaElement).nillable?
+                    }
+                }
+            }
+        }
+        {out.write-one-string "\n              \},\n"}
+        {out.write-one-string
+            "            field-names =\n" &
+            "                \{\{Array-of #XMLName\}"
+        }
+        || field-namespace ?
+        {for e key i in all-elements do
+            {out.write-one-string 
+                {if i == 0
+                 then "\n"
+                 else ",\n"}}
+            {out.write-one-string
+                {WSDLSchemaType.xml-name-to-curl-code {non-null e.xml-name}}
+            }
+        }
+        {out.write-one-string "\n                \},\n"}
+        || include-null-fields? = false
+        || include-unnamed-fields? = false
+        || is this needed? if so this needs to be moved to not be a class global
+        {out.write-one-string "            element-name-to-xml-type = element-name-to-xml-type,\n"}
+        {out.write-one-string "            xml-type-to-curl-type = xml-type-to-curl-type,\n"}
+        {out.write-one-string "            curl-type-to-xml-type = curl-type-to-xml-type,\n"}
+        {out.write-one-string "            xml-type-to-element-name = xml-type-to-element-name\n"}
+        {format out = out,
+            "        \}\n%s" &
+            "    \}\n",
+            {WSDLSchemaType.soap-marshaler-regster-code "soap-named-fields-marshaler"}
+        }
+        {return {out.to-String}}
+     else
+        {return null}
+    }
+  }
+
+  {method private {register-type-code-non-choice
+                      element-name:#XMLName = null
+                  }:#String
+    {if-non-null xml-name = self.xml-name then
+        let constant out:StringBuf = {new StringBuf}
+        let constant all-elements:{Array-of WSDLSchemaElement} =
+            self.all-elements-clone
+        let constant all-attributes:{Array-of WSDLSchemaAttribute} =
+            self.all-attributes-clone        
+        let constant repeating-elements:{Array-of XMLName} =
+            {{Array-of XMLName}}
+        let constant optional-elements:{Array-of XMLName} =
+            {{Array-of XMLName}}
+
+        || write out marshaler class variable
+        {format out = out,
+            "    \{do\n" &
+            "        let constant soap-struct-marshaler:SOAPStructMarshaler =\n" &
+            "        \{SOAPStructMarshaler\n" &
+            "%s,\n" &
+            "            \{\{Array-of #XMLName\}",
+            {self.soap-object-type-string
+                tab-level = 12, element-name = element-name
+            }
+        }
+        let n-args:int = 0
+        || output field-names, first attributes then elements
+        {for a in all-attributes do
+            {if n-args > 0 then
+                {out.append ','}}
+            {inc n-args}
+            {format out = out,
+                "\n                %s",
+                {WSDLSchemaType.xml-name-to-curl-code {non-null a.xml-name}}
+            }
+        }
+        {if-non-null self.content-type then
+            || simpleContent: synthesized 'content' field
+            {if n-args > 0 then
+                {out.append ','}}
+            {inc n-args}
+            {format out = out,
+                "\n                %s",
+                {WSDLSchemaType.xml-name-to-curl-code 
+                    self.content-field-xml-name}
+            }
+         else
+            || complexContent: specified elements
+            {for e in all-elements do
+                {if n-args > 0 then
+                    {out.append ','}}
+                {inc n-args}
+                {format out = out,
+                    "\n                %s",
+                    {WSDLSchemaType.xml-name-to-curl-code 
+                        {non-null e.xml-name}}
+                }
+            }
+        }
+        {out.write-one-string "\n            \},\n"}
+        || write out types of each field, don't need curl-type if
+        || SOAPStructMarshaler thay can do reflection is in use.
+        {out.write-one-string "            \{\{Array-of SOAPObjectType\}"}
+        || output field-types, first attributes then elements
+        set n-args = 0
+        {for a in all-attributes do
+            {if n-args > 0 then
+                {out.append ','}}
+            {inc n-args}
+            {format out = out,
+                "\n%s",
+                {a.type.soap-object-type-string
+                    tab-level = 16,
+                    element-name = a.xml-name
+                }
+            }
+        }
+        {if-non-null type = self.content-type then
+            || simpleContent: synthesized 'content' field
+            {if n-args > 0 then
+                {out.append ','}}
+            {inc n-args}
+            {format out = out,
+                "\n%s",
+                {type.soap-object-type-string
+                    tab-level = 16}
+            }
+         else
+            || complexContent: specified elements
+            {for e in all-elements do
+                {if n-args > 0 then
+                    {out.append ','}}
+                {inc n-args}
+                {format out = out,
+                    "\n%s",
+                    {e.type.soap-object-type-string
+                        tab-level = 16,
+                        element-name = e.xml-name,
+                        nillable? =
+                            e isa WSDLInternalSchemaElement and
+                        (e asa WSDLInternalSchemaElement).nillable?
+                    }
+                }
+            }
+        }
+        {out.write-one-string "\n            \},\n"}
+        || write out types of each field, don't need field-curl-name if
+        || SOAPStructMarshaler that can do reflection is in use.
+        let need-full-type-information?:bool = true
+        {if need-full-type-information? then
+            {out.write-one-string "            \{\{Array-of String\}"}
+            let constant element-scope-string:String = self.ref-name & '.'
+            let n-args:int = 0
+            || output field-types, first attributes then elements
+            {for a in all-attributes do
+                {if n-args > 0 then
+                    {out.append ','}}
+                {inc n-args}
+                {format out = out,
+                    "\n                \"%s\"",
+                    {self.wsdl.curl-namer.get-curl-name
+                        {non-null a.xml-name},
+                        scope = element-scope-string,
+                        curl-type = "field"
+                    }
+                }
+            }
+            {if-non-null type = self.content-type then
+                || simpleContent: synthesized 'content' field
+                {if n-args > 0 then
+                    {out.append ','}}
+                {inc n-args}
+                {format out = out,
+                    "\n                \"%s\"",
+                    {self.wsdl.curl-namer.get-curl-name
+                        self.content-field-xml-name,
+                        scope = element-scope-string,
+                        curl-type = "field"
+                    }
+                }
+             else
+                || complexContent: specified elements
+                {for e in all-elements do
+                    {if n-args > 0 then
+                        {out.append ','}}
+                    {inc n-args}
+                    {format out = out,
+                        "\n                \"%s\"",
+                        {self.wsdl.curl-namer.get-curl-name
+                            {non-null e.xml-name},
+                            scope = element-scope-string,
+                            curl-type = "field"
+                        }
+                    }
+                    || note non-nested repeating elements
+                    let repeating?:bool = 
+                        {type-switch e
+                         case e:WSDLInternalSchemaElement do
+                            e.max-occurs != 1
+                         else 
+                            false
+                        }
+                    {if repeating? then
+                        {repeating-elements.append {non-null e.xml-name}}
+                    }
+                    || note optional elements
+                    let optional?:bool = 
+                        {type-switch e
+                         case e:WSDLInternalSchemaElement do
+                            e.min-occurs == 0
+                         else 
+                            false
+                        }
+                    {if optional? then
+                        {optional-elements.append {non-null e.xml-name}}
+                    }
+                }
+            }
+            {out.write-one-string "\n            \},\n"}
+         else
+            {out.write-one-string "\n            null,\n"}
+        }
+        || note number of attributes
+        {if self.attributes.size > 0 then
+            {format out = out,
+                "            n-attributes = %d,\n",
+                self.attributes.size}
+        }
+        || note simpleContent required
+        {if-non-null self.content-type then
+            {out.concat
+                "            simple-content? = true,\n"}
+        }
+        || note non-nested repeating elements
+        {if not repeating-elements.empty? then
+            {out.concat "            repeating-elements = \n"}
+            {out.concat 
+                "                \{\{Set-of XMLName\}"}
+            {for f key i in repeating-elements do
+                {if i > 0 then
+                    {out.append ','}}
+                {format out = out, "\n                    %s",
+                    {WSDLSchemaType.xml-name-to-curl-code f}
+                }
+            }
+            {out.concat "\n              \},\n"}
+        }
+        || note optional elements
+        {if not optional-elements.empty? then
+            {out.concat "            optional-elements = \n"}
+            {out.concat 
+                "                \{\{Set-of XMLName\}"}
+            {for f key i in optional-elements do
+                {if i > 0 then
+                    {out.append ','}}
+                {format out = out, "\n                    %s",
+                    {WSDLSchemaType.xml-name-to-curl-code f}
+                }
+            }
+            {out.concat "\n              \},\n"}
+        }
+        || field-namespace ?
+        || is this needed? if so this needs to be moved to not be a class global
+        {out.write-one-string "            element-name-to-xml-type = element-name-to-xml-type,\n"}
+        {out.write-one-string "            xml-type-to-curl-type = xml-type-to-curl-type,\n"}
+        {out.write-one-string "            curl-type-to-xml-type = curl-type-to-xml-type,\n"}
+        {out.write-one-string "            xml-type-to-element-name = xml-type-to-element-name\n"}
+        {format out = out,
+            "        \}\n%s" &
+            "    \}\n",
+            {WSDLSchemaType.soap-marshaler-regster-code "soap-struct-marshaler"}
+        }
+        {return {out.to-String}}
+     else
+        {return null}
+    }
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {if not self._multiple-reference-set? then
+        set self._multiple-reference-set? = true
+        set self._multiple-reference = SOAPTypeMultipleReference.multiple
+        {if-non-null pc = self.parent-class then
+            || if a parent is multiple-reference then leave us
+            || as multiple-reference
+            let constant mr:SOAPTypeMultipleReference =
+                pc.multiple-reference
+            {if mr == SOAPTypeMultipleReference.multiple or
+                mr == SOAPTypeMultipleReference.multiple-instance or
+                mr == SOAPTypeMultipleReference.multiple-reference
+             then
+                {return self._multiple-reference}
+            }
+        }
+        let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+            {WSDL.flatten-elements self.elements}
+        {for e in fe do
+            let constant mr:SOAPTypeMultipleReference =
+                e.type.multiple-reference
+            {if mr == SOAPTypeMultipleReference.multiple or
+                mr == SOAPTypeMultipleReference.multiple-instance or
+                mr == SOAPTypeMultipleReference.multiple-reference
+             then
+                || if a field is multiple-reference then leave us
+                || as multiple-reference
+                {return self._multiple-reference}
+            }
+        }
+        || all the fields are safe, so go back to neutral
+        set self._multiple-reference = SOAPTypeMultipleReference.unknown
+    }
+    {return self._multiple-reference}
+  }
+
+  {getter public open {parent-class}:#WSDLSchemaClassType
+    {return
+        {if-non-null pc = self._parent-class then
+            {type-switch pc
+             case sct:WSDLSchemaClassType do
+                sct
+             else
+                {wsdl-exception
+                    || TODO: need node here for qname
+                    {hlmessage
+                        parent-class '{value pc.xml-name}' 
+                        of '{value self.xml-name}' is not a class.                        
+                    }
+                }
+            }
+         else
+            null
+        }
+    }
+  }
+  || TODO: verify content-type is kind of anySimpleType
+
+  {getter public open {all-elements-clone}:{Array-of WSDLSchemaElement}
+    || resolve possible group and use that as the element list to work with
+    let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+        {WSDL.flatten-elements self.elements}
+    {return
+        {if-non-null pc = self.parent-class then
+            let constant ret:{Array-of WSDLSchemaElement} =
+                pc.all-elements-clone
+
+            {ret.concat fe}
+            ret
+         else
+            {fe.clone}
+        }
+    }
+  }
+  
+  {getter public open {all-attributes-clone}:{Array-of WSDLSchemaAttribute}
+    || resolve possible group and use that as the element list to work with
+    let fa:{Array-of WSDLSchemaAttribute} =
+        {WSDL.flatten-attributes self.attributes}
+    {return
+        {if-non-null pc = self.parent-class then
+            let constant ret:{Array-of WSDLSchemaAttribute} =
+                pc.all-attributes-clone
+            
+            {ret.concat fa}
+            ret
+         else
+            {fa.clone}
+        }
+    }
+  }
+  
+}
+
+
+{define-class public open WSDLSchemaArrayType {inherits WSDLSchemaType}
+  field public constant element:WSDLInternalSchemaElement
+  field public constant array-types:#{Array-of XMLName}
+  field private _multiple-reference:SOAPTypeMultipleReference
+  field private _multiple-reference-set?:bool
+  field private _ref-name:#String
+  field public constant dimensions:{Array-of int}
+  field public constant repeating-element-name:#XMLName
+  
+  {constructor public {default
+                          xml-name:#XMLName,
+                          element:WSDLInternalSchemaElement,
+                          array-type:#XMLName = null,
+                          curl-namer:#WSDLCurlNamer = null,
+                          repeating-element-name:#XMLName = null
+                      }
+    {construct-super xml-name}
+    set self.element = element
+    set self._multiple-reference = SOAPTypeMultipleReference.unknown
+    set self._multiple-reference-set? = false
+    set self.repeating-element-name = repeating-element-name
+    || FIXME: look at array-type and complain if it has more
+    || dimensions or nesting than is supported.
+    {if-non-null array-type then
+        let constant dimensions:{Array-of int} = {new {Array-of int}}
+        let constant array-types:{Array-of XMLName} = {new {Array-of XMLName}}
+        let current-dimension:int = 1
+        let constant local-name:String = array-type.local-name
+        {for c key i in local-name do
+            {switch c
+             case '\]' do
+                || end of an array nesting dimension block
+                {dimensions.push current-dimension}
+                set current-dimension = 1
+                {array-types.push
+                    {new XMLName.unchecked,
+                        array-type.namespace,
+                        {local-name.substr 0, i + 1}
+                    }
+                }
+             case ',' do
+                || another dimension in the current array nesting block
+                set current-dimension = current-dimension + 1
+            }
+        }
+        set self.dimensions = dimensions
+        set self.array-types = array-types
+     else
+        set self.dimensions = {new {Array-of int}, 1}
+        set self.array-types = null
+    }
+    set self._ref-name =
+        {if-non-null xml-name = self.xml-name then
+            {if-non-null curl-namer then
+                {curl-namer.get-curl-name xml-name, curl-type = "class"}
+             else
+                null
+            }
+        else
+            null
+        }
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    || avoid cycles
+    {if-non-null name = self.xml-name then
+        {if {names.seen.member? name} then
+            {return}
+         else
+            {names.seen.insert name}
+        }
+    }
+    {self.element.resolve-types names}
+  }
+
+  {method package {default-curl-type-name
+                    top-dimension:int = self.dimensions.size - 1
+                }:String
+    let constant buf:StringBuf = {new StringBuf}
+    {for i:int = 0 to top-dimension do
+        let constant d:int = self.dimensions[i]
+        {for j = 0 below d do
+            {buf.concat "\{Array-of "}
+        }
+    }
+    || element type
+    let nullable-primitive?:bool =
+        {type-switch self.element.type
+         case e:WSDLSchemaPrimitiveType do
+            e.curl-primitive-type? and self.element.nillable?
+         else false}
+    {if nullable-primitive? then
+        {buf.concat |"{Nullable "|}
+        {buf.concat self.element.type.ref-name}
+        {buf.concat |"}"|}
+     else
+        || normal type
+        {if self.element.nillable? then
+            {if self.element.type.nullable? then
+                {buf.concat "#"}
+            }
+        }
+        {buf.concat self.element.type.ref-name}
+    }
+    
+    {for i:int = 0 to top-dimension do
+        let constant d:int = self.dimensions[i]
+        {for j = 0 below d do
+            {buf.append '\}'}
+        }
+    }
+    {return 
+        {buf.to-String}
+    }
+}
+
+  {getter package {ref-name}:String
+    {return
+        {if-non-null ref-name = self._ref-name then
+            ref-name
+         else
+            let constant rf:String = {self.default-curl-type-name}
+            set self._ref-name = rf
+            rf
+        }
+    }
+  }
+
+  {getter package {nullable?}:bool
+    {return true}
+  }
+
+  {method package {concat-sub-types
+                      h:{HashTable-of WSDLSchemaType, #XMLName}
+                  }:void
+    || add our element type, but only if there is not already
+    || an entry for them (which might have an element name)
+    let constant (element-name:#XMLName, found?:bool) =
+        {h.get-if-exists self.element.type}
+    {if not found? or element-name == null then
+        {h.set self.element.type, self.element.xml-name}
+        {if not found? then
+            {self.element.type.concat-sub-types h}
+        }
+    }
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {return
+        || NOTE: this allows "anonymous" array types
+||--        {if-non-null xml-name = self.xml-name then
+        {if true then
+            let constant out:StringBuf = {new StringBuf}
+            {format
+                out = out,
+                "    \{do\n" &
+                "        let constant array-marshaler:SOAPArrayMarshaler =\n" &
+                "            \{SOAPArrayMarshaler.from-element-type-array\n" &
+                "                \{\{Array-of SOAPObjectType\}\n" &
+                "%s,\n",
+                {self.element.type.soap-object-type-string
+                    tab-level = 20, element-name =
+                        {if-non-null element-xml-name = self.element.xml-name
+                         then
+                            element-xml-name
+                         else
+                            null
+                        },
+                    nillable? = self.element.nillable?
+                }
+            }
+            || for any middle nesting do their types (if there is more than
+            || one level of nesting.)
+            {for i:int = 0 below self.dimensions.size - 1 do
+                || NB self.array-types won't be null if there is more
+                || than one level of nesting.
+                {format
+                    out = out,
+                    "%s,\n",
+                    {WSDLSchemaType.soap-object-type-code-string
+                        tab-level = 20,
+                        xml-type = self.array-types[i],
+                        curl-type =
+                            {self.default-curl-type-name top-dimension = i},
+                        nillable? = true,
+                        multiple-reference = self.multiple-reference
+                    }
+                }
+            }
+            {format
+                out = out,
+                "%s\n" &
+                "                \},\n",
+                {self.soap-object-type-string
+                    tab-level = 20, 
+                    element-name = element-name
+                }
+            }
+            {if-non-null element-xml-name = self.element.xml-name then
+                {format
+                    out = out,
+                    "                element-names =\n" &
+                    "                    \{\{Array-of #XMLName\}\n" &
+                    "                        %s",
+                    {WSDLSchemaType.xml-name-to-curl-code element-xml-name}
+                }
+                {for i:int = 0 below self.dimensions.size - 1 do
+                    {if i != 0 then
+                        {out.append ','}}
+                    {out.concat "\n                        null"}
+                }
+                {out.concat
+                    "\n                    \},\n"
+                }
+            }
+            {if-non-null array-types = self.array-types then
+                {out.concat
+                    "                array-types =\n" &
+                    "                    \{\{Array-of #XMLName\}"
+                }
+                {for at key i in array-types do
+                    {if i != 0 then
+                        {out.append ','}}
+                    {format
+                        out = out,
+                        "\n                        %s",
+                        {WSDLSchemaType.xml-name-to-curl-code at}
+                    }
+                }
+                {out.concat "\n                    \},\n"}
+            }
+            {if-non-null repeating-element-name = self.repeating-element-name then
+                {format out = out,
+                    "                check-element-name = %s,\n",
+                    {WSDLSchemaType.xml-name-to-curl-code repeating-element-name}
+                }
+            }
+            {format
+                out = out,
+                "                xml-type-to-curl-type = xml-type-to-curl-type,\n" &
+                "                curl-type-to-xml-type = curl-type-to-xml-type,\n" &
+                "                xml-type-to-element-name = xml-type-to-element-name\n" &
+                "            \}\n%s" &
+                "    \}\n",
+                {WSDLSchemaType.soap-marshaler-regster-code "array-marshaler"}
+            }
+            {out.to-String}
+         else
+            null
+        }
+    }
+  }
+
+  {method package {soap-object-type-string
+                      tab-level:int = 0,
+                      element-name:#XMLName = null,
+                      nillable?:bool = self.nullable?,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          self.multiple-reference
+                  }:String
+
+    {return
+        {WSDLSchemaType.soap-object-type-code-string
+            tab-level = tab-level,
+            element-name = element-name,
+            xml-type =
+                {if-non-null array-types = self.array-types then
+                    {array-types.top-of-stack}
+                 else
+                    self.xml-name
+                },
+            curl-type = self.ref-name,
+            nillable? = nillable?,
+            multiple-reference = self.multiple-reference
+        }
+    }
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    let constant ref-name:String = self.ref-name
+    let constant default-curl-type:String = {self.default-curl-type-name}
+    {if ref-name != default-curl-type then
+        {format out = out,
+            "\{let public constant %s:ClassType = %s\}\n\n",
+            ref-name,
+            default-curl-type
+        }
+    }
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {if not self._multiple-reference-set? then
+        set self._multiple-reference-set? = true
+        set self._multiple-reference = SOAPTypeMultipleReference.multiple
+        let constant mr:SOAPTypeMultipleReference =
+            self.element.type.multiple-reference
+        {if mr != SOAPTypeMultipleReference.multiple and
+            mr != SOAPTypeMultipleReference.multiple-instance and
+            mr != SOAPTypeMultipleReference.multiple-reference
+         then
+            || if element is multiple-reference then leave us
+            || as multiple-reference, otherwise,
+            || element is safe, so go back to neutral
+            set self._multiple-reference = SOAPTypeMultipleReference.unknown
+        }
+    }
+    {return self._multiple-reference}
+  }
+
+}
+
+
+{define-class public open WSDLSchemaEnumType {inherits WSDLSchemaType}
+  field public constant members:StringArray
+  field private constant _ref-name:String
+  field private constant curl-namer:WSDLCurlNamer
+  field private constant base-type:#WSDLSchemaType
+
+  {constructor public {default
+                          xml-name:XMLName,
+                          members:StringArray,
+                          curl-namer:WSDLCurlNamer,
+                          base-type:#WSDLSchemaType = null
+                      }
+    {construct-super xml-name}
+    set self.members = members
+    set self.curl-namer = curl-namer
+    set self._ref-name =
+        {curl-namer.get-curl-name xml-name, curl-type = "class"}
+    set self.base-type = base-type
+  }
+
+  {getter package {ref-name}:String
+    {return self._ref-name}
+  }
+
+  {getter package {nullable?}:bool
+    {return false}
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    {if-non-null xml-name = self.xml-name then
+        let constant ref-name:String = self.ref-name
+        {format out = out, "\{define-enum public %s", ref-name}
+        {for m key i in self.members do
+            {if i > 0 then
+                {out.write-one ','}
+            }
+            let constant element-scope-string:String = ref-name & '.'
+            let constant buf:StringBuf = {new StringBuf, m}
+            let constant needs-prefix?:bool =
+                {if not buf.empty? then
+                    let ch:char = buf[0]
+                    {if {WSDLCurlNamer.curl-name-start-chars.member? ch} then
+                        false
+                     else
+                        true
+                    }
+                 else
+                    false
+                }
+            {format out = out, "\n    %s = %s",
+                {self.curl-namer.get-curl-name
+                    {XMLName.unchecked
+                        "",
+                        {if needs-prefix? then
+                            {format "value-%s", m}
+                         else
+                            m
+                        }
+                    },
+                    scope = element-scope-string,
+                    curl-type = "field"
+                },
+                {self.value-string m}
+            }
+        }
+        {out.write-one-string "\n\}\n\n"}
+    }
+  }
+
+  {method private {value-string s:String}:String
+    {return
+        {value
+            let constant curl-type:String = self.base-type.ref-name
+            {if curl-type == "String" then
+                {format "\"%s\"", s}
+             elseif {curl-type.prefix? "int"} or
+                {curl-type.prefix? "uint"}
+             then
+|| TODO: "Enum values may only be numbers, chars, bools, or string constants."
+||       Bools should be supported here shouldn't they?
+                {format "%s", s}
+             elseif {curl-type.prefix? "float"} or
+                {curl-type.prefix? "double"}
+             then
+                {format 
+                    "%s asa %s",
+                    {switch s
+                     case "NaN" do
+                        "nan"
+                     case "INF" do
+                        "infinity"
+                     case "-INF" do
+                        "-infinity"
+                     else
+                        s
+                    },
+                    curl-type
+                }
+             elseif curl-type == "Url" then
+                || FIXME relative URLs might be legal here...
+                {format "\"%s\"", s}
+                
+             elseif curl-type == "XMLName" then
+                || NOTE: namespace information has been lost
+                {format "\"%s\"", s}
+                
+             elseif (curl-type == "XMLSimpleValue" 
+                     or {curl-type.prefix? |"{XMLSimpleValue-for"|})
+             then
+                || NOTE: these have implicit constructors from String
+                {format "\"%s\"", s}
+             else
+                {wsdl-exception
+                    {format "enumerations of %s are not supported.", curl-type}
+                }
+            }
+        }
+    }
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {return
+        {if-non-null xml-name = self.xml-name then
+            {format
+                "    \{do\n" &
+                "        let constant enum-marshaler:SOAPEnumMarshaler =\n" &
+                "            \{SOAPEnumMarshaler\n" &
+                "%s,\n" &
+                "                use-value? = true\n" &
+                "            \}\n%s" &
+                "    \}\n"
+                ,
+                {self.soap-object-type-string
+                    tab-level = 16, element-name = element-name
+                },
+                {WSDLSchemaType.soap-marshaler-regster-code "enum-marshaler"}
+            }
+         else
+            null
+        }
+    }
+  }
+
+  || FIXME: really should be based on type of enum values...
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {return SOAPTypeMultipleReference.unknown}
+  }
+}
+
+|| NOTE: commented out code below was attempt to use 'XDMElement' instead of 'any'
+|| -- but that is not appropriate for runtime unmarshaling based on 'xsi:type' 
+
+{define-class public open WSDLSchemaXMLDocumentType {inherits WSDLSchemaType}
+
+  field package constant curl-namer:WSDLCurlNamer
+  {constructor public {default
+                          xml-name:#XMLName,
+                          curl-namer:WSDLCurlNamer
+                      }
+    {construct-super xml-name}
+    set self.curl-namer = curl-namer
+  }
+  
+  {getter package {curl-type-name}:String
+    {return "any"}
+  }
+||--  {getter package {curl-type-name}:String
+||--    || TODO: confirm this interpretation
+||--    || distinguish cases
+||--    || -- 'any' for 'xs:anyType'
+||--    || -- 'XDMElement' for fallback
+||--    {return 
+||--        {if self.xml-name == WSDLSchemaXMLDocumentType.anyType then
+||--            "any"
+||--         else
+||--            "XDMElement"
+||--        }
+||--    }
+||--  }
+||--  let package constant anyType:XMLName =
+||--      {XMLName WSDL.schema-namespace-uri, "anyType"}
+
+  field package _ref-name:#String
+  {getter package {ref-name}:String
+    {if self._ref-name == null then
+        set self._ref-name =
+            {if-non-null xml-name = self.xml-name then
+                {self.curl-namer.get-curl-name xml-name,
+                    curl-type = "class"}
+             else
+                self.curl-type-name}}                    
+    {return {non-null self._ref-name}}
+||--    {return "any"}
+  }
+
+  {getter package {nullable?}:bool
+    {return true}
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    || TODO: maybe depends on fallback vs declared?
+    let data-has-root-element?:bool = true 
+    {return
+        {if-non-null xml-name = self.xml-name then
+            {format
+                "    \{do\n" &
+                "        let constant doc-marshaler:SOAPXMLDocumentMarshaler =\n" &
+                "            \{SOAPXMLDocumentMarshaler\n" &
+                "%s,\n" &
+                || is there a case were this should be false?
+||--                "                data-has-root-element? = true\n" &
+                "                data-has-root-element? = %s\n" &
+                "            \}\n%s" &
+                "    \}\n"
+                ,
+                {self.soap-object-type-string
+                    tab-level = 16, element-name = element-name
+                },
+                data-has-root-element?,
+                {WSDLSchemaType.soap-marshaler-regster-code "doc-marshaler"}
+            }
+         else
+            null
+        }
+    }
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    {if-non-null xml-name = self.xml-name then
+        {format out = out,
+            "\{let public constant %s:Type = %s\}\n\n",
+            self.ref-name,
+            self.curl-type-name
+        }
+    }
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {return SOAPTypeMultipleReference.unknown}
+  }
+}
+
+{define-class public open WSDLSchemaUnionType {inherits WSDLSchemaType}
+
+  field public constant types:{Array-of WSDLSchemaType}
+  field private _multiple-reference:SOAPTypeMultipleReference
+  field private _multiple-reference-set?:bool
+  field private _alias-type:#WSDLSchemaAliasType
+  field private constant wsdl:WSDL
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          types:{Array-of WSDLSchemaType},
+                          wsdl:WSDL
+                      }
+    {construct-super xml-name}
+    set self.types = types
+    set self.wsdl = wsdl
+  }
+
+  {getter package {ref-name}:String
+    {return 
+        {if-non-null at = self.alias-type then
+            at.ref-name
+         else
+            "any"
+        }
+    }
+  }
+
+  {getter package {nullable?}:bool
+    {return true}
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    {if not self._multiple-reference-set? then
+        set self._multiple-reference-set? = true
+        set self._multiple-reference = SOAPTypeMultipleReference.multiple
+        {for t in self.types do
+            let constant mr:SOAPTypeMultipleReference = t.multiple-reference
+            {if mr == SOAPTypeMultipleReference.multiple or
+                mr == SOAPTypeMultipleReference.multiple-instance or
+                mr == SOAPTypeMultipleReference.multiple-reference
+             then
+                || if types are multiple-reference then leave us
+                || as multiple-reference
+                {return self._multiple-reference}
+            }
+        }
+        set self._multiple-reference = SOAPTypeMultipleReference.unknown
+    }
+    {return self._multiple-reference}
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {for t key i in self.types do
+        {type-switch t
+         case pt:WSDLSchemaPlaceholderType do
+            set self.types[i] = {pt.resolve-type names}
+        }
+    }
+    {if-non-null at = self.alias-type then
+        {at.resolve-types names}
+    }
+  }
+
+  {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
+    {for t in self.types do
+        let constant (element-name:#XMLName, found?:bool) =
+            {h.get-if-exists t}
+        {if not found? then
+            {h.set t, null}
+            {t.concat-sub-types h}
+        }
+    }
+    {if-non-null at = self.alias-type then
+        let constant (element-name:#XMLName, found?:bool) =
+            {h.get-if-exists at}
+        {if not found? then
+            {h.set at, null}
+            {at.concat-sub-types h}
+        }
+    }
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {return
+        {if-non-null at = self.alias-type then
+            {at.register-type-code element-name = element-name}
+         else
+            null
+        }
+    }
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    {if-non-null at = self.alias-type then
+        {at.dump out}
+    } 
+  }
+
+  {getter private {alias-type}:#WSDLSchemaAliasType
+    {return
+        {if-non-null xml-name = self.xml-name then
+            {if-non-null at = self._alias-type then
+                at
+             else
+                let constant at:WSDLSchemaAliasType =
+                    {new WSDLSchemaAliasType,
+                        xml-name,
+                        self.wsdl.names[{XMLName WSDL.schema-namespace-uri, WSDL.type-prefix & "anyType"}] asa WSDLSchemaType,
+                        self.wsdl.curl-namer,
+                        use-type-attribute? = false,
+                        override-multiple-reference = self.multiple-reference
+                    }
+                set self._alias-type = at
+                at
+            }
+         else
+            null
+        }
+    }
+  }
+}
+
+{define-class public open WSDLSchemaListType {inherits WSDLSchemaType}
+  field public constant item-type:WSDLSchemaType
+  field private _ref-name:String
+
+  {constructor public {default 
+                          xml-name:#XMLName, 
+                          item-type:WSDLSchemaType,
+                          curl-namer:WSDLCurlNamer}
+    {construct-super xml-name}
+    set self.item-type = item-type
+    set self._ref-name =
+        {if-non-null xml-name then
+            {curl-namer.get-curl-name xml-name, curl-type = "class"}
+         else
+            {self.default-curl-type-name}
+        }
+  }
+
+  {getter package {ref-name}:String
+    {return self._ref-name}
+  }
+
+  {getter package {nullable?}:bool
+    {return true}
+  }
+
+  {getter package {multiple-reference}:SOAPTypeMultipleReference
+    || TODO: check what array does
+    {return SOAPTypeMultipleReference.unknown}
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {self.item-type.resolve-types names}
+  }
+  
+  {method package {default-curl-type-name}:String
+    {return {format "\{Array-of %s\}", self.item-type.ref-name}}
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    let constant ref-name:String = self.ref-name
+    let constant default-curl-type:String = {self.default-curl-type-name}
+    {if ref-name != default-curl-type then
+        {format out = out,
+            "\{let public constant %s:ClassType = %s\}\n\n",
+            ref-name,
+            default-curl-type
+        }
+    }
+  }
+
+  {method package {register-type-code element-name:#XMLName = null}:#String
+    {return
+        {if-non-null xml-name = self.xml-name then
+            {format
+                "    \{do\n" &
+                "        let constant list-marshaler:SOAPListMarshaler =\n" &
+                "            \{SOAPListMarshaler\n" &
+                "%s,\n" &
+                "%s\n" &
+                "            \}\n%s" &
+                "    \}\n"
+                ,
+                {self.soap-object-type-string
+                    tab-level = 16, element-name = element-name
+                },
+                {self.item-type.soap-object-type-string
+                    tab-level = 16
+                },
+                {WSDLSchemaType.soap-marshaler-regster-code "list-marshaler"}
+            }
+         else
+            null
+        }
+    }
+  }
+  
+  || used to obtain reachable types for code generation
+  {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
+    let t:WSDLSchemaType = self.item-type
+    let constant (name:#XMLName, found?:bool) =
+        {h.get-if-exists t}
+    {if not found? or name == null then
+        {h.set t, t.xml-name}
+        {if not found? then
+            {t.concat-sub-types h}
+        }
+    }
+  }  
+
+}

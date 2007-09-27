@@ -1,0 +1,153 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{let round3-impls:RecordSet =
+    {RecordSet
+        {RecordFields
+            {RecordField "group", domain = String},
+            {RecordField "subgroup", domain = String},
+            {RecordField "server", domain = String, caption = "Server"},
+            {RecordField "wsdl", domain = String}},
+
+        || Group D
+        ||   Compound 1
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound1",
+            server = "GroupD/Compound1/BEA",
+            wsdl = "http://webservice.bea.com:7001/compound1/Compound1?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound1",
+            server = "GroupD/Compound1/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/compound1.wsdl"},
+        ||   Compound 2
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound2",
+            server = "GroupD/Compound2/BEA",
+            wsdl = "http://webservice.bea.com:7001/compound2/Compound2?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound2",
+            server = "GroupD/Compound2/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDCompound2.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound2",
+            server = "GroupD/Compound2/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/compound2.wsdl"},
+        ||   DocLit
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLit",
+            server = "GroupD/DocLit/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDInteroptestdoclit.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLit",
+            server = "GroupD/DocLit/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/interoptestdoclit.wsdl"},
+        ||   DocLitParams
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLitParams",
+            server = "GroupD/DocLitParams/BEA",
+            wsdl = "http://webservice.bea.com:7001/doclitparam/WSDLInteropTestDocLitService?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLitParams",
+            server = "GroupD/DocLitParams/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/interoptestdoclitparameters.wsdl"},
+        ||   Import 1
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import1",
+            server = "GroupD/Import1/BEA",
+            wsdl = "http://webservice.bea.com:7001/import1/Import1?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import1",
+            server = "GroupD/Import1/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDImport1.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import1",
+            server = "GroupD/Import1/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/import1.wsdl"},
+        ||   Import 2
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import2",
+            server = "GroupD/Import2/BEA",
+            wsdl = "http://webservice.bea.com:7001/import2/Import2?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import2",
+            server = "GroupD/Import2/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDImport2.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import2",
+            server = "GroupD/Import2/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/import2.wsdl"},
+        ||   Import 3
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import3",
+            server = "GroupD/Import3/BEA",
+            wsdl = "http://webservice.bea.com:7001/import3/Import3?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import3",
+            server = "GroupD/Import3/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/import3.wsdl"},
+||--            wsdl = "WhiteMesa/import3.wsdl"},
+        ||   RpcEnc
+        {RecordData
+            group = "GroupD",
+            subgroup = "RpcEnc",
+            server = "GroupD/RpcEnc/BEA",
+            wsdl = "http://webservice.bea.com:7001/rpc/WSDLInteropTestRpcEncService?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "RpcEnc",
+            server = "GroupD/RpcEnc/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDInteroptestrpcenc.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "RpcEnc",
+            server = "GroupD/RpcEnc/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/interoptestrpcenc.wsdl"},
+        || Group E
+        ||   DocLit
+        {RecordData
+            group = "GroupE",
+            subgroup = "DocLit",
+            server = "GroupE/DocLit/BEA",
+            wsdl = "http://webservice.bea.com:7001/doclit/WSDLInteropTestDocLitService?WSDL"},
+        ||   LinkedList
+        {RecordData
+            group = "GroupE",
+            subgroup = "LinkedList",
+            server = "GroupE/LinkedList/BEA",
+            wsdl = "http://webservice.bea.com:7001/list/WSDLInteropTestListService?WSDL"}
+        ||   RpcEnc
+        ||   NONE
+        || Group F
+        ||   TODO
+    }
+}

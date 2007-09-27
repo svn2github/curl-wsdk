@@ -1,0 +1,157 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 manifest}
+{manifest COM.CURL.WSDK.SUPPORT,
+    version = "1.0.5"}
+
+{delegate-to COM.CURL.WSDK,
+    location = "../code/manifest.mcurl"}
+
+{delegate-to COM.CURL.CDU,
+||--    || use with adjacent CDU repository
+||--    location = "../../../CDU/trunk/code/manifest.mcurl"
+    || use with svn:externals
+    location = "../lib/CDU/manifest.mcurl"
+}
+
+|| utility packages
+|| --------------------
+{component package COM.CURL.WSDK.API-SUPPORT,
+    location = "util/api-support/load.scurl"
+}
+{component package COM.CURL.WSDK.DISPLAY-SUPPORT,
+    location = "util/display-support/load.scurl"
+}
+{component package COM.CURL.WSDK.APPVIEW,
+    location = "util/AppView/load.scurl"
+}
+{component package COM.CURL.WSDK.XML-COMPARE,
+    location = "util/xdm-compare/load.scurl"
+}
+{component package COM.CURL.WSDK.MSXML,
+    location = "util/msxml/load.scurl"
+}
+
+|| test infrastructure
+|| --------------------
+{component package COM.CURL.WSDK.XML-TEST-SUPPORT,
+    location = "test-extensions/xdm-test-support.scurl"
+}
+{component package COM.CURL.WSDK.MSXML-TEST-SUPPORT,
+    location = "test-extensions/msxml-test-support.scurl"
+}
+{component package COM.CURL.WSDK.WSDL-TEST-SUPPORT,
+    location = "test-extensions/wsdl-test-support.scurl"
+}
+
+|| test cases
+|| --------------------
+{component file dguide-test-cases.scurl,
+    location = "test-cases/dguide-test-cases.scurl"
+}
+
+{component file msxml-test-cases.scurl,
+    location = "test-cases/msxml-test-cases.scurl"
+}
+
+{component file test-cases.scurl,
+    location = "test-cases/test-cases.scurl"
+}
+
+{component file wsdl-test-cases.scurl,
+    location = "test-cases/wsdl-test-cases.scurl"
+}
+
+{component file xdm-test-cases.scurl,
+    location = "test-cases/xdm-test-cases.scurl"
+}
+
+{component directory xml-data,
+    location = "test-cases/xml-data"
+}
+
+{component directory wsdl-services,
+    location = "test-cases/wsdl-services"
+}
+
+{component file extended-wsdl-test-cases.scurl,
+    location = "test-cases/extended-wsdl-test-cases.scurl"
+}
+
+{component file extended-test-cases.scurl,
+    location = "test-cases/extended-test-cases.scurl"
+}
+
+{component file full-manual-test.dcurl,
+    location = "full-manual-test.dcurl"
+}
+
+{component file full-manual-test.curl,
+    location = "full-manual-test.curl"
+}
+|| NOTE: excluded because xmethods service is defunct
+||--{component directory wsdl-samples,
+||--    location = "test-cases/wsdl-samples"
+||--}
+
+{component file project.cprj,
+    location = "project.cprj"
+}
+
+{component file xdm-unit-tests.scurl,
+    location = "test-cases/xdm-unit-tests.scurl"
+}
+
+{component directory xdm-test-applets,
+    location = "test-cases/xdm-test-applets"
+}
+
+{component file wsdl-echo-test-cases.scurl,
+    location = "test-cases/wsdl-echo-test-cases.scurl"
+}
+
+{component file context.scurl,
+    location = "test-cases/context.scurl"
+}
+
+{component file xdm-tree-model.scurl,
+    location = "test-cases/xdm-tree-model.scurl"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

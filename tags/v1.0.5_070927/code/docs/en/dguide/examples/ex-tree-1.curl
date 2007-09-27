@@ -1,0 +1,238 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+
+{include "settings-support.scurl"}
+
+{document-style PlainDocument}
+{set-document-properties
+    hstretch? = true,
+    vstretch? = true
+}
+
+{persistent-data "Settings"}
+{value
+    || defaults 
+    let restore-settings?:bool = true
+    let settings:XDMElement =
+        {XDMElement "settings",
+            {XDMElement "filename", "wsdk-dguide.rss"},
+            {XDMElement "tree-style",
+                {XDMElement "text-breakable", "true"},
+                {XDMElement "font-size", "8"},
+                {XDMElement "indentation", "1.25"},
+                {XDMElement "display-root", "true"},
+                {XDMElement "display-toggle-buttons", "true"},
+                {XDMElement "display-tree-connector", "true"},
+                {XDMElement "background",
+                    {XDMElement "selected", "beige"},
+                    {XDMElement "highlight", "pink"}},
+                {XDMElement "color",
+                    {XDMElement "element-name", "purple"},
+                    {XDMElement "attribute-name", "green"},
+                    {XDMElement "attribute", "blue"},
+                    {XDMElement "text", "black"},
+                    {XDMElement "nodeset", "orange"},
+                    {XDMElement "processing-instruction", "maroon"}}}
+        }
+    {if-non-null settings-xml =
+        {if restore-settings? then
+            {get-persistent-data "settings", error-if-missing? = false}
+         else null}
+     then
+        {try
+            set settings = 
+                {build-xml preserve-whitespace? = false, 
+                    settings-xml}.root
+         catch e:Exception do
+            {popup-message {message Ignoring faulty settings}}}}
+    let settings-context:XDMDataBindingContext =
+        {XDMDataBindingContext
+            model = settings}
+    {on-applet-suspend do
+        {set-persistent-data "settings", {settings.to-XML}}
+        {commit-persistent-data}}
+
+    || model
+    let xmldoc:#XDMDocument = null
+    let xml:#XDMElement = null    
+    || model tree
+    let tm:XDMTreeModel = {XDMTreeModel null}
+    let tc:XDMTreeControl = 
+        {XDMTreeControl tm,
+            tree-connector-color = "silver",
+            selection-policy = "single"}
+    
+    || actions
+    let load:{proc-type {Url}:void} =
+        {proc {loc:Url}:void
+            {try
+                || load document
+                set xmldoc =    
+                    {build-xml loc, preserve-whitespace? = false}
+                set xml = xmldoc.root
+                || populate display
+                let root:XDMTreeNode = {XDMTreeNode xml}
+                set tm.root = root
+                {tc.expand-node root}
+             catch e:Exception do
+                {popup-message e}}}
+    let base-url:Url = {{get-the-applet}.url.parent.canonicalize}
+    let load-command:ComboBox =
+        {ComboBox
+            {bind value to "filename"},
+            {on ValueFinished at c:ComboBox do
+                {c.update-data-binding "value"}},
+            vorigin = 70%,
+            {on ValueFinished at c:ComboBox do
+                {load {base-url.concat c.value}}
+                || remember new query
+                {if {c.find c.value} < 0 then
+                    {c.append c.value}}}}   
+    let choose-command:CommandButton =
+        {CommandButton 
+            label = {message Choose},
+            {on Action do
+                {if-non-null loc = 
+                    {choose-file 
+                        title = {message XML Document}, 
+                        style = FileDialogStyle.read,
+                        default-location = base-url,  
+                        filters =
+                            {{Array-of FileDialogFilter}
+                                {FileDialogFilter "XML files", 
+                                    {{Array-of FileDialogTypeFilter} 
+                                        {FileDialogTypeFilter "xml"}, 
+                                        {FileDialogTypeFilter "xhtml"}, 
+                                        {FileDialogTypeFilter "xsd"}, 
+                                        {FileDialogTypeFilter "rss"}, 
+                                        {FileDialogTypeFilter "wsdl"}}}}}
+                 then
+                    {load-command.set-value-with-events
+                        {loc.name-relative-to-url base-url}}}}}
+    
+    || display
+    let pane-style:Arguments =
+        {Arguments
+            border-width = 3px,
+            border-style = "ridge"} 
+    let display-tree:Graphic =
+        {VBox
+            margin = 3px,
+            width = 2in,
+            tc,
+            {Fill}}
+    let display-detail:Graphic =
+        {Frame
+            font-size = 8pt,
+            margin = 3px} 
+
+    || behavior
+    || - expand / collapse on double click
+    {tc.add-event-handler
+        {on Action at c:TreeControl do
+            {if-non-null node = c.current-node then
+                {with-busy-cursor
+                    {if {c.expanded-nodes.member? node} then
+                        {c.collapse-node node}
+                     else
+                        {c.expand-node node,
+                            expand-descendants? = true}}}}}}
+    || - show XML of current node
+    {tc.add-event-handler
+        {on e:CurrentNodeChanged at c:TreeControl do
+            {display-detail.clear}
+            {type-switch c.current-node.node-data
+             case n:XDMNode do
+                let out:String = 
+                    {XDMWriter.write-XML n, fragment? = true}
+                {display-detail.add
+                    {pre {value out}}}}}}         
+    
+    || settings dialog
+    let style-dialog:XDMTreeStyleDialog =
+        {XDMTreeStyleDialog tc,
+            use-look-and-feel? = true,
+            model = settings}
+    
+    || arrangement
+    let main:PanedWindow =
+        {PanedWindow orientation = "horizontal"}
+    {main.add-pane 
+        {ScrollBox
+            margin = 1px,
+            hstretch? = true,
+            vstretch? = true,
+            {splice pane-style},
+            display-tree}}
+    {main.add-pane 
+        {ScrollBox 
+            margin = 1px,
+            hstretch? = true,
+            vstretch? = true,
+            {splice pane-style},
+            display-detail}}
+    {main.set-pane-sizes {{Array-of double} 30%, 70%}}
+    
+    || initialize
+    {after 0s do
+        {load-command.handle-event {ValueFinished}}
+        {style-dialog.apply-styles}}
+    
+    || layout
+    {VBox
+        data-binding-context = settings-context,
+        margin = 3pt,
+        spacing = 3pt,
+        {splice pane-style},
+        {HBox
+            spacing = 3pt,
+            margin = 3pt,
+            {title XDMTree Display},
+            {Fill width = .5in},
+            {text File:},
+            load-command,
+            choose-command,
+            
+            {Fill},
+            || Style
+            {CommandButton label = {message Style ...},
+                {on Action do
+                    {style-dialog.show 
+                        title = {message Style},
+                        modal? = false}
+                }},            
+            {CommandButton label = {small {italic {message Settings ...}}},
+                {on Action do
+                    let display:XDMTreeControl = {XDMTreeControl settings}
+                    {display.expand-node {non-null display.data-model.root},
+                        expand-descendants? = true}
+                    {popup-message title = {message Settings XML},        
+                        {ScrollBox
+                            hstretch? = true,
+                            height = 5in,
+                            width = 3in,
+                            background = "white",
+                            display}}}}},
+        {hrule},        
+        main
+    }
+
+}

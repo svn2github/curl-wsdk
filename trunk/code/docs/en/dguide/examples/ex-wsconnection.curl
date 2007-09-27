@@ -42,13 +42,11 @@
     {return form, r}
 }
 
-{value
+{try
     let service-home:Url =  {url "http://localhost/SERVER/soap-services"}
     let service-location:Url = {service-home.concat "q-wsconnection.php"}
     let con:WSConnection = 
         {WSConnection service-location = service-location}
-    || for debugging
-||--    set con.service.soap-caller.trace-stream = {get-stdout}
     
     let size-limit:int = 15
     let w:StopWatch = {StopWatch}
@@ -135,17 +133,10 @@
             {Fill}},
         {text-width-display rg}
     }
+ catch e:Exception do
+    {paragraph
+        Unable to connect to {bold WSConnection Web Service}:        
+        {pre color = "red", {value e}}
+    }
 }
-
-|#
-10 {w.elapsed}=1.951s
-100 {w.elapsed}=1.993s
-1000 {w.elapsed}=2.23s
-10000 {w.elapsed}=4.215s
-100000 {w.elapsed}=4.404s
-10000 {w.elapsed}=4.259s
-1000 {w.elapsed}=2.174s
-100 {w.elapsed}=1.96s
-10 {w.elapsed}=1.943s
-#|
 

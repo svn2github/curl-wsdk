@@ -107,7 +107,7 @@ for use with Curl API Version 5.0.
 The following changes have been made,
 
  - SOAP messages with use='document' never use 'multiref' 
-  representation (only allowed with use'encoded.)
+  representation (only allowed with use='encoded'.)
 
  - SOAP messages containing repeating elements are now supported
 
@@ -117,14 +117,15 @@ The following changes have been made,
   are now supported
 
  - SOAP responses containing arrays with unspecified primitives
-  are now supported
+   are now supported
 
  - compressed responses may be requested from SOAP services
 
- - XDM change management corrected for XDMNode.detach
+ - XDM change notifications for XDMNode.detach 
+   are now correctly issued.
 
  - RecordSet-for change notifications (using RecordSetEvent)
-  are now correctly issued.
+   are now correctly issued.
 
  - correct treatment of SOAP fault detail elements
 

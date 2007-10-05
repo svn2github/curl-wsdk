@@ -1,0 +1,237 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public serializable StandardXDMAttributes 
+  {inherits XDMAttributes}
+  
+  field private attributes:{Association-of XDMName, XDMAttribute}
+  
+  field private _element:XDMElement
+  {getter public {element}:XDMElement
+    {return self._element}
+  }
+  {setter package {element element:XDMElement}:void
+    set self._element = element
+    {for a in self.attributes do
+        set a.parent = element}        
+  }
+  
+  {constructor package {default element:XDMElement,
+                           efficient-size:int = 6}
+    set self._element = element
+    set self.attributes =
+        {{BucketHashTable-of XDMName, XDMAttribute}
+            efficient-size = efficient-size}
+  }  
+  
+  {method public {assure-modifiable}:void
+    {type-switch self._element
+     case e:StandardXDMElement do
+        {e.assure-modifiable}}
+  }
+  {method protected {trigger-xdm-event x:XDMEvent}:void
+    {type-switch self._element
+     case e:StandardXDMElement do
+        {e.trigger-xdm-event x}}
+  }
+
+  {method public {add-attribute
+                     attribute:XDMAttribute,
+                     error-if-exists?:bool = true
+                 }:void
+    
+   
+    || Check to make sure this attribute is not a namespace
+    || declaration - if so, put it on the element, not this
+    || attributes object.
+    
+    {if {StandardXDMAttributes.namespace-declaration? attribute.xmlname} then
+        {self.assure-modifiable}
+        || NOTE: change management by element
+        {self.element.set-namespace-declaration
+            error-if-exists? = error-if-exists?,
+            {if {attribute.local-name.equal? "xmlns", ignore-case? = true} then
+                ""
+             else
+                attribute.local-name
+            },
+            attribute.value
+        } 
+        {return}
+    }
+    
+    || Check to make sure that this attribute hasn't been defined
+    || already. Overwrite an already existing attribute.
+    let name:XDMName = attribute.xmlname    
+    {self.assure-modifiable}
+    let (a:XDMAttribute, a?:bool) = 
+        {self.attributes.get-if-exists name}
+    {if a? then
+        {if error-if-exists? then
+            {xdm-exception 
+                {lmessage Attempted to add a new attribute with an 
+                    identical name '{value name}'}}
+         else
+            {self.trigger-xdm-event {XDMNodeRemoved self._element, a}}
+        }
+    }
+
+    || Set the parent pointer to this instance.
+    set attribute.parent = self.element
+    
+    {self.attributes.set name, attribute}       
+    {self.trigger-xdm-event {XDMNodeAdded attribute}}
+    
+  }
+  
+  {define-proc package {namespace-declaration? name:XDMName}:bool   
+    {return
+        {name.local-name.equal? "xmlns", ignore-case? = true} or        
+        name.namespace == "http://www.w3.org/XML/1998/XMLNS" 
+    }
+  }
+
+  {method public {clear}:void
+    {self.assure-modifiable}
+    {if not self.empty? then
+        let es:{Array-of XDMNodeRemoved} = {{Array-of XDMNodeRemoved}}
+        {for a in self.attributes do
+            {es.append {XDMNodeRemoved self._element, a}}}
+        {self.attributes.clear} 
+        {for e in es do
+            {self.trigger-xdm-event e}}
+    }
+  }
+
+  {method public {remove-attribute
+                     xmlname:XDMName,
+                     error-if-missing?:bool = true
+                 }:void    
+    {self.assure-modifiable}
+    let (a:XDMAttribute, a?:bool) = 
+        {self.attributes.get-if-exists xmlname}
+    {if a? then
+        {self.attributes.remove xmlname}
+        {self.trigger-xdm-event {XDMNodeRemoved self._element, a}}
+     elseif error-if-missing? then
+        {xdm-exception 
+            {lmessage Tried to remove an attribute 
+                ({value xmlname}) that didn't exist}}
+    }
+  }
+
+
+  {method public {find-matching-namespace prefix:String}:String
+    {return 
+        {self.element.find-matching-namespace prefix}}
+  }
+  
+  {method public {find-matching-prefix namespace:String}:#String
+    {return 
+        {self.element.find-matching-prefix namespace,
+            check-default? = false}}
+  }
+
+
+  {method public {get xmlname:XDMName}:String
+    {return {self.attributes.get xmlname}.value}
+  }
+
+  {method public {set xmlname:XDMName, value:String}:void
+    || NOTE: change management by add-attribute
+    {self.add-attribute
+        {XDMAttribute xmlname, value}
+    }
+  }
+
+  {method public {get-attribute
+                     xmlname:XDMName
+                 }:XDMAttribute
+    {return {self.attributes.get xmlname}}
+  }
+
+  {method public {key-exists? xmlname:XDMName}:bool
+    {return {self.attributes.key-exists? xmlname}}
+  }
+
+  {method public {get-if-exists xmlname:XDMName}:(String, bool)
+    let (att:XDMAttribute, exists?:bool) =
+        {self.attributes.get-if-exists xmlname}
+    {if exists? then
+        {return att.value, true}
+     else
+        {return {uninitialized-value-for-type String}, false}}
+  }
+  
+
+  {method public {get-attribute-if-exists
+                     xmlname:XDMName
+                 }:(XDMAttribute, bool)
+    let (att:XDMAttribute, exists?:bool) =
+        {self.attributes.get-if-exists xmlname}
+    {return att, exists?}
+  }
+  
+
+  {getter public {size}:int
+    {return self.attributes.size}
+  }
+
+  {getter public {empty?}:bool
+    {return self.attributes.empty?}
+  }
+
+  {method public {keys-to-Iterator}:{Iterator-of XDMName}
+    {return {self.attributes.keys-to-Iterator}}
+  }
+
+  {method public {clone}:StandardXDMAttributes
+    let atts:StandardXDMAttributes = 
+        {StandardXDMAttributes 
+            || NOTE: you probably don't want this!
+            self.element,
+            efficient-size = self.attributes.efficient-size}
+    {for attr:StandardXDMAttribute in self.attributes do
+        {atts.add-attribute {attr.clone}}
+    }
+    
+    {return atts}
+  }
+
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+    
+    {for attribute:XDMAttribute in self.attributes do
+        {if indentation >= 0 then
+            {out.write-one-string "\n"}
+            {for i = 0 below indentation do
+                {out.write-one ' '}}
+         else
+            {out.write-one ' '}
+        }
+        {attribute.to-XML out = out, indentation = indentation}
+    }
+    
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+  
+}

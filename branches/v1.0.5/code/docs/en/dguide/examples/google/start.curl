@@ -1,0 +1,301 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 5.0 applet}
+            
+{applet manifest = "manifest.mcurl"}
+{import * from COM.CURL.WSDK.RECORDSET-FOR}
+{import * from COM.CURL.WSDK.SOAP}
+{import * from COM.CURL.WSDL.GoogleSearch}
+
+|| developed applications will need their own key
+|| you can use this for a few tests while
+|| you're getting your own key
+
+{let gss-key:String = 
+    "uNhT2O/NtQgF69QyAIrCYybjfkB4dVH5"
+}
+{let gss:GoogleSearchService = 
+    {GoogleSearchService}
+}
+
+|| keyword arguments for 'optional' parameters
+{define-proc {do-google-search 
+                 query:String,
+                 start:int = 0,
+                 max-results:int = 10,                 
+                 filter?:bool = false,
+                 restrict:#String = null,
+                 safe-search?:bool = false,
+                 language-restrict:#String = null,
+                 input-encoding:#String = null,
+                 output-encoding:#String = null                 
+             }:GoogleSearchResult
+    let gss:GoogleSearchService = 
+        {GoogleSearchService}
+    let s:#GoogleSearchResult =
+        {gss.do-google-search        
+            gss-key, query, 
+            start, max-results, 
+            filter?, restrict, safe-search?, 
+            language-restrict, input-encoding, output-encoding}
+    {return {non-null s}}
+}
+
+|| accumulate results
+{define-proc {google-search 
+                 query:String,
+                 start:int = 0,
+                 max-results:int = 50,                
+                 filter?:bool = false,
+                 restrict:#String = null,
+                 safe-search?:bool = false,
+                 language-restrict:#String = null,
+                 input-encoding:#String = null,
+                 output-encoding:#String = null         
+             }:(RecordSet, GoogleSearchResult)
+    
+    let gss:GoogleSearchService = 
+        {GoogleSearchService}
+    || recordset for organizing results
+    let result-recordset:RecordSet =
+        {{RecordSet-for ResultElement}}
+    
+    || get first 10 (most they allow)
+    let result:GoogleSearchResult =
+        {non-null
+            {gss.do-google-search   
+                gss-key, query,
+                start, {min 10, max-results}, 
+                filter?, restrict, safe-search?, language-restrict, 
+                input-encoding, output-encoding}}
+    set max-results = 
+        {min max-results, result.estimated-total-results-count}
+    {for element in result.result-elements do
+        {result-recordset.append element}}
+    
+    || incrementally get more
+    {while result-recordset.size < max-results do
+        let size:int = result-recordset.size
+        let from:int = size
+        let count:int = {min 10, max-results - size}
+        let next:GoogleSearchResult = 
+            {non-null
+                {gss.do-google-search
+                    gss-key, query,
+                    from, count, 
+                    filter?, restrict, safe-search?, language-restrict,
+                    input-encoding, output-encoding}}
+        || merge with results
+        let n:int = next.result-elements.size
+        {if n > 0 then
+            {for element in result.result-elements do
+                {result-recordset.append element}}}
+        || got less than requested ==> must be done
+        {if n < count then
+            {break}}
+    }    
+    
+    || return accumulated results
+    {return result-recordset, result}
+}
+|| incremental results
+{define-proc {async-google-search
+                 query:String,
+                 start:int = 0,
+                 max-results:int = 50,                
+                 filter?:bool = false,
+                 restrict:#String = null,
+                 safe-search?:bool = false,
+                 language-restrict:#String = null,
+                 input-encoding:#String = null,
+                 output-encoding:#String = null         
+             }:(RecordSet, GoogleSearchResult)
+    
+    let result-recordset:RecordSet =
+        {{RecordSet-for ResultElement}}
+    
+    || get first 10 (most they allow)
+    let result:GoogleSearchResult =
+        {non-null
+            {gss.do-google-search 
+                gss-key, query,
+                start, {min 10, max-results},
+                filter?, restrict, safe-search?, language-restrict, 
+                input-encoding, output-encoding}}
+    set max-results = 
+        {min max-results, result.estimated-total-results-count}
+    {for element in result.result-elements do
+        {result-recordset.append element}}
+
+    || get more, asynchr0nously    
+    let extend-results:{proc-type {}:void} =
+        {proc {}:void
+            let size:int = result-recordset.size
+            {if size < max-results then
+                let from:int = size
+                let count:int = {min 10, max-results - size}
+                let handler:EventHandler =
+                    {on e:SOAPHTTPRPCPostAsyncEvent do
+                        {if-non-null responses = e.responses then
+                            let next:GoogleSearchResult = 
+                                responses[0] asa GoogleSearchResult
+                            || append results to recordset
+                            let n:int = next.result-elements.size
+                            {if n > 0 then
+                                {for element in next.result-elements do
+                                    {result-recordset.append element}}}
+                            || request more if necessary
+                            let need:int = 
+                                max-results - result-recordset.size
+                            {if need > 0 and
+                                || we must be done if got less than requested
+                                n == count 
+                             then
+                                {extend-results}}
+                         else
+                            || TODO: notify of failure
+                            {dump e.exception, e.canceled?}}}
+                || TODO: cancel after some time limit
+                let worker:SOAPHTTPRPCPostAsyncWorker =
+                    {gss.async-do-google-search
+                        gss-key, query,
+                        from, count,
+                        filter?, restrict, safe-search?, language-restrict,
+                        input-encoding, output-encoding,
+                        handler}
+            }}
+    {extend-results}
+    
+    || return initial results
+    {return result-recordset, result}
+}
+|| strip html markup
+{define-proc {get-text x:any}:String
+    let buf:StringBuf = {StringBuf}
+    {type-switch x
+     case s:StringInterface do
+        let n:int = 0
+        {for c in s do
+            {switch c 
+             case '<' do {inc n}
+             case '>' do {dec n}
+             else
+                {if n <= 0 then 
+                    {buf.append c}}}}
+     else
+        {format out = buf, "%s", x}}
+    {return {buf.to-String}}
+}
+{define-class public ExposeGridCell
+  {inherits StandardRecordGridCell}  
+  field display:ExposeFrame = 
+      {ExposeFrame
+        background = "white",
+        active-traversal-container = null,
+        text-breakable? = false,
+        margin = 3pt,
+        halign = "left"}
+  {constructor public {default}
+    {construct-super}
+    {self.add-internal 
+        {ClipFrame self.display}}
+  }  
+  {method public {refresh-data}:void
+    {self.display.clear}
+    {if-non-null r = self.record then
+        let ref:String = {self.get-formatted-data}
+        {self.display.add ref}}
+  }
+}
+{define-class public LinkGridCell
+  {inherits ExposeGridCell}  
+  {constructor public {default}
+    {construct-super}
+  }  
+  {method public {refresh-data}:void
+    {self.display.clear}
+    {if-non-null r = self.record then
+        let ref:String = {self.get-formatted-data}
+        {self.display.add
+            {link href = {url ref},
+                {value ref}}}}
+  }
+}
+{document-style PlainDocument}
+{set-document-properties 
+    hstretch? = true, 
+    vstretch? = true,
+    margin = 3px}
+
+{value
+    let rg:RecordGrid =
+        {RecordGrid 
+            width = {add-stretch},
+            height = {add-stretch},
+            {RecordGridColumn "title",
+                width = 2in,
+                cell-spec = ExposeGridCell,
+                format-spec = get-text},
+            {RecordGridColumn "url",
+                cell-spec = LinkGridCell,
+                width = 2in},
+            {RecordGridColumn "snippet",
+                width = 3in,
+                cell-spec = ExposeGridCell,
+                format-spec = get-text}}
+    let subject:String = "Curl Surge"
+    let max-results:int = 10
+    let display:VBox =
+        {VBox
+            hstretch? = true,
+            spacing = 3pt,
+            {HBox
+                valign = "top",
+                {VBox
+                    {bold WSDK Google Search Web Service},
+                    {Table 
+                        columns = 2,
+                        {text Subject},
+                        {TextField 
+                            value = subject,
+                            width = 2in,
+                            {on ValueFinished at c:TextField do
+                                set subject = c.value}},
+                        {text Max Results},
+                        {DropdownList 1, 5, 10, 20, 50, 100,
+                            value = max-results,
+                            vorigin = 70%,
+                            {on ValueFinished at c:DropdownList do
+                                set max-results = c.value}},
+                        {skip},
+                        {CommandButton label = {message Submit},
+                            {on Action do
+                                {with-busy-cursor
+                                    let (rs:RecordSet, 
+                                         result:GoogleSearchResult) =
+                                        {async-google-search subject,
+                                            max-results = max-results} 
+                                    set rg.user-data = result
+                                    set rg.record-source = rs
+                                }}}}},
+                {Fill},
+                {image source = {url "logo_sm.gif"}}},
+            {hrule height = 3pt},
+            rg}    
+    display
+}
+

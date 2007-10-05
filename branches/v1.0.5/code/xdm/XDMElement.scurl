@@ -1,0 +1,740 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public serializable StandardXDMElement  
+  {inherits XDMElement, StandardXDMNode}
+  field private _attributes:#XDMAttributes
+  field private _children:{Sequence-of XDMNode}
+  field private _namespace-declarations:#XDMNamespaceDeclarations
+  field private constant _xmlname:XDMName
+  
+  {getter public {xmlname}:XDMName
+    {return self._xmlname}
+  }
+
+  {getter public {prefix}:String
+    let prefix:#String = 
+        {if self.namespace.empty? then 
+            ""
+         else
+            {self.find-matching-prefix self.namespace}
+        }
+    {if-non-null prefix then
+        {return prefix}
+     else
+        {xdm-exception
+            {lmessage Missing prefix declaration for
+                '{value self.namespace}'}}}
+  }
+
+  field private _document:#XDMDocument
+  {getter public {document}:#XDMDocument
+    {return self._document}
+  }
+
+  {setter protected {document document:#XDMDocument}:void
+    {if document != self._document then
+        || TODO: check consistency with parent
+        set self._document = document
+        {for x in self.children do
+            set x.document = document}
+    }
+  }  
+
+  {getter public {attributes}:#XDMAttributes
+    {return self._attributes}
+  }
+
+  {setter package {attributes attributes:#XDMAttributes}:void
+    {self.assure-modifiable}
+    set self._attributes = attributes
+    {self.trigger-xdm-event {XDMNodeModified self}}
+  }
+
+  {getter public {namespace-declarations}:#XDMNamespaceDeclarations
+    {return self._namespace-declarations}
+  }
+  {setter protected {namespace-declarations
+                        namespace-declarations:#XDMNamespaceDeclarations
+                    }:void
+    {self.assure-modifiable}
+    set self._namespace-declarations = namespace-declarations
+    {self.trigger-xdm-event {XDMNodeModified self}}
+  }
+
+  {getter public {children}:{Sequence-of XDMNode}
+    {return self._children}
+  }
+
+  {getter public {assigned-base-url}:#String
+    {return {self.get-attribute-value xml-base}}
+  }
+
+  {getter public {xml-space-declaration}:XMLSpace
+    {return 
+        {if-non-null space = {self.get-attribute-value xml-space} then
+            space asa XMLSpace
+         else
+            XMLSpace.undefined
+        }}
+  }
+
+  {getter public {xml-space}:XMLSpace
+    || avoid repeated ascent through ancestors
+    {if self._xml-space == XMLSpace.undefined then
+        || cache value for future reference
+        set self._xml-space =     
+            {if self.xml-space-declaration != XMLSpace.undefined then
+                || declared on this node
+                self.xml-space-declaration
+             else 
+                {if-non-null parent = self.parent then
+                    || descend from parent
+                    parent.xml-space
+                 else
+                    || use default
+                    XMLSpace.default}}}
+    || use cached value
+    {return self._xml-space}
+  }
+  || TODO: beware changes induced by attach/detach/change ancestor
+  field private transient _xml-space:XMLSpace = XMLSpace.undefined
+
+  {getter public {xml-lang-declaration}:String
+    {return 
+        {if-non-null lang = {self.get-attribute-value xml-lang}
+         then lang
+         else ""}}
+  }
+
+  {getter public {xml-lang}:String
+    || avoid repeated ascent through ancestors
+    {if self._xml-lang == null then
+        || cache value for future reference
+        set self._xml-lang =     
+            {if self.xml-lang-declaration != "" then
+                || declared on this node
+                self.xml-lang-declaration
+             else 
+                {if-non-null parent = self.parent then
+                    || descend from parent
+                    parent.xml-lang
+                 else
+                    || use default
+                    ""}}}
+    || use cached value
+    {return {non-null self._xml-lang}}
+  }
+  || TODO: beware changes induced by attach/detach/change ancestor
+  field private transient _xml-lang:#String
+
+
+  {doc-next
+    {purpose Constructs a new element node with the supplied name (fully qualified) and attributes
+        {parameter name, the qualified name to use to create this node (can be in the form of a prefix:local-name pair)}
+    }
+    {for-example
+        The following example shows how to programmatically build an XML tree.
+
+        {example
+            title = {text Programmatically Build an XML Tree},
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Build an XML tree declaratively.
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMAttribute "attribute", "value"},
+                    {XDMElement
+                        "child-node",
+                        {XDMElement
+                            "another-child-node",
+                            {XDMAttribute "child-attribute", "child-value"}
+                        },
+                        {XDMElement "yet-another-child-node"}
+                    },
+                    {XDMElement "final-child-node"}
+                }
+            }
+
+            || Print out the XML structure.
+            {pre {root.to-XML}}
+        }
+    }
+  }
+  {constructor public {default
+                          name:XDMName,
+                          efficient-size:int = 4,
+                          ...
+                      }
+    
+    set self._xmlname = name
+    set self._children =  
+        {{Array-of XDMNode} 
+            efficient-size = efficient-size}
+    
+    || Add all of the child elements, if any.
+    {for (x, k) in ... do
+        {if-non-null k then
+            {self.add-attribute
+                {XDMAttribute k, {String x}}}
+         else
+            {type-switch x
+             case e:XDMElement do
+                {self.append e}
+             case a:XDMAttribute do
+                {self.add-attribute a}
+             case d:XDMNamespaceDeclaration do
+                {self.set-namespace-declaration d.prefix, d.namespace,
+                    error-if-exists? = true}
+             case t:XDMText do
+                {self.append t}
+             case p:XDMProcessingInstruction do
+                {self.append p}
+             case s:StringInterface do
+                {self.append {XDMText s}}
+             else
+                {xdm-exception {lmessage Unexpected argument type to XDMElement : {value x}}}
+            }
+        }
+    }
+  }
+
+  {method public {get-base-url}:Url
+    
+    || Check if our own base-url is an absolute URI
+    || (not relative) just return it!
+    
+    {if-non-null base = self.assigned-base-url then
+        {if {abs-url? base} then
+            {return {abs-url base}}
+        }
+    }
+
+    || Otherwise, we need to get the absolute URI from our parent
+    || (document if we're the root node), falling back to applet
+    || for user-constructed fragment with no document
+    
+    let parent-url:Url =
+        {if-non-null parent = self.parent then
+            || from parent
+            {parent.get-base-url}
+         else
+            {if-non-null doc = self.document then
+                || from document
+                doc.document-location
+             else
+                || from applet
+                {get-working-directory-url}
+            }
+        }
+    
+    || If assigned-base-url is non-null then need to splice it on
+    
+    {if-non-null base = self.assigned-base-url then
+        
+        || NOTE: Url.merge does not do what XML/RFC2396 expects here
+        {return {xml-url-merge parent-url, base}}
+        
+     else    
+        {return parent-url}
+    }
+  }
+
+  {method public {attribute-exists? xmlname:XDMName}:bool
+    {return not ( self.attributes == null or
+                 not {self.attributes.key-exists? xmlname})}
+  }
+
+  {method public {attribute-value-exists? value:String}:bool
+    {if self.attributes == null then {return false}}
+    {for val:String in {non-null self.attributes} do
+        {if val == value then {return true}}
+    }
+    {return false}
+  }
+
+  {method public {get-attribute-value xmlname:XDMName}:#String
+    {if not {self.attribute-exists? xmlname} then {return null}}
+    {return {self.attributes.get xmlname}}
+  }
+
+  {method public {get-attribute xmlname:XDMName}:#XDMAttribute
+    {if self.attributes == null or
+        not {self.attributes.key-exists? xmlname} then
+        {return null}
+    }
+    {return {self.attributes.get-attribute xmlname}}
+  }
+
+  {method public {remove-attribute
+                     xmlname:XDMName,
+                     error-if-missing?:bool = false
+                 }:void
+    || NOTE: change management by self.attributes
+    {if-non-null attributes = self.attributes then        
+        {self.attributes.remove-attribute xmlname, 
+            error-if-missing? = error-if-missing?
+        }
+    }    
+  }
+
+  {method public {add-attribute 
+                     attribute:XDMAttribute,
+                     error-if-exists?:bool = true
+                 }:void
+    {if self.attributes == null then
+        set self.attributes = {StandardXDMAttributes self}
+    }
+
+    || NOTE: change management by self.attributes
+    {self.attributes.add-attribute attribute,
+        error-if-exists? = error-if-exists?}
+  }
+  
+  {method public {remove-namespace-declaration
+                     prefix:String,
+                     error-if-missing?:bool = false
+                 }:void
+    {if-non-null as = self.namespace-declarations then
+        {if {self.namespace-declarations.key-exists? prefix} then
+            || NOTE: change management by self.namespace-declarations
+            {self.namespace-declarations.remove-declaration prefix}
+            {return}
+        }}
+    {if error-if-missing? then
+        {xdm-exception 
+            {lmessage Tried to remove an a namespace declaration 
+                ({value prefix}) that doesn't exist}}
+    }
+  }
+
+  {method public {clear-namespace-declarations}:void
+    {if-non-null as = self.namespace-declarations then
+        || NOTE: change management by self.namespace-declarations
+        {self.namespace-declarations.clear-declarations}
+    }
+  }
+
+  {method public {set-namespace-declaration
+                     prefix:String,
+                     namespace:String,
+                     error-if-exists?:bool = false
+                 }:void
+    {self.assure-modifiable}
+    
+    {if self.namespace-declarations == null then
+        let as:StandardXDMNamespaceDeclarations = {StandardXDMNamespaceDeclarations}
+        set as.element = self
+        set self.namespace-declarations = as
+    }
+    let as:XDMNamespaceDeclarations = 
+        {non-null self.namespace-declarations}    
+    let a:XDMNamespaceDeclaration =
+        {XDMNamespaceDeclaration prefix, namespace}
+
+    {if {as.key-exists? prefix} then
+        {if error-if-exists? then
+            {xdm-exception 
+                {lmessage Tried to add a namespace declaration 
+                    ({value prefix}) which already exists}}
+         else
+            || NOTE: change management by self.namespace-declarations
+            {as.remove-declaration prefix}
+        }}
+    || NOTE: change management by self.namespace-declarations
+    {as.add-declaration a}
+  }
+
+  {method public {find-matching-namespace
+                     prefix:String
+                 }:String
+    || Find the first matching namespace and return it.
+    || First look at our own declarations, then traverse up our
+    || parent(s).
+    {if-non-null 
+        namespace-declarations = self.namespace-declarations 
+     then
+        {if-non-null namespace = {namespace-declarations.get-uri prefix} then
+            {return namespace}
+        }
+    }
+    
+    {return
+        {if-non-null parent = self.parent 
+         then {parent.find-matching-namespace prefix}
+         else ""}}
+  }
+
+  {method public {find-matching-prefix
+                     namespace:String,
+                     check-default?:bool = true
+                 }:#String
+    || Check predefined standard XML namespace
+    {switch namespace 
+     case "http://www.w3.org/XML/1998/namespace" do
+        {return "xml"}
+    }
+    || Find the first matching prefix and return it.
+    || First look at our own declarations, then ancestors.
+    {if-non-null 
+        namespace-declarations = self.namespace-declarations 
+     then
+        || but only elements should check default namespace
+        {if check-default? then
+            let default:#String = {namespace-declarations.get-uri ""}
+            
+            {if default == namespace then
+                {return ""}
+             else
+                || non matching default will shadow those above 
+                set check-default? = false
+            }
+        }        
+        
+        || check other prefixes
+        {if-non-null 
+            prefix = {namespace-declarations.get-prefix namespace}
+         then
+            {return prefix}
+        }
+    }
+    
+    || Not found here
+    {if-non-null parent = self.parent then   
+        || delegate to parent
+        {return 
+            {parent.find-matching-prefix namespace,
+                check-default? = check-default?}}        
+     else        
+        || We hit the top of the stack!
+        {return null}
+    }    
+    
+  }
+  
+  {method public {generate-namespace-declarations
+                     default-context:XDMNamespaceContext = xml-namespace-context,
+                     include-descendants?:bool = true
+                 }:bool
+    let needed:{Set-of String} = {{Set-of String}}
+    let used:{Set-of String} = {{Set-of String}}
+    {self.walk-children 
+        || walk descendants and self
+        include-self? = true,
+        include-descendants? = include-descendants?,
+        {proc {n:XDMNode}:bool
+            {type-switch n
+             case e:XDMElement do
+                || note already declared prefixes
+                {if-non-null ps = e.namespace-declarations then
+                    {for p in {ps.get-prefixes} do
+                        {used.insert p}}}
+                || check this element
+                let ns:String = e.namespace
+                {if not ns.empty? and
+                    not {needed.member? ns} and
+                    {e.find-matching-prefix ns} == null 
+                 then
+                    {needed.insert ns}}
+                || check its attributes
+                {if-non-null atts = e.attributes then
+                    {for key k in atts do
+                        let ns:String = k.namespace
+                        {if not ns.empty? and
+                            not {needed.member? ns} and
+                            {atts.find-matching-prefix ns} == null 
+                         then
+                            {needed.insert ns}}}}}
+            || continue walk
+            {return true}}}
+    
+    || synthesize needed prefixes 
+    || - avoid any declared prefix
+    || -- stricter than necessary, but safe, simple and fast
+    || - add all declarations at top
+    || -- could push to "least common ancestor", but who really cares
+    let n:int = 0
+    {for tag = outer, ns in needed do
+        || first try global declarations
+        {for p in {default-context.get-prefixes-for-uri ns} do
+            {if not p.empty? and not {used.member? p} then
+                {self.set-namespace-declaration p, ns}
+                {continue tag = outer}}}
+        || otherwise increment prefix counter
+        {while true do
+            {inc n}
+            let p:String = {format "NS%02d", n}
+            {if not {used.member? p} then
+                {self.set-namespace-declaration p, ns}
+                {continue tag = outer}}}}
+    {return n > 0}
+  }
+  
+  {method public {get-text}:String
+    let out:StringBuf = {StringBuf}
+    {for x in self.children do
+        {if x isa XDMProcessingInstruction then
+            {continue}}
+        {out.concat {x.get-text}}}
+    {return {out.to-String}}
+  }
+
+  {method public {get-elements
+                     xmlname:#XDMName = null,
+                     attribute-xmlname:#XDMName = null,
+                     attribute-value:#String = null,
+                     include-descendants?:bool = false
+                 }:{Array-of XDMElement}
+    
+    let f:{proc-type {XDMElement}:bool} =
+        {if-non-null xmlname then
+            {if-non-null attribute-xmlname then
+                {if-non-null attribute-value then
+                    {proc {node:XDMElement}:bool
+                        {return node.xmlname == xmlname and 
+                            {node.get-attribute-value 
+                                attribute-xmlname} == attribute-value}}
+                 else
+                    {proc {node:XDMElement}:bool
+                        {return node.xmlname == xmlname and 
+                            {node.attribute-exists? attribute-xmlname}}}
+                }
+             else
+                {if-non-null attribute-value then
+                    {proc {node:XDMElement}:bool
+                        {return node.xmlname == xmlname and 
+                            {node.attribute-value-exists? attribute-value}}}
+                 else
+                    {proc {node:XDMElement}:bool
+                        {return node.xmlname == xmlname}}
+                }}
+         else
+            {if-non-null attribute-xmlname then
+                {if-non-null attribute-value then
+                    {proc {node:XDMElement}:bool
+                        {return {node.get-attribute-value 
+                                    attribute-xmlname} == attribute-value}}
+                 else
+                    {proc {node:XDMElement}:bool
+                        {return {node.attribute-exists? attribute-xmlname}}}
+                }
+             else
+                {if-non-null attribute-value then
+                    {proc {node:XDMElement}:bool
+                        {return {node.attribute-value-exists? attribute-value}}}
+                 else
+                    {proc {node:XDMElement}:bool
+                        {return true}}
+                }}
+        }
+    
+    let array:{Array-of XDMElement} = {new {Array-of XDMElement}}
+    {if include-descendants? then
+        {self.walk-children include-descendants? = true,
+            {proc {node:XDMNode}:bool 
+                {type-switch node
+                 case node:XDMElement do
+                    {if {f node} then
+                        {array.append node}}}
+                {return true}}}
+     else
+        {for node in self.children do
+            {type-switch node
+                 case node:XDMElement do
+                    {if {f node} then
+                        {array.append node}}}}}
+    {return array}
+  }
+
+  {method public {member? child:XDMNode}:bool
+    let index:int = {self.children.find child}
+    {return index >= 0}
+  }
+
+  {method private {private-add child:XDMNode}:void
+    {if-non-null parent = child.parent then
+        {child.detach}}
+    set child.parent = self
+  }
+
+  {method public {append child:XDMNode}:void
+    {self.assure-modifiable}
+    || INLINED {self.private-add child}
+    {if-non-null parent = child.parent then
+        {child.detach}}
+    set child.parent = self
+    {self.children.push child}
+    {self.trigger-xdm-event {XDMNodeAdded child}}
+  }
+
+  {method public {insert-child child:XDMNode, index:int}:void
+    {self.assure-modifiable}
+    {if index >= 0 and index <= self.children.size then
+        {self.private-add child}
+        {self.children.insert child, index}
+     else
+        {xdm-exception {lmessage Index ({value index}) out of bounds}}
+    }
+    {self.trigger-xdm-event {XDMNodeAdded child}}
+  }
+
+  {method public {splice-children
+                     children:{Array-of XDMNode},
+                     index:int
+                 }:void
+    {self.assure-modifiable}
+    {if index < 0 or index > self.children.size then
+        {xdm-exception 
+            {lmessage Tried to splice children into index {value index} 
+                when children Array only has {value self.children.size} elements}}
+    }
+    
+    {for child in children do
+        {self.private-add child}
+    }
+    {self.children.splice children, index}
+    {for x in children do
+        {self.trigger-xdm-event {XDMNodeAdded x}}}
+  }
+
+  {method public {find child:XDMNode}:int
+    {for c:XDMNode key index:int in self.children do
+        {if c == child then {return index}}
+    }
+    {return -1}
+  }
+
+  {method public {find-by-name xmlname:XDMName}:int
+    {for c:XDMNode key index:int in self.children do
+        {if c isa XDMElement and
+            {xmlname.equal? (c asa XDMElement).xmlname} then
+            {return index}
+        }
+    }
+    {return -1}
+  }
+
+  {method public {get-child-by-index index:int}:#XDMNode
+    let children:{Sequence-of XDMNode} = self.children
+    {return
+        {if index >= 0 and index < children.size 
+         then children[index]
+         else null}}
+  }
+
+  {method public {remove-child child:XDMNode}:void
+    || Find the child.
+    let index:int = {self.children.find child}
+    
+    || If we found it, then remove it.
+    {if index >= 0 then
+        {self.assure-modifiable}
+        {self.children.remove index}
+        {child.detach}
+    }
+  }
+
+  {getter public {empty?}:bool
+    {return self.children.empty?}
+  }
+
+  {method public {walk-children
+                     thunk:{proc-type {XDMNode}:bool},
+                     include-descendants?:bool = false,
+                     include-self?:bool = false
+                 }:bool
+    || If we're told to stop, then pass that request up the
+    || chain. In all three calls.
+    {if include-self? then
+        {if not {thunk self} then {return false}}
+    }
+    
+    {for child:XDMNode in self.children do
+        {if not {thunk child} then {return false}}
+        
+        {if child isa XDMElement and include-descendants? then
+            let cast-node:XDMElement = child asa XDMElement
+            {if not {cast-node.walk-children
+                        thunk,
+                        include-descendants? = true,
+                        include-self? = false
+                    } then
+                {return false}
+            }
+        }
+    }
+
+    || We weren't told to stop, so I guess we should keep going!
+    {return true}
+  }
+  
+  {method public {clone}:StandardXDMElement
+    let element:StandardXDMElement = 
+        {StandardXDMElement self.xmlname,
+            efficient-size = self._children.efficient-size}
+
+    {if-non-null 
+        namespace-declarations = self.namespace-declarations
+     then
+        set element.namespace-declarations =
+            {namespace-declarations.clone}
+    }
+
+    {if-non-null atts = self.attributes then
+        {for key name in atts do
+            {element.add-attribute
+                {{self.attributes.get-attribute name}.clone}
+            }
+        }
+    }
+    
+    || Clone the children.
+    {for child in self.children do
+        {element.append {child.clone}}
+    }
+    
+    {return element}
+  }  
+
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    {if out == null then
+        set out = {StringBuf}
+    }
+    let return?:bool = out isa StringBuf
+    let w:XDMWriter = 
+        {XDMWriter {non-null out}, indentation = indentation}
+    {w.write-element self}
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+
+  {method public {object-describe 
+                     out:TextOutputStream, locale:Locale}:void
+    let prefix-available?:bool = 
+        (self.namespace.empty? or
+         {self.find-matching-prefix self.namespace} != null) 
+    {wrap-object-description out = out, self,
+        description =
+            {if prefix-available?
+             then self.qualified-name
+             else {String self.xmlname}}}
+  }
+  
+}

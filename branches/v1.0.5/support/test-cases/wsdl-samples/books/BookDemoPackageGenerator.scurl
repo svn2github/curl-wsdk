@@ -1,0 +1,159 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{doc-next
+    {purpose
+        This class is handles requests to generate Curl source packages from
+        WSDL files.
+    }
+}
+{define-class public open BookDemoPackageGenerator
+  field protected wsdl-manifest-name:String = "books-wsdl-manifest.mcurl"
+  field protected create-path-err-msg:String =
+      "The target url must represent a local file."
+  let protected filename-uniquifier:int = -1
+
+  {constructor public {default}}
+
+  {doc-next
+    {purpose
+        Generates Curl source packages and a manifest.
+    }
+    {parameter
+        component-manifest,
+        A {docref ComponentManifest} that holds the generated packages.
+    }
+    {parameter
+        rs,
+        A {docref RecordSet} of WSDL files.
+    }
+    {parameter
+        base-url,
+        A {docref Url} relative to which the package sources and manifest
+        will be written to disk.
+    }
+  }
+  {method public open {generate
+                          component-manifest:ComponentManifest,
+                          rs:RecordSet,
+                          base-url:Url
+                      }:Url
+    let tloc:Url = {url "./wsdl/"}
+    {for r in rs do
+        {try
+            let loc:Url = {url r["wsdl"] asa String}
+            let fname:String =
+                {if not loc.filename.empty? then
+                    loc.filename
+                 else
+                    {inc BookDemoPackageGenerator.filename-uniquifier}
+                    "load" & BookDemoPackageGenerator.filename-uniquifier
+                }
+
+            let w:WSDL = {WSDL loc}
+            let sloc:Url = 
+                {{tloc.set-filename fname}.set-extension ".scurl"}
+
+            let package-name:String =
+                {if-non-null name = w.name then
+                    name
+                 elseif not w.services.empty? then
+                    w.services[0].name
+                 else
+                    tloc.basename
+                }
+
+            {self.write-wsdl w, package-name, sloc} 
+            let pname:String = "COM.CURL.WSDL." & package-name
+            {component-manifest.add
+                {make-package-selector
+                    pname,
+                    location = sloc
+                }
+            }
+
+         catch e:Exception do
+            {dump e}
+        }
+    }
+    let mloc:Url = {base-url.merge self.wsdl-manifest-name}
+    {self.create-path mloc}
+    {write-manifest component-manifest, mloc}
+    {return mloc}
+  }
+
+  {doc-next
+    {purpose
+        Creates a path on disk.
+    }
+    {parameter
+        u,
+        A {docref Url} specifying the path to create.
+    }
+  }
+  {method protected open {create-path u:Url}:void
+    {if-non-null u.local-filename then
+        {try
+            {u.parent-dir.url.resolve}
+         catch mfe:MissingFileException do
+            {try
+                {create-Directory
+                    u.parent-dir.url,
+                    create-missing-parents? = true
+                }
+             catch e:Exception do
+                {popup-message e}
+            }
+        }
+     else
+        {popup-message self.create-path-err-msg}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Writes a WSDL file to disk.
+    }
+    {parameter
+        w,
+        The {docref WSDL} to write.
+    }
+    {parameter
+        package-name,
+        A {docref String} specifying the package name.
+    }
+    {parameter
+        loc,
+        A {docref Url} specifying where on disk to write the file.
+    }
+  }
+  {method protected open {write-wsdl 
+                             w:WSDL, 
+                             package-name:String,
+                             loc:Url
+                         }:void
+    {self.create-path loc}
+    {with-open-streams 
+        out = {write-open loc} 
+     do
+        {format
+            out = out,
+            "\{curl 5.0 package\}\n\{package COM.CURL.WSDL.%s\}\n",
+            package-name
+        }
+        {w.dump-client-stubs out}
+    }
+  }
+}

@@ -1,0 +1,393 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPXMLDocumentMarshaler
+
+|| FIXME should this be called DefaultSOAPXMLDocumentMarshaler
+
+|| FIXME do we wedge this into the mappers automatically
+||      (base on Curl type only, assuming that XML type is right)
+
+{doc-next
+    {purpose
+        A class to handle marshaling and unmarshaling XML documents,
+        stored in {ctext XDMElement} or
+        {ctext XDMElement} or any similar class.
+    }
+}
+{define-class public open SOAPXMLDocumentMarshaler
+  {inherits SOAPMarshaler}
+  field public constant data-has-root-element?:bool
+  field public constant use-type-attribute?:bool
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          || means that root-element is in array when sending
+                          || (but will be stripped off in marshal routine,
+                          || since message writer does that.)  and should
+                          || be put in array by unmarshal.
+                          data-has-root-element?:bool = true,
+                          use-type-attribute?:bool = true
+                          || TODO: should be driven by WSDLSchemaXMLDocumentType
+                      }
+    {construct-super.SOAPMarshaler type}
+    set self.data-has-root-element? = data-has-root-element?
+    set self.use-type-attribute? = use-type-attribute?
+  }
+
+  {method public open {default-marshal
+                          stream:XMLOutputStream,
+                          val:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPMarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          marshal-proc:SOAPTypeMapper.MarshalProc,
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:(worked?:bool)
+    {self.check-type type, true}
+    
+    || type has to be XDMElement
+    {if not val isa XDMElement then
+        {throw-marshal-exception 
+            {lmessage Unacceptable type 
+                '{value type.curl-type}' for '{type-of self}}}}
+
+    {if write-type-attribute? and self.use-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    || handle multi-ref
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            val asa #Object,
+            type,
+            encoding,
+            context,
+            multiple-reference,
+            || FIXME: is this the right default?
+            SOAPTypeMultipleReference.single,
+            marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+    {if val == null then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or 
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        let tokens:{Array-of XMLToken} =
+            {XDMElement-to-tokens val asa XDMElement}
+        {stream.write tokens}            
+    }
+    {return true}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          default-encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          || TODO: where would this be overridden ?
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+
+    let id:#String, href:#String
+    let null?:bool = false
+    let constant curl-type:Type = {non-null type.curl-type}
+    {if-non-null attributes then
+
+        set null? = {unmarshal-check-if-nil? attributes, type}
+        set (id, href) =
+            {unmarshal-get-id-href attributes, context}
+        
+        || got object by reference: use it
+        {if-non-null href then
+            {if null? then
+                {throw-marshal-exception
+                    {localize "null xml type with an href attribute."}
+                }
+            }
+            || ignoring any content, and just going with href...
+            let constant (obj:any, status:SOAPUnmarshalObjectStatus) =
+                {context.get-object href}
+            
+            {if obj isa SOAPUnmarshalObjectState then
+                
+                || may return a SOAPUnmarshalObjectState                
+                {return obj, true}
+                
+             elseif  obj isa curl-type then
+                
+                || got object by reference
+                {return obj, true}
+                
+             elseif obj == null and type.nillable? then
+                
+                || got null by reference
+                {return obj, true}
+                
+             else
+                
+                || dereferenced unexpected type
+                {throw-marshal-exception
+                    {lmessage Unacceptable type 
+                        '{value type.curl-type}' for '{type-of self}}}
+            }
+        }
+    }
+    
+    || process immediate object
+    let object:any = null
+    let worked?:bool = false
+        
+    || it may have an explicit type   
+    {if self.use-type-attribute? then
+        
+        {if-non-null attributes then
+            let xsi-type:SOAPObjectType =
+                {any-find-type-from-attributes 
+                    type,
+                    attributes,
+                    xml-type-to-curl-type}
+            
+            || which could be unmarshaled
+            || -- any-unmarshal-proc throws if unspecific
+            let xsi-type-specific?:bool =
+                {switch xsi-type.curl-type
+                 case XDMElement, StandardXDMElement do false
+                 case null, any, Object, #Object do false
+                 else true}
+            
+            {if xsi-type-specific? then
+                set (object, worked?) =
+                    {any-unmarshal-proc 
+                        stream, attributes, 
+                        type, default-encoding, 
+                        context, current-mapper,
+                        xml-type-to-curl-type,
+                        check-type-attribute? = check-type-attribute?}
+            }
+        }
+    }
+        
+    {if worked? then
+        || already got object using xsi type
+        
+     elseif null? then 
+        || declared nil: ignore contents
+        || TODO: I think XSD actually allows nil elements to have attributes       
+                
+     else
+        || arbitrary content, gather tokens and create XDMElement
+        let initial-data:#{Array-of XMLToken}
+        {if self.data-has-root-element? then
+            || if we need the root start element, guess at
+            || what it was, and we can try to fix it later
+            || based on the end element.
+            || (the message reader already read the start
+            || element that we want.)
+            let constant nn-initial-data:{Array-of XMLToken} =
+                
+                || TODO: why not unread?
+                {new {Array-of XMLToken},
+                    {new XMLStartElement,
+                        {if-non-null element-name = type.element-name then
+                            element-name
+                         else
+                            {if-non-null element-name =
+                                self.type.element-name
+                             then
+                                element-name
+                             else
+                                {non-null self.type.xml-type}
+                            }
+                        }
+                    }
+                }
+            set initial-data = nn-initial-data
+            {if-non-null attributes then
+                {for a in attributes do
+                    {nn-initial-data.append a}
+                }
+            }
+        }
+        || read in all the stuff under this element into an array
+        let a:#{Array-of XMLToken} =
+            {reader-read-through-end-element
+                stream,
+                null,
+                include-end-element? = true,
+                out = initial-data
+            }
+        {if-non-null a then                
+            {if a.size > 0 and a[a.size - 1] isa XMLEndElement then
+                {if self.data-has-root-element? then
+                    || fix the start element, since it should have the same
+                    || element name as the end element.
+                    let constant root-end-element:XMLEndElement =
+                        a[a.size - 1] asa XMLEndElement 
+                    {if-non-null root-element = root-end-element.element
+                     then
+                        {type-switch a[0] 
+                         case se:XMLStartElement do
+                            {if se.element != root-element then
+                                set a[0] =
+                                    {new XMLStartElement, root-element}
+                            }
+                        }
+                    }
+                    {stream.unread-one root-end-element}
+                 else
+                    {stream.unread-one {a.pop}}
+                }
+            }
+            || create XDMElement
+            let element:XDMElement =
+                {XDMElement-from-tokens a}
+            set object = element
+         else
+            || empty source 
+            null
+        }
+    }
+    
+    || record id for later reference
+    {if-non-null id then
+        {context.set-object  
+            '#' & id, 
+            || TODO: do they allow primitives?
+            object asa #Object, 
+            SOAPUnmarshalObjectStatus.complete
+        }
+    }
+    {return object, true}
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {new {Array-of #String}, null, efficient-size = 1}}
+  }
+}
+{define-proc package {XDMElement-to-tokens 
+                 element:XDMElement,
+                 out:{Array-of XMLToken} = {{Array-of XMLToken}}
+             }:{Array-of XMLToken}
+    let xml-name:{proc-type {XDMName}:XMLName} =
+        {proc {x:XDMName}:XMLName
+            {return {XMLName x.namespace, x.local-name}}}
+    {out.append {XMLStartElement {xml-name element.xmlname}}}
+    {if-non-null atts = element.attributes then
+        {for x key k in atts do
+            {out.append {XMLAttribute {xml-name k}, x}}}}
+    {for x in element.children do
+        {type-switch x
+         case t:XDMText do
+            {out.append {XMLCharacters t.content}}
+         case e:XDMElement do
+            {XDMElement-to-tokens e, out = out}
+        }}
+    {out.append {XMLEndElement}}
+    {return out}
+}
+{define-proc package {XDMElement-from-tokens tokens:{Array-of XMLToken}}:XDMElement
+    let constant null-element:XDMElement = {XDMElement "_"}
+    let current:XDMElement = null-element
+    let stack:{Array-of XDMElement} = 
+        {{Array-of XDMElement} current}
+    let root:XDMElement = null-element
+    let ns-counter:int = 0
+    let nsd:XDMNamespaceDeclarations = {XDMNamespaceDeclarations}
+    let xdm-name:{proc-type {XMLName}:XDMName} =
+        {proc {x:XMLName}:XDMName
+            let namespace:String = x.namespace
+            || collect namespace declarations
+            {if not namespace.empty? then
+                {if-non-null {nsd.get-prefix namespace} then
+                    || already declared
+                 else
+                    {inc ns-counter}
+                {nsd.add-declaration 
+                    {XDMNamespaceDeclaration 
+                        {format "NS%02d", ns-counter},
+                        namespace}}}}
+            let name:String = x.local-name
+            {return {XDMName namespace, name}}}
+    {for token in tokens do
+        {type-switch token
+         case t:XMLStartDocument do
+            set root = null-element
+         case t:XMLStartElement do
+            let element:XDMElement = 
+                {XDMElement {xdm-name t.element}}
+            {if root == null-element then
+                set root = element}
+            set current = element
+            {stack.append current}
+         case t:XMLCharacters do
+            {current.append {XDMText t.characters}}
+         case t:XMLAttribute do
+            let val:String = 
+                {type-switch t.value
+                 case s:String do s
+                 else ""}
+            || it may contain preparsed XMLNames            
+            || - note namespaces
+            || - rewrite names with new prefix
+            let xval:StringBuf = {StringBuf}
+            {if-non-null xs = t.xml-name-values then
+                {for x in xs do
+                    let nx:XDMName = {xdm-name x}
+                    {if not xval.empty? then
+                        {xval.append ' '}}
+                    {xval.concat {non-null {nsd.get-prefix nx.namespace}}}
+                    {xval.append ':'}
+                    {xval.concat nx.local-name}}}
+            {if not xval.empty? then
+                set val = {xval.to-String}}
+            {current.add-attribute 
+                {XDMAttribute {xdm-name t.name}, val}}
+         case t:XMLEndElement do
+            let element:XDMElement = {stack.pop}
+            set current = {stack.top-of-stack}
+            {if current != null-element then
+                {current.append element}}
+         case t:XMLEndDocument do
+            || ignore
+        }}
+    {if current != null-element then
+        {error {lmessage Incomplete XML document}}
+     else
+        || add namespace declarations
+        {for prefix in {nsd.get-prefixes} do
+            {root.set-namespace-declaration prefix, {non-null {nsd.get-uri prefix}}}}
+        {return root}}
+}
+
+

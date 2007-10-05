@@ -1,0 +1,590 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public WSDLGeneration {inherits BaseFrame}
+
+  field constant surge-lab-interface:WSDLLabInterface
+
+  {factory {from-surge-lab editor-interface:WSDLLabInterface}:WSDLGeneration
+    let self:WSDLGeneration =
+        {WSDLGeneration surge-lab-interface = editor-interface}
+    {return self}
+  }
+
+  {constructor public {default surge-lab-interface:WSDLLabInterface = {WSDLLabInterface}}
+    set self.surge-lab-interface = surge-lab-interface
+    {construct-super.BaseFrame
+        width = {add-stretch},
+        height = {add-stretch}} 
+    {self.make-commands}
+    {self.add-internal {self.make-display}}
+  }
+
+  field _main-view:#View = null
+  {getter {main-view}:View
+    {if self._main-view == null then        
+        let d:Dialog = 
+            {Dialog
+                {VBox
+                    border-width = 1.5pt, border-style = "raised",  ||""
+                    {HBox
+                        valign = "top",     ||""
+                        {Fill
+                            width = 0pt,
+                            height =
+                                {make-elastic
+                                    preferred-size = 360pt,
+                                    compress-order = proportional-stretch-order}},
+                        self}}}
+        {self.validate-project-info}
+        let v:View =
+            {View d,
+                owner = null,
+                title = {lmessage WSDL Services},
+                {on e:WindowClose do
+                    {if {self.save-open-files} then
+                        {v.hide}}
+                    {e.consume}},
+                {on e:ViewActivateEvent do
+                    {self.validate-project-info}}}
+        set v.width = 700pt 
+        set self._main-view = v}
+    {return {non-null self._main-view}}
+   }
+
+  {method public final {show}:void
+    {self.main-view.show}
+  }
+  {method public {save-open-files}:bool
+    {return
+        {if self.modified? then
+            {switch
+                {popup-question title = {message Save File?},
+                    {message Save File {value self.scurl-selector.value}}}
+             case Dialog.yes do
+                {self.do-save}
+                true
+             case Dialog.no do
+                true
+             case Dialog.cancel do
+                false
+             else
+                false}
+         else
+            true}}
+  }
+
+  || Purpose:
+  || A test applet can call this method to show the editor.
+  {method public final {show-editor}:void
+    {self.surge-lab-interface.show-editor}
+  }
+
+  || The standard open-file personality for WSDL generation.
+  || Only .wsdl files are expected to be used, by default.
+  let constant wsdl-file-filters:{Array-of FileDialogFilter} =
+      {{Array-of FileDialogFilter}
+        {FileDialogFilter
+            {hlmessage WSDL files},
+            {{Array-of FileDialogTypeFilter}
+                {FileDialogTypeFilter "wsdl"} ||""
+            }
+        },
+        {FileDialogFilter
+            {hlmessage All files},
+            {{Array-of FileDialogTypeFilter}
+                {FileDialogTypeFilter "*"} ||""
+            }
+        }
+      }
+  let constant scurl-file-filters:{Array-of FileDialogFilter} =
+      {{Array-of FileDialogFilter}
+        {FileDialogFilter
+            {hlmessage Package files},
+            {{Array-of FileDialogTypeFilter}
+                {FileDialogTypeFilter "scurl"} ||""
+            }
+        },
+        {FileDialogFilter
+            {hlmessage All files},
+            {{Array-of FileDialogTypeFilter}
+                {FileDialogTypeFilter "*"} ||""
+            }
+        }
+      }
+  
+  || state
+  field wsdl:#WSDL = null
+  field modified?:bool = false
+  field constant code:StringBuf = {StringBuf}
+  
+  || display
+  field constant code-display:TextEditPanel = 
+      {TextEditPanel
+        mode = curl-mode,
+        background = "#DDD"}
+  {method {load-code-display code:StringInterface}:void
+    {self.code-display.load-from-stream
+        {code.to-InputStream}}
+    {self.code-display.request-layout}
+  }
+  {method {clear-code-display}:void
+    {self.load-code-display ""}
+  }
+  
+  || controls   
+  field constant scurl-selector:TextField = {TextField}
+  field constant package-name-selector:TextField = {TextField}
+  field constant project?-selector:CheckButton =
+      {CheckButton
+        enabled? = false,
+        label = {message Make this file part of current project}}
+  field constant template?-selector:CheckButton =
+      {CheckButton
+        label = {message Create template applet}}
+  field constant wsdl-selector:ComboBox =
+      {ComboBox
+        vorigin = 70%}
+  
+  || commands
+  field constant command-context:CommandContext = {CommandContext}
+  {method {make-commands}:void
+    || event handlers
+    {self.wsdl-selector.add-event-handler
+        {on ValueFinished at c:ComboBox do
+            {with-busy-cursor
+                {self.do-open}}}}
+    || commands
+    let choose-scurl-command:SimpleCommand =
+        {SimpleCommand "choose-scurl", ||""
+            execute-proc =
+                {proc {}:void
+                    {self.do-choose-scurl}},
+            enabled-proc =
+                {proc {}:bool
+                    {return self.modified?}}}
+    let save-command:SimpleCommand =
+        {SimpleCommand "save", ||""
+            execute-proc =
+                {proc {}:void
+                    {self.do-save}},
+            enabled-proc = 
+                {proc {}:bool
+                    {return self.modified?}}}
+    let reset-command:SimpleCommand =
+        {SimpleCommand "reset", ||""
+            execute-proc =
+                {proc {}:void
+                    {self.do-reset}},
+            enabled-proc = 
+                {proc {}:bool
+                    {return self.wsdl-selector.has-value?}}} 
+    || command context   
+    {self.command-context.add-command save-command}
+    {self.command-context.add-command reset-command}
+    {self.command-context.add-command choose-scurl-command}
+  }
+  {method {get-command name:String}:Command
+    {return 
+        {non-null {self.command-context.get-command name}}}
+  }
+  || project context
+  {getter {manifest-loc}:#Url
+    {return
+        {if-non-null project = self.current-project then
+            project.manifest-url
+         else null}}
+  }
+  {getter {base-url}:Url
+    {return
+        {if-non-null manifest-loc = self.manifest-loc then
+            manifest-loc.parent
+         else
+            {get-working-directory-url}}}
+  }
+  {method {url-for path:String}:Url
+    {return
+        {parse-url path,
+            relative-url = self.base-url,
+            encode-if-not-absolute? = false}}
+  }
+  {method {path-for loc:Url}:String
+    {return
+        {loc.name-relative-to-url self.base-url}}
+  }
+  field current-manifest-loc:#Url
+  field current-manifest-stamp:DateTime = {DateTime}
+  field current-project:#ProjectInterface
+  field service-packages:StringArray = {StringArray}
+  {method {validate-project-info}:void
+    || check project
+||--    {output {message validate-project-info : current-project}}
+    let current-project:#ProjectInterface = {self.surge-lab-interface.current-project}
+    let project-changed?:bool = current-project != self.current-project
+||--    {dump project-changed?}
+    {if project-changed? then
+        || note project
+        set self.current-project = current-project        
+        || TODO: base-url implications
+        set self.project?-selector.enabled? = self.manifest-loc != null
+    }
+    || check manifest 
+    let manifest-stamp:DateTime = 
+        {if-non-null loc = self.current-manifest-loc then
+            {type-switch {loc.instantiate-File}
+             case f:LocalFile do
+                {if-non-null when-last-modified = f.when-last-modified
+                 then when-last-modified
+                 else {DateTime}}
+             else {DateTime}}
+         else {DateTime}}   
+    let manifest-stamp-changed?:bool =
+        manifest-stamp > self.current-manifest-stamp
+    let manifest-loc-changed?:bool =
+        self.manifest-loc != self.current-manifest-loc 
+    let manifest-changed?:bool  = 
+        manifest-loc-changed? or manifest-stamp-changed?        
+    || note manifest
+    set self.current-manifest-loc = self.manifest-loc
+    set self.current-manifest-stamp = manifest-stamp
+||--    {dump manifest-changed?}   
+        
+    {if manifest-changed? then
+||--        {output {message validate-project-info : service-packages}}
+        let service-packages:StringArray = {self.project-service-packages}
+        let packages-changed?:bool = not {service-packages.equal? self.service-packages}
+||--        {dump packages-changed?}
+        {if packages-changed? then
+            set self.service-packages = service-packages
+            || known WSDL files
+            {self.wsdl-selector.clear-items}
+            || TODO: preserve "recent files"
+            {for wloc in service-packages do
+                {if {self.wsdl-selector.find wloc} < 0 then
+                    {self.wsdl-selector.append {self.path-for {abs-url wloc}}}}}}}
+  }
+  {method {project-service-packages}:StringArray
+    let locs:StringArray = {StringArray}
+    {if-non-null manifest-loc = self.current-manifest-loc then          
+||--        {output {message project-service-packages : importing {value manifest-loc}}}
+        {try
+            let m:ComponentManifest =
+                {import-manifest manifest-loc,
+                    check-out-of-date? = true, 
+                    use-cache? = false}
+            {for c in m do
+                {switch c.component-type
+                 case "package" do ||""
+                    {type-switch {c.get-if-exists "wsdl"} ||""
+                     case wloc:String do
+                        {locs.append wloc}}}}
+         catch e:Exception do
+            {output {message Unable to read manifest {value manifest-loc}}}
+            {output e}}}
+    {locs.sort}
+    {return locs}
+  }
+  || User Interface
+  {method {make-display}:Graphic 
+    let dialog:Dialog =
+        {Dialog
+            margin = 6pt,
+            border-width = 1px,
+            border-style = "sunken", ||""
+            {VBox
+                spacing = 3pt,
+                hstretch? = true,
+                {Table
+                    columns = 2,
+                    font-size = 9pt,
+                    cell-margin = 1pt,
+                    
+                    {text {message WSDL File:}},
+                    {HBox
+                        self.wsdl-selector,
+                        {CommandButton 
+                            label = {message Choose ...},
+                            {on Action do
+                                {self.do-choose-wsdl}}}},
+                    
+                    {text {message Directory:}},
+                    {HBox
+                        self.scurl-selector,
+                        {CommandButton
+                            label = {message Choose ...},
+                            bound-command = {self.get-command "choose-scurl"}}}, ||""
+                    
+                    {text {message Package Name:}},
+                    self.package-name-selector,
+                    
+                    {cell 
+                        colspan = 2,
+                        {value self.project?-selector}},
+                    {cell 
+                        colspan = 2,
+                        {value self.template?-selector}}
+                },
+                {HBox
+                    {Fill},
+                    spacing = 6pt,
+                    {CommandButton 
+                        label = {message Reset},
+                        bound-command = {self.get-command "reset"}}, ||""
+                    {CommandButton 
+                        label = {message Save},
+                        bound-command =  {self.get-command "save"}}}, ||""
+                {hrule},
+                {ScrollBox
+                    hstretch? = true,
+                    vstretch? = true,
+                    valign = "top",
+                    self.code-display}
+            }}
+    {return dialog}    
+  }
+  || operations
+  {method {do-open}:void
+    || save pending work
+    {if not {self.save-open-files} then
+        {return}}
+    || obtain location
+    let c:ComboBox = self.wsdl-selector
+    let loc:Url = {self.url-for c.value asa String} 
+    || clear display
+    {self.clear-code-display}
+    {self.code.clear}
+    
+    let error:#Exception =   
+        {try
+            || generate service package
+            set self.wsdl = {WSDL loc}                    
+            {with-open-streams out = self.code do
+                {self.wsdl.dump-client-stubs out}}
+            
+            || preload to catch syntax errors
+            let p:OpenPackage = 
+                {OpenPackage 
+                    manifest = {get-default-manifest},
+                    COM.CURL.WSDK.WSDL}
+            {evaluate 
+                package = p,
+                self.code}
+            null
+            
+         catch e:Exception do
+            e}                    
+    
+    {if-non-null error then
+        set self.modified? = false 
+        || display error info
+        {self.scurl-selector.unset-value}
+        {self.package-name-selector.unset-value}
+        let error-string:String = 
+            {type-switch error
+             case e:SyntaxError do
+                {if {e.url.name.prefix? "curl:"} then ||""
+                    e.message
+                 else {String e}}
+             else {String error}}
+        {self.load-code-display error-string}
+     else 
+        set self.modified? = true
+        || enable service package creation
+        || -- package name
+        let package-prefix:String = "COM.CURL.WSDL." ||""
+        let package-suffix:String =
+            {self.wsdl.curl-namer.get-curl-name 
+                loc.basename,
+                curl-type = "class"} ||""
+        set self.package-name-selector.value =
+            package-prefix & package-suffix
+        || -- scurl location
+        let base:Url =
+            {if loc.stem isa StemHttpDirectory then 
+                || HTTP file: use applet directory
+                self.base-url
+             else
+                || local file: use that directory
+                loc.parent}
+        let sloc:Url = {self.url-for loc.basename & ".scurl"} ||""
+        set self.scurl-selector.value = {sloc.name-relative-to-url self.base-url}        
+        {self.load-code-display self.code}
+    }    
+    {self.command-context.request-update-commands}
+  }
+  {method {do-save}:void
+    let loc:Url = {self.url-for self.scurl-selector.value}
+    let tloc:Url = {loc.set-filename "t-" & loc.basename & ".curl"}
+    let package-name:String = self.package-name-selector.value
+    let add-to-project?:bool = self.project?-selector.value
+    
+    {if not {url-is-writable-file? loc} then
+        || TODO: check out if possible
+        {popup-message {message File not writable}}
+        {return}}
+    
+    || add package herald
+    let wloc:Url = {non-null self.wsdl}.source-url                    
+    let package-herald:String = 
+        {self.generate-package-herald
+            package-name,
+            wloc.name}
+    || generate package code
+    {with-open-streams out = {write-open loc} do
+        {out.write-one-string package-herald}
+        {out.write-one-string self.code}}
+    || update display
+    let code-string:String =
+        package-herald & self.code
+    {self.load-code-display code-string}
+    || generate template code
+    let generate-template-code?:bool = self.template?-selector.value
+    {if generate-template-code? then
+        {with-open-streams out = {write-open tloc} do
+            {out.write-one-string 
+                {self.generate-template-code  
+                    package-name}}}
+    }
+    || note change
+    set self.modified? = false
+    || add to project
+    {if add-to-project? then            
+        {if-non-null project = self.current-project then
+            || assure writable
+            {if not project.writable? then
+                || TODO: check out if possible
+                {popup-message {message Project not writable}}
+                {return}
+             else
+                || service package                
+                {if {project.file-in-project? loc} then
+                    || already in project                     
+                 else
+                    {project.add-package loc}}
+                || template code
+                {if generate-template-code? then
+                    {if {project.file-in-project? tloc} then
+                        || already in project                     
+                     else
+                        {project.add-file tloc}}
+                }}
+        }}
+  }
+  {method {do-reset}:void
+    set self.modified? = false
+    {self.wsdl-selector.unset-value}
+    {self.scurl-selector.unset-value}
+    {self.package-name-selector.unset-value}    
+    {self.clear-code-display}                   
+    {self.code.clear}
+    
+  }
+  {method {do-choose-scurl}:void
+    let loc:Url = {self.url-for self.scurl-selector.value}
+    {if-non-null loc =
+        {choose-file 
+            title = {message Service Package File},
+            filters = WSDLGeneration.scurl-file-filters,
+            default-location = loc}
+     then
+        let name:String = {loc.name-relative-to-url self.base-url}
+        {self.scurl-selector.set-value-with-events name}}
+  }
+  {method {do-choose-wsdl}:void
+    {if-non-null loc =
+        {choose-file 
+            title = {message WSDL File},
+            filters = WSDLGeneration.wsdl-file-filters,
+            default-location = self.base-url}
+     then
+        let name:String = {loc.name-relative-to-url self.base-url}
+        {self.wsdl-selector.set-value-with-events name}}
+  }
+  || package herald template
+  {method {generate-package-herald
+              package-name:String,
+              wsdl-file:String
+          }:String
+    {return
+        {format
+            WSDLGeneration.package-herald-template,
+            {self.api-version.n-clone n = 2},
+            package-name,
+            wsdl-file}}
+  }
+  let constant package-herald-template:String = 
+      (   "\{curl %s package\}\n\{package %s,\n"
+        & "    \{compiler-directives careful? = true\},\n"
+        & "    wsdl=\"%s\"\}\n\n")   ||""
+  {getter {api-version}:VersionNumber
+    {return        
+        {if-non-null project = self.current-project then
+            project.api-version
+         else
+            curl-version-number
+        }}
+  }
+  || template applet code
+  {method {generate-template-code package-name:String}:String
+    let out:StringBuf = {StringBuf}
+    || applet herald
+    {format out = out,
+        WSDLGeneration.applet-herald-template,
+        package-name}
+    || service class
+    {for service-class in {self.get-service-classes} do
+        {format out = out,
+            WSDLGeneration.sample-service-call-template,
+            service-class, service-class}}
+    || result
+    {return {out.to-String}}
+  }
+  let constant applet-herald-template:String = 
+      |"{curl 5.0 applet}
+{applet manifest = "manifest.mcurl",
+    {compiler-directives careful? = true}
+}
+
+{import * from %s}
+"|
+  let constant sample-service-call-template:String = 
+      |"
+
+{value
+    let service:%s = {%s}
+    || test code here
+}
+"|
+  {method {get-service-classes}:StringArray
+    let service-classes:StringArray = {StringArray}
+    let p:OpenPackage = 
+        {OpenPackage 
+            manifest = {get-default-manifest},
+            COM.CURL.WSDK.WSDL}
+    {try
+        {evaluate 
+            package = p,
+            self.code}
+        {for m in {p.get-members} do
+            {type-switch {m.get-value}
+             case t:ClassType do
+                {if {t.subtype-of? WSDLHTTPRPCPostClient} then
+                    {service-classes.append t.name}}}}
+     catch e:Exception do
+    }
+    {return service-classes}
+  }
+}

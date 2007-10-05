@@ -1,0 +1,127 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| contains the classes:
+|| WSDLSchemaElement
+|| WSDLInternalSchemaElement
+|| WSDLSchema
+
+|| Also uses classes in WSDLSchemaType.curl
+
+|| common to WSDLSchemaElement and WSDLSchemaAttribute
+{define-class public open WSDLSchemaMember
+  field public constant xml-name:#XMLName
+  field protected _type:#WSDLSchemaType
+  field public constant node:WSDLDOMNode
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          node:WSDLDOMNode
+                      }
+    set self.xml-name = xml-name
+    set self._type = type
+    set self.node = node
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {type-switch self.type
+     case pt:WSDLSchemaPlaceholderType do
+        let rt:WSDLSchemaType = {pt.resolve-type names}
+        || "forward references" may not be resolved yet
+        {if rt isa WSDLSchemaPlaceholderType then
+            {names.unresolved-placeholders.insert self}
+         else
+            set self._type = rt}
+    }
+    {self.type.resolve-types names}
+  }
+
+  {getter package {type}:WSDLSchemaType
+    {return
+        {if-non-null t = self._type then
+            t
+         else
+            {if-non-null xml-name = self.xml-name then
+                {wsdl-exception
+                    {hlmessage
+                        Early use of null type in item '{value self.node}'.}
+                }
+             else
+                {wsdl-exception
+                    {hlmessage
+                        Early use of null type in item.
+                    }
+                }
+            }
+        }
+    }
+  }
+}
+
+
+{define-class public open WSDLSchemaElement {inherits WSDLSchemaMember}
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, node}
+  }
+}
+
+
+{define-class public open WSDLInternalSchemaElement {inherits WSDLSchemaElement}
+  field public constant min-occurs:int
+  field public constant max-occurs:int
+  field public constant nillable?:bool
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:WSDLSchemaType,
+                          min-occurs:int,
+                          max-occurs:int,
+                          nillable?:bool,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, node}
+    set self.min-occurs = min-occurs
+    set self.max-occurs = max-occurs
+    set self.nillable? = nillable?
+  }
+}
+
+
+{define-class public open WSDLSchemaAttribute {inherits WSDLSchemaMember}
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, node}
+  }
+}
+
+{define-class package WSDLSchema
+  field package elements:{Array-of WSDLSchemaElement} =
+      {new {Array-of WSDLSchemaElement}}
+  field package types:{Array-of WSDLSchemaType} =
+    {new {Array-of WSDLSchemaType}}
+  field package attributes:{Array-of WSDLSchemaAttribute} =
+      {new {Array-of WSDLSchemaAttribute}}
+}

@@ -786,9 +786,10 @@
         }
     }
     {if null? and not type.nillable? then
-        {throw-marshal-exception
-            {localize "Null xml type not expected."}
-        }
+        {dump "TODO", "Null xml type not expected.", type.curl-type}
+||--        {throw-marshal-exception
+||--            {localize "Null xml type not expected."}
+||--        }
     }
     {return null?}
 }

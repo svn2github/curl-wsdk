@@ -623,7 +623,7 @@
     }
   }
 
-  {method public open {set-field t:Object, index:int, value:any}:void
+  {method public open {set-field t:Object, index:int, val:any}:void
     let constant curl-type:Type = {type-of t}
     {with-compiler-directives allow-any-calls? = true do
         {type-switch curl-type
@@ -633,7 +633,7 @@
                 template-name == "FastArray-of"
              then
                 let constant ta:any = t
-                set ta[index] = value
+                set ta[index] = val
                 {return}
              elseif (template-name == "HashTable-of" or
                      template-name == "BucketHashTable-of") and
@@ -641,7 +641,7 @@
                      String)
              then
                 let constant ta:any = t
-                set ta[self.field-curl-names[index]] = value
+                set ta[self.field-curl-names[index]] = val
                 {return}
             }
         }
@@ -650,9 +650,9 @@
             let field-name:String = self.field-curl-names[index]
             let xml-type:SOAPObjectType = self.field-types[index]
             let field-type:Type = {non-null xml-type.curl-type}            
-            {if-non-null value then
+            {if-non-null val then
                 || supplied value
-                {set-public-property t, field-name, value}
+                {set-public-property t, field-name, val}
              else
                 || deal with nullable primitives
                 {if xml-type.nillable? and 
@@ -670,8 +670,15 @@
 ||--                            {unset-method.invoke t}}}
                  else
                     || normal case: null or primitive default
-                    {set-public-property t, field-name, 
-                        {uninitialized-value-for-type field-type}
+                    {try
+                        {set-public-property t, field-name, 
+                            {uninitialized-value-for-type field-type}
+                        }
+                     catch e:CastException do
+                        || avoid catastrophic failure if underlying type can not be nullable
+                        || NOTE: this happens when top level element is nillable='true'
+                        {output
+                            {lmessage Can not assign 'null' to {value curl-type}.{value field-name}}}
                     }
                 }
             }

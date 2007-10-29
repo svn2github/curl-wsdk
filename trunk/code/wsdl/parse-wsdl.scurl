@@ -170,34 +170,33 @@
     || prepare for recursion 
     let unresolved:{Set-of WSDLSchemaMember} =
         self.names.unresolved-placeholders
+    let resolve-placeholders:{proc-type {}:void} =
+        {proc {}:void
+            || clear cycle-detection cache
+            {self.names.seen.clear}
+            
+            || traverse reachable types
+            {for t in self.schema.types do
+                {t.resolve-types self.names}
+            }
+            {for e in self.schema.elements do
+                {e.resolve-types self.names}
+            }
+            {for a in self.schema.attributes do
+                {a.resolve-types self.names}
+            }
+            {self.names.seen.clear}
+        }
     {unresolved.clear} 
-||--    {dump " --> resolving types"}
-||--    {self.dump-types}
-    
-    || clear cycle-detection cache
-    {self.names.seen.clear}
-    
-    || traverse reachable types
-    {for t in self.schema.types do
-        {t.resolve-types self.names}
-    }
-    {for e in self.schema.elements do
-        {e.resolve-types self.names}
-    }
-    {for a in self.schema.attributes do
-        {a.resolve-types self.names}
-    }
-    {self.names.seen.clear}
+    {resolve-placeholders}
     
     || "forward references" may not be resolved in a single pass
     || so recurse (while making progress) until all are resolved
-    {while not unresolved.empty? do 
+    {while not unresolved.empty? do
         let to-resolve:{Set-of WSDLSchemaMember} = 
             {unresolved.clone}
         {unresolved.clear}
-        {for element in to-resolve do
-            {element.resolve-types self.names}
-        }
+        {resolve-placeholders}
         || not making progress
         {if unresolved.size >= to-resolve.size then
             {for x in unresolved do 
@@ -803,6 +802,7 @@
         {self.parse-element-name-and-type
             node, target-namespace, element-form-qualified?, false
         }
+    || TODO: nillable? ignored here
     let constant e:WSDLSchemaElement =
         {WSDLSchemaElement xml-name, type, node}
 
@@ -914,6 +914,19 @@
         {node.get-attribute "abstract"} == "true"
     
     let choice?:bool
+
+    || NOTE: check for presence of attributes, which disallow
+    || treatment repeating element as array type when parsing sequence
+    let has-attributes?:bool = false
+     {for child in node.children do
+        {if {self.schema-tag-match child.name, "attribute"} or
+            {self.schema-tag-match child.name, "attributeGroup"}
+         then
+            set has-attributes? = true
+            {break}
+        }
+     }
+   
     {for child in node.children do
 
         {if {self.schema-tag-match child.name, "sequence"} or
@@ -941,7 +954,8 @@
          then
             set type =
                 {self.parse-complex-type-sequence
-                    child, xml-name, target-namespace, element-form-qualified?
+                    child, xml-name, target-namespace, element-form-qualified?,
+                    allow-array-type? = not has-attributes?
                 }
          elseif {self.schema-tag-match child.name, "complexContent"} then
             set type =
@@ -960,14 +974,17 @@
             {if {self.ignorable-attribute-group? child} then
                 || OK to ignore
              else
-                {if type == null then
+                {type-switch type
+                 case t:Null do
                     set type =
                         {new WSDLSchemaClassType,
                             xml-name,
                             {new {Array-of WSDLSchemaElement}},
                             self}
-                }
-                {type-switch type
+                 case at:WSDLSchemaArrayType do
+                    || paranoia: 'has-attributes?' check should prevent this 
+                    {self.ignored-tag child}
+                    
                  case t:WSDLSchemaClassType do
                     let ag:WSDLSchemaAttributeGroup =
                         {self.parse-attribute-group child, target-namespace, 
@@ -979,14 +996,17 @@
             {if {self.ignorable-attribute? child} then
                 || OK to ignore
              else
-                {if type == null then
+                {type-switch type
+                 case t:Null do
                     set type =
                         {new WSDLSchemaClassType,
                             xml-name,
                             {new {Array-of WSDLSchemaElement}},
                             self}
-                }
-                {type-switch type
+                 case at:WSDLSchemaArrayType do
+                    || paranoia: 'has-attributes?' check should prevent this 
+                    {self.ignored-tag child}
+
                  case t:WSDLSchemaClassType do
                     let (name:XMLName, type:WSDLSchemaType) =
                         {self.parse-attribute-name-and-type                             
@@ -1215,7 +1235,8 @@
         }
         set ret =
             {new WSDLSchemaElementGroup,
-                xml-name,
+                || NOTE: using qualified name
+                {XMLName target-namespace, xml-name.local-name},
                 null,
                 {non-null group-type},
                 elements,
@@ -1319,8 +1340,9 @@
                 }
             }
             set ret =
-                {WSDLSchemaAttributeGroup   
-                    xml-name, 
+                {WSDLSchemaAttributeGroup
+                    || NOTE: using qualified name
+                    {XMLName target-namespace, xml-name.local-name},
                     null,   
                     attributes,
                     node
@@ -1353,7 +1375,8 @@
                       node:WSDLDOMNode,
                       xml-name:#XMLName,
                       target-namespace:String,
-                      element-form-qualified?:bool
+                      element-form-qualified?:bool,
+                      allow-array-type?:bool = true
                   }:WSDLSchemaType
     let constant (elements:{Array-of WSDLSchemaElement},
                   maybe-doc:#WSDLSchemaType) =
@@ -1371,7 +1394,8 @@
 
     || resolve possible group and use that as the element list to work with
     {return
-        {if not choice? and elements.size == 1 and
+        {if allow-array-type? and
+            not choice? and elements.size == 1 and
             elements[0] isa WSDLInternalSchemaElement and
             ((elements[0] asa WSDLInternalSchemaElement).max-occurs == -1 or
              (elements[0] asa WSDLInternalSchemaElement).max-occurs > 1)

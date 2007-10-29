@@ -1118,8 +1118,10 @@
                         tab-level = 16,
                         element-name = e.xml-name,
                         nillable? =
-                            e isa WSDLInternalSchemaElement and
-                        (e asa WSDLInternalSchemaElement).nillable?
+                            {type-switch e
+                             case e:WSDLInternalSchemaElement do
+                                e.nillable? or (e.min-occurs == 0 and e.max-occurs == 1)
+                             else false}
                     }
                 }
             }
@@ -1203,9 +1205,12 @@
         }
         || note number of attributes
         {if self.attributes.size > 0 then
+            || making sure to expand attribute groups !
+            let attributes:{Array-of WSDLSchemaAttribute} =
+                {WSDL.flatten-attributes self.attributes}
             {format out = out,
                 "            n-attributes = %d,\n",
-                self.attributes.size}
+                attributes.size}
         }
         || note simpleContent required
         {if-non-null self.content-type then

@@ -151,7 +151,7 @@
     
     {if used? then
         let constant namespace-url:#Url =
-            {if {xml-name.namespace.find ':'} >= 0 then
+            {if {xml-name.namespace.prefix? "http:"} then
                 {parse-url xml-name.namespace}
              else
                 null

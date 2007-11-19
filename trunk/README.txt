@@ -15,10 +15,10 @@
 ||| limitations under the License.
 
 ====================
-WSDK Release 1.0.5 for Curl API Version 5.0. 
+WSDK Release 1.0.6 for Curl API Version 6.0. 
 ====================
 
-This directory contains the 1.0.5 release of the Curl
+This directory contains the 1.0.6 release of the Curl
 Web Services Software Development Kit (WSDK)
 
 The Curl Web Services SDK (WSDK) provides the technologies necessary
@@ -97,6 +97,28 @@ and thus require privilege and web access to succeed.
 
 CHANGES
 ====================
+
+WSDK 1.0.6 CHANGES
+--------------------
+
+This WSDK Release is a maintenance release,
+for use with Curl API Version 6.0.
+    
+The following changes have been made,
+
+- WSDL arrays with attributes work correctly
+
+- WSDL treatment of toplevel optional and nillable elements improved. 
+  A consequence of this change is that the nullability of curl types
+  for some fields and parameters in generated code may vary from what
+  was generated in earlier WSDK versions.}
+
+- WSDL allows use of URN scheme in namespaces
+    
+These changes affect the code generated for WSDL service packages,
+so such packages should be regenerated for use with this release.
+The 'WSDLHTTPRPCPostClient.generated-using-version' property has been 
+incremented, so that incompatible service packages can be detected.
 
 WSDK 1.0.5 CHANGES
 --------------------

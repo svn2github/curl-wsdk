@@ -37,13 +37,37 @@
 }
 
 {heading level=2,
+    What's New in WSDK 1.0.6
+}
+
+{paragraph
+    This WSDK Release is a maintenance release,
+    for use with Curl API Version 6.0.
+    
+    The following changes have been made,
+
+    {itemize
+        {item WSDL arrays with attributes work correctly}
+        {item WSDL treatment of toplevel optional and nillable elements has improved.
+            A consequence of this change is that the nullability of curl types for
+            some fields and parameters in generated code may 
+            vary from what was generated in earlier WSDK versions.}
+        {item WSDL allows use of URN scheme in namespaces}
+    }
+    
+    These changes affect the code generated for WSDL service packages,
+    so such packages should be regenerated for use with this release.
+    The {docref WSDLHTTPRPCPostClient.generated-using-version} property 
+    has been incremented, so that incompatible service packages can be detected.
+}
+
+{heading level=2,
     What's New in WSDK 1.0.5
 }
 
 {paragraph
     This WSDK Release is a maintenance release,
     for use with Curl API Version 5.0.
-    || - and Version 6.0 Beta
     
     The following changes have been made,
 

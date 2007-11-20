@@ -1669,12 +1669,14 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"},
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfOverlappingThemeInfo"},
-                    curl-type = ArrayOfOverlappingThemeInfo
+                    curl-type = ArrayOfOverlappingThemeInfo,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -1844,7 +1846,7 @@
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
-                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
                 xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
                 curl-type = LonLatPt,
                 nillable? = true
@@ -1964,7 +1966,8 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "dateTime"},
@@ -1987,7 +1990,8 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -2036,15 +2040,18 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -2235,7 +2242,8 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
@@ -2258,7 +2266,8 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
@@ -2335,15 +2344,18 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
@@ -2362,11 +2374,13 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String
+                    curl-type = String,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -2626,7 +2640,7 @@
             {abs-url "http://terraservice.net/TerraService.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "2"
+        generated-using-version = "3"
     }
   }
 }

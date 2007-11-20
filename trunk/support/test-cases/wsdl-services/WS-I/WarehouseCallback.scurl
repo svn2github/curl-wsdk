@@ -1,10 +1,10 @@
 {curl 6.0 package}
 {package COM.CURL.WSDL.WarehouseCallback,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WarehouseCallbackService {inherits WSDLHTTPRPCPostClient}
@@ -17,10 +17,10 @@
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
-  {method public {submit-sn shipment-notice:#ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null}:(response:bool)
+  {method public {submit-sn shipment-notice:ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null}:(response:bool)
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
@@ -104,10 +104,10 @@
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
-  {method public {async-submit-sn shipment-notice:#ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-submit-sn shipment-notice:ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
@@ -183,16 +183,16 @@
     {details 
       Notify warehouse  there was an error in processing a submitted PO.
       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
-                having been acknowledged by the Manufacturer.  Contains callback information with
-                which to find the original replenishment request.
+		having been acknowledged by the Manufacturer.  Contains callback information with
+		which to find the original replenishment request.
       A response of true indicates the purchase order has been accepted for processing.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
-  {method public {error-po process-pofault:#SubmitPOFaultType, callback-header:#CallbackHeaderType = null}:(response:bool)
+  {method public {error-po process-pofault:SubmitPOFaultType, callback-header:#CallbackHeaderType = null}:(response:bool)
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
@@ -259,16 +259,16 @@
     {details 
       Notify warehouse  there was an error in processing a submitted PO.
       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
-                having been acknowledged by the Manufacturer.  Contains callback information with
-                which to find the original replenishment request.
+		having been acknowledged by the Manufacturer.  Contains callback information with
+		which to find the original replenishment request.
       A response of true indicates the purchase order has been accepted for processing.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
-  {method public {async-error-po process-pofault:#SubmitPOFaultType, callback-header:#CallbackHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-error-po process-pofault:SubmitPOFaultType, callback-header:#CallbackHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
@@ -749,12 +749,14 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
-                    curl-type = Url
+                    curl-type = Url,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
-                    curl-type = Detail
+                    curl-type = Detail,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -1250,7 +1252,7 @@
             {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"}
     }
     {construct-super service-location,
-        generated-using-version = "2"
+        generated-using-version = "3"
     }
   }
 }

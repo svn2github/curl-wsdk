@@ -1,10 +1,10 @@
 {curl 6.0 package}
 {package COM.CURL.WSDL.WarehouseA,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-services/WS-I/WarehouseA.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/WarehouseA.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-services/WS-I/WarehouseA.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/WarehouseA.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WarehouseServiceA {inherits WSDLHTTPRPCPostClient}
@@ -520,12 +520,14 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
-                    curl-type = Url
+                    curl-type = Url,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
-                    curl-type = Detail
+                    curl-type = Detail,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -761,7 +763,7 @@
             {abs-url "http://localhost:8888/ws-i/supplychain/services/WarehouseA"}
     }
     {construct-super service-location,
-        generated-using-version = "2"
+        generated-using-version = "3"
     }
   }
 }

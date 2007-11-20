@@ -1,10 +1,10 @@
 {curl 6.0 package}
 {package COM.CURL.WSDL.LoggingFacility,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/DEV5/WSDK/support_TEST/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/DEV5/WSDK/support_TEST/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public LoggingFacilityService {inherits WSDLHTTPRPCPostClient}
@@ -14,7 +14,7 @@
       Append an entry to the system log.
     }
   }
-  {method public {log-event document:#LogEventRequestType}:void
+  {method public {log-event document:LogEventRequestType}:void
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -56,7 +56,7 @@
       Append an entry to the system log.
     }
   }
-  {method public {async-log-event document:#LogEventRequestType, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-log-event document:LogEventRequestType, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
         {self.soap-caller.async-call
             self.service-location,
@@ -94,7 +94,7 @@
       Retrieve entries from the system log with the specified userId.
     }
   }
-  {method public {get-events demo-user-id:String}:(document:#GetEventsResponseType)
+  {method public {get-events demo-user-id:String}:(document:GetEventsResponseType)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -134,7 +134,7 @@
             write-encoding-attribute? = false
         }
     {return
-        responses[0] asa #GetEventsResponseType
+        responses[0] asa GetEventsResponseType
     }
   }
 
@@ -320,7 +320,7 @@
             {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"}
     }
     {construct-super service-location,
-        generated-using-version = "2"
+        generated-using-version = "3"
     }
   }
 }

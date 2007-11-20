@@ -1,10 +1,10 @@
 {curl 6.0 package}
 {package COM.CURL.WSDL.ManufacturerA,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-services/WS-I/ManufacturerA.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/ManufacturerA.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-services/WS-I/ManufacturerA.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/ManufacturerA.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public ManufacturerServiceA {inherits WSDLHTTPRPCPostClient}
@@ -15,12 +15,12 @@
       A purchase order.
       A response of true indicates the purchase order has been accepted for processing.
       A reason code for the rejection of a given PO that can be matched through the conversationID
-                in the callback section of the SOAP header.
+		in the callback section of the SOAP header.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
   }
-  {method public {submit-po purchase-order:#PurchOrdType, configuration:#ConfigurationType = null, start-header:#StartHeaderType = null}:(response:bool)
+  {method public {submit-po purchase-order:PurchOrdType, configuration:#ConfigurationType = null, start-header:#StartHeaderType = null}:(response:bool)
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
@@ -102,12 +102,12 @@
       A purchase order.
       A response of true indicates the purchase order has been accepted for processing.
       A reason code for the rejection of a given PO that can be matched through the conversationID
-                in the callback section of the SOAP header.
+		in the callback section of the SOAP header.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
   }
-  {method public {async-submit-po purchase-order:#PurchOrdType, configuration:#ConfigurationType = null, start-header:#StartHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-submit-po purchase-order:PurchOrdType, configuration:#ConfigurationType = null, start-header:#StartHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
@@ -601,12 +601,14 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
-                    curl-type = Url
+                    curl-type = Url,
+                    nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
-                    curl-type = Detail
+                    curl-type = Detail,
+                    nillable? = true
                 }
             },
             {{Array-of String}
@@ -1102,7 +1104,7 @@
             {abs-url "http://localhost:8888/ws-i/supplychain/services/ManufacturerA"}
     }
     {construct-super service-location,
-        generated-using-version = "2"
+        generated-using-version = "3"
     }
   }
 }

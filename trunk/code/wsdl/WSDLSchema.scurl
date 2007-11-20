@@ -101,6 +101,7 @@
         {if re isa WSDLSchemaPlaceholderType then
             {names.unresolved-placeholders.insert self}
          else
+            {re.resolve-types names}
             || merge only if unspecified
             {if not self.nillable-specified? then
                 set self.nillable? = re.nillable?}

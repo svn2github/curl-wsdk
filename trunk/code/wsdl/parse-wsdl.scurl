@@ -349,7 +349,9 @@
             soapenc-array-name, 
             {WSDLInternalSchemaElement null,
                 self.generic-document-type, 
-                0, -1, false, 
+                min-occurs = 0,
+                max-occurs = -1,
+                nillable? = false, 
                 self.top-node}}
     set self.names[soapenc-array-key] = soapenc-array-type
     
@@ -798,14 +800,18 @@
                       target-namespace:String,
                       element-form-qualified?:bool
                   }:WSDLSchemaElement
-    let constant (xml-name:#XMLName, type:WSDLSchemaType) =
-        {self.parse-element-name-and-type
-            node, target-namespace, element-form-qualified?, false
+   
+    let constant (xml-name:#XMLName, type:WSDLSchemaType,
+                  min-occurs:int, max-occurs:int, nillable?:bool) =
+        {self.parse-internal-element-attributes 
+            node, target-namespace, element-form-qualified?
         }
-    || TODO: nillable? ignored here
     let constant e:WSDLSchemaElement =
-        {WSDLSchemaElement xml-name, type, node}
-
+        {WSDLSchemaElement xml-name, type, node,
+            min-occurs = min-occurs,
+            max-occurs = max-occurs,
+            nillable? = nillable?
+        }
     {if-non-null xml-name then
         {self.names.set-name
             xml-name.namespace, WSDL.element-prefix, xml-name.local-name, e
@@ -1073,14 +1079,18 @@
     {for e in node.children do
         {if {self.schema-tag-match e.name, "element"} then
             let constant (e-xml-name:#XMLName, e-type:WSDLSchemaType,
-                min:int, max:int, null?:bool) =
+                          min-occurs:int, max-occurs:int, nillable?:bool) =
                 {self.parse-internal-element-attributes
                     e, target-namespace, element-form-qualified?
                 }
             || save this element to be used for a class field for the array element
             {elements.append
                 {WSDLInternalSchemaElement
-                    e-xml-name, e-type, min, max, null?, e
+                    e-xml-name, e-type,
+                    min-occurs = min-occurs,
+                    max-occurs = max-occurs,
+                    nillable? = nillable?,
+                    e
                 }
             }
          elseif {self.schema-tag-match e.name, "group"} then
@@ -1446,7 +1456,9 @@
                             element.xml-name, 
                             array-type,
                             || NOTE: need not be nillable, because it can be empty
-                            e.min-occurs, e.max-occurs, false,
+                            min-occurs = e.min-occurs,
+                            max-occurs = e.max-occurs,
+                            nillable? = false,
                             element.node}
                      else 
                         || single element
@@ -1562,9 +1574,9 @@
                             {WSDLInternalSchemaElement
                                 null,
                                 {self.get-type-from-node-string e, etype},
-                                0,
-                                -1,
-                                false,
+                                min-occurs = 0,
+                                max-occurs = -1,
+                                nillable? = false,
                                 e
                             },
                             curl-namer = self.curl-namer

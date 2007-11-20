@@ -30,9 +30,10 @@
                           type:#WSDLSchemaType,
                           group-type:String,
                           elements:#{Array-of WSDLSchemaElement},
-                          node:WSDLDOMNode
+                          node:WSDLDOMNode,
+                          ...
                       }
-    {construct-super xml-name, type, node}
+    {construct-super xml-name, type, node, {splice ...}}
     set self.group-type = group-type
     set self._elements = elements
   }
@@ -54,8 +55,6 @@
 {define-class public open WSDLSchemaPlaceholderElementGroup
   {inherits WSDLSchemaElementGroup}
   field public constant reference-qname:XMLName
-  field public constant min-occurs:int
-  field public constant max-occurs:int
 
   {constructor public {default
                           xml-name:#XMLName,
@@ -66,10 +65,10 @@
                           max-occurs:int,
                           node:WSDLDOMNode
                       }
-    {construct-super xml-name, type, group-type, null, node}
+    {construct-super xml-name, type, group-type, null, node,
+        min-occurs = min-occurs,
+        max-occurs = max-occurs}
     set self.reference-qname = reference-qname
-    set self.min-occurs = min-occurs
-    set self.max-occurs = max-occurs
   }
   
   {getter public open {elements}:{Array-of WSDLSchemaElement}

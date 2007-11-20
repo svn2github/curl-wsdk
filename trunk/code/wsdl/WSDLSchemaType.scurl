@@ -271,6 +271,11 @@
   }
 
   {method public open {resolve-type names:WSDLNameTable}:WSDLSchemaType
+    let e:WSDLSchemaElement = {self.resolve-element names}
+    {return e.type}
+  }
+
+  {method public open {resolve-element names:WSDLNameTable}:WSDLSchemaElement
     let constant (element:Object, found?:bool) =
         {names.get-if-exists self.qname}
     {if not found? then
@@ -282,7 +287,8 @@
                 '{WSDL.format-name name = name, self.node}'.}
         }
     }
-    {return (element asa WSDLSchemaElement).type}
+    let e:WSDLSchemaElement = (element asa WSDLSchemaElement)
+    {return e}
   }
 }
 
@@ -725,7 +731,7 @@
                     type,
                     self.wsdl.top-node}}
          else
-            || complexConetnt: use specified elements
+            || complexContent: use specified elements
             {for e in fe do
                 {fm.append e}
             }
@@ -1471,7 +1477,7 @@
     {return 
         {buf.to-String}
     }
-}
+  }
 
   {getter package {ref-name}:String
     {return

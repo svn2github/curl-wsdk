@@ -1,0 +1,53 @@
+<?xml version="1.0" standalone = "no" ?>
+<!DOCTYPE root [
+  <!ELEMENT root (nodeOne, nodeTwo, nodeFour)>
+  <!ELEMENT nodeOne      (#PCDATA)>
+  <!ELEMENT nodeTwo    (#PCDATA)>
+  <!ATTLIST nodeTwo att2 CDATA "1">
+  <!ATTLIST item  xml:space (default|preserve) 'preserve'>
+  <!ELEMENT nodeThree (#PCDATA)>
+  <!ELEMENT nodeFour    (#PCDATA)>
+  
+  <!ENTITY NEWSPAPER "Vervet Logic Times">
+  <!ENTITY PUBLISHER "Vervet Logic Press">
+  <!ENTITY COPYRIGHT "Copyright 1998 Vervet Logic Press">
+]>
+
+<!-- First comment -->
+<root xmlns = "http://global"
+      one = "two"
+      xmlns:xlink="http://www.w3.org/1999/xlink">
+ <nodeOne />
+ &NEWSPAPER;
+ <!-- Second comment -->
+ <nodeTwo xmlns = "" xmlns:edi="http://ecommerce.org/schema" edi:att = "att1" att2 = "att3">
+  <nodeThree unique-attribute = "this is unique"/>
+  <edi:nodeThree edi:att = "att"/>
+
+  <!--
+    "what's new" resolves to the URI "http://example.org/today/new.xml"
+
+"Hot Pick #1" resolves to the URI "http://example.org/hotpicks/pick1.xml"
+
+"Hot Pick #2" resolves to the URI "http://example.org/hotpicks/pick2.xml"
+
+"Hot Pick #3" resolves to the URI "http://example.org/hotpicks/pick3.xml"
+-->
+
+  <link xml:space = "default" xlink:type="simple" xlink:href="new.xml">what's new</link>!
+  <olist xml:base="/hotpicks/">
+      <item>
+        <link xlink:type="simple" xlink:href="pick1.xml">Hot Pick #1</link>
+      </item>
+      <item>
+        <link xml:space = "default" xlink:type="simple" xlink:href="pick2.xml">Hot Pick #2</link>
+      </item>
+      <item>
+        <link xlink:type="simple" xlink:href="pick3.xml">Hot Pick #3</link>
+      </item>
+    </olist>
+
+ </nodeTwo>
+ <nodeFour />
+
+</root>

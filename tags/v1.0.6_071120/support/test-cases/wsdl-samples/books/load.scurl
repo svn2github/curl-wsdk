@@ -1,0 +1,112 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{curl 6.0 package}
+
+{package COM.CURL.WSDK.SAMPLES.BOOK-DEMO,
+    version = "0.9",
+    {compiler-directives
+        careful? = true
+    }
+}
+{doc
+    type = package,
+    COM.CURL.WSDK.SAMPLES.BOOK-DEMO
+    {purpose
+        The classes in this package comprise the code used by an applet which
+        demonstrates how web services might be used in one possible use case.
+    }
+    {details
+        The Book Finder Demonstration applet, which uses this package, follows
+        a pattern for employing web services that is typical when using Curl.
+        There are only a few basic steps to follow and this package provides
+        the application level components to help get from a Web Service
+        Description Language (WSDL) file to end-user application.
+        {enumerate
+            {item
+                Generate Curl code (as a {docref package}) that represents the
+                web service.
+            }
+            {item
+                Load the {docref package} containing the generated Curl code.
+            }
+            {item
+                Call the web service using the methods in the generated
+                {docref package}.
+            }
+        }
+        The following classes apply to those three steps:
+        {itemize
+            {item {docref BookDemoPackageGenerator}}
+            {item {docref BookDemoPackageLoader}}
+            {item {docref BookDemoDisplay}}
+        }
+        {paragraph
+            The last, {docref BookDemoDisplay}, is the user-interface (UI)
+            class. A user chooses what information is desired via
+            {docref TextField}s and {docref DropdownLists}, then issues the
+            request with a {docref CommandButton}. The UI responds to the button
+            click by making the call to the web service.
+        }
+        {paragraph
+            There are a few supporting classes that help the top level classes
+            do their work. They are:
+            {itemize
+                {item
+                    {docref BookDemoServiceData}{br}
+                    This class holds information about the generated packages.
+                    It also serves as a proxy for
+                    {docref BookDemoPackageLoader}.
+                }
+                {item
+                    {docref BookDemoBookInfo}{br}
+                    This class is a data structure that holds the data returned
+                    from the web services, allowing the application to treat the
+                    data as a Curl object.
+                }
+                {item
+                    {docref RemoteMethodDelegate}{br}
+                    The {docref BookDemoDisplay} makes calls to web services
+                    through this class. It deals with the specifics of calling
+                    each service and handles each response in accordance with
+                    that service's data format.
+                }
+            }
+            There are two other classes, {docref ImageCell} and
+            {docref VendorCell} which are just used to spruce up the display of
+            results in a {docref RecordGrid}.
+        }
+    }
+}
+
+
+{import * from CURL.GUI.STANDARD}
+{import * from CURL.DATA-ACCESS.BASE}
+{import * from CURL.LANGUAGE.REFLECTION}
+{import SocketInetAddress, DataTCPSocket from CURL.IO.SOCKET}
+
+{import * from COM.CURL.WSDK.SOAP}
+{import * from COM.CURL.WSDK.WSDL}
+
+{include
+    "BookDemoBookInfo.scurl",
+    "BookDemoDisplay.scurl",
+    "BookDemoPackageGenerator.scurl",
+    "BookDemoPackageLoader.scurl",
+    "BookDemoServiceData.scurl",
+    "ImageCell.scurl",
+    "VendorCell.scurl",
+    "RemoteMethodDelegate.scurl"
+}

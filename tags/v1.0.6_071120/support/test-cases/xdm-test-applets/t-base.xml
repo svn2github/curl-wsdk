@@ -1,0 +1,64 @@
+<root>
+ <test case = '1'>
+  <ref file = 'examples/foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ <test case = '2' xml:base = ".">
+  <ref file = 'examples/foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ <test case = '2A' xml:base = "./">
+  <ref file = 'examples/foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ <test case = '2B' xml:base = "./ ">
+  <ref file = 'examples/foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ <!-- ## KNOWN TO NOT WORK ##
+ <test case = '3' xml:base = "examples">
+  <ref file = 'foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ -->
+ <test case = '4' xml:base = "examples/">
+  <ref file = 'foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ <test case = '5' xml:base = "examples/ ">
+  <ref file = 'foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test>
+ <!-- ## KNOWN TO THROW ERROR ##
+ <test case = '6' xml:base = "examples/.">
+  <ref file = 'foo.scurl'
+   expected = 'examples/foo.scurl'/>
+ </test> 
+ -->
+ <test case = '7' xml:base = "..">
+  <ref file = 'testing/examples/foo.scurl'
+   expected = '../testing/examples/foo.scurl'/>
+ </test>
+ <test case = '8' xml:base = "../">
+  <ref file = 'testing/examples/foo.scurl'
+   expected = '../testing/examples/foo.scurl'/>
+ </test>
+ <test case = '9' xml:base = "../ ">
+  <ref file = 'testing/examples/foo.scurl'
+   expected = '../testing/examples/foo.scurl'/>
+ </test>
+ <!-- ## KNOWN TO NOT WORK ##
+ <test case = '10' xml:base = "../testing">
+  <ref file = 'examples/foo.scurl'
+   expected = '../testing/examples/foo.scurl'/>
+ </test>
+ -->
+ <test case = '11' xml:base = "../testing/">
+  <ref file = 'examples/foo.scurl'
+   expected = '../testing/examples/foo.scurl'/>
+ </test>
+ <test case = '12' xml:base = "../testing/ ">
+  <ref file = 'examples/foo.scurl'
+   expected = '../testing/examples/foo.scurl'/>
+ </test>
+</root>

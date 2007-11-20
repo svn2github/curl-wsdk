@@ -1,0 +1,309 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| generic functions
+|| ====================
+{define-proc public {compare-any x:any, y:any,
+                        special-case:#{proc-type {any, any}:bool} = null
+                    }:bool
+    {with-compiler-directives 
+        allow-any-calls? = true, 
+        allow-implicit-any-casts? = true 
+     do
+        let compare-internal:#{proc-type {any, any}:bool} =
+            {proc {x:any, y:any}:bool
+                {return 
+                    {compare-any x, y, special-case = special-case}}}
+        {if-non-null special-case then
+            {if {special-case x, y} then
+                {return true}}}
+        {return
+            {if x == y then true
+             elseif {type-of x} != {type-of y} then false
+             elseif x isa RecordSet then
+                || some kind of RecordSet -- use RecordFields to compare records
+                {compare-recordset
+                    x asa RecordSet,
+                    y asa RecordSet}
+             elseif x isa XDMNode then
+                || XDMNode -- compare structurally
+                {compare-xdm-node x, y}
+             else
+                let t:Type = {type-of x}
+                {if not t.class? then
+                    || primitive: already failed
+                    false
+                 else
+                    {type-switch t
+                     case t:ClassType do
+                        || String: already failed
+                        {if {t.subtype-of? StringInterface} then
+                            {return false}
+                         elseif
+                            || some kind of Association-of -- compare each element
+                            {t.get-getter "key-type"} != null 
+                         then
+                            {if x.size != y.size then
+                                {return false}}
+                            {for xi key i in x do
+                                {if not {compare-internal xi, y[i]} then
+                                    {return false}}}
+                            {return true}
+                         elseif
+                            || some Nullable variant
+                            {t.name.prefix? |"{Nullable"|}
+                         then
+                            x.value-as-any == y.value-as-any
+                         else
+                            || arbitrary class -- compare each field
+                            || NOTE: this is dangerous, only public fields accessible
+                            {for m in {t.get-members filter = ClassMember.get-property-filter}
+                             do
+                                let f:Property = m asa Property
+                                {if not {compare-internal {f.get-value x}, {f.get-value y}}
+                                 then
+                                    {return false}}}
+                            {return true}}
+                     else
+                        {output
+                            {message
+                                Don't know how to compare {value x} and {value y}}}
+                        false}}}}}
+}
+{define-proc public {compare-recordset 
+                        this:RecordSet, 
+                        that:RecordSet, 
+                        fields:#StringArray = null
+                    }:bool
+    || applicable fields
+    let fs:{Array-of RecordField} = {{Array-of RecordField}}
+    {if-non-null fields then
+        || specified subset
+        {for f in fields do
+            {fs.append this.fields[f]}}
+     else
+        || all defined fields
+        {for f in this.fields do
+            {fs.append f}}}
+    || NOTE: inconsistent subject RecordFields will fail
+    || compare sizes
+    {if this.size != that.size then
+        {return false}
+     elseif 
+        this.size == 0 then
+        {return true}}
+    || consider successive pairs of records
+    || - caller responsible for controlling order
+    let xs:{Iterator-of Record} = {this.to-Iterator}
+    let ys:{Iterator-of Record} = {that.to-Iterator}
+    {while true do
+        let (x:Record, x?:bool) = {xs.read-one}
+        let (y:Record, y?:bool) = {ys.read-one}
+        {if x? and y? then
+            || no more records: success
+            {return true}
+         elseif x? or y? then
+            || mismatched sizes: failure
+            {return false}}
+        || compare each field 
+        {for f in fs do
+            let k:String = f.name
+            {if {f.domain.compare x[k], y[k]} != 0 then
+                {return false}}}}
+}    
+{define-proc public {display-any val:any}:Graphic
+    {with-compiler-directives 
+        allow-any-calls? = true, 
+        allow-implicit-any-casts? = true
+     do
+        let display-association:{proc-type {any}:Table} =
+            {proc {val:any}:Table
+                let display:Table = 
+                    {Table 
+                        cell-margin = 1px,
+                        border-width = 1px,
+                        border-style = "flat",
+                        border-color = "silver"}
+                let limit:int = 100
+                let n:int = 0
+                let key-type:Type = any
+                {for x key k in val do 
+                    {if n == 0 then
+                        set key-type = {type-of k}}
+                    {inc n}
+                    {if n > limit then
+                        {display.add {row-prototype {skip}, {italic ...More}}}
+                        {break}}
+                    {display.add {row-prototype k, {display-any x}}}}
+                {if val.size > 0 then
+                    set {display.get-column 0}.width =
+                        {if key-type.primitive? 
+                         then .25in
+                         else 1in}}
+                {return display} 
+            }
+        {return
+            {type-switch {type-of val}
+             case n:NumericType do
+                {if val isa int then val
+                 elseif val isa bool then val
+                 elseif val isa byte then
+                    {format "%02x", val}
+                 elseif not {scalar? val} then
+                    {format 
+                        {switch 
+                            {type-of val / {unit-value-for-type {type-of val}}}
+                         case double do "%.15g"
+                         case float do "%.6g"
+                         else "%s"},
+                        val}
+                 else val}
+             case t:ClassType do
+                {if not t.class? then 
+                    val
+                    
+                 elseif || standard display
+                    {t.subtype-of? StringInterface}
+                 then
+                    || might be XML string -- see if it parses
+                    let s:StringInterface = val asa StringInterface
+                    let n:int = s.size - 1
+                    || starts with '<'
+                    let i:int = 0
+                    {while i < n and CharClass.whitespace-chars[s[i]] do
+                        {inc i}}
+                    let maybe-xml?:bool = n > 2 and s[i] == '<'
+                    || ends with '>' (maybe followed by whitespace)
+                    {if maybe-xml? then
+                        {while n > 2 and CharClass.whitespace-chars[s[n]] do
+                            {dec n}}
+                        set maybe-xml? = s[n] == '>'}
+                    || try parsing -- might be malformed and/or html
+                    {if maybe-xml? then
+                        {try
+                            set val = 
+                                {XDMTreeControl open? = true,
+                                    xdm-text-breakable? = true,
+                                    {build-xml s}.root}
+                         catch e:Exception do}}
+                    val
+                    
+                 elseif || standard display
+                    {t.subtype-of? DateTime}
+                 then
+                    val
+                    
+                 elseif || XDMElement
+                    {t.subtype-of? XDMElement}
+                 then
+                    {XDMTreeControl open? = true, 
+                        xdm-text-breakable? = true,
+                        val asa XDMElement}
+                    
+                 elseif
+                    || some kind of Association-of 
+                    {t.get-getter "key-type"} != null
+                 then
+                    let element-type:Type = val.element-type
+                    let soap-struct?:bool =
+                        {type-switch element-type
+                         case t:ClassType do
+                            {t.get-constructor "from-keywords"} != null
+                         else false}
+                    {if soap-struct? then
+                        || display like recordset
+                        let rs-type:ClassType =
+                            {RecordSet-for.construct element-type} asa ClassType
+                        {RecordGrid
+                            width = {add-stretch},
+                            record-source =
+                                {rs-type {splice val}}}
+                     elseif element-type == byte then
+                        || ByteArray: probably an image
+                        let d:#ImageData = null
+                        || guess the type
+                        {for mime-type in 
+                            {StringArray "image/gif", "image/jpeg"}
+                         do
+                            {try
+                                set d = 
+                                    {ImageData.from-stream 
+                                        {{ByteInputStream-from ByteArray} val asa ByteArray},
+                                        mime-type}
+                             catch e:Exception do}
+                            {if d != null then
+                                {break}}}
+                        {if-non-null d then
+                            || got image
+                            let p:Pixmap = d.pixmaps[0]
+                            {Frame
+                                height = p.height * 1px,
+                                width = p.width * 1px,
+                                background =
+                                    {FillPattern.from-pixmap p}}
+                            || fallback as bytes
+                         else val}                 
+                     else
+                        || arbitrary association: display each element
+                        {display-association val}}
+                    
+                 elseif
+                    || some kind of FastArray-of
+                    {t.get-getter "max-size"} != null
+                 then
+                    || arbitrary association: display each element
+                    let t:Table = {display-association val}
+                    || visually distinguish FastArray,
+                    || -- because these (usually) represent mutiple value returns
+                    set {t.get-column 0}.background = "#DDD"
+                    t
+                    
+||--                 elseif
+||--                    || saved result
+||--                    {t.subtype-of? ResultString}
+||--                 then
+||--                    {Frame background = "#DDD", val.value}
+                    
+                 else
+                    || arbitrary class -- display each public field
+                    let fs:{FastArray-of ClassMember} =
+                        {t.get-members filter = ClassMember.get-property-filter}
+                    let background:FillPattern =
+                        {if {t.subtype-of? SyntaxError} then "yellow"
+                         elseif {t.subtype-of? Exception} then "pink" 
+                         else "transparent"}
+                    {if fs.size == 0 then
+                        || no public fields -- default display
+                        {Frame 
+                            background = background,
+                            val}
+                     else
+                        let display:Table = 
+                            {Table 
+                                background = background,
+                                cell-margin = 1px,
+                                border-width = 1px,
+                                border-style = "flat",
+                                border-color = "silver",
+                                {cell-prototype colspan = 2, {italic {value t}}}}
+                        {for m in fs do
+                            let f:Property = m asa Property
+                            {display.add {row-prototype f.name, {display-any {f.get-value val}}}}}
+                        display}}
+             else val}}}
+}
+
+

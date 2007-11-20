@@ -1,0 +1,195 @@
+<!-- Copyright (C) 1998-2004, Curl Corporation.  All Rights Reserved.-->
+<!-- Maintained by: Curl Solutions -->
+<!--
+The CAFBranding spec is used to configure applications using the CAF. Part of it is also used to
+save preferences modified by a user running an application.
+
+The attributes are:
+default-table: The initial palette to be used for the color scheme.
+theme: the primary color scheme theme from the chosen palette 
+
+layout-rows: The number of rows to be used for a regular table layout of CAF panes,. 
+layout-cols: The number of columns to be used for a regular table layout of CAF panes.
+
+chart-color-sequence: Specifies the color sequence to be used when charting dimensions. The choices are
+                      scenario - color determined principally by scenario name.
+                      metric - color determined principally by metric name .
+                      value  - cycle through the color table to color each item differently.
+
+chart-legend-align: Specifies the alignment to be used for the legend of charts in an application. Options
+                    are - left, right, top, bottom
+-->
+<CAFBranding 
+  id = "CAF" 
+  default-table = 'bright' 
+  theme = '#EE9C00' 
+  layout-rows = '2' 
+  layout-cols = '2' 
+  chart-color-sequence = 'scenario' 
+  chart-legend-align = 'left' 
+  title = "Curl for Performance Management"
+>
+<!--
+CAFLocations is a set of Urls defined in CAFLocation tags that can be used within the CAF Framework.
+
+The current use is to populate an application level menu with locations of saved
+configurations.
+
+This is an optional feature. 
+
+The default path to the location is that of the applet. Specifying a fully qualified url here will override that path.
+
+The CAFLocations attributes are:
+label: The label associated with the location set. Currently used as the
+       text in a menu.
+path:  (Optional) Root path of the specified locations. Defaults to the applet location.
+
+The CAFLocation attributes are:
+label: an index name assocuatied with a Url. currently used as a mune label
+location: a Url
+-->
+<CAFLocations label = "Configurations">
+<CAFLocation label = "sample" location = "sample.xml"></CAFLocation>
+</CAFLocations>
+
+<!-- 
+A CAFPalette is a named set of colors that can be used to create a color scheme for the CAF and an application.
+Use a hex specifier e.g.
+color = "#AABBCC"
+
+or a keyword recognized by Curl - one of
+aqua,beige,black,blue,brown,cyan,fuchsia,gray,green,lime,
+magenta,maroon,navy,olive,orange,pink,purple,red,silver,teal,violet
+wheat,white,yellow
+
+
+-->
+<CAFPalette name = 'rich'>
+<CAFColor color = '#A11135'></CAFColor>
+<CAFColor color = '#353A90'></CAFColor>
+<CAFColor color = '#4D0867'></CAFColor>
+<CAFColor color = '#C56B23'></CAFColor>
+<CAFColor color = '#00604B'></CAFColor>
+<CAFColor color = '#3D117B'></CAFColor>
+<CAFColor color = '#A32F75'></CAFColor>
+<CAFColor color = '#7E6565'></CAFColor>
+</CAFPalette>
+
+<CAFPalette name = 'curl'>
+<CAFColor color = '#006968'></CAFColor>
+<CAFColor color = '#FF660D'></CAFColor>
+<CAFColor color = '#660066'></CAFColor>
+<CAFColor color = '#1E5FA9'></CAFColor>
+<CAFColor color = '#CC0000'></CAFColor>
+<CAFColor color = '#330033'></CAFColor>
+<CAFColor color = '#003366'></CAFColor>
+</CAFPalette>
+
+<CAFPalette name = 'bright'>
+<CAFColor color = '#EE9C00'></CAFColor>
+<CAFColor color = '#E5571D'></CAFColor>
+<CAFColor color = '#DF0032'></CAFColor>
+<CAFColor color = '#00B1AE'></CAFColor>
+<CAFColor color = '#B3007C'></CAFColor>
+<CAFColor color = '#009F62'></CAFColor>
+<CAFColor color = '#6F067B'></CAFColor>
+</CAFPalette>
+
+<!-- 
+A CAFConfigTable is a color scheme made avaialable to the CAF by processing a CAFPalette. A CAFPalette
+not matching a CAFConfigTable will not be avaialble to the CAF.
+
+The attributes are:
+        name: The identification of the color scheme. This MUST match one of the named CAFPalettes. The
+              only exception is the name "customized" in which each element of the scheme is listed.
+        custom: Must be true for the "customized CAFConfigTable.
+        dol: A flag indication "dark on light". If true, the color scheme will use dark text and a
+             light background.
+        theme: The prime color of the scheme - the initial value must be derived from the Palette.
+-->
+        
+<CAFConfigTable id = "CAF" name = 'bright' dol = 'true' custom = 'false' theme = '#EE9C00'></CAFConfigTable>
+<CAFConfigTable id = "CAF" name = 'rich' dol = 'true' custom = 'false' theme = '#A11135'></CAFConfigTable>
+<CAFConfigTable id = "CAF" name = 'curl' dol = 'true' custom = 'false' theme = '#660066'></CAFConfigTable>
+
+<!--
+A customized CAFConfigTable must specify ALL the theme colors - as shown in this example. The
+attribute names are mostly self-explanatory.
+-->
+<CAFConfigTable id = "CAF" name = 'customized' dol = 'true' custom = 'true' theme = '#660066'>
+<CAFConfigAttribute name='portal-background' color='#FFAB7A'></CAFConfigAttribute>
+<CAFConfigAttribute name='chart-axis-fill' color='#000000'></CAFConfigAttribute>
+<CAFConfigAttribute name='line-theme' color='#853385'></CAFConfigAttribute>
+<CAFConfigAttribute name='dark-theme' color='#751975'></CAFConfigAttribute>
+<CAFConfigAttribute name='title-bar-background' color='#B380B3'></CAFConfigAttribute>
+<CAFConfigAttribute name='chart-label-fill' color='#000000'></CAFConfigAttribute>
+<CAFConfigAttribute name='chart-font-fill' color='#000000'></CAFConfigAttribute>
+<CAFConfigAttribute name='light-theme' color='#B380B3'></CAFConfigAttribute>
+<CAFConfigAttribute name='text-color' color='#000000'></CAFConfigAttribute>
+<CAFConfigAttribute name='background-theme' color='#D1B3D1'></CAFConfigAttribute>
+<CAFConfigAttribute name='control-theme' color='#944D94'></CAFConfigAttribute>
+<CAFConfigAttribute name='highlight-theme' color='#F0E6F0'></CAFConfigAttribute>
+<CAFConfigAttribute name='control-content-background-theme' color='#C299C2'></CAFConfigAttribute>
+<CAFConfigAttribute name='chart-grid-fill' color='#B380B3'></CAFConfigAttribute>
+</CAFConfigTable>
+
+<!-- 
+A CAFIconSet is a table of images used for buttons. This is the default framework 
+set, so no location is specified. The default path is specified in the CAF manifest
+as a manifest url. Specifying a fully qualified url here will override that path.
+
+If the icon is single state then make the up and down specs identical.
+
+The CAF uses an icon to represent a dimension selection control. This table is used
+to match a dimensions name to an icon if it is not found in the "Application" CAFIconSet.
+-->
+<CAFIconSet id = "CAF">
+<CAFIcon name='maximize' up='buttons/maximize.jpg' down='buttons/minimize.jpg'> </CAFIcon>
+<CAFIcon name='minimize' up='buttons/minimize.jpg' down='buttons/maximize.jpg'> </CAFIcon>
+<CAFIcon name='close' up='buttons/close.jpg' down='buttons/close-pressed.jpg'> </CAFIcon>
+<CAFIcon name='swap'  up='buttons/swap.jpg'  down='buttons/swap-pressed.jpg'>  </CAFIcon>
+<CAFIcon name='chart' up='buttons/chart.jpg' down='buttons/chart.jpg'>  </CAFIcon>
+<CAFIcon name='default' up = 'buttons/close.jpg' down = 'buttons/close-pressed.jpg'>  </CAFIcon>
+<CAFIcon name='location' up = 'new-buttons/geography-copy.gif' down = 'new-buttons/geography-over.gif'>  </CAFIcon>
+<CAFIcon name='organization' up = 'new-buttons/org-chart-2-over.gif' down = 'new-buttons/org-chart-2-copy.gif'>  </CAFIcon>
+<CAFIcon name='metric' up = 'new-buttons/metrics2-copy.gif' down = 'new-buttons/metrics2-over.gif'>  </CAFIcon>
+<CAFIcon name='time' up = 'new-buttons/time-copy.gif' down = 'new-buttons/time-over.gif'>  </CAFIcon>
+<CAFIcon name='presentation' up = 'new-buttons/charts-over.gif' down = 'new-buttons/charts.gif'>  </CAFIcon>
+<CAFIcon name='product' up = 'new-buttons/product-line-over.gif' down = 'new-buttons/product-line.gif'>  </CAFIcon>
+<CAFIcon name='sales' up = 'new-buttons/sales-over.gif' down = 'new-buttons/sales.gif'>  </CAFIcon>
+<CAFIcon name='supplier' up = 'new-buttons/suppliers-over.gif' down = 'new-buttons/suppliers.gif'>  </CAFIcon>
+<CAFIcon name='financial' up = 'new-buttons/financial-over.gif' down = 'new-buttons/financial-copy.gif'>  </CAFIcon>
+<CAFIcon name='pie' up = 'new-buttons/charts-reports-2-copy.gif' down = 'new-buttons/charts-reports-2-over.gif'>  </CAFIcon>
+<CAFIcon name='chart' up = 'new-buttons/charts-reports-copy.gif' down = 'new-buttons/charts-reports-over.gif'>  </CAFIcon>
+<CAFIcon name='ordinate' up = 'new-buttons/market2-copy.gif' down = 'new-buttons/market2-over.gif'>  </CAFIcon>
+<CAFIcon name='save' up = 'buttons/save-normal.gif' down = 'buttons/save-over.gif'>  </CAFIcon>
+<CAFIcon name='reports' up = 'buttons/reports-over.gif' down = 'buttons/reports-normal.gif'>  </CAFIcon>
+<CAFIcon name='product' up = 'new-buttons/product-line3-over.gif' down = 'new-buttons/product-line3.gif'>  </CAFIcon>
+<!--
+These are added as alias' especially for the CPM. Placed here so the path is resolved correctly.
+-->
+<CAFIcon name='measure' up = 'new-buttons/metrics2-copy.gif' down = 'new-buttons/metrics2-over.gif'>  </CAFIcon>
+<CAFIcon name='geo' up = 'new-buttons/geography-copy.gif' down = 'new-buttons/geography-over.gif'>  </CAFIcon>
+<CAFIcon name='org' up = 'new-buttons/org-chart-2-over.gif' down = 'new-buttons/org-chart-2-copy.gif'>  </CAFIcon>
+<CAFIcon name='state' up = 'new-buttons/geography-copy.gif' down = 'new-buttons/geography-over.gif'>  </CAFIcon>
+<CAFIcon name='name' up = 'new-buttons/metrics2-copy.gif' down = 'new-buttons/metrics2-over.gif'>  </CAFIcon>
+<CAFIcon name='sku' up = 'new-buttons/product-line3-over.gif' down = 'new-buttons/product-line3.gif'>  </CAFIcon>
+<CAFIcon name='suppliername' up = 'new-buttons/suppliers-over.gif' down = 'new-buttons/suppliers.gif'>  </CAFIcon>
+<CAFIcon name='scenario' up = 'new-buttons/financial-over.gif' down = 'new-buttons/financial-copy.gif'>  </CAFIcon>
+
+</CAFIconSet>
+
+<!--
+This CAFIconSet is the CPM set of icons, used for the perspectives.
+
+The location is a path relative to the url of the XML file
+-->
+<CAFIconSet id = 'CPM' location='branding/images'>
+<CAFIcon name='Departments' up='buttons/departments.gif' down='buttons/departments-over.gif'> </CAFIcon>
+<CAFIcon name='E-Business' up='buttons/ebiz.gif' down='buttons/ebiz-over.gif'> </CAFIcon>
+<CAFIcon name='International' up='buttons/international.gif' down='buttons/international-over.gif'> </CAFIcon>
+<CAFIcon name='Operations' up='buttons/operations.gif' down='buttons/operations-over.gif'> </CAFIcon>
+<CAFIcon name='maximize' up='buttons/maximize.gif' down='buttons/maximize_over.gif'> </CAFIcon>
+</CAFIconSet>  
+
+</CAFBranding>

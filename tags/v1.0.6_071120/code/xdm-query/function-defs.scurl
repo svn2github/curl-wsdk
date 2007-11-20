@@ -1,0 +1,245 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 package}
+{package COM.CURL.WSDK.XML-QUERY-FUNCTIONS,
+    version = "1.0",
+    resource-directory = "../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        careful? = true
+    }
+}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+|| function definitions
+|| ====================
+{let public constant xp-functions:FunctionSpecs =
+    {FunctionSpecs
+
+        || conversion functions
+        || --------------------
+        || TODO: "inline" these
+        {define-xp-proc from-context {string x:XPathValue}:String
+            {return x.as-String}
+        },
+        {define-xp-proc from-context {boolean x:XPathValue}:bool
+            {return x.as-bool}
+        },
+        {define-xp-proc {number x:XPathValue}:double
+            {return x.as-double}
+        },
+        
+        || node functions
+        || --------------------
+        {define-xp-proc {count ns:XDMNodeSet}:int
+            {return ns.size}
+        },
+        {define-xp-proc from-context {id ns:XDMNodeSet, x:XPathValue}:XDMNodeSet
+            let subject:XDMNode = ns.as-XDMNode
+            let xs:StandardXDMNodeSet = {StandardXDMNodeSet}
+            let nodes:{Array-of XDMNode} = {{Array-of XDMNode}}
+            || document maintains index via designated key attribute
+            {if-non-null doc = subject.document then
+                || obtain argument ids
+                || - whitespaces delimited tokens from supplied string value(s)
+                let ids:StringArray = 
+                    {type-switch x.value
+                     case xs:XDMNodeSet do
+                        let ids:StringArray = {StringArray}
+                        {for x in xs do
+                            {ids.concat {{x.get-text}.split}}}
+                        ids
+                     else {x.as-String.split}}
+                || avoid duplicates
+                {ids.sort}
+                let prev-id:#String = null
+                || collect nodes
+                {for id in ids do
+                    {if id.empty? or id == prev-id then
+                        {continue}
+                     else
+                        set prev-id = id
+                        {if-non-null x = {doc.get-element-by-id id} then
+                            {nodes.append x}}}}
+                || assure document order
+                {nodes.sort comparison-proc = doc.nodes-ordered?}
+                || compose nodeset
+                {for x in nodes do
+                    {xs.append x}}}
+            {return xs}
+        },
+        {define-xp-proc {local-name ns:XDMNodeSet}:String
+            {return
+                {if-non-null n = ns.as-XDMNode? 
+                 then n.local-name
+                 else ""}}
+        },
+        {define-xp-proc from-context {namespace-uri ns:XDMNodeSet}:String
+            {return
+                {if-non-null n = ns.as-XDMNode? 
+                 then n.namespace
+                 else ""}}
+        },
+        {define-xp-proc from-context {name ns:XDMNodeSet}:String
+            {return
+                {if-non-null n = ns.as-XDMNode? 
+                 then n.qualified-name
+                 else ""}}
+        },
+
+        || string functions
+        || --------------------
+        {define-xp-proc {concat 
+                            s1:String, 
+                            s2:String
+                            || TODO: restargs
+                            ||, ...:String
+                        }:String
+            {return {String s1, s2}}
+        },
+        {define-xp-proc {starts-with 
+                            src:String, 
+                            substr:String
+                        }:bool
+            {return {src.prefix? substr}}
+        },
+        {define-xp-proc {contains 
+                            src:String, 
+                            substr:String
+                        }:bool
+            {return {src.find-string substr} >= 0}
+        },
+        {define-xp-proc {substring-before 
+                            src:String, 
+                            substr:String
+                        }:String
+            let i:int = {src.find-string substr}
+            {return
+                {if i < 0 
+                 then ""
+                 else {src.substr 0, i}}}
+        },
+        {define-xp-proc {substring-after 
+                            src:String, 
+                            substr:String
+                        }:String
+            let i:int = {src.find-string substr}
+            {return
+                {if i < 0 
+                 then ""
+                 else {src.tail i + substr.size}}}
+        },
+        {define-xp-proc {substring 
+                            src:String, 
+                            start:int, 
+                            || TODO: should be optional
+                            length:int || = -1
+                        }:String
+            || NOTE: XPath indices are 1-based
+            set start = start - 1
+            let all:int = {max src.size - start, 0}
+            let len:int =
+                {if length < 0 
+                 then all
+                 else {min length, all}}
+            {return {src.substr start, len}}
+        },
+        {define-xp-proc from-context {string-length src:String}:int
+            {return src.size}
+        },
+        {define-xp-proc from-context {normalize-space src:String}:String
+            || TODO: something more efficient
+            let xs:StringArray = {src.split}
+            {xs.filter
+                {proc {x:String} :bool
+                    {return not x.empty?}}}
+            let out:StringBuf = 
+                {StringBuf efficient-size = src.size}
+            {for x in xs do
+                {if not out.empty? then
+                    {out.append ' '}}
+                {out.concat x}}
+            {return {out.to-String}}
+        },
+        {define-xp-proc {translate 
+                            src:String, 
+                            remove-chars:String, 
+                            replace-chars:String
+                        }:String
+            || TODO: avoid duplication if no matches
+            let out:StringBuf = {StringBuf}
+            {for c in src do
+                let i:int = {remove-chars.find c}
+                {if i < 0 then
+                    {out.append c}
+                 else
+                    {if i < replace-chars.size then
+                        {out.append replace-chars[i]}}
+                }}
+            {return {out.to-String}}
+        },
+
+        || boolean functions
+        || --------------------
+        {define-xp-proc {not x:bool}:bool
+            {return not x}
+        },
+        {define-xp-proc from-context {lang xs:XDMNodeSet, code:String}:bool
+            let subject:XDMNode = xs.as-XDMNode
+            let lang:String = 
+                {type-switch subject
+                 case e:XDMElement do e.xml-lang
+                 else {if-non-null p = subject.parent 
+                       then p.xml-lang
+                       else ""}}
+            {return 
+                not lang.empty? 
+                and {sublanguage? code, lang}}
+        },
+
+        || number functions
+        || --------------------
+        {define-xp-proc {sum ns:XDMNodeSet}:double
+            let total:double = 0
+            {for n in ns do
+                let s:String = {n.get-text}
+                {inc total, {XDMNodeSet.parse-double s}}}
+            {return total}
+        },
+        {define-xp-proc {floor num:double}:double
+            {return {floor num}}
+        },
+        {define-xp-proc {ceiling num:double}:double
+            {return {ceiling num}}
+        },
+        {define-xp-proc {round num:double}:double
+            || NOTE: XPath specifies "round-half-up"
+            || - curl 'round' does "round-half-even"
+            || - but dguide suggests the following
+            {return {floor num + 0.5f}}
+        }
+        
+    }
+}
+{define-proc {sublanguage? x:String, y:String}:bool
+    {return
+        {if {x.compare y, ignore-case? = true} == 0 then
+            true
+         else
+            let i:int = {y.find '-'}
+            i >= 0 and {x.compare {y.substr 0, i}, ignore-case? = true} == 0}}
+}

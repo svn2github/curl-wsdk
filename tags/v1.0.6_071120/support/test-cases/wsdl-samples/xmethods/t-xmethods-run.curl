@@ -1,0 +1,382 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+            
+{applet manifest = "manifest.mcurl"}
+
+{import * from COM.CURL.WSDK.XMETHODS-SUPPORT}
+
+{import * from COM.CURL.WSDK.API-SUPPORT}
+{import * from COM.CURL.WSDK.SOAP}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from CURL.LANGUAGE.REFLECTION}
+
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+{import * from COM.CURL.WSDK.DISPLAY-SUPPORT}
+
+{document-style PlainDocument}
+{set-document-properties 
+    hstretch? = true, 
+    vstretch? = true
+}
+
+
+{value 
+    || state   
+    || --------------------
+    let query:String = {get-base-url}.query
+    let batch?:bool = query == "?batch"
+    let log-output?:bool = batch?
+    || TODO: this should be selectable
+    let dir:Url = {url "services"}    
+    || locations
+    let mloc:Url = {dir.concat "methods.csv"}    
+    || model
+    || --------------------
+    || read method definitions
+    let all-methods:RecordSet = 
+        {CsvRecordSet mloc,
+            fields = methods-fields}
+    || set up for method application
+    let manifest:ComponentManifest =
+        {import-manifest {mloc.merge "manifest.mcurl"}}
+    let args-template:{proc-type {Record}:void} =
+        {proc {r:Record}:void
+            let m:Method = 
+                {get-service-method 
+                    manifest = manifest,
+                    r["package"],
+                    r["class"],
+                    r["member"]} 
+            let pt:ProcType = m.type asa ProcType
+            let input:StringBuf = {StringBuf}
+            || clear result 
+            set r["result"] = DataBinding.unset
+            || synthesize arguments 
+            {input.concat "\{Arguments "}
+            {format-arguments input, pt, indent = 4}
+            {input.concat "\}\n"}
+            set r["input"] = {input.to-String}}        
+    let test-method:{proc-type {Record}:void} =
+        {proc {r:Record}:void
+            let m:Method = 
+                {get-service-method 
+                    manifest = manifest,
+                    r["package"],
+                    r["class"],
+                    r["member"]} 
+            let pt:ProcType = m.type asa ProcType
+            let input:StringBuf = {StringBuf r["input"]}
+            || synthesize arguments if unspecified
+            {if input.empty? then
+                {input.concat "\{Arguments "}
+                {format-arguments input, pt, indent = 4}
+                {input.concat "\}\n"}
+                set r["input"] = {input.to-String}}
+            || clear result and apply method to arguments
+            set r["result"] = DataBinding.unset
+            || log if requested
+            {if log-output? then
+                {output {message [{timestamp}] Run 
+                            {value m.declaring-class}.{value m.name}}}}
+            || invoke method
+            let result:any = {invoke-service-method m, input}
+            || interpret results
+            set r["result"] = result
+            set r["result-type"] = {String {type-of result}} 
+            || TODO: how to distinguish multiple values -- maybe FastArray
+            set r["result-kind"] = 
+                {type-switch result
+                 case e:SOAP-1-1-FaultException do "Fault"
+                 case e:SOAPException do "SOAPException"
+                 case e:HttpException do "HttpException"
+                 case e:SyntaxError do "SyntaxError"
+                 case e:Exception do "Exception"
+                 case x:XDMNode do "XMLDocument"
+                 case x:Object do 
+                    let t:ClassType = {type-of x} asa ClassType                
+                    {if {t.get-getter "key-type"} != null 
+                     then "Association"
+                     elseif {t.get-constructor "from-keywords"} != null 
+                     then "SOAPStruct"
+                     else "Object"}
+                 case x:Null do "Null"
+                 else 
+                    {if {type-of result} isa EnumType 
+                     then "Enum"
+                     else "Primitive"}
+                }
+        }     
+    || set up method type filters
+    let prefix-all:String = ""
+    let prefix-no-arg:String = |"{proc-type {}:"|
+    let prefix-int-arg:String = |"{proc-type {int}:"|
+    let prefix-string-arg:String = |"{proc-type {String}:"|
+    let prefix-nstring-arg:String = |"{proc-type {#String}:"|
+    let prefix-string2-arg:String = |"{proc-type {String, String}:"|
+    let prefix-nstring2-arg:String = |"{proc-type {#String, #String}:"|
+    let prefix:String = 
+        {if batch? then prefix-int-arg else prefix-all}
+    let prefix-choices:Array =
+        {Array 
+            prefix-no-arg, 
+            prefix-string-arg, 
+            prefix-nstring-arg,  
+            prefix-string2-arg, 
+            prefix-nstring2-arg,
+            prefix-int-arg,
+            {ListValueItem "",
+                label = {bold All}}}
+    let prefix-filter:{proc-type {String}:{proc-type {Record}:bool}} =
+        {proc {prefix:String}:{proc-type {Record}:bool}
+            {return
+                {proc {r:Record}:bool
+                    {return {r["type"].prefix? prefix}}}}}
+    let test-methods:RecordView =
+        {RecordView all-methods,
+            filter = {prefix-filter prefix}}
+    || to work around lost current-record
+    let select-record:{proc-type {RecordGrid, Record}:void} =
+        {proc {rg:RecordGrid, r:Record}:void
+            {if rg.current-record !=  r then
+                {for x key i in rg.records do
+                    {if x == r then 
+                        set rg.current-index = i
+                        {break}}}}}
+    || display
+    || --------------------
+    let rg:RecordGrid =
+        {RecordGrid
+            record-source = test-methods,
+            width = {add-stretch},
+            height = {make-elastic},
+            sort = "class,member",
+            automatic-columns? = false, 
+            editable? = false,
+            {RecordGridColumn "class", width = 1.25in},
+            {RecordGridColumn "member", width = 1.25in},
+            {RecordGridColumn "type", width = 1.5in},
+            {RecordGridColumn "input", width = 2in},
+            {RecordGridColumn "result-type", width = .5in, header-spec = "type"},
+            {RecordGridColumn "result-kind", width = .5in, header-spec = "kind"},
+            {RecordGridColumn "result", width = {make-elastic},
+                format-spec =
+                    {proc {x:any}:String
+                        {return
+                            {type-switch x
+                             case x:ResultString do x.value
+                             case x:String do x
+                             else {String x}}}}
+            }
+        }    
+    let progress-display:DisplayFrame = {DisplayFrame}
+    let display:RecordForm =
+        {RecordForm 
+            record-source = rg.records,
+            use-look-and-feel? = false,
+            display-navigation-panel? = false,
+            {VBox
+                spacing = 3pt,
+                hstretch? = true,
+                {HBox
+                    valign = "top",
+                    || signature
+                    {paragraph
+                        {DisplayFrame font-size = 0.8em,
+                            {bind value to "package"}}
+                        {DisplayFrame font-style = "italic",
+                            {bind value to "class"}}
+                        {DisplayFrame font-weight = "bold",
+                            {bind value to "member"}}
+                        {DisplayFrame font-family = "monospace",
+                            {bind value to "type"}}},
+                    {Fill},
+                    || links
+                    {VBox
+                        height = {add-stretch},
+                        hstretch? = true,
+                        || TODO: need RecordFields for these
+||--                        {DisplayFrame
+||--                            {bind value to "filename",
+||--                                {format name:String as
+||--                                    {link target = "WSDL",
+||--                                        href = {dir.concat name & ".wsdl"}, 
+||--                                        {italic WSDL}}}}},
+||--                        {DisplayFrame
+||--                            {bind enabled? to "error",
+||--                                {format x:String as x == "_"}},                            
+||--                            {bind value to "wsdl-url",
+||--                                {format loc:String as
+||--                                    {soapscope-link loc, 
+||--                                        label = {italic SOAPScope Test}}}}},
+                        {Fill}
+                    }},
+                {hrule},
+                {HBox
+                    valign = "top",
+                    spacing = 3px,
+                    {TextEditFrame
+                        width = 3in,
+                        height = {add-stretch},
+                        font-size = 8pt,
+                        border-width = 2px,
+                        border-style = "sunken",
+                        background = "#F7FBF7",
+                        {bind value to "input"},
+                        {on ValueFinished at c:TextEditFrame do
+                            {c.update-data-binding "value"}}},
+                    {ScrollBox
+                        hstretch? = true,
+                        hscroll? = false,
+                        border-width = 2px,
+                        border-style = "sunken",
+                        {DisplayFrame 
+                            font-size = 8pt,
+                            halign = "left",
+                            width = {add-stretch},
+                            {bind value to "result",
+                                {format x:any as
+                                    {display-any x}}}}}}}}
+    {rg.add-event-handler
+        {on CurrentRecordChanged do
+            set display.current-index = rg.current-index}}
+    || commands
+    || --------------------
+    let running?:bool = false
+    let stop-command:CommandButton = 
+        {CommandButton 
+            label = {message Stop},
+            enabled? = false,
+            {on Action do
+                set running? = false}}
+    let test-all-command:SimpleCommand =
+        {SimpleCommand "test-all",
+            execute-proc = 
+                {proc {}:void
+                    {with-busy-cursor
+                        let n-total:int = rg.records.size
+                        let n-good:int = 0
+                        let n-bad:int = 0
+                        set stop-command.enabled? = true
+                        set running? = true
+                        {for r key i in rg.records do
+                            {if not running? then
+                                {break}}
+                            {test-method r}
+                            {if r["result"] isa Exception 
+                             then {inc n-bad}
+                             else {inc n-good}}
+                            set progress-display.value =
+                                {format "%3d %3d / %3d", n-good, n-bad, n-total}
+                            set rg.current-index = i
+                            {dispatch-events false}}
+                        set running? = false
+                        set stop-command.enabled? = false
+                    }}}
+    let main-commands:HBox =
+        {HBox
+            spacing = 3pt,
+            {CommandButton label = {message Test Current},
+                {on Action do
+                    {with-busy-cursor
+                        {if-non-null r = rg.current-record then
+                            {test-method r}                            
+                            || recover current record
+                            || -- lost after RecordsReordered
+                            || NOTE: maybe fixed in v4
+                            {select-record rg, r}}
+                    }}},
+            {CommandButton label = {message Arg Template},
+                {on Action do
+                    {with-busy-cursor
+                        {if-non-null r = rg.current-record then
+                            {args-template r}                            
+                            || recover current record
+                            || -- lost after RecordsReordered
+                            || NOTE: maybe fixed in v4
+                            {select-record rg, r}}
+                    }}},
+            {CommandButton label = {message Test All},
+                bound-command = test-all-command},
+            {small Type Filter},
+            {ComboBox 
+                value = prefix,
+                {splice prefix-choices},
+                vorigin = 70%,
+                {on ValueFinished at c:ComboBox do
+                    set prefix = c.value
+                    {if {c.data-model.find prefix} < 0 then
+                        {c.data-model.append prefix}}
+                    set test-methods.filter = 
+                        {prefix-filter prefix}}},
+            stop-command,
+            {CommandButton 
+                label = {message Clear},
+                {on Action do
+                    {with-busy-cursor
+                        {for r in rg.records do
+                            set r["input"] = ""
+                            set r["result"] = null}}}},
+            {Fill},
+            {CommandButton 
+                label = {message Save As ...},
+                {on Action do
+                    {if-non-null 
+                        loc = {choose-file 
+                                  title = {message Methods Data}, 
+                                  style = FileDialogStyle.save-as,
+                                  default-location = mloc}
+                     then
+                        {with-busy-cursor
+                            {with-open-streams 
+                                out = {CsvDataWriter loc} do
+                                    {for r in {all-methods.select} do
+                                        {out.write-record r}}}
+                        }}}},
+            progress-display}
+    let header:HBox =
+        {HBox
+            spacing = 6pt,
+            margin = 2pt,
+            {heading level = 3, WSDK Service Execution Test Driver}, 
+            {paragraph Source 
+                {link href = {url "http://www.xmethods.com"}, 
+                target = "WSDL", font-size = 12pt,
+                www.xmethods.com}},
+            {Fill},
+            {link href = {url "xmethods-info.curl"}, target = "_INFO", {big {bold Help}}}}
+    || arrangement
+    || --------------------
+    let main:PanedWindow =
+        {PanedWindow orientation = "vertical"}
+    {main.add-pane rg}
+    {main.add-pane display}
+    {main.set-pane-sizes {{Array-of double} 60%, 40%}}
+    || automation
+    || --------------------
+    {if batch? then
+        {test-all-command.do-command}}
+    || layout
+    || --------------------
+    {VBox
+        hstretch? = true,
+        spacing = 3pt,
+        margin = 3pt,
+        header,
+        main-commands,
+        main} 
+}

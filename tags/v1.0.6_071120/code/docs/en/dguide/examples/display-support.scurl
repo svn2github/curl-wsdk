@@ -1,0 +1,123 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from CURL.LANGUAGE.REGEXP}
+
+|| data binding support
+|| ====================
+|| need "bindable" content property
+|| --------------------
+{define-class public DisplayFrame {inherits Frame}
+  field _value:any = null
+  {getter public {value}:any
+    {return self._value}
+  }
+  {setter public {value val:any}:void
+    {if val != self._value then
+        set self._value = val
+        {self.clear}
+        {if-non-null val then
+            {self.add-internal val}}}
+  }
+  {constructor public {default ...}
+    {construct-super ...}
+  }
+}
+|| link Visual is closed
+|| --------------------
+{define-class public LinkFrame {inherits DisplayFrame}
+  field public href:#Url
+  field public target:String  
+  {constructor public {default 
+                          href:#Url = null, 
+                          target:String = "_self", 
+                          ...}
+    set self.href = href
+    set self.target = target
+    {construct-super
+        color = "blue",
+        text-underline? = true,
+        cursor = cursor-hand,
+        {on PointerEnter do
+            {if-non-null href = self.href then
+                {{get-the-applet}.set-status href.name}}},
+        {on PointerLeave do
+            {if-non-null href = self.href then
+                {{get-the-applet}.set-status ""}}},
+        {on PointerRelease do
+            {self.browse-url}},
+        ...}
+  }
+  {method {browse-url}:void
+    {if-non-null href = self.href then
+        {{get-the-applet}.browse-url href,
+            target = self.target}}
+  }
+}
+|| another way
+{define-class public LinkCommand {inherits CommandButton}
+  field public target:String = "_self"
+  field public href:#Url = null
+  field _value:any = null
+  field _label:Visual
+  {getter public {value}:any
+    {return self._value}
+  }
+  {setter public {value val:any}:void
+    {if val != self._value then
+        set self._value = val
+        {self._label.clear}
+        {if-non-null val then
+            {self._label.add val}}}
+  }
+  {constructor public {default ...}
+    set self._label = {text}
+    {construct-super
+        color = "blue",
+        text-underline? = true,
+        cursor = cursor-hand,
+        label = self._label,
+        style = CommandButtonStyle.label-only,
+        {on PointerEnter do
+            {if-non-null href = self.href then
+                {{get-the-applet}.set-status href.name}}},
+        {on PointerLeave do
+            {if-non-null href = self.href then
+                {{get-the-applet}.set-status ""}}},
+        {on Action do
+            {self.browse-url}},
+        ...}
+  }
+  {method {browse-url}:void
+    {if-non-null href = self.href then
+        {{get-the-applet}.browse-url href,
+            target = self.target}}
+  }
+}
+|| local (X)HTML elaboration
+|| --------------------
+{define-proc {get-html-text in:String}:String
+    let out:StringBuf = {StringBuf efficient-size = in.size}
+    let n:int = 0
+    {for c in in do
+        {switch c
+         case '<' do {inc n}
+         case '>' do {dec n}
+         else
+            {if n <= 0 then
+                {out.append c}}}}
+    {return {out.to-String}}
+}

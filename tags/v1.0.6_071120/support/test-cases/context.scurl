@@ -1,0 +1,82 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from CURL.IO.HTTP}
+
+|| test context
+|| --------------------
+{TestSuite "context",
+  {test-case "platform",
+    {TestCondition.succeed message = 
+        {platform-switch
+         case "win32" do "win32"
+         case "linux" do "linux"
+         case "unix" do "unix"
+         else "unknown"}}
+  },
+  {test-case "privilege",
+    {TestCondition.succeed message = 
+        {String {process-privileged?}}}
+  },
+  {test-case "debuggable",
+    {TestCondition.succeed message = 
+        {String {process-debuggable?}}}
+  },
+  {test-case "scheme",
+    {TestCondition.succeed message = 
+        {get-base-url}.stem.parent-dir.name}
+  },
+  {test-case "locale",
+    {TestCondition.succeed message = 
+        {get-working-locale}.name}
+  },
+  {test-case "working-directory",
+    {TestCondition.succeed message = 
+        {get-working-directory-url}.name}
+  },
+  {test-case "curl-root",
+    {TestCondition.succeed message = 
+        {if-non-null loc = {process-get-curl-root}
+         then loc.name else ""}}
+  },
+  {test-case "effective-root",
+    {TestCondition.succeed message = 
+        {if-non-null loc = {process-get-effective-root}
+         then loc.name else ""}}
+  },
+  {test-case "resync-as-of",
+    {TestCondition.succeed message = 
+        {String {process-resync-as-of}}}
+  },
+  {test-case "network-disconnected",
+    {TestCondition.succeed message = 
+        {String {network-disconnected? }}}
+  },
+  {test-case "network-offline-mode",
+    {TestCondition.succeed message = 
+        {String {network-offline-mode?}}}
+  },
+  {test-case "curl-version",
+    {TestCondition.succeed message = 
+        curl-version}
+  },
+  {test-case "curl-ide",
+    let ide-available?:bool = 
+        {package-available? "CURL.IDE.DOCUMENTATION"}
+    {TestCondition.succeed message = 
+        {String ide-available?}}
+  }
+}

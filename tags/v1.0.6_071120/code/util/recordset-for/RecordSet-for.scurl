@@ -1,0 +1,176 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public {RecordSet-for T:ClassType}
+  {inherits GenericRecordSet}
+  {getter public {subject-type}:ClassType
+    {return T}
+  }
+  {constructor public {default 
+                          fields:RecordFields = {fields-for T},
+                          ...}
+    {construct-super fields, {splice ...}}
+  }
+  {method public {new-record}:Record
+    {return {{RecordFacade-for T} null, self}}
+  }
+  {method public {append val:any}:void
+    {type-switch val
+     case t:T do 
+        let r:GenericRecord =
+            {{RecordFacade-for T} t, record-set = self}
+        {r.internal-attach self}
+     case r:{RecordFacade-for T} do 
+        {r.internal-attach self}
+     else 
+        {with-compiler-directives allow-any-calls? = true do
+            {error {message Type {value T} required for {value self}.append}}
+        }}
+  }
+}
+{define-class public abstract RecordFacade {inherits GenericRecord}
+  {constructor {default record-set:#GenericRecordSet}
+    {construct-super record-set}
+  }
+  {getter public abstract {subject-as-object}:Object}
+}
+{define-class public {RecordFacade-for T:ClassType}
+  {inherits RecordFacade}
+  field public-get constant subject:T
+  {getter public {subject-as-object}:Object
+    {return self.subject}
+  }
+  {constructor public {default 
+                          subject:T,
+                          record-set:#{RecordSet-for T} = null}
+    set self.subject = subject
+    {construct-super record-set}
+  }
+  {factory public implicit {from-subject subject:T}:{RecordFacade-for T}
+    {return {{RecordFacade-for T} subject}}
+  }
+  || implementation
+  || TODO: consider using getter/setter from RecordField 
+  || -- containing REFLECTION Getter/Setter
+  {method protected {internal-get k:String}:any
+    {return {get-public-property self.subject, k}}
+  }
+  {method protected {internal-set k:String, x:any}:void
+    {set-public-property self.subject, k, x}
+  }
+}
+|| TODO: 'exclude' keyword arg
+{define-proc public {fields-for t:ClassType,
+                        sort?:bool = false
+                    }:RecordFields
+    let ms:{FastArray-of ClassMember} = 
+        {t.get-members search-superclasses? = true,
+            filter = ClassMember.get-property-filter}
+    let fs:{Array-of RecordField} = {{Array-of RecordField}}
+    let seen:{Set-of String} = {{Set-of String}}
+    {for m in ms do
+        {type-switch m
+         case p:Property do
+            let name:String = p.name
+            {if not {seen.member? name} then
+                {seen.insert name}
+                let settable?:bool =
+                    {t.get-property-for-set name} != null
+                {fs.append
+                    {RecordField p.name, 
+                        domain = {domain-for p.type},
+                        nullable? = p.type.can-be-null?, 
+                        modifiable? = settable?}}}}}
+    {if sort? then
+        {fs.sort 
+            comparison-proc =
+                {proc {a:RecordField, b:RecordField}:bool
+                    {return {String-leq? a.name, b.name}}}}}
+    let fields:RecordFields = 
+        {RecordFields {splice fs}}
+    {return fields}
+}
+|| TODO: consider saving getter/setter
+|| -- something like this
+||--    {return {self.fields[k].get-value self.subject}}
+|#
+{define-class {Field-for Tc:ClassType, Tf:ClassType, p:String}
+  field get-value:{proc-type {Tc}:Tf}
+  {constructor {default}
+    set self.get-value =
+      {evaluate
+        {expand-template 
+            {proc {x:?{Literal Tc}}:?{Literal Tf}
+                {return x.?{Identifier p}}}
+        }}
+  }
+}
+#|
+{define-proc {domain-for t:Type}:Domain
+    let d:Domain = {Domain.from-type any}
+    let constant domain-of:ParameterizedTypeTemplate = Domain-of
+    {with-compiler-directives 
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        || NOTE: there are no standard nullable domains
+        || - but there's no need, because the RecordField can be nullable?
+        let tt:Type =
+            {if t.can-be-null? then
+                {if-non-null nnv = t.non-null-variant
+                 then nnv
+                 else t}
+             else t}
+        {try
+            set d = 
+                {switch tt
+                 case DateTime do
+                    {StandardDateTimeDomain time-zone = DateTimeZone.utc}
+                 else
+                    {Domain.from-type tt}}
+         catch e:Error do
+            set d = {{domain-of.construct tt}}}}
+    {return d}
+}
+|| TODO: need way to specialize these
+|| -- registry of per-type defaults
+{define-class public {Domain-of T:Type}
+  {inherits {StandardDomain-of T}}
+  {constructor public {default 
+                          default-value:#T = {uninitialized-value-for-type T}, 
+                          allowable-values:#{Array-of T} = null}
+    {construct-super 
+        || work around insistence on default-value
+        {if {keyword-supplied? default-value} 
+         then default-value
+         else default-value-proc}, 
+        null, null, allowable-values}
+  }
+  {method public {parse s:String}:any
+    || in the hope there could be an implicit 'from-String'
+    {return s}
+  }
+  {method public {compare x:any, y:any}:int
+    {return {{self.format x}.compare {self.format y}}}
+  }
+}
+|| work around insistence on default-value
+{define-proc {default-value-proc 
+                 rf:RecordField, rs:RecordSet}:any
+    {error {message Need default-value}}
+}
+
+

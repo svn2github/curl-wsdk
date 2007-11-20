@@ -1,0 +1,85 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{curl 6.0 applet}
+{applet manifest = "google/manifest.mcurl"}
+
+|| import the service package
+{import * from COM.CURL.WSDL.GoogleSearch}
+{import * from COM.CURL.WSDK.RECORDSET-FOR}
+
+|| instantiate the service class
+{let gss:GoogleSearchService = 
+    {GoogleSearchService}
+}
+
+|| developed applications will need their own key
+|| you can use this for a few tests while
+|| you're getting your own key
+{let gss-key:String = 
+    "uNhT2O/NtQgF69QyAIrCYybjfkB4dVH5"
+}
+|| use the service
+{define-proc {google-search 
+                 query:String,
+                 start:int = 0,
+                 max-results:int = 10,                
+                 filter?:bool = false,
+                 restrict:#String = null,
+                 safe-search?:bool = false,
+                 language-restrict:#String = null,
+                 input-encoding:#String = null,
+                 output-encoding:#String = null         
+             }:(RecordSet, GoogleSearchResult)
+    
+    || get the results (most they allow at a time is 10)
+    let result:GoogleSearchResult =
+        {non-null
+            {gss.do-google-search
+                gss-key, query,
+                start, {min 10, max-results},
+                filter?, restrict, safe-search?, language-restrict, 
+                input-encoding, output-encoding}}
+    
+    || construct recordset
+    let result-recordset:RecordSet =
+        {{RecordSet-for ResultElement} 
+            {splice result.result-elements}}
+    
+    || return
+    {return result-recordset, result}
+}
+{try
+    let query:String = "Curl Surge"
+    let (rs:RecordSet, result:GoogleSearchResult) =
+        {google-search query}
+    
+    {VBox
+        {bold WSDK Google Search Web Service},
+        {RecordGrid    
+            width = 8in,
+            height = 3in,
+            halign = "left",
+            {RecordGridColumn "title", width = 2in},
+            {RecordGridColumn "url", width = 2in},
+            {RecordGridColumn "snippet", width = 3in},
+            record-source = rs}
+    }
+ catch e:HttpException do
+    {paragraph
+        Unable to connect to {bold Google Search Web Service}:        
+        {pre color = "red", {value e}}
+    }
+}

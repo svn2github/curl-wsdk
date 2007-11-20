@@ -1,0 +1,66 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{curl 6.0 applet}
+{applet manifest = "../manifest.mcurl"}
+|| import the service package
+{import * from COM.CURL.WSDL.PowerQuote}
+|| instantiate the service class
+{value
+    || instantiate the service
+    let service:DelayedStockQuote = 
+        {DelayedStockQuote}
+    || display elements
+    let quote-display:TextDisplay = {TextDisplay width = 1in}
+    let trace-buffer:StringBuf = {StringBuf}
+    let trace-display:TextArea = 
+        {TextArea 
+            enabled? = false,
+            height = 2in}
+    let symbol-field:TextField =
+        {TextField
+            value = "IBM",
+            width = 1in,
+            {on ValueFinished at c:TextField do
+                || clear trace output and display
+                {trace-buffer.clear}
+                {trace-display.unset-value}
+                let symbol:String = c.value
+                || call the method, using test license key
+                let license-key:String = "0"
+                let quote-data:QuoteData = {service.get-quote symbol, license-key}
+                || display the result
+                let quote:double = quote-data.last-trade-amount
+                set quote-display.value = {String quote}
+                || display the trace
+                set trace-display.value = {trace-buffer.to-String}
+            }}
+    {paragraph 
+        {small Stock Quote for} 
+        {value symbol-field}
+        {value quote-display}
+        {CheckButton label = {text Trace?},
+            {on ValueFinished at c:CheckButton do
+                || toggle tracing
+                set service.trace-stream = 
+                    {if c.value 
+                     then trace-buffer
+                     else null}
+                || trigger service call
+                {symbol-field.handle-event {ValueFinished}}}}
+        {hrule}
+        {text-width-display trace-display}
+    }
+}

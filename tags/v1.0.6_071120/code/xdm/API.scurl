@@ -1,0 +1,1099 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc
+    type = package,
+    COM.CURL.WSDK.XML-DOCUMENT-MODEL
+    {purpose
+        The package provides an API for generic Curl XML document object model building, 
+        querying, and programmatically modifying. 
+        The tree can be automatically built from a Url, 
+        a String holding an XML structure, a TextInputStream, or a ByteInputStream, 
+        or may be programmatically constructed from scratch.
+    }
+}
+
+{doc-next
+    {purpose The superclass for all XDM classes involved in the XML tree.}
+}
+{define-class public abstract XDMObject
+
+  {doc-next
+    {purpose Clones a copy of this object}
+    {return-vals The cloned copy}
+  }
+  {method public abstract {clone}:XDMObject}
+
+  {doc-next
+    {purpose Prints the object out in valid XML format
+        {parameter out, The output stream to use, if any}
+        {parameter indentation, The amount of per-line indentation to use, 
+            if any (useful for easy-reading format)
+            {itemize
+                {item positive integer specifies numebr of spaces to indent}
+                {item 0 means no indentation}
+                {item -1 means no line breaks at all}}
+        }}
+    {return-vals The XML String representation, 
+        if no output stream was specified.}
+  }
+  {method public abstract {to-XML
+                              out:#TextOutputStream = null,
+                              indentation:int = 1
+                          }:String
+  }
+}
+
+||=== "XDMNode.scurl"
+
+{doc-next
+    {purpose The abstract class which represents a node in an XML tree.}
+}
+{define-class public abstract shared XDMNode {inherits XDMObject}
+
+
+  {doc-next
+    {purpose The XDMName of this element}
+  }
+  
+  {getter public abstract {xmlname}:XDMName
+  }
+  
+  {doc-next
+    {purpose The namespace for this element}
+  }
+  {getter public abstract {namespace}:String    
+  }
+
+  {doc-next
+    {purpose The local-name of this element}
+  }
+  {getter public abstract {local-name}:String
+  }
+
+  {doc-next
+    {purpose The prefix of this element, 
+        or null if no namespace declaration is found}
+  }
+  {getter public abstract {prefix}:String
+  }
+  
+  {doc-next
+    {purpose The qualified name of this element (prefix:local-name)
+    }
+  }
+  {getter public abstract {qualified-name}:String
+  }
+  
+  {doc-next
+    {purpose A pointer to the parent node of this node, if any.}
+  }
+  {getter public abstract {parent}:#XDMElement
+  }    
+  {setter protected abstract {parent val:#XDMElement}:void
+  }    
+
+  {doc-next
+    {purpose A pointer to the document that contains this node.}
+  }
+  {getter public abstract {document}:#XDMDocument
+  }
+  {setter protected abstract {document val:#XDMDocument}:void
+  }
+  
+  {doc-next
+    {purpose The ordered list of children held in this node.}
+  }
+  {getter public abstract {children}:{Sequence-of XDMNode}
+  }
+
+  {doc-next
+    {purpose Get a character string representing the contents of this XML node}
+  }
+  {method public abstract {get-text}:String
+  }
+
+  {doc-next
+    {purpose Tells if this node is the root node in the XML tree.}
+  }
+  {getter public abstract {root?}:bool
+  }
+
+  {doc-next
+    {purpose Indicate whether changes to the contents are allowed.}
+  }
+  {getter public abstract {modifiable?}:bool
+  }
+
+  {doc-next
+    {purpose Gets the root of the XML tree in which this node exists.}
+    {return-vals The XDMNode which is the root of the tree.}
+  }
+  {method public abstract {get-root}:XDMNode
+  }
+  
+  {doc-next
+    {purpose Search this node using a path expression.
+        {parameter path, The {docref XDMPath} expression to be applied.}}
+    {return-vals
+        An {docref XDMNodeSet} containing the nodes matched
+        by the path expression.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XDMNodeSet.as-String}}
+            {item {docref-abbr XDMNodeSet.as-XDMNode}}
+            {item {docref-abbr XDMNodeSet.as-XDMNode?}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement?}}
+            {item {docref-abbr XDMNodeSet.as-double}}
+            {item {docref-abbr XDMNodeSet.as-bool}}
+        }}
+  }
+  {method public abstract {search path:XDMPath}:XDMNodeSet
+  }
+  
+  {doc-next
+    {purpose Evaluate a path expression for this node.
+        {parameter path, The {docref XDMPath} expression to be evaluated.}}
+    {return-vals
+        An {docref XPathValue} containing the result computed
+        by the path expression.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XPathValue.as-XDMNodeSet}}
+            {item {docref-abbr XPathValue.as-String}}
+            {item {docref-abbr XPathValue.as-XDMNode}}
+            {item {docref-abbr XPathValue.as-XDMNode?}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement?}}
+            {item {docref-abbr XPathValue.as-double}}
+            {item {docref-abbr XPathValue.as-bool}}
+        }}
+  }
+  {method public abstract {evaluate path:XDMPath}:XPathValue
+  }
+
+  {doc-next
+    {purpose Removes this Node from the XML tree}
+  }
+  {method public abstract {detach}:void
+  }
+  
+  {doc-next
+    {purpose Traverses the ancestors of this node, applying thunk to each node.
+        {parameter thunk, the procedure to apply}
+    }
+  }
+  {method public abstract {walk-ancestors
+                     thunk:{proc-type {XDMNode}:void}
+                 }:void
+  }
+
+  {doc-next
+    {purpose Gets the ancestors of this node.}
+    {return-vals An Array-of the ancestors of this node}
+  }
+  {method public abstract {get-ancestors}:{Array-of XDMElement}
+  }
+
+  {doc-next
+    {purpose Finds the first ancestor where {curl-code {thunk a}} is true 
+        - null if none are found.
+        {parameter thunk, the procedure to apply as the test case.}
+    }
+    {return-vals The matching node, if any.}
+  }
+  {method public abstract {find-ancestor
+                     thunk:{proc-type {XDMElement}:bool}
+                 }:#XDMElement
+  }
+
+  || docstring inherited
+  {method public abstract {clone}:XDMNode}
+}
+
+||=== "XDMText.scurl"
+
+{doc-next
+    {purpose
+        The encapsulating class for a Text node in an XML document.
+    }
+    {for-example
+        Explicitly and implicitly place XDMText nodes into an XML tree.
+        {example
+            title = {text Add XDMText to an XML Tree},
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMElement "child-node"},
+                    {XDMText "Here is some text"},
+                    {XDMElement "second-child-node"},
+                    "Here also is some text"
+                }
+            }
+
+            {pre {root.to-XML}}
+        }
+    }
+}
+
+{define-class public abstract XDMText {inherits XDMNode}
+  
+  {doc-next
+    {purpose The content of this text node}
+  }
+  {getter public abstract {content}:String
+  }
+  {setter public abstract {content content:StringInterface}:void
+  }
+  
+  {factory public {default content:StringInterface}:StandardXDMText
+    {return {StandardXDMText content}}
+  }
+
+  {doc-next
+    {purpose Concatenates the supplied content to this text's existing content
+        {parameter content, the content to concatenate}
+    }
+  }
+  {method public abstract {concat content:StringInterface}:void
+  }
+
+  || docstring inherited
+  {method public abstract {clone}:XDMText}
+}
+||=== "XDMElement.scurl"
+
+{doc-next
+    {purpose Represents an element node in an XML document.}
+}
+
+{define-class public abstract XDMElement {inherits XDMNode}
+
+  {doc-next
+    {purpose The collection of attributes associated with this element, if any}
+  }
+  {getter public abstract {attributes}:#XDMAttributes
+  }
+  
+  {doc-next
+    {purpose The Association of prefix-to-namespace declarations on this element}
+  }
+  {getter public abstract {namespace-declarations}:#XDMNamespaceDeclarations
+  }
+  {setter protected abstract {namespace-declarations
+                                 namespace-declarations:#XDMNamespaceDeclarations
+                             }:void
+  }
+  
+  {doc-next
+    {purpose The xml:base value assigned to this element, if any}
+  }
+  {getter public abstract {assigned-base-url}:#String
+  }
+
+  {doc-next
+    {purpose The xml:space value assigned to this element, if any}
+  }
+  {getter public abstract {xml-space-declaration}:XMLSpace
+  }
+
+  {doc-next
+    {purpose The xml:space value applicable to this element}
+  }
+  {getter public abstract {xml-space}:XMLSpace
+  }
+
+  {doc-next
+    {purpose The xml:lang value assigned to this element, if any}
+  }
+  {getter public abstract {xml-lang-declaration}:String
+  }
+
+  {doc-next
+    {purpose The xml:lang value applicable to this element}
+  }
+  {getter public abstract {xml-lang}:String
+  }
+
+  {doc-next
+    {purpose Constructs a new element node with the 
+        supplied name (fully qualified) and attributes
+        {parameter name, the qualified name to use to create this node 
+            (can be in the form of a prefix:local-name pair)}
+    }
+    {for-example
+        The following example shows how to programmatically build an XML tree.
+
+        {example
+            title = {text Programmatically Build an XML Tree},
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Build an XML tree declaratively.
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMAttribute "attribute", "value"},
+                    {XDMElement
+                        "child-node",
+                        {XDMElement
+                            "another-child-node",
+                            {XDMAttribute "child-attribute", "child-value"}
+                        },
+                        {XDMElement "yet-another-child-node"}
+                    },
+                    {XDMElement "final-child-node"}
+                }
+            }
+
+            || Print out the XML structure.
+            {pre {root.to-XML}}
+        }
+    }
+  }
+  {factory public {default
+                          name:XDMName,
+                          ...
+                      }:StandardXDMElement
+    {return {StandardXDMElement name, {splice ...}}}
+  }
+
+  {doc-next
+    {purpose Calculates the base url of this element node. 
+        The base url is calculated by (from the XML Base specification):
+
+        The rules for determining the base URI can be summarized as follows 
+        (highest priority to lowest):
+        {itemize
+            {item The base URI is embedded in the document's content.}
+            {item The base URI is that of the encapsulating entity 
+                (message, document, or none).}
+            {item The base URI is the URI used to retrieve the entity.}
+            {item The base URI is defined by the context of the application.}
+        }
+    }
+    {return-vals The calculated base url}
+  }
+  {method public abstract {get-base-url}:Url
+  }
+
+  {doc-next
+    {purpose  Tells whether this element node has an 
+        attribute with the supplied XDMName
+        {parameter xmlname, The name to search for}
+    }
+    {return-vals Whether the attribute name exists or not}
+  }
+  {method public abstract {attribute-exists? xmlname:XDMName}:bool
+  }
+
+  {doc-next
+    {purpose  Tells whether this element node has an attribute with the supplied value
+        {parameter value, The value to search for}
+    }
+    {return-vals Whether the attribute value exists or not}
+  }
+  {method public abstract {attribute-value-exists? value:String}:bool
+  }
+
+  {doc-next
+    {purpose Gets the value of the attribute with the specified XDMName, if any
+        {parameter xmlname, The name to search for}
+    }
+    {return-vals The attribute's value, if any}
+  }
+  {method public abstract {get-attribute-value xmlname:XDMName}:#String
+  }
+
+  {doc-next
+    {purpose Gets the attribute with the specified XDMName, if any
+        {parameter xmlname, The name to search for}
+    }
+    {return-vals The attribute, if any}
+  }
+  {method public abstract {get-attribute xmlname:XDMName}:#XDMAttribute
+  }
+
+  {doc-next
+    {purpose Removes the specified attribute
+        {parameter attribute, The attribute to remove}
+        {parameter error-if-missing?, Should an error be thrown 
+            if there is no matching attribute}
+    }
+  }
+  {method public abstract {remove-attribute
+                     xmlname:XDMName,
+                     error-if-missing?:bool = false
+                 }:void
+  }
+
+  {doc-next
+    {purpose Adds the attribute to the element's collection of attributes.
+        {parameter attribute, The attribute to add}
+    }
+  }
+  {method public abstract {add-attribute 
+                     attribute:XDMAttribute,
+                     error-if-exists?:bool = true
+                 }:void
+  }
+  
+  {doc-next
+    {purpose Removes the namespace assignment for the 
+        attribute which matches this prefix.
+        {parameter prefix, the prefix of the namespace definition to rmove}
+    }
+  }  
+  {method public abstract {remove-namespace-declaration
+                     prefix:String,
+                     error-if-missing?:bool = false
+                 }:void
+  }
+
+  {doc-next
+    {purpose Clears out all of the namespace assignments on this node}
+  }
+  {method public abstract {clear-namespace-declarations}:void
+  }
+
+  {doc-next
+    {purpose Sets the namespace assignment on this node.
+        {parameter prefix, The prefix of the namespace binding}
+        {parameter namespace, The value of the namespace to bind}
+        {parameter error-if-exists?, Should an error be thrown 
+            if there already is a binding for this prefix}
+    }
+  }
+  {method public abstract {set-namespace-declaration
+                     prefix:String,
+                     namespace:String,
+                     error-if-exists?:bool = false
+                 }:void
+  }
+
+  {doc-next
+    {purpose Finds the namespace which matches the supplied prefix.
+        {parameter prefix, The prefix to search for}
+    }
+    {return-vals The namespace assignment if found. If not, the empty string.}
+  }
+  {method public abstract {find-matching-namespace
+                     prefix:String
+                 }:String
+  }
+
+  {doc-next
+    {purpose Generates declarations for any namespaces 
+        without an in-scope declaration.
+        {parameter default-context, will be checked for prefixes}
+        {parameter include-descendants?, whether to check recursively}
+    }
+    {return-vals Whether any namespace declarations were generated.}
+  }
+  {method public abstract {generate-namespace-declarations
+                              default-context:XDMNamespaceContext = xml-namespace-context,
+                              include-descendants?:bool = true
+                          }:bool
+  }
+
+  {doc-next
+    {purpose Finds the prefix which matches the supplied namespace.
+        {parameter namespace, The namespace to search for}
+    }
+    {return-vals The prefix if found. If not, null.}
+  }
+  {method public abstract {find-matching-prefix
+                     namespace:String,
+                     check-default?:bool = true
+                 }:#String
+  }
+
+  {doc-next
+    {purpose Returns all of the elements (direct children and, optionally, descendants) 
+        of the node which match the supplied arguments.
+        {parameter xmlname, The name of the element for which to search.}
+        {parameter attribute-xmlname, The name of an attribute for which to search.}
+        {parameter attribute-value, The value of an attribute for which to search.}
+        {parameter include-descendants?, Indicates whether the result should include 
+            only direct children or all descendants of the node.}
+    }
+    {return-vals An ordered array of the matching nodes.}
+  }
+  {method public abstract {get-elements
+                     xmlname:#XDMName = null,
+                     attribute-xmlname:#XDMName = null,
+                     attribute-value:#String = null,
+                     include-descendants?:bool = false
+                 }:{Array-of XDMElement}
+  }
+
+  {doc-next
+    {purpose Tells if a particular node is a child of this parent
+        {parameter child, the node to search for}
+    }
+    {return-vals Whether the node is a child or not}
+  }
+  {method public abstract {member? child:XDMNode}:bool
+  }
+
+  {doc-next
+    {purpose Appends the node to this parent's list of children
+        {parameter child, the node to append}
+    }
+  }
+  {method public abstract {append child:XDMNode}:void
+  }
+
+  {doc-next
+    {purpose
+        Inserts the node into the list of the parent's children at the specified index
+        {parameter child, the node to insert}
+        {parameter index, the index at which to do the insertion}
+    }
+  }
+  {method public abstract {insert-child child:XDMNode, index:int}:void
+  }
+
+  {doc-next
+    {purpose Splices the Array of nodes into the parent's 
+        children at the specified index.
+        {parameter children, the nodes to splice into the parent}
+        {parameter index, the index at which to insert the nodex}
+    }
+  }
+  {method public abstract {splice-children
+                     children:{Array-of XDMNode},
+                     index:int
+                 }:void
+  }
+
+  {doc-next
+    {purpose Finds the index at which the specified node exists in the 
+        parent's list of children.
+        {parameter child, the node to search for}
+    }
+    {return-vals The index of the node in the parent's list of children, 
+        or -1 if it is not in the parent.}
+  }
+  {method public abstract {find child:XDMNode}:int
+  }
+
+  {doc-next
+    {purpose Finds the index at which a node with the specified XDMName 
+        exists in the parent's list of children.
+        {parameter xmlname, the name of the node to search for}
+    }
+    {return-vals The index of the node in the parent's list of children, 
+        or -1 if it is not in the parent.}
+  }
+  {method public abstract {find-by-name xmlname:XDMName}:int
+  }
+
+  {doc-next
+    {purpose Gets the child at the specified index
+        {parameter index, The index of the child to return}
+    }
+    {return-vals The child at the index, if any}
+  }
+  {method public abstract {get-child-by-index index:int}:#XDMNode
+  }
+  
+  {doc-next
+    {purpose Removes the specified child
+        {parameter child, The child to remove}
+    }
+  }
+  {method public abstract {remove-child child:XDMNode}:void
+  }
+
+  {doc-next
+    {purpose Tells if the parent has no children}
+  }
+  {getter public abstract {empty?}:bool
+  }
+
+  {doc-next
+    {purpose Traverses the children, applying thunk to each node.
+        {parameter thunk, The procedure to apply to each node. 
+            If returning true, then the walk should continue 
+            - but false would stop the walk.}
+        {parameter include-descedants?, Indicates whether all descedants 
+            (the children of children) should be included.}
+    }
+    {return-vals If returning true, then the walk should continue 
+        - but false would stop the walk.}
+  }
+  {method public abstract {walk-children
+                     thunk:{proc-type {XDMNode}:bool},
+                     include-descendants?:bool = false,
+                     include-self?:bool = false
+                 }:bool
+  }
+
+  || docstring inherited
+  {method public abstract {clone}:XDMElement}
+
+}
+||=== "XDMAttribute.scurl"
+
+{doc-next
+    {purpose Represents an attribute to an element in an XML document}
+    {usage
+        Typically constructed automatically by the builder 
+        or programmatically by a programmer, 
+        once added to an element node it is checked for validity 
+        (no two idential names, etc) and held at the node in XDMAttributes.
+    }
+    {for-example
+        The following example shows how to add a XDMAttribute to a XDMElement.
+
+        {example
+            title = {text How to add a XDMAttribute to a XDMElement},
+            
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+            
+            || Create an element node.
+            {let element:XDMElement = {XDMElement "name"}}
+            
+            || And add an attribute to it.
+            {element.add-attribute {XDMAttribute "attribute", "value"}}
+            
+            || Then query for the attribute.
+            {element.attribute-exists? {XDMName "", "attribute"}}
+            
+        }
+    }
+}
+
+{define-class public abstract XDMAttribute {inherits XDMNode}
+  
+  {doc-next
+    {purpose The value of this attribute}
+  }
+  {getter public abstract {value}:String
+  }
+  {setter public abstract {value value:String}:void
+  }
+  
+  {doc-next
+    {purpose The type of this attribute}
+  }
+  {getter public abstract {type}:XDMAttributeType
+  }
+  
+  || We will parse out things like "xmlns:foo" from the "name" piece here.
+  {doc-next
+    {purpose
+        Constructs an instance of a {docref XDMAttribute} from the arguments.
+        {parameter name, the full name (prefix and local-name) of the attribute}
+        {parameter value, the value of the attribute}
+        {parameter type, the type of the attribute defined in the DTD, 
+            XDMAttributeType.UNDECLARED if none is specified}
+    }
+  }
+
+  {factory public {default
+                          name:XDMName,
+                          value:String,
+                          type:XDMAttributeType = 
+                              XDMAttributeType.UNDECLARED
+                      }:StandardXDMAttribute
+    {return {StandardXDMAttribute name, value, type = type}}
+  }
+  
+  || docstring inherited
+  {method public abstract {clone}:XDMAttribute}
+
+}
+||=== "XDMAttributes.scurl"
+
+{doc-next
+    {purpose
+        Helper class to hold a Set-of XDMAttribute objects and 
+        provide easy ways to query the for the existence of
+        XDMAttributes by value or name.
+    }
+}
+
+{define-class public abstract XDMAttributes {inherits XDMObject}
+  
+  {doc-next
+    {purpose The element to which this collection of attributes is associated.}
+  }
+  {getter public abstract {element}:XDMElement
+  }
+  
+  {doc-next
+    {purpose
+        Adds the specified XDMAttribute to the collection
+        {parameter attribute, The attribute to add}
+        {parameter error-if-exists?, Throw an error if an attribute 
+            with an identical XDMName exists in the collection already}
+    }
+    {for-example
+        Adding a XDMAttribute to the XDMAttributes object directly.
+
+        {example
+            title = {text Add XDMAttribute to XDMAttributes},
+            || Import the XDM package
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Create an element node.
+            {let element:XDMElement = {XDMElement "name"}}
+            
+            || And add an attribute to it.
+            {element.add-attribute {XDMAttribute "attribute", "value"}}
+            || Add a second attribute to it's XDMAttributes object.
+            {element.attributes.add-attribute {XDMAttribute "attribute2", "value2"}}
+            
+            || Then query for the attribute.
+            {element.attribute-exists? {XDMName "", "attribute2"}}
+        }
+    }            
+  }
+  {method public abstract {add-attribute
+                     attribute:XDMAttribute,
+                     error-if-exists?:bool = true
+                 }:void
+  }
+
+  {doc-next
+    {purpose Clears out all of the attributes}
+  }
+  {method public abstract {clear}:void
+  }
+  
+  {doc-next
+    {purpose Removes the attribute specified by the supplied XDMName
+        {parameter xmlname, the name of the attribute to remove}
+        {parameter error-if-missing?, should it throw an error 
+            if no attribute exists with the specified name}
+    }
+  }
+  {method public abstract {remove-attribute
+                     xmlname:XDMName,
+                     error-if-missing?:bool = true
+                 }:void
+  }
+
+
+  {doc-next
+    {purpose Returns the value of the attribute specified by xmlname
+        {parameter xmlname, the XDMName to use}
+    }
+    {return-vals The value of the XDMAttribute, if found. If not, exception is thrown.}
+  }
+  {method public abstract {get xmlname:XDMName}:String
+  }
+  {method public abstract {set xmlname:XDMName, value:String}:void
+  }
+
+
+  {doc-next
+    {purpose Returns the XDMAttribute specified by xmlname
+        {parameter xmlname, the XDMName to use}
+    }
+    {return-vals The XDMAttribute, if found. If not, exception is thrown.}
+  }
+  {method public abstract {get-attribute
+                     xmlname:XDMName
+                 }:XDMAttribute
+  }
+
+  {doc-next
+    {purpose Tells if an attribute with the specified XDMName exists in the collection
+        {parameter xmlname, the XDMName to use}
+    }
+    {return-vals Whether an attribute with xmlname exists}
+  }
+  {method public abstract {key-exists? xmlname:XDMName}:bool
+  }
+
+  {doc-next
+    {purpose Searches for an attribute with xmlname, 
+        returning it's value and true if found. 
+        Otherwise, returns an undefined String and false
+        {parameter xmlname, the XDMName to use}
+    }
+    {return-vals The String value and true, if found, undefined and false otherwise.}
+  }
+  {method public abstract {get-if-exists xmlname:XDMName}:(String, bool)
+  }
+  
+
+  {doc-next
+    {purpose Searches for an attribute with xmlname, returning it and true if found. 
+        Otherwise, returns an undefined XDMAttribute object and false
+        {parameter xmlname, the XDMName to use}
+    }
+    {return-vals The attribute and true, if found, undefined and false otherwise.}
+  }
+  {method public abstract {get-attribute-if-exists
+                     xmlname:XDMName
+                 }:(XDMAttribute, bool)
+  }
+  
+
+  {doc-next
+    {purpose The number of attributes in the collection}
+  }
+  {getter public abstract {size}:int
+  }
+
+  {doc-next
+    {purpose Checks if the collection is empty}
+  }
+  {getter public abstract {empty?}:bool
+  }
+  
+  {doc-next
+    {purpose Makes the keys of the collection iterable}
+    {return-vals The iteration of the keys (xmlnames) 
+        of the attributes in the collection}
+  }
+  {method public abstract {keys-to-Iterator}:{Iterator-of XDMName}
+  }
+
+  {doc-next
+    {purpose Finds the namespace which matches the supplied prefix.
+        {parameter prefix, The prefix to search for}
+    }
+    {return-vals The namespace assignment if found. If not, the empty string.}
+  }
+  {method public abstract {find-matching-namespace
+                     prefix:String
+                 }:String
+  }
+
+  {doc-next
+    {purpose Finds the prefix which matches the supplied namespace.
+        {parameter namespace, The namespace to search for}
+    }
+    {return-vals The prefix if found. If not, null.}
+  }
+  {method public abstract {find-matching-prefix namespace:String}:#String
+  }
+
+  || docstring inherited
+  {method public abstract {clone}:XDMAttributes}
+  
+}
+||=== "XDMDocument.scurl"
+
+{doc-next
+    {purpose 
+        The top-level XDMDocument of an XML document. 
+        An XML tree has a single root node 
+        and optional processing instructions, DTDs, and comments. 
+        Although currently not implemented, 
+        support for these optional elements would be held in the XDMDocument.
+    }
+    {usage
+        XDMDocument is either instantiated explicitly 
+        or the result of a call to {docref XDMBuilder.build}.
+    }
+    {for-example
+        This examples illustrates how to create an XDMDocument 
+        with a root node and print out the resulting XML tree.
+        
+        || TODO: doesn't deploy as example
+||--        {example
+||--            title = {text Create and Print an XML tree},
+        {curl-code
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+            
+            {let doc:XDMDocument =
+                {XDMDocument
+                    {XDMElement
+                        "root",
+                        {XDMElement "child-node"},
+                        "Here is some text"
+                    }
+                }
+            }
+            
+            {pre {doc.to-XML}}
+        }
+    }
+}
+
+{define-class public abstract serializable XDMDocument {inherits XDMNode, EventTarget}
+
+  || serialization stubs
+  || -- so that inherited EventTarget is "transient"
+  || ------------------------------
+  {method public {object-serialize out:SerializeOutputStream}:void
+    {out.write-class-version 0}
+  }
+  {constructor {object-deserialize in:SerializeInputStream}
+    {in.verify-class-version 0}
+  }
+  {constructor {default}
+  }
+  
+  {doc-next
+    {purpose The root node in the document. 
+        Note that it must be a XDMElement node because valid XML documents 
+        must have one, and only one, element root node}
+  }
+  {getter public abstract {root}:XDMElement
+  }
+  {setter protected abstract {root root:XDMElement}:void
+  }
+  
+  {doc-next
+    {purpose The Url of the source document}
+  }
+  {getter public abstract {document-location}:Url
+  }
+  
+  {doc-next
+    {purpose The ordered list of children held in this node.}
+  }
+  {getter public abstract {children}:{Sequence-of XDMNode}
+  }
+  
+  {doc-next
+    {purpose The {monospace standalone} declaration from the XML declaration.}
+    {details An XML document is standalone if it has no dependency
+        on "external markup definitions".}
+  }
+  {getter public abstract {standalone?}:bool
+  }
+  
+  {doc-next
+    {purpose The character encoding from the XML declaration.}    
+  }
+  {getter public abstract {character-encoding}:CharEncoding
+  }
+  {setter protected abstract {character-encoding val:CharEncoding}:void
+  }
+  
+  {doc-next
+    {purpose The {monospace version} declaration from the XML declaration.}    
+  }
+  {getter public abstract {version}:String
+  }
+  {setter protected abstract {version val:String}:void
+  }
+
+  || docstring inherited
+  {setter public abstract {modifiable? val:bool}:void
+  }
+  
+  {doc-next
+    {purpose Contructs a XDMDocument with the assigned root node 
+        and (optional) document-location.
+        {parameter root, The root of the XML tree.}
+        {parameter document-location, (optional) The assigned location 
+            of the XML document - or the applet's URL if not supplied.}
+    }
+  }
+  {factory public {default
+                      root:XDMElement,
+                      document-location:Url = {get-working-directory-url},
+                      modifiable?:bool = true,
+                      ...:EventHandler
+                  }:StandardXDMDocument
+    {return 
+        {StandardXDMDocument 
+            root, 
+            document-location = document-location,
+            modifiable? = modifiable?,
+            ...}}
+  }
+  
+  || ID management
+  || --------------------
+  {doc-next
+    {purpose Find element with specified ID.}
+  }
+  {method public abstract {get-element-by-id 
+                              id:String
+                          }:#XDMElement
+  }
+  
+  || document order
+  || --------------------
+  {doc-next
+    {purpose Compare two nodes by document order.}
+  }
+  {getter public abstract {nodes-ordered?
+                          }:{proc-type {XDMNode, XDMNode}:bool}
+  }
+
+  
+  || xi:include
+  || --------------------
+  {doc-next
+    {purpose Instructs the XDMDocument to walk the tree, 
+        following and including any XML:Include nodes}
+  }
+  {method public abstract {execute-xml-include
+                     preserve-whitespace?:bool = true
+                 }:void
+  }
+
+  {doc-next
+    {purpose Returns the set of nodes which should replace 
+        this node in an XML:Include included instance. 
+        Note, if this node is not an XML:Include node, 
+        this method throws an XDMException.}
+  }
+  
+  {method public abstract {get-xml-include-result-nodes
+                     node:XDMElement,
+                     preserve-whitespace?:bool = true
+                 }:{Array-of XDMNode}
+  }
+
+  || docstring inherited
+  {method public abstract {clone}:XDMDocument}
+}
+
+{define-class public abstract XDMProcessingInstruction {inherits XDMNode}
+  
+  {doc-next
+    {purpose The target of this processing instruction node}
+  }
+  {getter public abstract {target}:String
+  }
+  {setter public abstract {target val:String}:void
+  }
+  
+  {doc-next
+    {purpose The data of this processing instruction node}
+  }
+  {getter public abstract {data}:String
+  }
+  {setter public abstract {data val:String}:void
+  }
+  
+  {factory public {default 
+                      target:String,
+                      data:String
+                  }:StandardXDMProcessingInstruction
+    {return {StandardXDMProcessingInstruction target, data}}
+  }
+
+  || docstring inherited
+  {method public abstract {clone}:XDMProcessingInstruction}
+}
+

@@ -1,0 +1,192 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| convenience function for XML over HTTP
+|| ------------------------------
+{doc-next ||=== HttpXmlRequestData
+    {purpose 
+        A subclass of HttpRequestData to pass an XML message
+        as "text/xml"
+    }
+    {notes
+        Useful when working with web services 
+        which expect an XML message.
+    }
+}
+{define-class public HttpXMLRequestData {inherits HttpRequestData}
+  field protected char-encoding:CharEncoding
+  field protected string:String
+  field protected mime-type:String
+
+  {constructor public implicit {from-String s:String, 
+                                   mime-type:String = "text/xml",
+                                   char-encoding:CharEncoding = CharEncoding.utf8}
+    set self.char-encoding = char-encoding
+    set self.mime-type = mime-type
+    set self.string = s
+  }
+  {constructor public implicit {default x:XDMElement, 
+                                   mime-type:String = "text/xml",
+                                   char-encoding:CharEncoding = CharEncoding.utf8}
+    set self.char-encoding = char-encoding
+    set self.mime-type = mime-type
+    set self.string = {x.to-XML}
+  }
+  || passed as content-type in http request header
+  {getter public {content-type}:#String
+    {return 
+        {format |"%s; charset="%s""|,
+            self.mime-type,
+            {char-encoding-to-http-charset self.char-encoding}}}
+  }
+  || convert string to octets using specified encoding
+  {method public {request-data}:{Array-of byte}
+    let bytes:{OutputStreamArray-of byte} = {{OutputStreamArray-of byte}}
+    {with-open-streams 
+        out = {TranscodingTextOutputStream bytes, self.char-encoding, false}
+     do {out.write-one-string self.string}}
+    {return bytes}
+  }
+}
+{doc-next ||=== submit-xml
+    {purpose 
+        convenience function for XML over HTTP
+    }
+    {notes
+        Useful when working with web services 
+        which expect an XML message.
+    }
+}
+{define-proc public {submit-xml
+                        server-url:Url,
+                        xml:XDMElement,
+                        request-headers:#HttpRequestHeaders = null,
+                        request-method:HttpRequestMethod = HttpRequestMethod.post
+                    }:(XDMDocument, bool, int)
+    || build the message body
+    let request-data:HttpXMLRequestData = {HttpXMLRequestData xml}
+    || send XML message
+    let http-file:HttpFile = {server-url.instantiate-File} asa HttpFile
+    || interpret the response
+    {with-open-streams in =
+        {http-file.http-read-open
+            request-data = request-data,
+            request-headers = request-headers,
+            request-method = request-method,
+            always-return-response-headers? = true}
+     do
+        let status:int = in.response-headers.status
+        {switch status
+         case 200, 500 do
+            {return 
+                {build-xml preserve-whitespace? = false, in}, true, status}
+         else
+            {return 
+                {uninitialized-value-for-type XDMDocument}, false, status}}
+    }
+}
+{doc-next ||=== async-submit-xml
+    {purpose 
+        convenience function for XML over HTTP
+    }
+    {notes
+        Useful when working with web services 
+        which expect an XML message.
+    }
+}
+{define-proc public {async-submit-xml
+                        server-url:Url,
+                        xml:XDMElement,
+                        request-headers:#HttpRequestHeaders = null,
+                        request-method:HttpRequestMethod = HttpRequestMethod.post,
+                        ...:EventHandler
+                    }:HttpXMLAsyncWorker
+    || build the message body
+    let request-data:HttpXMLRequestData = {HttpXMLRequestData xml}
+    || send XML message
+    let http-file:HttpFile = {server-url.instantiate-File} asa HttpFile
+    || submit the request
+    let worker:AsyncFileOpener = 
+        {http-file.http-async-read-open 
+            request-data = request-data,
+            request-headers = request-headers,
+            request-method = request-method,
+            always-return-response-headers? = true,
+            {on e:AsyncFileOpenEvent do 
+                let result:#HttpXMLResponseEvent =
+                    {if-non-null ex = e.exception then
+                        {HttpXMLResponseEvent null, ex}
+                     else
+                        {if e.canceled? then null
+                         else
+                            {with-open-streams 
+                                in:HttpTextInputStream = e.stream asa HttpTextInputStream
+                             do
+                                let status:int = in.response-headers.status
+                                {switch status
+                                 case 200, 500 do
+                                    {try
+                                        let doc:XDMDocument =
+                                            {build-xml preserve-whitespace? = false, in}
+                                        {if status == 200 then
+                                            {HttpXMLResponseDocumentEvent doc, null}
+                                         else
+                                            {HttpXMLResponseFaultEvent doc, null}}
+                                     catch ex:Exception do
+                                        {HttpXMLResponseEvent null, ex}}
+                                 else
+                                    {HttpXMLResponseEvent null, 
+                                        {Exception {lmessage HTTP Status Code: {value status}}}}
+                                }}}}
+                {if-non-null result then
+                    {xml-worker.handle-event result}}
+            }}
+    , xml-worker:HttpXMLAsyncWorker =
+        {HttpXMLAsyncWorker worker, {splice ...}}
+    {return xml-worker}
+}
+{define-class public HttpXMLAsyncWorker {inherits EventTarget}
+  field public constant worker:AsyncWorker
+  {constructor public {default worker:AsyncWorker, ...:EventHandler}
+    set self.worker = worker
+    {construct-super {splice ...}}
+  }
+}
+{define-class public HttpXMLResponseEvent {inherits AsyncWorkEvent}
+  field _document:#XDMDocument
+  {getter public {document}:XDMDocument
+    {self.check-exception}
+    {return {non-null self._document}}
+  }
+  field _exception:#Exception
+  {getter public {exception}:#Exception
+    {return self._exception}
+  }
+  {constructor {default document:#XDMDocument, exception:#Exception}
+    set self._document = document
+    set self._exception = exception
+  }
+}
+{define-class public HttpXMLResponseDocumentEvent {inherits HttpXMLResponseEvent}
+  {constructor {default ...}
+    {construct-super {splice ...}}
+  }
+}
+{define-class public HttpXMLResponseFaultEvent {inherits HttpXMLResponseEvent}
+  {constructor {default ...}
+    {construct-super {splice ...}}
+  }
+}

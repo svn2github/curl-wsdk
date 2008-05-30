@@ -824,7 +824,7 @@
     {return
         {CommandButton {splice ...},
             takes-focus? = false,
-            ui-object = {CompactCommandButtonUI}}}
+            label-inset = 0px}}
   }
   {method {context-changed}:void
     set self.index-display.value =
@@ -834,19 +834,5 @@
                 context.context-nodeset.size}
          else ""}
   }
-}
-{doc-next ||=== CompactCommandButtonUI
-    {purpose
-        Used by {docref CommandButton}s in {docref XDMDataBindingNavigationPanel}}
-}
-{define-class public CompactCommandButtonUI 
-  {inherits StandardCommandButtonUI}
-  {constructor public {default control:#CommandButton = null, ...}
-    {construct-super control = control, ...}
-  }
-  {getter protected {left-width-increment}:int {return 3}}
-  {getter protected {right-width-increment}:int {return 3}}
-  {getter protected {top-height-increment}:int {return 2}}
-  {getter protected {bottom-height-increment}:int {return 2}}
 }
 

@@ -14,18 +14,44 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
+{import * from CURL.LANGUAGE.REFLECTION}
+
 {define-class public {RecordSet-for T:ClassType}
   {inherits GenericRecordSet}
   {getter public {subject-type}:ClassType
     {return T}
   }
+  field public-get constant create-subject:{proc-type {}:T}
   {constructor public {default 
                           fields:RecordFields = {fields-for T},
+                          create-subject:#{proc-type {}:T} = null,
                           ...}
+    set self.create-subject =
+        {if-non-null create-subject then
+            create-subject
+         else
+            {if-non-null create-subject =
+                {if-non-null c = {(T asa ClassType).get-constructor "default"} then
+                    {if (c.type asa ProcType).num-args == 0 then
+                        {proc {}:T
+                            {return {c.new} asa T}}
+                     else null}
+                 else null}
+             then create-subject
+             else
+                {proc {}:T
+                    || NOTE: this gives a mysterious failure
+                    ||{return {uninitialized-value-for-type T}
+                    {error
+                        {message 'RecordSet-for.new-record' can not create a '{value T}'
+                            because '{value T}' does not have a no-arg 'default' constructor
+                            and no 'create-subject' procedure was supplied.}}}
+            }}
     {construct-super fields, {splice ...}}
   }
-  {method public {new-record}:Record
-    {return {{RecordFacade-for T} null, self}}
+  {method public {new-record}:{RecordFacade-for T}
+    def subject = {self.create-subject}
+    {return {{RecordFacade-for T} subject, record-set = self}}
   }
   {method public {append val:any}:void
     {type-switch val

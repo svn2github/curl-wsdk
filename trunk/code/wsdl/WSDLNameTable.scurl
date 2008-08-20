@@ -29,14 +29,14 @@
                          qname:String,
                          prefix:String
                      }:#Object
-    let constant (ns:String, local-name:String) =
-        {WSDLNameTable.split-qname qname}
     let val:#Object
     {try
         set val = {self.get {WSDLNameTable.make-qname node, qname, prefix}}
      catch e:KeyNotFoundException do
+        let constant (p:String, local-name:String) = {WSDLNameTable.split-qname qname}
+        let constant ns:String = {node.get-namespace-uri p}
         {wsdl-exception node = node,
-            {hlmessage {WSDL.format-name name = local-name, node} not found.}
+            {hlmessage {WSDL.format-name name = {XMLName ns, local-name}, node} not found.}
         }
     }
     {return val}

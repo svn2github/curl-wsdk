@@ -1,0 +1,74 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{chapter
+    index= {HeadingIndex primary-key="WSDK Extras"},
+    WSDK Extras
+}
+{summary
+    The WSDK includes additional packages
+    {itemize
+        {item Recordset Adapters}
+    }
+}
+
+{heading level = 1,
+    RecordSet Adapters
+}
+{paragraph
+    
+    {bold RecordSets for Classes}
+    
+    The presentation and manipulation facilities offered
+    by Curl DATA-ACCESS GUI elements can be useful
+    for information stored in other forms.
+    For example, many web services return "result sets"
+    as arrays of structures.
+    
+    The {docref RecordSet-for} adapter implements the
+    {docref RecordSet} protocol for data accessible 
+    by get/set properties of Curl classes.
+    
+    {bold Web Service RecordSet}
+    
+    Like any rich client consumer of structured data,
+    connected recordsets require the existence of
+    a server based producer of that data.  
+    {docref WSConnection} and {docref WSConnectedRecordSet}
+    use a WSDL web sevice definition to bound
+    server communication.
+    
+    {preliminary
+        The {docref COM.CURL.WSDK.WS-CONNECTED-RECORDSET}
+        contains preliminary versions of new features. 
+        These features are not yet in final form, 
+        and are subject to revision.
+        
+        In particular, the sample server side implementation
+        is incomplete.
+    }    
+}
+
+|| ====================
+
+{curl-copyright}
+

@@ -1,0 +1,359 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| service method invocation
+|| ====================
+{define-proc public {get-service-method
+                        package-name:String,
+                        service-name:String,
+                        method-name:String,
+                        manifest:ComponentManifest =
+                            {get-default-manifest}
+                    }:Method
+    let package:Package =
+        {import-package manifest = manifest,
+            {make-package-selector package-name}}
+    let service-class:ClassType =
+        {package.lookup service-name} asa ClassType
+    let method:Method = 
+        {service-class.get-method method-name} asa Method   
+    {return method}
+}
+{define-proc public {invoke-service-method
+                        method:Method,
+                        input:StringInterface,
+                        package:OpenPackage =
+                            {OpenPackage method.declaring-class.package},
+                        trace-on-error?:bool = false
+                    }:any 
+    {with-compiler-directives allow-any-calls? = true do
+        let result:any = null
+        let service-class:ClassType = method.declaring-class
+        let service:any = {service-class}
+        let method-type:ProcType = method.type asa ProcType
+        let args:Arguments = {Arguments}
+        {try
+            let x:any =      
+                {evaluate package = package, input}
+            set args =      
+                {type-switch x
+                 case args:Arguments do args
+                 else {Arguments x}}
+            set result =
+                {switch method-type.num-rets
+                 case 0, 1 do
+                    {method.invoke service, {splice args}}
+                 else
+                    || multiple values (will be FastArray)
+                    || TODO: distinguish these for display-any
+                    {method.invoke-n service, {splice args}}}
+         catch e:HttpException do
+            || no point getting trace output
+            set result = e
+         catch e:Exception do
+            {if trace-on-error? then
+                || run again with trace output
+                {output "\n\n =========="}
+                {dump service.package.name}
+                {dump service-class.name}
+                {dump method.name}
+                {dump e}
+                {with service.soap-caller.trace-stream = {get-stdout} do
+                    {try
+                        {method.invoke service, {splice args}}
+                     catch e:Exception do}}}
+            set result = e}
+        {return result}}
+}
+|| helper definitions
+|| ====================
+{define-proc public {normalize-filename name:String}:String
+    let constant spec:StringArray =
+        {StringArray 
+            || eliminate spaces, quotes and punctuation
+            |"([ '"!?.+$\)\(])"|, "",
+            || replace separators
+            |"([/,&:\\@])"|, "_",
+            || replace separators
+            |"(_)"|, "-"
+        }
+    {for i = 0 below spec.size step 2  do
+        let pattern:String = spec[i]
+        let replacement:String = spec[i + 1]
+        set name = 
+            {regexp-subst pattern, name, replacement, 
+                replace-all? = true}}
+    || force initial upper-case letter
+    set name = {{name.substr 0, 1}.to-upper-clone} & {name.tail 1}
+    {return name}
+}
+
+|| useful to "clone" a record into a different RecordSet
+{define-proc public {record-data r:Record}:RecordData
+    let d:RecordData = {RecordData}
+    {for f in r.record-set.fields do
+        let k:String = f.name
+        set d[k] = r[k]}
+    {return d}
+}
+{let soapscope-base:Url =
+    {url "http://www.mindreef.net/soapscope/wsdldemo" 
+        & "?url="}
+}
+{define-proc public {soapscope-link 
+                        url-name:String,
+                        label:#Visual = null
+                    }:Visual
+    {return
+        {link target = "WSDL",
+            href = {url soapscope-base & url-name},
+            {value 
+                {if-non-null label 
+                 then label 
+                 else {url url-name}.filename}}}}
+}
+{define-proc public {timestamp}:String
+    {return {DateTime}.info.iso-time}
+}
+|| xmethods bootstrap support
+|| ====================
+{let public constant service-status-codes:StringArray =
+    {StringArray
+        "", || unknown
+        "copied",
+        "failed copy",
+        "html",
+        "rejected"
+    }}
+{define-proc public {xmethods-recordset}:RecordSet
+    let service:XMethodsQuery = {XMethodsQuery}
+    let xs:{Array-of ServiceSummary} =
+        {non-null {service.get-all-service-summaries}}
+    let rs:RecordSet = 
+        {{RecordSet-for ServiceSummary} 
+            {splice xs}}
+    {return rs}
+}
+{define-proc public {load-services-recordset xs:RecordSet}:RecordSet
+    let rs:RecordSet = {RecordSet services-fields}
+    let filenames:{Set-of String} = {{Set-of String}}
+    let wsdls:{Set-of String} = {{Set-of String}}
+    {for r in xs do
+        let filename:String = {normalize-filename r["name"] asa String}
+        let wsdl-url:String = r["wsdl-url"] asa String
+        || ignore duplicate definitions
+        || - we process all these services, who cares about the names
+        {if {wsdls.member? wsdl-url} then
+            {continue}}
+        || prevent duplicate filenames
+        || - append index until no case-insensitive match
+        let fname:String = {filename.to-lower-clone}
+        {if {filenames.member? fname} then
+            let i:int = 2
+            {while {filenames.member? fname & i} do
+                {inc i}}
+            set fname = fname & i
+            set filename = filename & i}
+        {filenames.insert fname}
+        || create descriptor record
+        {rs.append 
+            {RecordData
+                name = r["name"],
+                wsdl-url = wsdl-url,
+                filename = filename,
+                status = "",
+                note = "",
+                description = r["short-description"]}
+        }}
+    {return rs}
+}
+|| NOTE: this accepts RecordGrid rather than RecordSet
+|| so that it can display progress
+|| TODO: maybe there should be a way to cancel
+{define-proc public {copy-services rg:RecordGrid, dir:Url}:void    
+    || prepare manifest
+    let m:ComponentManifest = {ComponentManifest}
+    set m.direct-delegates =
+        {{ReadOnlyArray-of ComponentManifest}
+            {get-default-manifest}}
+    || process services
+    {for r key i in rg.records do
+        let wsdl-url:Url = {url r["wsdl-url"] asa String}
+        let filename:String = r["filename"] asa String
+        let local-wsdl:Url = {dir.concat filename & ".wsdl"}
+        let local-scurl:Url = {local-wsdl.set-extension ".scurl"}
+        let package-name:String = "COM.CURL.WSDL." & local-wsdl.basename
+        {try
+            {with-open-streams 
+                in:HttpTextInputStream = 
+                    {read-open wsdl-url} asa HttpTextInputStream
+             do
+                let status:String = r["status"] asa String
+                {if not status.empty? then
+                    || ignore noted problems
+                 elseif in.response-headers.mime-type == "text/html" then
+                    || reject html content
+                    set r["status"] = "html"
+                 else 
+                    || copy contents
+                    {write-to 
+                        local-wsdl,
+                        character-encoding = in.character-encoding,
+                        {in.read-one-string}}
+                    || extend manifest
+                    {m.add 
+                        {make-package-selector package-name, 
+                            location = local-scurl}}
+                    set r["status"] = "copied"}}
+         catch e:Exception do
+            || note failure
+            set r["status"] = "failed copy"}
+        {output {message [{value {DateTime}.info.iso-time}] 
+                    {format "%3d", i} {value filename}}}
+        set rg.current-index = i
+        {type-switch {rg.get-graphical-root} 
+         case v:View do
+            {v.update}}
+    }
+    || write inventory
+    {with-open-streams 
+        out = {CsvDataWriter {dir.concat "services.csv"}, character-encoding = "utf8"} do
+        {if-non-null rs = rg.record-source then
+            {for r in {rs.select} do
+                {out.write-record r}}
+        }}
+    || write manifest
+    let mloc:Url = {dir.concat "manifest.mcurl"}    
+    {write-manifest m, mloc}
+}
+{define-proc public {generate-manifest rs:RecordSet, dir:Url}:void    
+    || prepare manifest
+    let m:ComponentManifest = {ComponentManifest}
+    set m.direct-delegates =
+        {{ReadOnlyArray-of ComponentManifest}
+            {get-default-manifest}}
+    || process services
+    {for r in rs do
+        let wsdl-url:Url = {url r["wsdl-url"] asa String}
+        let filename:String = r["filename"] asa String
+        let local-wsdl:Url = {dir.concat filename & ".wsdl"}
+        let local-scurl:Url = {local-wsdl.set-extension ".scurl"}
+        let package-name:String = "COM.CURL.WSDL." & local-wsdl.basename        
+        || extend manifest
+        {m.add 
+            {make-package-selector package-name, 
+                location = local-scurl,
+                wsdl = wsdl-url.name}}
+    }
+    || write manifest
+    let mloc:Url = {dir.concat "manifest.mcurl"}    
+    {write-manifest m, mloc}
+}
+{define-proc public {verify-directory loc:Url}:bool
+    let empty?:bool = true
+    {for f in {loc.instantiate-Directory} do
+        {if (f asa LocalFile).url.filename == "readme.txt" then
+            {continue}}
+        set empty? = false
+        {break}}
+    {return
+        empty? or 
+        {popup-question cancel? = true,
+            {message Directory is not empty. Use anyway?}
+        } == "yes"
+    }}
+|| code generation
+|| ====================
+{define-proc public {code-test-applet 
+                 pkg:Package,
+                 package-name:#String = null
+             }:String
+    let out:StringBuf = {StringBuf}
+    {format out = out,
+        "\{curl 6.0 applet\}\n"}
+    {format out = out,
+        "\{applet manifest = \"manifest.mcurl\"\}\n\n"}
+    let src:String = 
+        {service-templates pkg, package-name = package-name}
+    {out.concat src}
+    {return {out.to-String}}
+}
+
+{define-proc public {service-templates
+                 package:Package,
+                 package-name:#String = null,
+                 import?:bool = true
+             }:String
+    let out:StringBuf = {StringBuf}    
+    let pname:String = 
+        {if-non-null package-name then package-name
+         else {non-null package.name}}
+    {if import? then
+        {format out = out,
+            "\{import * from %s\}\n\n", pname}}
+    {out.concat "\{value \n"}
+    
+    let service-class:ClassType = Object
+    {for pm in {package.get-members} do
+        {type-switch {pm.get-value}
+         case pm:ClassType do
+            let found?:bool = false
+            {for s in pm.direct-superclasses do
+                {if s == WSDLHTTPRPCPostClient then
+                    set found? = true
+                    {break}}}
+            {if found? then
+                set service-class = pm
+                {break}}}}            
+    
+    let sname:String = service-class.name
+    {format out = out,
+        "    let service:%s = \{%s\}\n", sname, sname}
+    
+    {out.concat "    \{VBox \n"}
+    let ms:{FastArray-of ClassMember} =
+        {service-class.get-members  
+            search-superclasses? = false,
+            filter =
+                {proc {m:ClassMember}:bool
+                    let name:String = m.name
+                    {return
+                        m isa Method
+                        and name != "register-types"
+                        and not {name.prefix? "async-"}}}}
+    
+    {for m in ms do
+        let method:Method = m asa Method
+        let mname:String = m.name
+        let pt:ProcType = method.type asa ProcType
+        {format out = out,
+            "\n        \|\| == %s\n", pt}
+        {format out = out,
+            "        \{service.%s ", mname}
+        {format-arguments out, pt, indent = 12}
+        {out.concat "        \},\n"}
+    }
+    {out.concat "        \{Fill\}\n"}
+    {out.concat "      \}\n"}
+    {out.concat "\}\n"}
+    {return {out.to-String}}
+}
+{define-proc public {non-null-type type:Type}:Type
+    {return
+        {if-non-null non-null-type = type.non-null-variant 
+         then non-null-type
+         else type}}
+}

@@ -1,0 +1,265 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class package WSDLDOMNode
+  field package constant name:#XMLName
+  field private constant qname:#String
+  field package constant attributes:#Attributes
+  field package constant source-url:Url
+  field package constant line-number:int
+  field package _parent:#WSDLDOMNode 
+  field package children:{Array-of WSDLDOMNode} = {new {Array-of WSDLDOMNode}}
+  field private name-spaces:#{HashTable-of String, String} 
+  field package characters:#StringBuf
+  
+  {constructor package {default
+                           name:#XMLName,
+                           attributes:#Attributes,
+                           qname:#String,
+                           source-url:Url,
+                           line-number:int,
+                           characters:#StringBuf
+                       }
+    set self.name = name
+    set self.attributes = attributes
+    set self.qname = qname
+    set self.source-url = source-url
+    set self.line-number = line-number
+    set self.characters = characters
+    || Grab any namespaces defined in this element
+    {if-non-null attributes then
+        {for ix = 0 below {attributes.get-length} do
+            {if-non-null qname = {attributes.get-qname ix} then
+                let (ns:String, local-name:String) =
+                    {WSDLNameTable.split-qname qname}
+                {if ns == "xmlns" or ns == "" and local-name == "xmlns" then
+                    {if-non-null v = {attributes.get-value ix} then           
+                        {if self.name-spaces == null then
+                            set self.name-spaces = 
+                                {new {HashTable-of String, String}}
+                        }
+                        {if ns == "" then
+                            || default namespace
+                            set local-name = ""
+                        }
+                        {self.name-spaces.set local-name, v}
+                        ||{output {format "add ns: %s --> %s", local-name, v}}
+                    }
+                }
+            }
+        }
+    }
+  }
+
+  {method package {dump out:TextOutputStream}:void
+    {if-non-null self.qname then
+        {format out = out, "<%s", self.qname}
+    }
+    {if-non-null atts = self.attributes then
+        {for i = 0 below {atts.get-length} do
+            {format out = out, " %s=%s", {atts.get-qname i}, {atts.get-value i}}
+        }
+    }
+    {if-non-null self.qname then
+        {out.write-one '>'}
+    }
+    {if-non-null characters = self.characters then
+        {out.write-one-string characters}
+    }
+    {for x in self.children do 
+        {x.dump out}
+    }
+    {if-non-null self.qname then
+        {format out = out, "</%s>", self.qname}
+        }
+  }
+    
+  {method package {dump-text out:TextOutputStream}:void
+    {if-non-null characters = self.characters then
+        {out.write-one-string characters}
+    }
+    {for x in self.children do 
+        {x.dump-text out}
+    }
+  }
+
+  || get uri of a name-space: if not defined in this node,
+  || get it from our parent.
+  {method package {get-namespace-uri ns:String}:String
+    {if ns == "xml" then
+        {return "http://www.w3.org/XML/1998/namespace"}
+    }
+    {if-non-null name-spaces = self.name-spaces then
+        let constant (defn:String, found?:bool) = {name-spaces.get-if-exists ns}
+        {if found? then
+            {return defn}
+        }
+    }
+    {if-non-null parent = self.parent then
+        {return {parent.get-namespace-uri ns}}
+    }
+    {return ""}
+  }
+
+  || get prefix of a name-space: if not defined in this node,
+  || get it from our parent.
+  {method package {get-namespace-prefix ns:String}:String
+    {if-non-null name-spaces = self.name-spaces then
+        {for uri key prefix in name-spaces do
+            {if uri == ns then {return prefix}}
+        }
+    }
+    {if-non-null parent = self.parent then
+        {return {parent.get-namespace-prefix ns}}
+    }
+    {return ""}
+  }
+  
+  || get value of an attribute
+  {method package {get-attribute name:String, namespace:String = ""}:#String
+    {return 
+        {if-non-null atts = self.attributes then
+            {atts.get-value-by-namespace namespace, name}
+         else
+            null
+        }
+    }
+  }
+  
+  || accessors for parent
+  {getter package {parent}:#WSDLDOMNode
+    {return self._parent}
+  }
+  {setter package {parent _parent:#WSDLDOMNode}:void
+    set self._parent = _parent
+    {if-non-null _parent then
+        {_parent.children.append self}
+    }
+  }
+
+  {method package {append-character-child
+                      characters:StringBuf,
+                      source-url:Url,
+                      line-number:int
+                  }:void
+    {self.children.append
+        {new WSDLDOMNode,
+            null,
+            null,
+            null,
+            source-url,
+            line-number,
+            {characters.clone}
+        }
+    }
+  }
+
+}
+
+{define-class package WSDLDOMHandler {inherits DefaultHandler}
+  || Parse stack, and rules for parsing
+  field private top-node:#WSDLDOMNode
+  field private stack:{Array-of WSDLDOMNode} = {new {Array-of WSDLDOMNode}}
+  field private url:Url
+  field private parser:#SAXParser
+  field private characters-buf:StringBuf = {new StringBuf}
+  field private characters-line-number:int
+  
+  {constructor package {default 
+                   url:Url
+               }
+    set self.url = url
+  }
+
+  {method package {parse}:#WSDLDOMNode
+    let constant parser:SAXParser = {SAXParser}
+    {parser.set-content-handler self}
+    {parser.set-error-handler self}
+    set self.parser = parser
+    {parser.parse {InputSource system-id = self.url.name}}        
+    set self.parser = null
+    {return self.top-node}
+  }
+  
+  || This method is called by the SAXParser when it has
+  || recognized the start of an element. 
+  {method public open {start-element
+                          uri:String,
+                          name:String,
+                          qname:String,
+                          attributes:Attributes
+                      }:void
+    {if self.characters-buf.size > 0 then
+        {self.characters-buf.trim}
+        {if self.stack.size > 0 and self.characters-buf.size > 0 then
+            {{self.stack.top-of-stack}.append-character-child
+                self.characters-buf,
+                self.url,
+                self.characters-line-number
+            }
+        }
+        {self.characters-buf.clear}
+    }
+    || push a new node
+    let constant node:WSDLDOMNode =
+        {new WSDLDOMNode,
+            {XMLName uri, name},
+            attributes,
+            qname,
+            self.url,
+            {self.parser.get-line-number},
+            null
+        }
+    {if self.stack.size > 0 then
+        set node.parent = {self.stack.top-of-stack} 
+     else
+        set self.top-node = node
+    }
+    {self.stack.push node}
+  }
+  
+  || This method is called by the SAXParser when it has
+  || recognized the end of an element. 
+  {method public open {end-element
+                          uri:String,
+                          name:String,
+                          qname:String
+                      }:void
+    {if self.characters-buf.size > 0 then
+        {self.characters-buf.trim}
+        {if self.stack.size > 0 and self.characters-buf.size > 0 then
+            {{self.stack.top-of-stack}.append-character-child
+                self.characters-buf,
+                self.url,
+                self.characters-line-number
+            }
+        }
+        {self.characters-buf.clear}
+    }
+    {self.stack.pop}
+  }
+
+  {method public open {characters
+                          ch:StringBuf,
+                          start:int,
+                          length:int
+                      }:void
+    {if self.characters-buf.size <= 0 then
+        set self.characters-line-number = {self.parser.get-line-number}
+    }
+    {self.characters-buf.write-one-string ch, start = start, length = length}
+  }
+}

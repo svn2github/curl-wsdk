@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions 
+    name="SampleConfigurator" 
+    targetNamespace="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.wsdl" 
+    xmlns="http://schemas.xmlsoap.org/wsdl/" 
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+    xmlns:tns="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.wsdl" 
+    xmlns:cfg="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.xsd" 
+    xmlns:cfgn="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd" 
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  
+  <wsdl:types>
+
+    <xs:schema 
+        targetNamespace="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.xsd"
+        xmlns:tns="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.xsd" 
+        xmlns:cfgn="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd" 
+        xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+        elementFormDefault="qualified">
+
+      <xs:element name="configOptions" type="xs:string"/>
+      <xs:element name="refresh" type="xs:boolean"/>
+      <!-- <xs:element name="configError" type="xs:string"/> -->
+      <xs:element name="configError" type="tns:ConfigurationFaultType"/>
+
+      <xs:complexType name="ConfigurationFaultType">
+        <xs:sequence>
+          <xs:element name="Message" type="xs:string"/>
+          <xs:element name="ErroneousElement" type="xs:string" minOccurs="0" maxOccurs="8"/>
+        </xs:sequence>
+      </xs:complexType>
+
+    </xs:schema>
+
+  </wsdl:types>
+
+  <wsdl:message name="getConfigurationOptionsRequest">
+    <wsdl:part name="refresh" element="cfg:refresh"/>
+  </wsdl:message>
+
+  <wsdl:message name="getConfigurationOptionsResponse">
+    <wsdl:part name="configOptions" element="cfg:configOptions"/>
+    <!-- <wsdl:part name="configError" element="cfg:configError"/> -->
+  </wsdl:message>
+
+  <wsdl:message name="configuratorFailedFault">
+    <wsdl:part name="configError" element="cfg:configError"/>
+  </wsdl:message>
+
+  <wsdl:portType name="ConfiguratorPortType">
+    <wsdl:operation name="getConfigurationOptions">
+      <wsdl:input message="tns:getConfigurationOptionsRequest"/>
+      <wsdl:output message="tns:getConfigurationOptionsResponse"/>
+      <wsdl:fault message="tns:configuratorFailedFault" name="configuratorFailedFault"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="ConfiguratorBinding" type="tns:ConfiguratorPortType">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <wsdl:operation name="getConfigurationOptions">
+      <soap:operation soapAction="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.wsdl/getConfigurationOptions"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="configuratorFailedFault">
+        <soap:fault name="configuratorFailedFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="ConfiguratorService">
+    <wsdl:port binding="tns:ConfiguratorBinding" name="ConfiguratorPort">
+      <soap:address location="http://localhost:8888/ws-i/supplychain/services/Configurator"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

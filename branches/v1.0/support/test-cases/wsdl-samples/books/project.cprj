@@ -1,0 +1,31 @@
+|| *******************************************************
+|| *** THIS FILE IS AUTOMATICALLY UPDATED BY SURGE LAB ***
+|| ***              DO NOT MODIFY IT BY HAND           ***
+|| *******************************************************
+
+{project
+    version = 2,
+    manifest-location = "manifest.mcurl",
+    api-version = "6.0",
+    compiler-directives = "careful? = true",
+    {target
+        name = "default",
+        target-url-name = "deploy-default",
+        {resource-transform "start.curl\u0000file\u0000start.curl", copy? = true},
+        {resource-transform "wsdl\u0000directory\u0000wsdl", copy? = true},
+        {resource-transform "start.curl\u0000resource\u0000start.curl", copy? = true},
+        {assembly-transform "COM.CURL.WSDK.TEST", use-path? = true},
+        {resource-transform "no-image-available.jpg\u0000file\u0000no-image-available.jpg", copy? = true},
+        {package-transform "COM.CURL.WSDK.SAMPLES.BOOK-DEMO\u0000package\u0000load.scurl", pcurl? = true, generate-doc? = true}
+    },
+    {target
+        name = "generate-docs",
+        target-url-name = "doc-deploy",
+        {resource-transform "start.curl\u0000file\u0000start.curl"},
+        {resource-transform "wsdl\u0000directory\u0000wsdl"},
+        {assembly-transform "COM.CURL.WSDK.TEST"},
+        {resource-transform "no-image-available.jpg\u0000file\u0000no-image-available.jpg"},
+        {package-transform "COM.CURL.WSDK.SAMPLES.BOOK-DEMO\u0000package\u0000load.scurl", pcurl? = true, generate-doc? = true}
+    },
+    {file-setting "start.curl", start-file? = true}
+}

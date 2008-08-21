@@ -1,0 +1,28 @@
+|| **********************************************************
+|| *** THIS FILE IS AUTOMATICALLY UPDATED BY THE CURL IDE ***
+|| ***              DO NOT MODIFY IT BY HAND              ***
+|| **********************************************************
+{project
+    version = 2,
+    manifest-location = "manifest.mcurl",
+    api-version = "6.0",
+    compiler-directives = "careful? = true",
+    use-style-sheets? = false,
+    style-package-name = "",
+    style-sheet-name = "DEFAULT-STYLE-SHEET",
+    {target
+        name = "deploy",
+        target-url-name = "file:///c:/Inetpub/wwwroot/Z/WSDK-TOOLS",
+        {package-transform "COM.CURL.WSDK.WSDL-IDE\u0000package\u0000wsdl/load.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.WSDL-IDE\u0000package\u0000ide/load.scurl", copy? = true},
+        {resource-transform "project.cprj\u0000file\u0000project.cprj", copy? = true},
+        {resource-transform "editor-info.txt\u0000file\u0000wsdl/editor-info.txt", copy? = true},
+        {resource-transform "start.curl\u0000file\u0000wsdl/start.curl", copy? = true},
+        {resource-transform "start.curl\u0000resource\u0000start.curl", copy? = true},
+        {package-transform "COM.CURL.WSDK.WSDL-IDE\u0000package\u0000load.scurl", copy? = true},
+        {resource-transform "project.cprj\u0000file\u0000../support/project.cprj", copy? = true},
+        {resource-transform "manifest.mcurl\u0000file\u0000wsdl/manifest.mcurl", copy? = true},
+        {assembly-transform "COM.CURL.WSDK", use-path? = true}
+    },
+    {file-setting "wsdl/start.curl", start-file? = true}
+}

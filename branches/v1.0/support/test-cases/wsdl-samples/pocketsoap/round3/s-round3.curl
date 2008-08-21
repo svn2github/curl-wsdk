@@ -1,0 +1,177 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+{applet manifest = "../manifest.mcurl"}
+
+{import * from COM.CURL.WSDK.POCKETSOAP-SUPPORT}
+
+{value
+    let cm:ComponentManifest = {import-manifest {url "round3-manifest.mcurl"}}
+
+    let cases:RecordSet =
+        {new RecordSet,
+            {new RecordFields,
+                {new RecordField, "Test?", domain = bool, default-value = true},
+                {new RecordField, "group", domain = String},
+                {new RecordField, "subgroup", domain = String},
+                {new RecordField, "service", domain = {ServiceDomain}},
+                {new RecordField, "name", domain = String},
+                {new RecordField, "arg", domain = any},
+                {new RecordField, "expected-result",
+                    domain = any, nullable? = true},
+                {new RecordField, "result",
+                    domain = any, nullable? = true},
+                {new RecordField, "match",
+                    domain = any, nullable? = true}
+            }
+        }
+
+    let results:#RecordGrid
+
+    {for cs in cm do
+        {try
+            let (ct:#ClassType, method-members:{Array-of ClassMember}) =
+                {get-package-inspection-data cs, cm}
+
+            let (group:String, b1?:bool) = {cs.get-if-exists "group"}
+            {if not b1? then
+                set group = ""
+            }
+            let (subgroup:String, b2?:bool) = {cs.get-if-exists "subgroup"}
+            {if not b2? then
+                set subgroup = ""
+            }
+
+            let service = 
+                {if-non-null ct then
+                    {new ct}
+                 else
+                    null
+                }
+
+            {if-non-null service then
+||--                set service.soap-caller.trace-stream = {get-stdout}
+                {for m key k in method-members do
+                    let meth:#Method = {ct.get-method m.name}
+                    || Need a way to determine the Method's args
+                    || so they can be set up in the RecordData
+                    let buf:StringBuf = {new StringBuf}
+                    let (arg-val:any, expected-result:any) =
+                        {get-arg meth.type, ct.package, m.name, group, subgroup}
+                    let rd:RecordData =
+                        {new RecordData,
+                            group = group,
+                            subgroup = subgroup,
+                            service = service,
+                            name = meth.name,
+                            expected-result = expected-result,
+                            arg = arg-val
+                        }
+                    {cases.append rd}
+                }
+             else
+                "No service was found."
+            }
+         catch err:Error do
+            {dump err}
+         catch e:Exception do
+            {dump e}
+        }
+    }
+    set results =
+        {RecordGrid
+            record-source = cases,
+            sort = {RecordSort.from-string "group"},
+            width = {make-elastic},
+            {RecordGridColumn width = 1.25cm, "Test?"},
+            {RecordGridColumn width = 1.25cm, "group"},
+            {RecordGridColumn width = 2.5cm, "subgroup"},
+            {RecordGridColumn width = 5cm, "service"},
+            {RecordGridColumn width = 2.5cm, "name"},
+            {RecordGridColumn width = 2.5cm, "arg"},
+            {RecordGridColumn width = 2.5cm, "expected-result"},
+            {RecordGridColumn width = 2.5cm, "result"},
+            {RecordGridColumn width = 1.25cm, "match"}
+        }
+    {text-width-display
+        {VBox
+            results,
+            {HBox
+                {Fill},
+                {CommandButton label = "Select All",
+                    {on Action do
+                        {for case in cases do
+                            set case["Test?"] = true
+                        }
+                    }
+                },
+                {CommandButton label = "Select All From Filter",
+                    {on Action do
+                        {for case in cases do
+                            set case["Test?"] = false
+                        }
+                        let rv:RecordView =
+                            {new RecordView,
+                                cases,
+                                filter = results.filter
+                            }
+                        {for r in rv do
+                            set r["Test?"] = true
+                        }
+                    }
+                },
+                {CommandButton label = "Select All But Filter",
+                    {on Action do
+                        {for case in cases do
+                            set case["Test?"] = true
+                        }
+                        let rv:RecordView =
+                            {new RecordView,
+                                cases,
+                                filter = results.filter
+                            }
+                        {for r in rv do
+                            set r["Test?"] = false
+                        }
+                    }
+                },
+                {CommandButton label = "Deselect All",
+                    {on Action do
+                        {for case in cases do
+                            set case["Test?"] = false
+                        }
+                    }
+                },
+                {Fill}
+            },
+            {HBox
+                {Fill},
+                {CommandButton label = "Test",
+                    {on Action do
+                        let rv:RecordView =
+                            {new RecordView,
+                                cases,
+                                filter = {new RecordData, Test? = true}
+                            }
+                        {test-cases rv}
+                    }
+                },
+                {Fill}
+            }
+        }
+    }
+}

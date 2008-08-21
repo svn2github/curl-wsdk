@@ -1,0 +1,331 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public XDMWriter
+  field package constant out:TextOutputStream
+  field package indent-level:int
+  field package constant indentation:int
+  field package constant context:NamespaceSupport
+  field package constant default-context:NamespaceSupport
+  field package constant fragment?:bool
+  field package constant use-cdata?:bool
+  field package ns-counter:int
+  
+  {constructor public {default  
+                          out:TextOutputStream,
+                          indentation:int = 1,
+                          context:#XDMNamespaceContext = null,
+                          default-context:XDMNamespaceContext = xml-namespace-context,
+                          fragment?:bool = false,
+                          use-cdata?:bool = true}
+    set self.out = out
+    set self.indentation = indentation
+    set self.indent-level =
+        {if indentation >= 0 then 0 else -1}
+    set self.ns-counter = 0
+    set self.context =
+        {if-non-null context then 
+            {self.make-NamespaceSupport context} 
+         else {NamespaceSupport}}
+    set self.default-context = 
+        {self.make-NamespaceSupport default-context}
+    set self.fragment? = fragment?
+    set self.use-cdata? = use-cdata?
+  }  
+  {define-proc public {write-XML
+                          node:XDMNode,
+                          out:#TextOutputStream = null,
+                          indentation:int = 1,
+                          fragment?:bool = false,
+                          use-cdata?:bool = true,
+                          ...
+                      }:String
+    {if out == null then
+        set out = {StringBuf}
+    }
+    let return?:bool = out isa StringBuf        
+    let w:XDMWriter = 
+        {XDMWriter {non-null out}, 
+            indentation = indentation,
+            fragment? = fragment?,
+            use-cdata? = use-cdata?,
+            {splice ...}}
+    {type-switch node
+     case e:XDMElement do {w.write-element e}
+     case t:XDMText do {w.write-characters t}
+     case p:XDMProcessingInstruction do {w.write-processing-instruction p}
+     case d:XDMDocument do {w.write-element d.root}
+     case a:XDMAttribute do {a.to-XML out = {non-null out}}
+     else {xdm-exception {message Unexpected {value node} can not be written.}}
+    }
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }   
+  {method public {write-element 
+                     node:XDMElement
+                 }:void
+    let out:TextOutputStream = self.out
+    let check-element:#XDMElement =
+        {if self.fragment? then node else null}
+    || note namespace declarations
+    {self.context.push-context}
+    let ns?:bool = 
+        {if-non-null nsd = node.namespace-declarations then 
+            {for p in {nsd.get-prefixes} do
+                let ns:String = {non-null {nsd.get-uri p}}
+                {self.context.declare-prefix? p, ns}}
+            not nsd.empty?
+         else false}
+    || == open tag
+    let (p:String, p?:bool) = 
+        {self.get-prefix node.namespace, element = check-element}
+    let tag:String =
+        {if p.empty? then node.local-name
+         else {String p, ':', node.local-name}}
+    {out.write-one '<'}
+    {out.write-one-string tag}
+    || == synthesized namespace declaration
+    {if p? then
+        set ns? = true
+        {self.write-newline} 
+        {out.write-one-string " xmlns:"}
+        {out.write-one-string p}
+        {out.write-one-string "='"}
+        {out.write-one-string node.namespace}
+        {out.write-one '\''}
+    }
+    || == explicit namespace declarations
+    {if-non-null nsd = node.namespace-declarations then 
+        {for p in {nsd.get-prefixes} do
+            let ns:String = {non-null {nsd.get-uri p}}
+            {self.write-newline} 
+            {if p.empty? then
+                {out.write-one-string " xmlns='"}
+                {out.write-one-string ns}
+                {out.write-one '\''}
+             else 
+                {out.write-one-string " xmlns:"}
+                {out.write-one-string p}
+                {out.write-one-string "='"}
+                {out.write-one-string ns}
+                {out.write-one '\''}
+            }
+        }}
+    || == attributes
+    {if-non-null atts = node.attributes then
+        || use two passes so namespaces are before attributes
+        {for pass = 0 below 2 do
+            {for x key k in atts do          
+                let (p:String, p?:bool) = 
+                    {self.get-prefix k.namespace, 
+                        for-attribute? = true, 
+                        element = check-element}
+                {if pass == 1 then
+                    || == attribute
+                    let tag:String =
+                        {if p.empty? then k.local-name
+                         else {String p, ':', k.local-name}}
+                    {self.write-newline}
+                    {out.write-one ' '} 
+                    {out.write-one-string tag}
+                    {out.write-one-string "='"} 
+                    {write-xml-escaped-string 
+                        out, out.character-encoding, x, self.one-char-buf, true}
+                    {out.write-one '\''}
+                 else
+                    || == synthesized namespace declaration
+                    {if p? then
+                        set ns? = true
+                        {self.write-newline} 
+                        {out.write-one-string " xmlns:"}
+                        {out.write-one-string p}
+                        {out.write-one-string "='"}
+                        {out.write-one-string k.namespace}
+                        {out.write-one '\''}
+                    }}}}}
+    || avoid proliferation of empty contexts
+    {if not ns? then
+        {self.context.pop-context}}
+    || == contents
+    {if node.children.empty? then
+        {out.write-one-string "/>"}
+     else
+        {out.write-one-string ">"}
+        {inc self.indent-level, self.indentation}
+        let previous:#XDMNode = null
+        {for x in node.children do
+            {type-switch x
+             case x:XDMElement do
+                {if not previous isa XDMText then
+                    {self.write-newline}}
+                {self.write-element x}
+             case x:XDMText do
+                {self.write-characters x}
+             case x:XDMProcessingInstruction do
+                {self.write-newline}
+                {self.write-processing-instruction x}}
+            set previous = x}
+        {dec self.indent-level, self.indentation}
+        {if not previous isa XDMText then
+            {self.write-newline}}
+        || == close tag
+        {out.write-one-string "</"}
+        {out.write-one-string tag}
+        {out.write-one '>'}
+    }    
+    {if ns? then
+        {self.context.pop-context}}
+  }
+  {method public {get-prefix 
+                     ns:String, 
+                     for-attribute?:bool = false,
+                     element:#XDMElement = null
+                 }:(String, bool)
+    {if ns.empty? then 
+        || no namespace -- no prefix needed
+        {return "", false}
+     else
+        || check element first, if so requested
+        {if-non-null element then
+            {if-non-null 
+                p = {element.find-matching-prefix ns, 
+                        check-default? = not for-attribute?}
+             then {return p, false}}}
+        || NOTE: not using 'get-prefix' as, despite its docstring,
+        || it does _not_ exclude default prefix
+        let ps:StringArray = {self.context.get-prefixes-for-uri ns}
+        {if for-attribute? then
+            {ps.filter 
+                {proc {p:String}:bool 
+                    {return not p.empty?}}}} 
+        {if not ps.empty? then
+            || declared prefixes -- use the shortest
+            {ps.sort comparison-proc =
+                {proc {p:String, q:String}:bool 
+                    {return p.size <= q.size}}}
+            let p:String = ps[0]
+            {return p, false}
+         else
+            || none declared
+            let p?:bool = false
+            let p:String = ""
+            || first try global declarations
+            {for prefix in {self.default-context.get-prefixes-for-uri ns} do
+                {if not prefix.empty? and 
+                    {self.context.get-uri prefix} == null 
+                 then
+                    set p = prefix
+                    set p? = true}}
+            || otherwise increment prefix counter
+            {while not p? do
+                {inc self.ns-counter}
+                set p = {format "NS%02d", self.ns-counter}
+                || detect and skip any clashes
+                set p? = {self.context.get-uri p} == null}
+            || add declaration
+            {self.context.declare-prefix? p, ns}
+            {return p, true}}}
+  }
+  {method public {write-newline}:void
+    let out:TextOutputStream = self.out
+    {if self.indent-level >= 0 then
+        {out.write-one '\n'}
+        {for i = 0 below self.indent-level do
+            {out.write-one ' '}}
+    }
+  }
+  {method public {write-processing-instruction node:XDMProcessingInstruction}:void
+    let out:TextOutputStream = self.out
+    {out.write-one-string "<?"}
+    {out.write-one-string node.target}
+    {out.write-one ' '}
+    {out.write-one-string node.data}
+    {out.write-one-string "?>"}  
+  }
+  {method public {write-characters node:XDMText}:void
+    {self.buf.clear}
+    let characters:String = {node.get-text}
+    let all-chars-in-encoding?:bool =
+        {write-xml-escaped-string 
+            self.buf, self.out.character-encoding, 
+            characters, self.one-char-buf, false}
+    {if self.use-cdata? and
+        || was something escaped?
+        self.buf.size > characters.size and
+        || were there no weird characters that need explicit encoding?
+        all-chars-in-encoding? and
+        || will a CDATA block be unambiguous?
+        {characters.find-string "]]>"} == -1
+     then
+        || It's a string with escaped stuff, so use CDATA for readability.
+        {self.out.write-one-string "<![CDATA["}
+        {self.out.write-one-string characters}
+        {self.out.write-one-string "]]>"}
+     else
+        {self.out.write-one-string self.buf}
+    }
+  }
+  field package constant buf:StringBuf = {StringBuf}
+  field package constant one-char-buf:CharVec = {CharVec '\u0000'}
+  
+  {method public {make-NamespaceSupport context:XDMNamespaceContext}:NamespaceSupport
+    let ns:NamespaceSupport = {NamespaceSupport}
+    {for k in {context.get-prefixes} do
+        {if-non-null x = {context.get-uri k} then
+            {ns.declare-prefix? k, x}}}
+    {return ns}
+  }
+}
+{define-proc package {write-xml-escaped-string
+                         out:TextOutputStream,
+                         character-encoding:CharEncoding,
+                         str:String,
+                         one-char-buf:CharVec,
+                         for-attribute?:bool
+                     }:(all-chars-in-encoding?:bool)
+    let all-chars-in-encoding?:bool = true
+    {for c in str do
+        {switch c
+         case '<' do
+            {out.write-one-string "&lt;"} ||""
+         case '>' do
+            {out.write-one-string "&gt;"} ||""
+         case '&' do
+            {out.write-one-string "&amp;"} ||""
+         case '\'' do
+            {if for-attribute? then
+                || NOTE: assumes we're quoting atts w apos
+                {out.write-one-string "&apos;"} ||""
+             else
+                {out.write-one c}}
+         else
+            {if (c < '\u0020' and c != '\n' and c != '\r' and c != '\t') then
+                {xdm-exception
+                    {lmessage
+                        Encountered character {format "%w", c}
+                        not encodable in XML.}}}
+            set one-char-buf[0] = c
+            {if (character-encoding == CharEncoding.none-specified or
+                 {character-encoding.all-chars-in-encoding? one-char-buf})
+             then
+                {out.write-one c}
+             else
+                || use XML escape when encoding can't handle character
+                {format out = out, "&#x%X;", c}
+                set all-chars-in-encoding? = false
+            }}}
+    {return all-chars-in-encoding?}
+}
+

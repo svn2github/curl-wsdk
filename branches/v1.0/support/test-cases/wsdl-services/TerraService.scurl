@@ -1,0 +1,3111 @@
+{curl 6.0 package}
+{package COM.CURL.WSDL.TerraService,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/TerraService.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/TerraService.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+  {doc-next 
+    {details 
+      TerraServer Web Service
+    }
+  }
+{define-class public TerraService {inherits WSDLHTTPRPCPostClient}
+
+  {method public {convert-lon-lat-pt-to-nearest-place point:LonLatPt}:(convert-lon-lat-pt-to-nearest-place-result:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                point
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlaceResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertLonLatPtToNearestPlace",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlace"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlaceResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-convert-lon-lat-pt-to-nearest-place point:LonLatPt, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                point
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlaceResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertLonLatPtToNearestPlace",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlace"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlaceResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {convert-lon-lat-pt-to-utm-pt point:LonLatPt}:(convert-lon-lat-pt-to-utm-pt-result:UtmPt)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                point
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "UtmPt"},
+                    curl-type = UtmPt,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertLonLatPtToUtmPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa UtmPt
+    }
+  }
+
+
+  {method public {async-convert-lon-lat-pt-to-utm-pt point:LonLatPt, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                point
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "UtmPt"},
+                    curl-type = UtmPt,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertLonLatPtToUtmPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {convert-utm-pt-to-lon-lat-pt utm:UtmPt}:(convert-utm-pt-to-lon-lat-pt-result:LonLatPt)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                utm
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "utm"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "UtmPt"},
+                    curl-type = UtmPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertUtmPtToLonLatPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa LonLatPt
+    }
+  }
+
+
+  {method public {async-convert-utm-pt-to-lon-lat-pt utm:UtmPt, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                utm
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "utm"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "UtmPt"},
+                    curl-type = UtmPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertUtmPtToLonLatPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {convert-place-to-lon-lat-pt place:Place}:(convert-place-to-lon-lat-pt-result:LonLatPt)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                place
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "place"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                    curl-type = Place,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertPlaceToLonLatPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa LonLatPt
+    }
+  }
+
+
+  {method public {async-convert-place-to-lon-lat-pt place:Place, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                place
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "place"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                    curl-type = Place,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/ConvertPlaceToLonLatPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {count-places-in-rect upperleft:LonLatPt, lowerright:LonLatPt, ptype:PlaceType}:(count-places-in-rect-result:int)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                upperleft,
+                lowerright,
+                ptype
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "upperleft"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "lowerright"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ptype"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceType"},
+                    curl-type = PlaceType
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRectResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/CountPlacesInRect",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRect"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRectResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa int
+    }
+  }
+
+
+  {method public {async-count-places-in-rect upperleft:LonLatPt, lowerright:LonLatPt, ptype:PlaceType, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                upperleft,
+                lowerright,
+                ptype
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "upperleft"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "lowerright"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ptype"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceType"},
+                    curl-type = PlaceType
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRectResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/CountPlacesInRect",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRect"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRectResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-area-from-pt center:LonLatPt, theme:Theme, scale:Scale, display-pix-width:int, display-pix-height:int}:(get-area-from-pt-result:AreaBoundingBox)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                center,
+                theme,
+                scale,
+                display-pix-width,
+                display-pix-height
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "center"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "scale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixWidth"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixHeight"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                    curl-type = AreaBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetAreaFromPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa AreaBoundingBox
+    }
+  }
+
+
+  {method public {async-get-area-from-pt center:LonLatPt, theme:Theme, scale:Scale, display-pix-width:int, display-pix-height:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                center,
+                theme,
+                scale,
+                display-pix-width,
+                display-pix-height
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "center"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "scale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixWidth"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixHeight"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                    curl-type = AreaBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetAreaFromPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-area-from-rect upper-left:LonLatPt, lower-right:LonLatPt, theme:Theme, scale:Scale}:(get-area-from-rect-result:AreaBoundingBox)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                upper-left,
+                lower-right,
+                theme,
+                scale
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "upperLeft"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "lowerRight"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "scale"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRectResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                    curl-type = AreaBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetAreaFromRect",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRect"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRectResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa AreaBoundingBox
+    }
+  }
+
+
+  {method public {async-get-area-from-rect upper-left:LonLatPt, lower-right:LonLatPt, theme:Theme, scale:Scale, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                upper-left,
+                lower-right,
+                theme,
+                scale
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "upperLeft"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "lowerRight"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "scale"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRectResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                    curl-type = AreaBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetAreaFromRect",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRect"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRectResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-area-from-tile-id id:TileId, display-pix-width:int, display-pix-height:int}:(get-area-from-tile-id-result:AreaBoundingBox)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                id,
+                display-pix-width,
+                display-pix-height
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "id"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixWidth"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixHeight"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileIdResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                    curl-type = AreaBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetAreaFromTileId",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileId"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileIdResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa AreaBoundingBox
+    }
+  }
+
+
+  {method public {async-get-area-from-tile-id id:TileId, display-pix-width:int, display-pix-height:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                id,
+                display-pix-width,
+                display-pix-height
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "id"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixWidth"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "displayPixHeight"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileIdResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                    curl-type = AreaBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetAreaFromTileId",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileId"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileIdResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-lat-lon-metrics point:LonLatPt}:(get-lat-lon-metrics-result:#ArrayOfThemeBoundingBox)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                point
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetricsResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfThemeBoundingBox"},
+                    curl-type = ArrayOfThemeBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetLatLonMetrics",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetrics"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetricsResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa #ArrayOfThemeBoundingBox
+    }
+  }
+
+
+  {method public {async-get-lat-lon-metrics point:LonLatPt, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                point
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetricsResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfThemeBoundingBox"},
+                    curl-type = ArrayOfThemeBoundingBox,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetLatLonMetrics",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetrics"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetricsResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-place-facts place:Place}:(get-place-facts-result:PlaceFacts)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                place
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "place"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                    curl-type = Place,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFactsResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                    curl-type = PlaceFacts,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetPlaceFacts",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFacts"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFactsResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa PlaceFacts
+    }
+  }
+
+
+  {method public {async-get-place-facts place:Place, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                place
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "place"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                    curl-type = Place,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFactsResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                    curl-type = PlaceFacts,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetPlaceFacts",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFacts"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFactsResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-place-list place-name:String, max-items:int, image-presence:bool}:(get-place-list-result:#ArrayOfPlaceFacts)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                place-name,
+                max-items,
+                image-presence
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "placeName"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "MaxItems"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "imagePresence"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
+                    curl-type = ArrayOfPlaceFacts,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetPlaceList",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceList"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa #ArrayOfPlaceFacts
+    }
+  }
+
+
+  {method public {async-get-place-list place-name:String, max-items:int, image-presence:bool, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                place-name,
+                max-items,
+                image-presence
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "placeName"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "MaxItems"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "imagePresence"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
+                    curl-type = ArrayOfPlaceFacts,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetPlaceList",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceList"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-place-list-in-rect upperleft:LonLatPt, lowerright:LonLatPt, ptype:PlaceType, max-items:int}:(get-place-list-in-rect-result:#ArrayOfPlaceFacts)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                upperleft,
+                lowerright,
+                ptype,
+                max-items
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "upperleft"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "lowerright"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ptype"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "MaxItems"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceType"},
+                    curl-type = PlaceType
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRectResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
+                    curl-type = ArrayOfPlaceFacts,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetPlaceListInRect",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRect"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRectResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa #ArrayOfPlaceFacts
+    }
+  }
+
+
+  {method public {async-get-place-list-in-rect upperleft:LonLatPt, lowerright:LonLatPt, ptype:PlaceType, max-items:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                upperleft,
+                lowerright,
+                ptype,
+                max-items
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "upperleft"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "lowerright"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ptype"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "MaxItems"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceType"},
+                    curl-type = PlaceType
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRectResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
+                    curl-type = ArrayOfPlaceFacts,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetPlaceListInRect",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRect"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRectResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-theme theme:Theme}:(get-theme-result:ThemeInfo)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                theme
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetThemeResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeInfo"},
+                    curl-type = ThemeInfo,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTheme",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTheme"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetThemeResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa ThemeInfo
+    }
+  }
+
+
+  {method public {async-get-theme theme:Theme, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                theme
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetThemeResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeInfo"},
+                    curl-type = ThemeInfo,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTheme",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTheme"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetThemeResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-tile-meta-from-lon-lat-pt point:LonLatPt, theme:Theme, scale:Scale}:(get-tile-meta-from-lon-lat-pt-result:TileMeta)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                point,
+                theme,
+                scale
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "scale"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                    curl-type = TileMeta,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTileMetaFromLonLatPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa TileMeta
+    }
+  }
+
+
+  {method public {async-get-tile-meta-from-lon-lat-pt point:LonLatPt, theme:Theme, scale:Scale, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                point,
+                theme,
+                scale
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "point"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "scale"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPtResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                    curl-type = TileMeta,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTileMetaFromLonLatPt",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPt"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPtResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-tile-meta-from-tile-id id:TileId}:(get-tile-meta-from-tile-id-result:TileMeta)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                id
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "id"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileIdResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                    curl-type = TileMeta,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTileMetaFromTileId",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileId"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileIdResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa TileMeta
+    }
+  }
+
+
+  {method public {async-get-tile-meta-from-tile-id id:TileId, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                id
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "id"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileIdResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                    curl-type = TileMeta,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTileMetaFromTileId",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileId"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileIdResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {get-tile id:TileId}:(get-tile-result:#{Array-of byte})
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                id
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "id"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetTileResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "base64Binary"},
+                    curl-type = {Array-of byte},
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTile",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTile"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+        }
+    {return
+        responses[0] asa #{Array-of byte}
+    }
+  }
+
+
+  {method public {async-get-tile id:TileId, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                id
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "id"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "GetTileResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "base64Binary"},
+                    curl-type = {Array-of byte},
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://terraserver-usa.com/terraserver/GetTile",
+            request-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTile"},
+            response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            event-handler,
+            ...
+        }
+    }
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaBoundingBox"},
+                curl-type = AreaBoundingBox,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "NorthEast"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "SouthWest"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "SouthEast"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "NearestPlace"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaCoordinate"},
+                    curl-type = AreaCoordinate
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthEast"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaCoordinate"},
+                    curl-type = AreaCoordinate
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "SouthWest"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaCoordinate"},
+                    curl-type = AreaCoordinate
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "SouthEast"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaCoordinate"},
+                    curl-type = AreaCoordinate
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaCoordinate"},
+                    curl-type = AreaCoordinate
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfOverlappingThemeInfo"},
+                    curl-type = ArrayOfOverlappingThemeInfo,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "north-west",
+                "north-east",
+                "south-west",
+                "south-east",
+                "center",
+                "nearest-place",
+                "overlapping-theme-infos"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://terraserver-usa.com/terraserver/", "NearestPlace"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "AreaCoordinate"},
+                curl-type = AreaCoordinate,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Offset"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                    curl-type = TileMeta
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Offset"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPtOffset"},
+                    curl-type = LonLatPtOffset
+                }
+            },
+            {{Array-of String}
+                "tile-meta",
+                "offset"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
+                        curl-type = OverlappingThemeInfo
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfOverlappingThemeInfo"},
+                        curl-type = ArrayOfOverlappingThemeInfo,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                        curl-type = PlaceFacts
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
+                        curl-type = ArrayOfPlaceFacts,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
+                        curl-type = ThemeBoundingBox
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfThemeBoundingBox"},
+                        curl-type = ArrayOfThemeBoundingBox,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                curl-type = LonLatPt,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Lon"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Lat"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                }
+            },
+            {{Array-of String}
+                "lon",
+                "lat"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Offset"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPtOffset"},
+                curl-type = LonLatPtOffset,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Point"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "XOffset"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "YOffset"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Point"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of String}
+                "point",
+                "xoffset",
+                "yoffset"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
+                curl-type = OverlappingThemeInfo,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "LocalTheme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Point"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ThemeName"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Capture"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "HiScale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Url"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Point"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "dateTime"},
+                    curl-type = DateTime
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionType"},
+                    curl-type = ProjectionType
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "HiScale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "local-theme",
+                "theme",
+                "point",
+                "theme-name",
+                "capture",
+                "projection-id",
+                "lo-scale",
+                "hi-scale",
+                "url"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://terraserver-usa.com/terraserver/", "ThemeName"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "Url"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                curl-type = Place,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "City"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "State"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Country"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "city",
+                "state",
+                "country"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://terraserver-usa.com/terraserver/", "City"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "State"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "Country"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                curl-type = PlaceFacts,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "AvailableThemeMask"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "PlaceTypeId"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Population"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Place"},
+                    curl-type = Place
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "AvailableThemeMask"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Themes"},
+                    curl-type = Themes
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceTypeId"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceType"},
+                    curl-type = PlaceType
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of String}
+                "place",
+                "center",
+                "available-theme-mask",
+                "place-type-id",
+                "population"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant enum-marshaler:SOAPEnumMarshaler =
+            {SOAPEnumMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceTypeId"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceType"},
+                    curl-type = PlaceType
+                },
+                use-value? = true
+            }
+        {enum-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant enum-marshaler:SOAPEnumMarshaler =
+            {SOAPEnumMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionType"},
+                    curl-type = ProjectionType
+                },
+                use-value? = true
+            }
+        {enum-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant enum-marshaler:SOAPEnumMarshaler =
+            {SOAPEnumMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                use-value? = true
+            }
+        {enum-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant enum-marshaler:SOAPEnumMarshaler =
+            {SOAPEnumMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                use-value? = true
+            }
+        {enum-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
+                curl-type = ThemeBoundingBox,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ThemeName"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Sparseness"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "HiScale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionName"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "WestLongitude"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "NorthLatitude"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "EastLongitude"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "SouthLatitude"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "HiScale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionType"},
+                    curl-type = ProjectionType
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                }
+            },
+            {{Array-of String}
+                "theme",
+                "theme-name",
+                "sparseness",
+                "lo-scale",
+                "hi-scale",
+                "projection-id",
+                "projection-name",
+                "west-longitude",
+                "north-latitude",
+                "east-longitude",
+                "south-latitude"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://terraserver-usa.com/terraserver/", "ThemeName"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionName"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeInfo"},
+                curl-type = ThemeInfo,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Name"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Description"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Supplier"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "HiScale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionName"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "CopyrightNotice"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "HiScale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionId"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionType"},
+                    curl-type = ProjectionType
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "theme",
+                "name",
+                "description",
+                "supplier",
+                "lo-scale",
+                "hi-scale",
+                "projection-id",
+                "projection-name",
+                "copyright-notice"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://terraserver-usa.com/terraserver/", "Name"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "Description"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "Supplier"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "ProjectionName"},
+                    {XMLName "http://terraserver-usa.com/terraserver/", "CopyrightNotice"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant list-marshaler:SOAPListMarshaler =
+            {SOAPListMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "AvailableThemeMask"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Themes"},
+                    curl-type = Themes,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            }
+        {list-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Id"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                curl-type = TileId,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Scene"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "X"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Y"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Theme"},
+                    curl-type = Theme
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    curl-type = Scale
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of String}
+                "theme",
+                "scale",
+                "scene",
+                "x",
+                "y"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileMeta"},
+                curl-type = TileMeta,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Id"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "TileExists"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "NorthEast"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "SouthWest"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "SouthEast"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Capture"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Id"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "TileId"},
+                    curl-type = TileId
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthEast"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "SouthWest"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "SouthEast"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                    xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
+                    curl-type = LonLatPt
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "dateTime"},
+                    curl-type = DateTime
+                }
+            },
+            {{Array-of String}
+                "id",
+                "tile-exists",
+                "north-west",
+                "north-east",
+                "south-west",
+                "south-east",
+                "center",
+                "capture"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "UtmPt"},
+                curl-type = UtmPt,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://terraserver-usa.com/terraserver/", "Zone"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "X"},
+                {XMLName "http://terraserver-usa.com/terraserver/", "Y"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                }
+            },
+            {{Array-of String}
+                "zone",
+                "x",
+                "y"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://terraservice.net/TerraService.asmx"}
+    }
+    {construct-super service-location,
+        generated-using-version = "3"
+    }
+  }
+}
+
+{define-class public open AreaBoundingBox
+
+  field public north-west:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
+  field public north-east:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
+  field public south-west:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
+  field public south-east:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
+  field public center:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
+  field public nearest-place:#String
+  field public overlapping-theme-infos:#ArrayOfOverlappingThemeInfo
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      north-west:AreaCoordinate = {required-keyword "AreaBoundingBox.north-west"} asa AreaCoordinate,
+      north-east:AreaCoordinate = {required-keyword "AreaBoundingBox.north-east"} asa AreaCoordinate,
+      south-west:AreaCoordinate = {required-keyword "AreaBoundingBox.south-west"} asa AreaCoordinate,
+      south-east:AreaCoordinate = {required-keyword "AreaBoundingBox.south-east"} asa AreaCoordinate,
+      center:AreaCoordinate = {required-keyword "AreaBoundingBox.center"} asa AreaCoordinate,
+      nearest-place:#String = {uninitialized-value-for-type #String},
+      overlapping-theme-infos:#ArrayOfOverlappingThemeInfo = {uninitialized-value-for-type #ArrayOfOverlappingThemeInfo}
+    }
+    {if {keyword-supplied? north-west} then
+        set self.north-west = north-west}
+    {if {keyword-supplied? north-east} then
+        set self.north-east = north-east}
+    {if {keyword-supplied? south-west} then
+        set self.south-west = south-west}
+    {if {keyword-supplied? south-east} then
+        set self.south-east = south-east}
+    {if {keyword-supplied? center} then
+        set self.center = center}
+    {if {keyword-supplied? nearest-place} then
+        set self.nearest-place = nearest-place}
+    {if {keyword-supplied? overlapping-theme-infos} then
+        set self.overlapping-theme-infos = overlapping-theme-infos}
+  }
+
+}
+
+{define-class public open AreaCoordinate
+
+  field public tile-meta:TileMeta = {uninitialized-value-for-type TileMeta}
+  field public offset:LonLatPtOffset = {uninitialized-value-for-type LonLatPtOffset}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      tile-meta:TileMeta = {required-keyword "AreaCoordinate.tile-meta"} asa TileMeta,
+      offset:LonLatPtOffset = {required-keyword "AreaCoordinate.offset"} asa LonLatPtOffset
+    }
+    {if {keyword-supplied? tile-meta} then
+        set self.tile-meta = tile-meta}
+    {if {keyword-supplied? offset} then
+        set self.offset = offset}
+  }
+
+}
+
+{let public constant ArrayOfOverlappingThemeInfo:ClassType = {Array-of OverlappingThemeInfo}}
+
+{let public constant ArrayOfPlaceFacts:ClassType = {Array-of PlaceFacts}}
+
+{let public constant ArrayOfThemeBoundingBox:ClassType = {Array-of ThemeBoundingBox}}
+
+{define-class public open LonLatPt
+
+  field public lon:double
+  field public lat:double
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      lon:double = {uninitialized-value-for-type double},
+      lat:double = {uninitialized-value-for-type double}
+    }
+    {if {keyword-supplied? lon} then
+        set self.lon = lon}
+    {if {keyword-supplied? lat} then
+        set self.lat = lat}
+  }
+
+}
+
+{define-class public open LonLatPtOffset
+
+  field public point:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public xoffset:int
+  field public yoffset:int
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      point:LonLatPt = {required-keyword "LonLatPtOffset.point"} asa LonLatPt,
+      xoffset:int = {uninitialized-value-for-type int},
+      yoffset:int = {uninitialized-value-for-type int}
+    }
+    {if {keyword-supplied? point} then
+        set self.point = point}
+    {if {keyword-supplied? xoffset} then
+        set self.xoffset = xoffset}
+    {if {keyword-supplied? yoffset} then
+        set self.yoffset = yoffset}
+  }
+
+}
+
+{define-class public open OverlappingThemeInfo
+
+  field public local-theme:bool
+  field public theme:Theme
+  field public point:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public theme-name:#String
+  field public capture:DateTime = {uninitialized-value-for-type DateTime}
+  field public projection-id:ProjectionType
+  field public lo-scale:Scale
+  field public hi-scale:Scale
+  field public url:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      local-theme:bool = {uninitialized-value-for-type bool},
+      theme:Theme = {uninitialized-value-for-type Theme},
+      point:LonLatPt = {required-keyword "OverlappingThemeInfo.point"} asa LonLatPt,
+      theme-name:#String = {uninitialized-value-for-type #String},
+      capture:DateTime = {required-keyword "OverlappingThemeInfo.capture"} asa DateTime,
+      projection-id:ProjectionType = {uninitialized-value-for-type ProjectionType},
+      lo-scale:Scale = {uninitialized-value-for-type Scale},
+      hi-scale:Scale = {uninitialized-value-for-type Scale},
+      url:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? local-theme} then
+        set self.local-theme = local-theme}
+    {if {keyword-supplied? theme} then
+        set self.theme = theme}
+    {if {keyword-supplied? point} then
+        set self.point = point}
+    {if {keyword-supplied? theme-name} then
+        set self.theme-name = theme-name}
+    {if {keyword-supplied? capture} then
+        set self.capture = capture}
+    {if {keyword-supplied? projection-id} then
+        set self.projection-id = projection-id}
+    {if {keyword-supplied? lo-scale} then
+        set self.lo-scale = lo-scale}
+    {if {keyword-supplied? hi-scale} then
+        set self.hi-scale = hi-scale}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+  }
+
+}
+
+{define-class public open Place
+
+  field public city:#String
+  field public state:#String
+  field public country:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      city:#String = {uninitialized-value-for-type #String},
+      state:#String = {uninitialized-value-for-type #String},
+      country:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? city} then
+        set self.city = city}
+    {if {keyword-supplied? state} then
+        set self.state = state}
+    {if {keyword-supplied? country} then
+        set self.country = country}
+  }
+
+}
+
+{define-class public open PlaceFacts
+
+  field public place:Place = {uninitialized-value-for-type Place}
+  field public center:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public available-theme-mask:Themes = {uninitialized-value-for-type Themes}
+  field public place-type-id:PlaceType
+  field public population:int
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      place:Place = {required-keyword "PlaceFacts.place"} asa Place,
+      center:LonLatPt = {required-keyword "PlaceFacts.center"} asa LonLatPt,
+      available-theme-mask:Themes = {required-keyword "PlaceFacts.available-theme-mask"} asa Themes,
+      place-type-id:PlaceType = {uninitialized-value-for-type PlaceType},
+      population:int = {uninitialized-value-for-type int}
+    }
+    {if {keyword-supplied? place} then
+        set self.place = place}
+    {if {keyword-supplied? center} then
+        set self.center = center}
+    {if {keyword-supplied? available-theme-mask} then
+        set self.available-theme-mask = available-theme-mask}
+    {if {keyword-supplied? place-type-id} then
+        set self.place-type-id = place-type-id}
+    {if {keyword-supplied? population} then
+        set self.population = population}
+  }
+
+}
+
+{define-enum public PlaceType
+    unknown-place-type = "UnknownPlaceType",
+    air-rail-station = "AirRailStation",
+    bay-gulf = "BayGulf",
+    cape-peninsula = "CapePeninsula",
+    city-town = "CityTown",
+    hill-mountain = "HillMountain",
+    island = "Island",
+    lake = "Lake",
+    other-land-feature = "OtherLandFeature",
+    other-water-feature = "OtherWaterFeature",
+    park-beach = "ParkBeach",
+    point-of-interest = "PointOfInterest",
+    river = "River"
+}
+
+{define-enum public ProjectionType
+    geographic = "Geographic",
+    utm-nad27 = "UtmNad27",
+    utm-nad83 = "UtmNad83"
+}
+
+{define-enum public Scale
+    scale1mm = "Scale1mm",
+    scale2mm = "Scale2mm",
+    scale4mm = "Scale4mm",
+    scale8mm = "Scale8mm",
+    scale16mm = "Scale16mm",
+    scale32mm = "Scale32mm",
+    scale63mm = "Scale63mm",
+    scale125mm = "Scale125mm",
+    scale250mm = "Scale250mm",
+    scale500mm = "Scale500mm",
+    scale1m = "Scale1m",
+    scale2m = "Scale2m",
+    scale4m = "Scale4m",
+    scale8m = "Scale8m",
+    scale16m = "Scale16m",
+    scale32m = "Scale32m",
+    scale64m = "Scale64m",
+    scale128m = "Scale128m",
+    scale256m = "Scale256m",
+    scale512m = "Scale512m",
+    scale1km = "Scale1km",
+    scale2km = "Scale2km",
+    scale4km = "Scale4km",
+    scale8km = "Scale8km",
+    scale16km = "Scale16km"
+}
+
+{define-enum public Theme
+    photo = "Photo",
+    topo = "Topo",
+    relief = "Relief"
+}
+
+{define-class public open ThemeBoundingBox
+
+  field public theme:Theme
+  field public theme-name:#String
+  field public sparseness:int
+  field public lo-scale:Scale
+  field public hi-scale:Scale
+  field public projection-id:ProjectionType
+  field public projection-name:#String
+  field public west-longitude:double
+  field public north-latitude:double
+  field public east-longitude:double
+  field public south-latitude:double
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      theme:Theme = {uninitialized-value-for-type Theme},
+      theme-name:#String = {uninitialized-value-for-type #String},
+      sparseness:int = {uninitialized-value-for-type int},
+      lo-scale:Scale = {uninitialized-value-for-type Scale},
+      hi-scale:Scale = {uninitialized-value-for-type Scale},
+      projection-id:ProjectionType = {uninitialized-value-for-type ProjectionType},
+      projection-name:#String = {uninitialized-value-for-type #String},
+      west-longitude:double = {uninitialized-value-for-type double},
+      north-latitude:double = {uninitialized-value-for-type double},
+      east-longitude:double = {uninitialized-value-for-type double},
+      south-latitude:double = {uninitialized-value-for-type double}
+    }
+    {if {keyword-supplied? theme} then
+        set self.theme = theme}
+    {if {keyword-supplied? theme-name} then
+        set self.theme-name = theme-name}
+    {if {keyword-supplied? sparseness} then
+        set self.sparseness = sparseness}
+    {if {keyword-supplied? lo-scale} then
+        set self.lo-scale = lo-scale}
+    {if {keyword-supplied? hi-scale} then
+        set self.hi-scale = hi-scale}
+    {if {keyword-supplied? projection-id} then
+        set self.projection-id = projection-id}
+    {if {keyword-supplied? projection-name} then
+        set self.projection-name = projection-name}
+    {if {keyword-supplied? west-longitude} then
+        set self.west-longitude = west-longitude}
+    {if {keyword-supplied? north-latitude} then
+        set self.north-latitude = north-latitude}
+    {if {keyword-supplied? east-longitude} then
+        set self.east-longitude = east-longitude}
+    {if {keyword-supplied? south-latitude} then
+        set self.south-latitude = south-latitude}
+  }
+
+}
+
+{define-class public open ThemeInfo
+
+  field public theme:Theme
+  field public name:#String
+  field public description:#String
+  field public supplier:#String
+  field public lo-scale:Scale
+  field public hi-scale:Scale
+  field public projection-id:ProjectionType
+  field public projection-name:#String
+  field public copyright-notice:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      theme:Theme = {uninitialized-value-for-type Theme},
+      name:#String = {uninitialized-value-for-type #String},
+      description:#String = {uninitialized-value-for-type #String},
+      supplier:#String = {uninitialized-value-for-type #String},
+      lo-scale:Scale = {uninitialized-value-for-type Scale},
+      hi-scale:Scale = {uninitialized-value-for-type Scale},
+      projection-id:ProjectionType = {uninitialized-value-for-type ProjectionType},
+      projection-name:#String = {uninitialized-value-for-type #String},
+      copyright-notice:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? theme} then
+        set self.theme = theme}
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? description} then
+        set self.description = description}
+    {if {keyword-supplied? supplier} then
+        set self.supplier = supplier}
+    {if {keyword-supplied? lo-scale} then
+        set self.lo-scale = lo-scale}
+    {if {keyword-supplied? hi-scale} then
+        set self.hi-scale = hi-scale}
+    {if {keyword-supplied? projection-id} then
+        set self.projection-id = projection-id}
+    {if {keyword-supplied? projection-name} then
+        set self.projection-name = projection-name}
+    {if {keyword-supplied? copyright-notice} then
+        set self.copyright-notice = copyright-notice}
+  }
+
+}
+
+{let public constant Themes:ClassType = {Array-of String}}
+
+{define-class public open TileId
+
+  field public theme:Theme
+  field public scale:Scale
+  field public scene:int
+  field public x:int
+  field public y:int
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      theme:Theme = {uninitialized-value-for-type Theme},
+      scale:Scale = {uninitialized-value-for-type Scale},
+      scene:int = {uninitialized-value-for-type int},
+      x:int = {uninitialized-value-for-type int},
+      y:int = {uninitialized-value-for-type int}
+    }
+    {if {keyword-supplied? theme} then
+        set self.theme = theme}
+    {if {keyword-supplied? scale} then
+        set self.scale = scale}
+    {if {keyword-supplied? scene} then
+        set self.scene = scene}
+    {if {keyword-supplied? x} then
+        set self.x = x}
+    {if {keyword-supplied? y} then
+        set self.y = y}
+  }
+
+}
+
+{define-class public open TileMeta
+
+  field public id:TileId = {uninitialized-value-for-type TileId}
+  field public tile-exists:bool
+  field public north-west:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public north-east:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public south-west:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public south-east:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public center:LonLatPt = {uninitialized-value-for-type LonLatPt}
+  field public capture:DateTime = {uninitialized-value-for-type DateTime}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      id:TileId = {required-keyword "TileMeta.id"} asa TileId,
+      tile-exists:bool = {uninitialized-value-for-type bool},
+      north-west:LonLatPt = {required-keyword "TileMeta.north-west"} asa LonLatPt,
+      north-east:LonLatPt = {required-keyword "TileMeta.north-east"} asa LonLatPt,
+      south-west:LonLatPt = {required-keyword "TileMeta.south-west"} asa LonLatPt,
+      south-east:LonLatPt = {required-keyword "TileMeta.south-east"} asa LonLatPt,
+      center:LonLatPt = {required-keyword "TileMeta.center"} asa LonLatPt,
+      capture:DateTime = {required-keyword "TileMeta.capture"} asa DateTime
+    }
+    {if {keyword-supplied? id} then
+        set self.id = id}
+    {if {keyword-supplied? tile-exists} then
+        set self.tile-exists = tile-exists}
+    {if {keyword-supplied? north-west} then
+        set self.north-west = north-west}
+    {if {keyword-supplied? north-east} then
+        set self.north-east = north-east}
+    {if {keyword-supplied? south-west} then
+        set self.south-west = south-west}
+    {if {keyword-supplied? south-east} then
+        set self.south-east = south-east}
+    {if {keyword-supplied? center} then
+        set self.center = center}
+    {if {keyword-supplied? capture} then
+        set self.capture = capture}
+  }
+
+}
+
+{define-class public open UtmPt
+
+  field public zone:int
+  field public x:double
+  field public y:double
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      zone:int = {uninitialized-value-for-type int},
+      x:double = {uninitialized-value-for-type double},
+      y:double = {uninitialized-value-for-type double}
+    }
+    {if {keyword-supplied? zone} then
+        set self.zone = zone}
+    {if {keyword-supplied? x} then
+        set self.x = x}
+    {if {keyword-supplied? y} then
+        set self.y = y}
+  }
+
+}
+

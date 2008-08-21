@@ -1,0 +1,1104 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| XPath subset
+|| -------------------
+{define-class StandardXDMPath {inherits XDMPath}
+  
+  || XDMPath protocol
+  {getter public {source}:String
+    {return self._source}
+  }
+  {method public {search subject:XDMNode}:XDMNodeSet
+    {return {self.expression.apply subject}.as-XDMNodeSet}
+  }
+  {method public {evaluate subject:XDMNode}:XPathValue    
+    {return {self.expression.apply subject}}
+  }
+  || construction
+  field _source:String
+  field expression:Expression
+  field _parser:#XDMSearchParser  
+  {constructor {internal parser:XDMSearchParser}
+    set self._source = parser._source
+    set self.expression = parser.expression
+    {parser.commit}
+    || DEBUG
+    {if {process-debuggable?} then
+        set self._parser = parser}
+  }
+  let interned:{HashTable-of String, StandardXDMPath} =
+      {{HashTable-of String, StandardXDMPath}}
+  
+  || runtime factory
+  {factory {default 
+               query:String,
+               source-location:#CurlSource = null, 
+               ... || prefix declarations
+           }:StandardXDMPath
+    || qualify cache key with namespace declarations
+    let namespace-context:XDMNamespaceContext = 
+        {extend-namespace-context 
+            || use dynamic context when we can
+            context = 
+                {if-non-null source-location then 
+                    || but during macroexpansion, globals are inaccessible
+                    {XDMNamespaceContext}
+                 else xml-namespace-context}, 
+            {splice ...}}
+    let namespace-suffix:String = {namespace-context-digest namespace-context}
+    let query-key:String = namespace-suffix & query 
+    || use interned path if possible
+    let (path:StandardXDMPath, found?:bool) = 
+        {StandardXDMPath.interned.get-if-exists query-key}
+    {if not found? then
+        || parse and create if necessary
+        let parser:XDMSearchParser = 
+            {XDMSearchParser 
+                source-location = source-location,
+                namespace-context = namespace-context,
+                query}
+        set path = {StandardXDMPath.internal parser}
+        set StandardXDMPath.interned[query-key] = path
+    }            
+    {return path}
+  }
+  {method public {object-describe 
+                     out:TextOutputStream, locale:Locale}:void
+    {format out = out, locale = locale,
+        |"[%s "%s"]"|,
+        {type-of self}, self.source}
+  }
+}
+{define-class XDMSearchParser
+  || input
+  field constant _source:String
+  field constant _source-location:#CurlSource
+  || context
+  field constant namespace-context:XDMNamespaceContext
+  || result
+  field expression:Expression
+  || scan state
+  field terms-stream:{SeekableBufferedInputStream-of Term}
+  || parse state
+  field root-node:ParsedNode
+  field current-node:ParsedNode
+  
+  {constructor {default 
+                   source:String,
+                   source-location:#CurlSource = null,
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    || input
+    set self._source = source
+    set self._source-location = source-location
+    || context
+    set self.namespace-context = namespace-context
+    || state
+    set self.root-node = 
+        {ParsedNode "expression",
+            namespace-context = namespace-context}
+    set self.current-node = self.root-node
+    
+    || scan 
+    set self.terms-stream = {self.scan}
+    || parse    
+    {self.parse}
+    || compile
+    {self.root-node.commit}
+    set self.expression = {self.root-node.elaborate-expression}
+  }
+  || force internment of xmlnames
+  {method {commit}:void
+    {self.expression.visit
+        {proc {x:XPathAction}:void
+            {type-switch x
+             case x:MatchName do
+                let n:XDMName = x.name
+                set x.name = {XDMName n.namespace, n.local-name}}}}
+  }
+  
+  || recursive descent parser
+  || --------------------
+  {method {parse kind:String = "expression"}:void
+    {switch kind
+     case "path" do
+        {self.parse-path}
+     case "expression" do
+        {self.parse-path-expression}
+     else
+        {xdmq-exception {message Unexpected kind '{value kind}'}}}
+    {self.parse-eof}
+  }
+  {method {parse-path}:void
+    {self.push-state "path"}
+    let t:Term = {self.peek-one}
+    {switch t.kind
+     case "connector" do
+        || optional connector: absolute path
+        {self.read-one}
+        {self.note-root-step}
+        {self.note-term t}
+        {self.parse-relative-path}        
+     case "selector", "special", "axis" do
+        {self.push-state "step"}
+        {self.note-term {Term "connector", "/"}}
+        {self.parse-relative-path }
+    }
+    {self.pop-state}
+  }
+  {method {parse-relative-path}:void 
+    || required step
+    {self.parse-step}
+    || possible connector
+    let t:Term = {self.peek-one}
+    {switch t.kind
+     case "connector" do
+        {self.read-one}
+        {self.push-state "step"}
+        {self.note-term t}
+        {self.parse-relative-path}
+    }
+  }
+  {method {parse-step}:void   
+    let need-node?:bool = true
+    || possible axis
+    let tt:Term = {self.peek-one}
+    {switch tt.kind
+     case "axis" do
+        {self.read-one}
+        {self.note-term tt}
+     case "special" do
+        || expand abbreviations
+        {switch tt.text
+         case "@" do
+            {self.read-one}
+            {self.note-term {Term "axis", "attribute::"}}
+         case "." do
+            {self.read-one}
+            {self.note-term {Term "axis", "self::"}}
+            {self.note-term {Term "special", "node()"}}
+            set need-node? = false
+         case ".." do
+            {self.read-one}
+            {self.note-term {Term "axis", "parent::"}}
+            {self.note-term {Term "special", "node()"}}
+            set need-node? = false
+         else
+            {self.note-term {Term "axis", "child::"}}}
+     else
+        {self.note-term {Term "axis", "child::"}}}
+    || required node 
+    {if need-node? then
+        let t:Term = {self.read-one}
+        {switch t.kind
+         case "selector", "special" do
+            {self.note-term t}
+         else {self.unexpected t}}}
+    || possible predicates
+    {self.parse-predicates}
+    {self.pop-state}
+  }
+  {method {parse-predicates}:void
+    || possible open
+    let t:Term = {self.peek-one}
+    {switch t.text
+     case "\[" do
+        {self.read-one}
+        || required predicate
+        {self.parse-predicate}
+        || possible predicates
+        {self.parse-predicates}
+    }
+  }
+  {method {parse-predicate}:void
+    {self.push-state "predicate"}
+    || required expression
+    {self.parse-expression}
+    || required close
+    {self.parse-required-item "\]"}
+    {self.pop-state}
+  }
+  {method {parse-expression}:void
+    {self.parse-or-expression}
+  }
+  {method {parse-or-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-and-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "or" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-and-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-and-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-equality-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "and" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-equality-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-equality-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-relational-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "=", "!=" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-relational-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-relational-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-additive-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "<", "<=", ">=", ">" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-additive-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-additive-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-multiplicative-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "+", "-" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-multiplicative-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-multiplicative-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-unary-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "*", "div", "mod" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-unary-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-unary-expression}:void
+    {self.push-state "expression"}
+    || possible unary operator
+    let t:Term = {self.peek-one}
+    {switch t.text
+     case "-" do
+        {self.read-one}
+        {self.note-term t}
+        || required operand
+        {self.parse-unary-expression}
+     else
+        || required 
+        {self.parse-set-expression}
+    }
+    {self.pop-state}
+  }
+  {method {parse-set-expression}:void
+    {self.push-state "expression"}
+    || required 
+    {self.parse-path-expression}
+    || possible infix operators
+    {while true do
+        || possible infix operator
+        let t:Term = {self.peek-one}       
+        {switch t.text
+         case "union", "\|" do
+            {self.read-one}
+            {self.note-term t}
+            || required operand
+            {self.parse-path-expression}
+         else
+            {break}}}
+    {self.pop-state}
+  }
+  {method {parse-path-expression}:void
+    let t:Term = {self.peek-one}
+    {switch t.kind
+     case "connector", "selector", "special", "axis" do
+        {self.parse-path}
+     else
+        {self.push-state "expression"}
+        || required expression
+        {self.parse-primary-expression}
+        || possible predicates
+        {self.parse-predicates}
+        || possible relative path
+        let t:Term = {self.peek-one}
+        {switch t.kind
+         case "connector" do
+            {self.push-state "step"}
+            {self.read-one}
+            {self.note-term t}
+            {self.parse-relative-path}}        
+        {self.pop-state}
+    }
+  }
+  {method {parse-primary-expression}:void
+    let t:Term = {self.peek-one}
+    {switch t.kind
+     case "call" do
+        {self.read-one}
+        {self.push-state "call"}
+        {self.note-term t}
+        {self.parse-arguments}
+        {self.pop-state}
+     case "string", "double", "bool" do
+        {self.read-one}
+        {self.push-state "expression"}
+        {self.note-term t}
+        {self.pop-state}
+     else
+        || possible nested expression
+        {switch t.text            
+         case "\(" do
+            {self.read-one}
+            {self.parse-expression}
+            {self.parse-required-item "\)"}        
+         else {self.unexpected t}}}
+  }
+  {method {parse-arguments}:void
+    let t:Term = {self.peek-one}
+    {switch t.text
+     case "\)" do
+        || possible close
+        {self.read-one}
+        {return}}
+    || required argument
+    {self.parse-argument}
+    || possible aruments
+    {self.parse-more-arguments}
+  }
+  {method {parse-more-arguments}:void
+    let t:Term = {self.peek-one}
+    {switch t.text
+     case "\)" do
+        || possible close
+        {self.read-one}
+        {return}
+     case "," do
+        || possible comma
+        {self.read-one}
+        || required argument
+        {self.parse-argument}
+        || possible aruments
+        {self.parse-more-arguments}}
+  }
+  {method {parse-argument}:void
+    || required expression
+    {self.parse-expression}
+  }
+  {method {parse-eof}:void
+    let t:Term = {self.read-one}
+    {switch t.kind
+     case "EOF" do {return}
+     else {self.unexpected t}
+    }
+  }
+  {method {parse-required-item text:String}:void
+    let t:Term = {self.read-one}
+    {if t.text != text then
+        {self.unexpected t}}
+  }
+
+  || syntax tree construction
+  || --------------------
+  {method {push-state kind:String}:void
+    let node:ParsedNode = 
+        {ParsedNode kind, 
+            namespace-context = self.namespace-context}
+    {self.current-node.append node}
+    set self.current-node = node
+  }
+  {method {pop-state}:void
+    {if-non-null node = self.current-node.parent then
+        || node finished (this collapses extraneous nodes)
+        {self.current-node.commit}
+        set self.current-node = node
+     else
+        {xdmq-exception {message Top of stack in {value self}}}}
+  } 
+  {method {note-term t:Term}:void
+    {switch t.text
+     case "//" do
+        || HACK: rewrite '//' as '/descendant-or-self::node()/'
+        || TODO: maybe better in ParsedPath.elaborate
+        let terms:{Array-of Term} = self.current-node.terms
+        {assert self.current-node.kind == "step"}
+        {assert terms.empty?}
+        {terms.clear}
+        {terms.append {Term "connector", "/"}}
+        {terms.append {Term "axis", "descendant-or-self::"}}
+        {terms.append {Term "special", "node()"}}
+        {self.pop-state}    
+        {self.push-state "step"}
+        {self.current-node.terms.append {Term "connector", "/"}}
+     else
+        {self.current-node.terms.append t}}
+  }
+  || synthesized step
+  || --------------------
+  {method {note-root-step}:void
+    {self.push-state "step"}
+    {self.note-term {Term "connector", "/"}}
+    {self.note-term {Term "axis", "child::"}}
+    {self.note-term {Term "special", "root()"}}
+    {self.pop-state}
+    {self.push-state "step"}
+  }
+  || warnings
+  || --------------------
+  {method {unexpected t:Term}:void
+    let m:String =
+        {message Unexpected {value t} at position 
+            {value t.start-location}}
+    {if-non-null src = self._source-location then
+        {src.parse-error index = t.start-location, m}
+     else
+        {xdmq-exception m}}
+  }
+  || debugging  
+  || --------------------
+  {method public {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, "\[%s '%s'\]",
+        {type-of self}, self._source}
+  }
+  || term reader
+  || --------------------
+  {method {read-one}:Term
+    let (t:Term, empty?:bool) = {self.terms-stream.read-one}
+    {return 
+        {if empty? 
+         then {Term "EOF", ""}
+         else t}}
+  }
+  {method {peek-one}:Term
+    let (t:Term, empty?:bool) = {self.terms-stream.peek-one}
+    {return 
+        {if empty? 
+         then {Term "EOF", ""}
+         else t}}
+  }
+  
+  || scan input into terms
+  || --------------------
+  {method {scan}:{SeekableBufferedInputStream-of Term}
+    let in:TextInputStream = {self._source.to-InputStream}
+    let terms:{Array-of Term} = {scan-tokens in}
+    let out:{SeekableBufferedInputStream-of Term} = 
+        {{InputStream-of-from Term, {Array-of Term}} terms}
+    {return out}
+  }
+}
+|| exceptions
+|| --------------------
+{doc-next
+    {purpose Encapsulates exceptions which occur 
+        while parsing XDM Path expressions}
+}
+{define-class public XDMPathException {inherits Exception}
+  {constructor public {default ...}
+    {construct-super {splice ...}}
+  }
+}
+{doc-next
+    {purpose Throws a {docref XDMPathxception}}
+}
+{define-proc public {xdmq-exception ...}:never-returns
+    {throw {XDMPathException ...}}
+}
+|| namespace context
+|| --------------------
+{define-proc {namespace-context-digest context:XDMNamespaceContext}:String
+    let buf:StringBuf = {StringBuf} 
+    let ps:StringArray = {context.get-prefixes}
+    {ps.sort}
+    {for p in ps do
+        {if p == "xml" then
+            {continue}}
+        {buf.concat p}
+        {buf.append '\u0000'}
+        {buf.concat {non-null {context.get-uri p}}}
+        {buf.append '\u0000'}}
+    {return
+        {buf.to-String}}
+}
+|| parsed results
+|| --------------------
+{define-class abstract ParsedNode
+  field constant kind:String 
+  field constant terms:{Array-of Term}
+  field constant children:{Array-of ParsedNode}
+  field parent:#ParsedNode
+  || context
+  field constant namespace-context:XDMNamespaceContext
+  
+  {factory {default 
+               kind:String,
+               namespace-context:XDMNamespaceContext = xml-namespace-context
+           }:ParsedNode
+    {return 
+        {switch kind 
+         case "expression" do 
+            {ParsedExpression namespace-context = namespace-context}
+         case "call" do 
+            {ParsedCall namespace-context = namespace-context}
+         case "path" do 
+            {ParsedPath namespace-context = namespace-context}
+         case "predicate" do 
+            {ParsedPredicate namespace-context = namespace-context}
+         case "step" do 
+            {ParsedStep namespace-context = namespace-context}
+         else {xdmq-exception {message Unexpected kind '{value kind}'}}}}
+  }
+  {constructor {internal 
+                   kind:String,
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    set self.kind = kind
+    set self.children = {{Array-of ParsedNode}}
+    set self.terms = {{Array-of Term}}
+    set self.namespace-context = namespace-context
+  }
+  {method {append node:ParsedNode}:void
+    {self.children.append node}
+    set node.parent = self
+  }
+  || ParsedNode protocol
+  {method abstract {elaborate}:XPathAction}
+  
+  || strongly typed versions
+  {method {elaborate-expression}:Expression
+    let x:XPathAction = {self.elaborate}
+    {return
+        {type-switch x
+         case expr:Expression do expr
+         case path:PathFunction do
+            {PathExpression path}
+         else {xdmq-exception {message Expected Expression or PathFunction 
+                                  not {value x}}}}}
+  }
+  {method {elaborate-step}:PathStep
+    let x:XPathAction = {self.elaborate}
+    {return
+        {type-switch x
+         case step:PathStep do step
+         else {xdmq-exception {message Expected Match not {value x}}}}}
+  }
+  {method {elaborate-predicate}:MatchPredicate
+    let x:XPathAction = {self.elaborate}
+    {return
+        {type-switch x
+         case p:MatchPredicate do p
+         else {xdmq-exception {message Expected Match not {value x}}}}}
+  }
+  {method {elaborate-path}:PathFunction
+    let x:XPathAction = {self.elaborate}
+    {return
+        {type-switch x
+         case path:PathFunction do path
+         else {xdmq-exception {message Expacted PathFunction not {value x}}}}}
+  } 
+  || syntax tree simplification: collapse extraneous nodes
+  {method {commit}:void
+    {if self.extraneous? then
+        {if-non-null parent = self.parent then
+            let node:ParsedNode = self.child
+            let index:int = {parent.children.find self}
+            set parent.children[index] = node
+            set node.parent = parent
+            set self.parent = null
+        }}
+  }
+  || can be replaced by its child
+  {getter {extraneous?}:bool
+    {return false}
+  }
+
+  || TODO: standardize error reporting 
+  || - expected what, where, or NYI
+  {getter {term}:Term
+    {if self.terms.size != 1 then
+        {xdmq-exception {message Expected one term in {value self}}}
+     else
+        {return self.terms[0]}}
+  }
+  {getter {child}:ParsedNode
+    {if self.children.size != 1 then
+        {xdmq-exception {message Expected one child in {value self}}}
+     else
+        {return self.children[0]}}
+  }  
+  || for trace output
+  {getter {depth}:int
+    {return
+        {if-non-null parent = self.parent then
+            1 + parent.depth
+         else 0}}
+  }
+  || debugging
+  {getter {summary}:String
+    {return ""}
+  }
+  {method public {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, "\[%s '%s'\]",
+        {type-of self}, self.summary}
+  }
+}
+{define-class ParsedExpression {inherits ParsedNode}
+  {constructor {default 
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    {construct-super.internal "expression",
+        namespace-context = namespace-context}
+  }  
+  || can be replaced by its child when
+  {getter {extraneous?}:bool
+    {return self.terms.empty? and self.children.size == 1 }
+  }
+  {method {elaborate}:Expression
+    let expr:#Expression =
+        {switch self.children.size
+         case 0 do
+            {switch self.term.kind
+             case "string", "double", "bool" do
+                {LiteralExpression   
+                    {XPathValue self.term.value}}
+             else
+                {xdmq-exception {message Expected Term "literal",
+                                    not {value self.term}}}}
+         case 1 do
+            {if self.terms.empty? then
+                || simple value
+                {self.child.elaborate-expression}
+             else
+                || unary operator
+                let t:String = self.terms[0].text
+                {switch t
+                 case "-" do
+                    {UnaryExpression
+                        {proc {x:XPathValue}:XPathValue
+                            {return -x.as-double}},
+                        {self.children[0].elaborate-expression}}
+                 else
+                    {xdmq-exception {message Unexpected unary operator}}}}
+         else
+            {if self.terms.empty? then
+                {if self.children.size > 1 then
+                    || expression in path
+                    let steps:{Array-of PathStep} = {{Array-of PathStep}}
+                    {for x in self.children do
+                        {if steps.empty? then 
+                            || initial step from expression
+                            {steps.append 
+                                {PathStep 
+                                    {MatchExpression {x.elaborate-expression}}, 
+                                    {{Array-of MatchPredicate}}}}
+                         else 
+                            {type-switch {x.elaborate}
+                             case x:PathStep do
+                                || subsequent step
+                                {steps.append x}
+                             case x:MatchPredicate do
+                                || predicate for initial step
+                                {{steps.top-of-stack}.predicates.append x}
+                             else
+                                {xdmq-exception {message Expected step or predicate}}}}}
+                    || composite expression expression
+                    {PathExpression {PathFunction steps}}
+                 else
+                    || simple expression
+                    {self.child.elaborate-expression}}
+             else
+                || infix operator
+                let t:String = self.terms[0].text
+                || determine expression type
+                || TODO: validate constraints on correctly parsed source
+                || - subsequent terms in same class
+                || - self.terms.size + 1 == self.children.size
+                let T:Type =
+                    {switch t
+                     case "and", "or" do 
+                        BooleanExpression
+                     case "=", "!=", ">=", ">", "<=", "<" do 
+                        CompareExpression
+                     case "+", "-", "*", "div", "mod" do 
+                        ArithmeticExpression
+                     case "union", "\|" do 
+                        SetExpression
+                     else 
+                        {xdmq-exception {message Unrecognized operator '{value t}'}}}
+                || right-associative operators: elaborate from end (none are)
+||--            let last:int = self.terms.size
+||--            let exp:Expression = {self.children[last].elaborate-expression}
+||--            {for i = last - 1 downto 0 do
+||--            {for i = last - 1 downto 0 do
+||--                {with-compiler-directives allow-any-calls? = true do
+||--                    || TODO: use "factory proc" to avoid any-call
+||--                    set exp = {T self.terms[i].text, 
+||--                                  {self.children[i].elaborate-expression},
+||--                                  exp} asa Expression}}
+                || left-associative operators: elaborate from start
+                let exp:Expression = {self.children[0].elaborate-expression}
+                {for i = 0 below self.terms.size do
+                    {with-compiler-directives allow-any-calls? = true do
+                        || TODO: use "factory proc" to avoid any-call
+                        set exp = {T self.terms[i].text, exp, 
+                                      {self.children[i+1].elaborate-expression}
+                                  } asa Expression}}
+                exp}}
+    {if-non-null expr then
+        {return expr}
+     else
+        {xdmq-exception {message Could not make expression with 
+                            {value self.children.size} terms}}}
+  }
+}
+{define-class ParsedCall {inherits ParsedNode}
+  {constructor {default 
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    {construct-super.internal "call",
+        namespace-context = namespace-context}
+  }
+  {method {elaborate}:Expression
+    || function name
+    let name:String = self.term.text
+    set name = {name.substr 0, name.size - 1}
+    || special context accessors
+    {switch name
+     case "position", "last", "_context-node" do
+        || NOTE: "context-node" is internal, not XPath
+        {return {ContextExpression name}}
+    }
+    || otherwise, look up function
+    let xp-functions:FunctionSpecs = {get-function-specs}
+    let (function:FunctionSpec, found?:bool) = 
+        {xp-functions.get-if-exists name}
+    {if not found? then
+        {xdmq-exception {message Unknown function '{value name}'}}}
+    || validate argument list
+    let args:{Array-of Expression} = {{Array-of Expression}}
+    {for x in self.children do
+        {args.append {x.elaborate-expression}}}
+    let have-args:int = args.size
+    let need-args:int = function.type.num-args
+    {if have-args == need-args then
+        || argments match: OK
+     elseif function.from-context? and have-args + 1 == need-args then
+        || first argument implicit from context
+        || TODO: does this apply only to single optional arg ?
+        {args.insert {ContextExpression "_context-node"}, 0}
+     else
+        {xdmq-exception {message Function '{value name}' 
+                            expects {value need-args} arguments
+                            not {value have-args}}}}
+    || invoke function
+    {with-compiler-directives allow-implicit-any-casts? = true do
+        {return
+            {switch args.size
+             case 0 do
+                {xdmq-exception {message NYI: No arguments}}
+             case 1 do
+                {UnaryExpression function.proc, args[0]}
+             case 2 do
+                {BinaryExpression function.proc, args[0], args[1]}
+             case 3 do
+                {TernaryExpression function.proc, args[0], args[1], args[2]}
+             else 
+                {xdmq-exception {message NYI: Too many arguments 
+                                    ({value have-args})}}}}}
+  }
+}
+{define-class ParsedPath {inherits ParsedNode}
+  {constructor {default 
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    {construct-super.internal "path",
+        namespace-context = namespace-context}
+  }
+  {method {elaborate}:PathFunction
+    let steps:{Array-of PathStep} = {{Array-of PathStep}}    
+    {for x in self.children do
+        {switch x.kind
+         case "step" do
+            {steps.append {x.elaborate-step}}
+         else
+            {xdmq-exception {message Unexpected parsed node '{value x.kind}'}}
+        }}
+    {return {PathFunction steps}}
+  }
+}
+{define-class ParsedPredicate {inherits ParsedNode}
+  {constructor {default 
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    {construct-super.internal "predicate",
+        namespace-context = namespace-context}
+  }
+  {method {elaborate}:MatchPredicate
+    {return
+        || NOTE: MatchPredicate handles special case 
+        || -- Literal N ==> position()=N
+        || NOTE: MatchPredicate.forward? set by ParsedStep.elaborate
+        {MatchPredicate 
+            {self.child.elaborate-expression}}}
+  }
+}
+{define-class ParsedStep {inherits ParsedNode}
+  {constructor {default 
+                   namespace-context:XDMNamespaceContext = xml-namespace-context}
+    {construct-super.internal "step",
+        namespace-context = namespace-context}
+  }
+  {method {elaborate}:PathStep
+    || NOTE: abbreviations are already expanded
+    let m:#Match = 
+        {switch self.terms.size
+         case 3 do
+            let node:Term = self.terms[2]
+            let axis:Term = self.terms[1]
+            {assert self.terms[0].kind == "connector"}
+            let name:String = node.text
+            let direction:PathDirection =
+                {switch axis.text
+                 case "child::" do PathDirection.children
+                 case "ancestor::" do PathDirection.ancestors
+                 case "ancestor-or-self::" do PathDirection.ancestors
+                 case "descendant::" do PathDirection.descendants
+                 case "descendant-or-self::" do PathDirection.descendants
+                 case "self::" do PathDirection.self
+                 case "parent::" do PathDirection.parent
+                 case "attribute::" do PathDirection.attribute
+                 case "preceding-sibling::" do PathDirection.preceding-sibling
+                 case "following-sibling::" do PathDirection.following-sibling
+                 case "preceding::" do PathDirection.preceding
+                 case "following::" do PathDirection.following
+                 else
+                    {xdmq-exception {message Unexpected axis '{value axis}'}}}
+            let include-self?:bool = 
+                {switch axis.text
+                 case "ancestor-or-self::" do true
+                 case "descendant-or-self::" do true
+                 else false}
+            let test-kind:PathTest =
+                {switch name
+                 case "*" do PathTest.element
+                 case "node()" do PathTest.node
+                 case "text()" do PathTest.text
+                 case "processing-instruction()" do PathTest.processing-instruction
+                 case "root()" do PathTest.root
+                 else PathTest.name}
+            
+            || TODO: missing cases
+            || - self X text processing-instruction
+            || - sibling X text processing-instruction
+            
+            let xdmname:{proc-type {String}:XDMName} =
+                {proc {name:String}:XDMName
+                    || NOTE: these are not interned, 
+                    || - (because macroexpansion can not access globals)
+                    || - they will be interned later
+                    || - when StandardXDMPath calls XDMPathParser.commit
+                    {return 
+                        {XDMName.from-String-internal name,
+                            namespace-context = self.namespace-context}}}
+            let spec:Match =
+                {switch direction
+                    
+                 case PathDirection.children do
+                    {switch test-kind 
+                     case PathTest.element do {MatchAnyElement} 
+                     case PathTest.node do {MatchAnyNode}
+                     case PathTest.name do {MatchElement {xdmname name}}
+                     case PathTest.text do {MatchTextChildren}
+                     case PathTest.processing-instruction do {MatchProcessingInstructionChildren}
+                     case PathTest.root do {MatchRoot}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.descendants do
+                    {switch test-kind 
+                     case PathTest.element do 
+                        {MatchAnyDescendant include-self? = include-self?}
+                     case PathTest.node do 
+                        {MatchAnyNodeDescendant include-self? = include-self?}
+                     case PathTest.name do 
+                        {MatchDescendant {xdmname name}, include-self? = include-self?}
+                     case PathTest.text do {MatchTextDescendants}
+                     case PathTest.processing-instruction do {MatchProcessingInstructionChildren}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.self do
+                    {switch test-kind 
+                     case PathTest.node, PathTest.element do {MatchSelf}
+                     case PathTest.name do {MatchSelfName {xdmname name}}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.parent do
+                    {switch test-kind 
+                     case PathTest.node, PathTest.element do {MatchParent}
+                     case PathTest.name do {MatchParentName {xdmname name}}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.ancestors do
+                    {switch test-kind 
+                     case PathTest.node, PathTest.element do 
+                        {MatchAnyAncestor include-self? = include-self?}
+                     case PathTest.name do 
+                        {MatchAncestor {xdmname name}, include-self? = include-self?}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.preceding-sibling do
+                    {switch test-kind 
+                     case PathTest.element do {MatchAnySibling following? = false} 
+                     case PathTest.node do {MatchAnyNodeSibling following? = false} 
+                     case PathTest.name do {MatchSibling {xdmname name}, following? = false} 
+                     case PathTest.text do {MatchTextSibling following? = false}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.following-sibling do
+                    {switch test-kind 
+                     case PathTest.element do {MatchAnySibling following? = true}
+                     case PathTest.node do {MatchAnyNodeSibling following? = true} 
+                     case PathTest.name do {MatchSibling {xdmname name}, following? = true}
+                     case PathTest.text do {MatchTextSibling following? = true}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.preceding do
+                    {switch test-kind
+                     case PathTest.element do {MatchAnyRelative following? = false} 
+                     case PathTest.node do {MatchAnyNodeRelative following? = false}  
+                     case PathTest.name do {MatchRelative {xdmname name}, following? = false}
+                     case PathTest.text do {MatchTextRelative following? = false}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.following do
+                    {switch test-kind 
+                     case PathTest.element do {MatchAnyRelative following? = true} 
+                     case PathTest.node do {MatchAnyNodeRelative following? = true} 
+                     case PathTest.name do {MatchRelative {xdmname name}, following? = true}
+                     case PathTest.text do {MatchTextRelative following? = true}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 case PathDirection.attribute do
+                    {switch test-kind 
+                     case PathTest.element do {MatchAnyAttribute} 
+                     case PathTest.name do {MatchAttribute {xdmname name}}
+                     else
+                        {xdmq-exception {message Unexpected test '{value test-kind.name}'}}}
+                    
+                 else
+                    {xdmq-exception {message Unexpected direction '{value direction.name}'}}}
+            spec
+         else 
+            || wrong number of terms
+            null}
+    {if-non-null m then
+        let predicates:{Array-of MatchPredicate} = {{Array-of MatchPredicate}}
+        {for x in self.children do
+            {switch x.kind
+             case "predicate" do
+                let p:MatchPredicate = {x.elaborate-predicate}
+                || note axis direction needed for "proximity-position"
+                set p.forward? = m.forward?
+                {predicates.append p}
+             else
+                {xdmq-exception {message Unexpected parsed node '{value x.kind}'}}
+            }}
+        let step:PathStep = {PathStep m, predicates}
+        {return step}
+     else
+        {xdmq-exception {message Could not make path step with 
+                            {value self.terms.size} terms}}}
+  }
+}
+{define-enum PathDirection
+    children,
+    descendants,
+    ancestors,
+    self,
+    parent,
+    attribute,
+    following,
+    preceding,
+    following-sibling,
+    preceding-sibling
+}
+{define-enum PathTest
+    node,
+    element,
+    text,
+    processing-instruction,
+    name,
+    root
+    || TODO: wildcard
+}
+

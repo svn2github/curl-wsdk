@@ -1,0 +1,142 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from CURL.DATA-ACCESS.CONNECTED}
+{import * from COM.CURL.WSDK.WS-CONNECTED-RECORDSET}
+
+{define-proc {test-insert-form 
+                 rs:RecordSet, 
+                 ...
+             }:(RecordForm, Record)
+    let display:Table = {Table columns = 2}
+    let r:Record = {rs.new-record}
+    {rs.append r}
+    let form:RecordForm = 
+        {RecordForm display,
+            display-navigation-panel? = false,
+            record-source = rs,
+            ...}
+    let last:int = rs.size - 1
+    set form.current-index = last
+    {for f in rs.fields do
+        {display.add
+            {row-prototype
+                {text {value f.caption}},
+                {TextField width = 2in,
+                    {bind value to f.name}}}}}
+    {return form, r}
+}
+
+{try
+    let service-home:Url =  {url "http://localhost/SERVER/soap-services"}
+    let service-location:Url = {service-home.concat "q-wsconnection.php"}
+    let con:WSConnection = 
+        {WSConnection service-location = service-location}
+    
+    let size-limit:int = 15
+    let w:StopWatch = {StopWatch}
+    {w.reset}{w.start}
+    let rs:ConnectedRecordSet = 
+        {con.create-record-set "test", 
+            request-modifiable? = true,
+            size-limit = size-limit,
+            "select * from states"
+        }
+    {w.stop}{dump {w.elapsed}}
+    let rg:RecordGrid =
+        {RecordGrid 
+            record-source = rs,
+            {RecordGridColumn "State"},
+            {RecordGridColumn "Population",
+                format-spec = "%.15g", 
+                halign = "right"},
+            width = {add-stretch}}
+    {VBox 
+        hstretch? = true,
+        {bold WSDK Connected RecordSet Web Service},
+        {HBox
+            spacing = 6pt,
+            margin = 3pt,
+            {CommandButton label = {message Test},
+                {on Action do
+                    let insert:String =
+                        "INSERT INTO states (State, Region, Population)"
+                    let n:int =
+                        {con.execute "test",
+                            {StringArray
+                                insert & "VALUES ('Alaska','West', NULL)"
+||--                                insert & "VALUES ('Alaska','West', 100000)",
+||--                                insert & "VALUES ('Alaska','West', 100000)"
+                            }}
+                }},
+            {CommandButton label = {message Insert},
+                {on Action do
+                    let (form:RecordForm, r:Record) =
+                        {test-insert-form rs,
+                            vorigin = "top"}
+                    let result:String =
+                        {popup-message 
+                            cancel? = true,
+                            width = 4in,
+                            height = 3in,
+                            {ScrollBox
+                                height = {add-stretch},
+                                valign = "top",
+                                form}}
+                    {switch result
+                     case "ok" do
+                        {form.data-binding-context.update}
+                     else
+                        {r.delete}}
+                }},
+            {CommandButton label = {message Delete},
+                {on Action do                    
+                    let rs:{Array-of Record} = {{Array-of Record}}
+                    {for i in rg.selection.records do
+                        {rs.append rg.records[i]}}
+                    {for r in rs do
+                        {r.delete}}
+                }},
+            {CommandButton label = {message More records},
+                {on Action do
+                    {if rs.size < size-limit then
+                        {popup-message
+                            {message All records are already available}}
+                     else
+                        set size-limit = size-limit * 2
+                        {with-busy-cursor
+                            {rs.fill size-limit = size-limit}}}}},
+            {CommandButton label = {message Less records},
+                {on Action do
+                    {if size-limit <= 1 then
+                        {popup-message
+                            {message Can not request less than one record}}
+                     else
+                        set size-limit = {ceiling size-limit / 2} asa int
+                        {with-busy-cursor
+                            {rs.fill size-limit = size-limit}}}}},
+            {Fill}},
+        {text-width-display rg}
+    }
+ catch e:Exception do
+    {paragraph
+        Unable to connect to {bold WSConnection Web Service}:        
+        {pre color = "red", {value e}}
+    }
+}
+

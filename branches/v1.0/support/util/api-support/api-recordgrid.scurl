@@ -1,0 +1,83 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-proc public {api-recordgrid
+                        rs:RecordSet,
+                        font-size:Distance = 8pt,
+                        ...
+                    }:RecordGrid
+    let grid:RecordGrid =
+        {RecordGrid record-source = rs,
+            sort = "package,class,member",
+            font-size = font-size,
+            width = {add-stretch},
+            automatic-columns? = false,
+||--                {RecordGridColumn "package"},
+            {RecordGridColumn "class", width = 1.5in},
+            {RecordGridColumn "member", width = 1.5in},
+            {RecordGridColumn "kind", width = .75in},
+            {RecordGridColumn "type", width = {make-elastic}},
+            {splice ...}}
+    || hack for printing entire grid
+    || attempt to predict total size
+    || to override, specify height in rest args
+    {if grid.height == null then
+        {grid.add-event-handler autosize-hack}
+    }
+    {return grid}
+}
+{let autosize-hack:EventHandler =
+    {on AttachEvent at g:RecordGrid do
+        || one time only calculation
+        {g.remove-event-handler autosize-hack}
+        || await layout so bounds known
+        {after 0s do
+            let bounds:GRect = {g.get-bounds}
+            let font-size:Distance = 
+                {g.any-to-Distance g.font-size,
+                    convert-font-relative-values? = true}
+            || try to obtain two representative cells
+            let dy:Distance = font-size * 3
+            let y0:Distance = -bounds.ascent
+            let y1:Distance = y0 + dy
+            let y2:Distance = y1 + dy
+            let (cell1:#RecordGridCell, row1:int, col1:int) =
+                {g.grid-objects-at 0pt, y1}
+            let (cell2:#RecordGridCell, row2:int, col2:int) =
+                {g.grid-objects-at 0pt, y2}
+            let dh-fallback:Distance = 1.1 * (font-size + 6pt)
+            let dh:Distance =
+                {if-non-null cell1 then
+                    {if-non-null cell2 then
+                        let dr:int = row2 - row1
+                        {if dr > 0 then
+                            || estimate height per row
+                            || - assumes homogeneous rows, as is usual
+                            let (xx1:Distance, yy1:Distance) = 
+                                {cell1.get-origin-in-graphical-ancestor g}
+                            let (xx2:Distance, yy2:Distance) = 
+                                {cell2.get-origin-in-graphical-ancestor g}
+                            (yy2 - yy1) / dr
+                         else dh-fallback}
+                     else dh-fallback}
+                 else dh-fallback}
+            || account for header and nav-panel width fudge factor
+            let height:Distance = dh * (g.record-source.size + 3)
+            || set height explicit height preference
+            || - will not adjust for record-source changes
+            set g.height = {make-elastic preferred-size = height}
+        }}
+}

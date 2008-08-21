@@ -1,0 +1,747 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| change notification
+|| --------------------
+{doc-next ||=== XDMEvent
+  {purpose Superclass for {docref XDMDocument} notification events.}
+  {details
+    {ctext XDMEvent}s are fired by {ctext XDMDocument}s at 
+    themselves in order to indicate changes to their contents.
+
+    Known subclasses: 
+    {itemize
+        {item {docref XDMNodesChanged}}
+        {itemize
+            {item {docref XDMNodesBulkChanges}}
+            {item {docref XDMNodeModified}}
+            {itemize
+                {item {docref XDMNodeAdded}}
+                {item {docref XDMNodeRemoved}}
+            }
+        }
+    }
+  }
+}
+{define-class public XDMEvent {inherits Event}
+}
+{doc-next ||=== XDMNodesChanged
+  {purpose Indicates a change to the contents of an {docref XDMDocument}.}
+}
+{define-class public XDMNodesChanged {inherits XDMEvent}
+}
+{doc-next ||=== XDMNodesBulkChanges
+    {purpose Indicates the contents of an {docref XDMDocument} 
+        have been substantially changed.}
+}
+{define-class public XDMNodesBulkChanges {inherits XDMNodesChanged}
+}
+{doc-next ||=== XDMNodeModified
+  {purpose Indicates a change to the contents of an {docref XDMNode}}
+}
+{define-class public XDMNodeModified {inherits XDMNodesChanged}
+  {doc-next ||=== XDMNodeModified.node
+    {purpose The affected {docref XDMNode}.}
+  }
+  field public constant node:XDMNode
+  {doc-next ||=== XDMNodeModified.default
+    {purpose Construct this object.}
+  }
+  {constructor public {default node:XDMNode}
+    set self.node = node
+  }
+}
+{doc-next ||=== XDMNodeAdded
+  {purpose Indicates the addition of an {docref XDMNode}}
+}
+{define-class public XDMNodeAdded {inherits XDMNodeModified}
+  {doc-next ||=== XDMNodeModified.default
+    {purpose Construct this object.}
+  }
+  {constructor public {default node:XDMNode}
+    {construct-super node}
+  }
+}
+{doc-next ||=== XDMNodeRemoved
+    {purpose Indicates the removal of an {docref XDMNode}}
+}
+{define-class public XDMNodeRemoved {inherits XDMNodeModified}
+  {doc-next ||=== XDMNodeModified.node
+    {purpose The removed {docref XDMNode}.}
+  }
+  field public constant removed:XDMNode
+  {doc-next ||=== XDMNodeModified.default
+    {purpose Construct this object.}
+  }
+  {constructor public {default node:XDMNode, removed:XDMNode}
+    set self.removed = removed
+    {construct-super node}
+  }
+}
+
+
+|| whitespace
+|| --------------------
+{doc-next ||=== xml-whitespace?
+    {purpose
+        Determines whether the supplied argument contains
+        only XML whitespace characters
+        (' ', '\\t', '\\n', '\\r')}
+}
+{define-proc public {xml-whitespace? s:StringInterface}:bool
+    {for c in s do
+        {switch c
+         case ' ', '\t', '\n', '\r' do 
+            || whitespace: continue
+         else
+            || not whitespace
+            {return false}}}
+    {return true}
+}
+
+|| namespace declarations
+|| --------------------
+{doc-next ||=== XDMNamespaceDeclaration
+    {purpose Represents an XML namespace prefix declaration}
+}
+{define-class public abstract XDMNamespaceDeclaration {inherits XDMNode}
+  {doc-next
+    {purpose
+        Constructs an instance of a {ctext XDMNamespaceDeclaration}.
+        {parameter prefix, the prefix  of the declaration}
+        {parameter namespace, the namespace of the declaration}
+    }
+  }
+  || NOTE: some parts of protocol don't make sense for NamespaceDeclaration
+  {factory public {default
+                      prefix:String,
+                      namespace:String
+                  }:StandardXDMNamespaceDeclaration
+    {return {StandardXDMNamespaceDeclaration prefix, namespace}}
+  }
+  {doc-next ||=== XDMNamespaceDeclaration.xmlname-for
+    {purpose Create an {docref XDMName} in this namespace.}
+  }
+  {method public {xmlname-for local-name:String}:XDMName
+    {return {XDMName self.namespace, local-name}}
+  }
+}
+{doc-next ||=== XDMNamespaceDeclarations
+    {purpose Represent a group of XML namespace prefix declarations.}
+}
+{define-class public abstract XDMNamespaceDeclarations {inherits XDMObject}
+  {factory public {default ...}:StandardXDMNamespaceDeclarations
+    {return {StandardXDMNamespaceDeclarations {splice ...}}}
+  }
+  {method public abstract {get-declaration prefix:String}:XDMNamespaceDeclaration
+  }
+  {method public abstract {add-declaration a:XDMNamespaceDeclaration}:void
+  }
+  {method public abstract {remove-declaration prefix:String}:void
+  }
+  {method public abstract {clear-declarations}:void
+  }
+  || NamespaceSupport API
+  {method public abstract {get-uri prefix:String}:#String
+  }
+  {method public abstract {get-prefix namespace:String}:#String
+  }
+  {method public abstract {get-prefixes-for-uri namespace:String}:StringArray
+  }
+  {method public abstract {get-prefixes}:StringArray
+  }
+  {method public abstract {declare-prefix? prefix:String, namespace:String}:bool
+  }
+  || Association-of API
+  {getter public abstract {empty?}:bool
+  }
+  {method public abstract {key-exists? prefix:String}:bool
+  }
+  || XDMObject API
+  {method public abstract {clone}:XDMNamespaceDeclarations
+  }
+  || adapters
+  {method public abstract {to-Arguments}:Arguments
+  }
+}
+
+|| namespace context
+|| --------------------
+{let public constant XDMNamespaceContext:ClassType = 
+    XDMNamespaceDeclarations
+}
+{doc-next ||=== xml-namespace-context
+    {purpose Defines global XML namespace prefix declarations.}
+    {notes 
+        Use {docref with-namespace-declarations} 
+        to declare prefixes temporarily}
+}
+{let public xml-namespace-context:XDMNamespaceContext =
+    {XDMNamespaceContext}
+}
+
+{doc-next ||=== with-namespace-declarations
+    {purpose 
+        Execute some code with specified XML namespace prefix declarations.}
+    {syntax
+        The "with-namespace-declarations" macro uses the following syntax:
+        {ctext
+            {with-namespace-declarations
+                {metavar prefix} = {metavar "namespace"}
+                [, {metavar prefix} = {metavar "namespace"}]*
+             do
+                {metavar body}
+            }
+        }}
+    {details
+        Extends the declarations in {docref xml-namespace-context}
+        for the duration of the enclosed code.}
+}
+{define-macro public 
+    {with-namespace-declarations
+        ?specs:{comma-sequence ?:identifier = ?:{literal String}}
+     do 
+        ?body:verbatim}
+    let keywords:CurlSource =
+        {if specs.size == 0 
+         then {EmptySource}
+         else {expand-template , ?specs}}
+    let result:CurlSource =
+        {expand-template
+            {with-namespace-declarations-aux 
+                {proc {}:any
+                    {return {value ?body}}}
+                ?keywords}
+        }
+    {return result}
+}
+{define-proc {with-namespace-declarations-aux 
+                 action:{proc-type {}:any},
+                 ... || prefix declarations
+             }:any
+    {return
+        {with xml-namespace-context = {xml-namespace-context.clone} asa XDMNamespaceContext do
+            {extend-namespace-context {splice ...}}
+            {action}
+        }}
+}
+{define-proc public {extend-namespace-context 
+                         context:XDMNamespaceContext = xml-namespace-context,
+                         ...}:XDMNamespaceContext
+    {for (x, p) in ... do
+        {if-non-null p then
+            {type-switch x
+             case x:String do
+                {context.add-declaration {XDMNamespaceDeclaration p, x}}
+             else
+                || disallowed by 'with-namespace-declarations'
+                {xdm-exception {lmessage Namespace URI must be a String}}}
+         else
+            || disallowed by 'with-namespace-declarations'
+            {xdm-exception {lmessage Positional arguments not allowed}}}}
+    {return context}
+}
+
+|| escape xml special characters
+|| --------------------
+{let constant package specials:String = 
+    "<&'\">"
+}
+
+{let constant package escapes:StringVec = 
+    {StringVec "lt", "amp", "apos", "quot", "gt"}
+}
+{define-proc public {format-xml-string 
+                         characters:StringInterface,
+                         out:#TextOutputStream = null
+                     }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+    
+    || for each character
+    {for c in characters do
+        || is it special?
+        let i:int = {specials.find c}
+        {if i >= 0 then
+            || special: write escaped equivalent
+            {out.write-one '&'}
+            {out.write-one-string escapes[i]}
+            {out.write-one ';'}
+         else
+            || standard: write as is
+            {out.write-one c}
+        }
+    }
+    
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+}
+
+|| output xml declaration
+|| --------------------
+{define-proc public {format-xml-declaration
+                        out:TextOutputStream,
+                        encoding:CharEncoding = 
+                            out.character-encoding
+                    }:void
+    
+    || Write out the XML declaration.
+    {out.write-one-string
+        "<?xml version='1.0'"
+    }
+    
+    || Write out the character encoding, if any.
+    {if-non-null enc = 
+        {char-encoding-to-http-charset encoding}
+     then 
+        {out.write-one-string " encoding='"}
+        {out.write-one-string enc}
+        {out.write-one-string "'"}
+    }
+
+    || Close the XML declaration.
+    {out.write-one-string " standalone='yes'?>\n"}
+}
+
+|| base-url merging
+|| --------------------
+|| -- Url.merge does not do what XML/RFC2396 expects
+{define-proc package {xml-url-suffix? base:String, suffix:String}:bool
+    {return base == suffix or {base.suffix? '/' & suffix}}
+}
+{define-proc package {xml-url-merge base:Url, path:String}:Url
+    {return
+        {if {xml-url-suffix? path, "./"} 
+            or {xml-url-suffix? path, "../"} 
+         then
+            let name:String = {base.merge path & ' '}.name
+            {url {name.substr 0, name.size - 1}}
+         elseif {xml-url-suffix? path, "."} 
+            or {xml-url-suffix? path, ".."} 
+         then 
+            {xml-url-merge base, path & '/'}
+         else
+            {base.merge path}}
+    }}
+
+|| NCName verification (XML 1.0)
+|| --------------------
+{define-class package CC
+  || [86] Ideographic
+  field package constant Ideographic:CharClass =
+      {value
+        let cc:WCharClass = {WCharClass}
+        {cc.add-range '\u4E00', '\u9FA5'}
+        {cc.add '\u3007'}
+        {cc.add-range '\u3021', '\u3029'} 
+        {CharClass cc}
+      }
+  || [88] Digit
+  field package constant Digit:CharClass =
+      {value
+        let cc:WCharClass = {WCharClass}
+        {cc.add-range '\u0030', '\u0039'}
+        {cc.add-range '\u0660', '\u0669'}
+        {cc.add-range '\u06F0', '\u06F9'} 
+        {cc.add-range '\u0966', '\u096F'}
+        {cc.add-range '\u09E6', '\u09EF'}
+        {cc.add-range '\u0A66', '\u0A6F'}
+        {cc.add-range '\u0AE6', '\u0AEF'} 
+        {cc.add-range '\u0B66', '\u0B6F'}
+        {cc.add-range '\u0BE7', '\u0BEF'}
+        {cc.add-range '\u0C66', '\u0C6F'}
+        {cc.add-range '\u0CE6', '\u0CEF'} 
+        {cc.add-range '\u0D66', '\u0D6F'}
+        {cc.add-range '\u0E50', '\u0E59'}
+        {cc.add-range '\u0ED0', '\u0ED9'}
+        {cc.add-range '\u0F20', '\u0F29'} 
+        {CharClass cc}
+      }
+  || [89] Extender
+  field package constant Extender:CharClass =
+      {value
+        let cc:WCharClass = {WCharClass}
+        {cc.add '\u00B7'}
+        {cc.add '\u02D0'}
+        {cc.add '\u02D1'}
+        {cc.add '\u0387'}
+        {cc.add '\u0640'} 
+        {cc.add '\u0E46'}
+        {cc.add '\u0EC6'}
+        {cc.add '\u3005'}
+        {cc.add-range '\u3031', '\u3035'}
+        {cc.add-range '\u309D', '\u309E'}
+        {cc.add-range '\u30FC', '\u30FE'} 
+        {CharClass cc}
+      }
+  || [85] BaseChar
+  field package constant BaseChar:CharClass =
+      {value
+        let cc:WCharClass = {WCharClass}
+        {cc.add-range '\u0041', '\u005A'}
+        {cc.add-range '\u0061', '\u007A'}
+        {cc.add-range '\u00C0', '\u00D6'} 
+        {cc.add-range '\u00D8', '\u00F6'}
+        {cc.add-range '\u00F8', '\u00FF'}
+        {cc.add-range '\u0100', '\u0131'}
+        {cc.add-range '\u0134', '\u013E'} 
+        {cc.add-range '\u0141', '\u0148'}
+        {cc.add-range '\u014A', '\u017E'}
+        {cc.add-range '\u0180', '\u01C3'}
+        {cc.add-range '\u01CD', '\u01F0'} 
+        {cc.add-range '\u01F4', '\u01F5'}
+        {cc.add-range '\u01FA', '\u0217'}
+        {cc.add-range '\u0250', '\u02A8'}
+        {cc.add-range '\u02BB', '\u02C1'} 
+        {cc.add '\u0386'}
+        {cc.add-range '\u0388', '\u038A'}
+        {cc.add '\u038C'}
+        {cc.add-range '\u038E', '\u03A1'}
+        {cc.add-range '\u03A3', '\u03CE'} 
+        {cc.add-range '\u03D0', '\u03D6'}
+        {cc.add '\u03DA'}
+        {cc.add '\u03DC'}
+        {cc.add '\u03DE'}
+        {cc.add '\u03E0'}
+        {cc.add-range '\u03E2', '\u03F3'} 
+        {cc.add-range '\u0401', '\u040C'}
+        {cc.add-range '\u040E', '\u044F'}
+        {cc.add-range '\u0451', '\u045C'}
+        {cc.add-range '\u045E', '\u0481'} 
+        {cc.add-range '\u0490', '\u04C4'}
+        {cc.add-range '\u04C7', '\u04C8'}
+        {cc.add-range '\u04CB', '\u04CC'}
+        {cc.add-range '\u04D0', '\u04EB'} 
+        {cc.add-range '\u04EE', '\u04F5'}
+        {cc.add-range '\u04F8', '\u04F9'}
+        {cc.add-range '\u0531', '\u0556'}
+        {cc.add '\u0559'}
+        {cc.add-range '\u0561', '\u0586'} 
+        {cc.add-range '\u05D0', '\u05EA'}
+        {cc.add-range '\u05F0', '\u05F2'}
+        {cc.add-range '\u0621', '\u063A'}
+        {cc.add-range '\u0641', '\u064A'} 
+        {cc.add-range '\u0671', '\u06B7'}
+        {cc.add-range '\u06BA', '\u06BE'}
+        {cc.add-range '\u06C0', '\u06CE'}
+        {cc.add-range '\u06D0', '\u06D3'} 
+        {cc.add '\u06D5'}
+        {cc.add-range '\u06E5', '\u06E6'}
+        {cc.add-range '\u0905', '\u0939'}
+        {cc.add '\u093D'}
+        {cc.add-range '\u0958', '\u0961'} 
+        {cc.add-range '\u0985', '\u098C'}
+        {cc.add-range '\u098F', '\u0990'}
+        {cc.add-range '\u0993', '\u09A8'}
+        {cc.add-range '\u09AA', '\u09B0'} 
+        {cc.add '\u09B2'}
+        {cc.add-range '\u09B6', '\u09B9'}
+        {cc.add-range '\u09DC', '\u09DD'}
+        {cc.add-range '\u09DF', '\u09E1'}
+        {cc.add-range '\u09F0', '\u09F1'} 
+        {cc.add-range '\u0A05', '\u0A0A'}
+        {cc.add-range '\u0A0F', '\u0A10'}
+        {cc.add-range '\u0A13', '\u0A28'}
+        {cc.add-range '\u0A2A', '\u0A30'} 
+        {cc.add-range '\u0A32', '\u0A33'}
+        {cc.add-range '\u0A35', '\u0A36'}
+        {cc.add-range '\u0A38', '\u0A39'}
+        {cc.add-range '\u0A59', '\u0A5C'} 
+        {cc.add '\u0A5E'}
+        {cc.add-range '\u0A72', '\u0A74'}
+        {cc.add-range '\u0A85', '\u0A8B'}
+        {cc.add '\u0A8D'}
+        {cc.add-range '\u0A8F', '\u0A91'} 
+        {cc.add-range '\u0A93', '\u0AA8'}
+        {cc.add-range '\u0AAA', '\u0AB0'}
+        {cc.add-range '\u0AB2', '\u0AB3'}
+        {cc.add-range '\u0AB5', '\u0AB9'} 
+        {cc.add '\u0ABD'}
+        {cc.add '\u0AE0'}
+        {cc.add-range '\u0B05', '\u0B0C'}
+        {cc.add-range '\u0B0F', '\u0B10'}
+        {cc.add-range '\u0B13', '\u0B28'} 
+        {cc.add-range '\u0B2A', '\u0B30'}
+        {cc.add-range '\u0B32', '\u0B33'}
+        {cc.add-range '\u0B36', '\u0B39'}
+        {cc.add '\u0B3D'}
+        {cc.add-range '\u0B5C', '\u0B5D'} 
+        {cc.add-range '\u0B5F', '\u0B61'}
+        {cc.add-range '\u0B85', '\u0B8A'}
+        {cc.add-range '\u0B8E', '\u0B90'}
+        {cc.add-range '\u0B92', '\u0B95'} 
+        {cc.add-range '\u0B99', '\u0B9A'}
+        {cc.add '\u0B9C'}
+        {cc.add-range '\u0B9E', '\u0B9F'}
+        {cc.add-range '\u0BA3', '\u0BA4'}
+        {cc.add-range '\u0BA8', '\u0BAA'} 
+        {cc.add-range '\u0BAE', '\u0BB5'}
+        {cc.add-range '\u0BB7', '\u0BB9'}
+        {cc.add-range '\u0C05', '\u0C0C'}
+        {cc.add-range '\u0C0E', '\u0C10'} 
+        {cc.add-range '\u0C12', '\u0C28'}
+        {cc.add-range '\u0C2A', '\u0C33'}
+        {cc.add-range '\u0C35', '\u0C39'}
+        {cc.add-range '\u0C60', '\u0C61'} 
+        {cc.add-range '\u0C85', '\u0C8C'}
+        {cc.add-range '\u0C8E', '\u0C90'}
+        {cc.add-range '\u0C92', '\u0CA8'}
+        {cc.add-range '\u0CAA', '\u0CB3'} 
+        {cc.add-range '\u0CB5', '\u0CB9'}
+        {cc.add '\u0CDE'}
+        {cc.add-range '\u0CE0', '\u0CE1'}
+        {cc.add-range '\u0D05', '\u0D0C'}
+        {cc.add-range '\u0D0E', '\u0D10'} 
+        {cc.add-range '\u0D12', '\u0D28'}
+        {cc.add-range '\u0D2A', '\u0D39'}
+        {cc.add-range '\u0D60', '\u0D61'}
+        {cc.add-range '\u0E01', '\u0E2E'} 
+        {cc.add '\u0E30'}
+        {cc.add-range '\u0E32', '\u0E33'}
+        {cc.add-range '\u0E40', '\u0E45'}
+        {cc.add-range '\u0E81', '\u0E82'}
+        {cc.add '\u0E84'} 
+        {cc.add-range '\u0E87', '\u0E88'}
+        {cc.add '\u0E8A'}
+        {cc.add '\u0E8D'}
+        {cc.add-range '\u0E94', '\u0E97'}
+        {cc.add-range '\u0E99', '\u0E9F'} 
+        {cc.add-range '\u0EA1', '\u0EA3'}
+        {cc.add '\u0EA5'}
+        {cc.add '\u0EA7'}
+        {cc.add-range '\u0EAA', '\u0EAB'}
+        {cc.add-range '\u0EAD', '\u0EAE'} 
+        {cc.add '\u0EB0'}
+        {cc.add-range '\u0EB2', '\u0EB3'}
+        {cc.add '\u0EBD'}
+        {cc.add-range '\u0EC0', '\u0EC4'}
+        {cc.add-range '\u0F40', '\u0F47'} 
+        {cc.add-range '\u0F49', '\u0F69'}
+        {cc.add-range '\u10A0', '\u10C5'}
+        {cc.add-range '\u10D0', '\u10F6'}
+        {cc.add '\u1100'}
+        {cc.add-range '\u1102', '\u1103'} 
+        {cc.add-range '\u1105', '\u1107'}
+        {cc.add '\u1109'}
+        {cc.add-range '\u110B', '\u110C'}
+        {cc.add-range '\u110E', '\u1112'}
+        {cc.add '\u113C'} 
+        {cc.add '\u113E'}
+        {cc.add '\u1140'}
+        {cc.add '\u114C'}
+        {cc.add '\u114E'}
+        {cc.add '\u1150'}
+        {cc.add-range '\u1154', '\u1155'}
+        {cc.add '\u1159'} 
+        {cc.add-range '\u115F', '\u1161'}
+        {cc.add '\u1163'}
+        {cc.add '\u1165'}
+        {cc.add '\u1167'}
+        {cc.add '\u1169'}
+        {cc.add-range '\u116D', '\u116E'} 
+        {cc.add-range '\u1172', '\u1173'}
+        {cc.add '\u1175'}
+        {cc.add '\u119E'}
+        {cc.add '\u11A8'}
+        {cc.add '\u11AB'}
+        {cc.add-range '\u11AE', '\u11AF'} 
+        {cc.add-range '\u11B7', '\u11B8'}
+        {cc.add '\u11BA'}
+        {cc.add-range '\u11BC', '\u11C2'}
+        {cc.add '\u11EB'}
+        {cc.add '\u11F0'}
+        {cc.add '\u11F9'} 
+        {cc.add-range '\u1E00', '\u1E9B'}
+        {cc.add-range '\u1EA0', '\u1EF9'}
+        {cc.add-range '\u1F00', '\u1F15'}
+        {cc.add-range '\u1F18', '\u1F1D'} 
+        {cc.add-range '\u1F20', '\u1F45'}
+        {cc.add-range '\u1F48', '\u1F4D'}
+        {cc.add-range '\u1F50', '\u1F57'}
+        {cc.add '\u1F59'}
+        {cc.add '\u1F5B'}
+        {cc.add '\u1F5D'}
+        {cc.add-range '\u1F5F', '\u1F7D'}
+        {cc.add-range '\u1F80', '\u1FB4'}
+        {cc.add-range '\u1FB6', '\u1FBC'}
+        {cc.add '\u1FBE'} 
+        {cc.add-range '\u1FC2', '\u1FC4'}
+        {cc.add-range '\u1FC6', '\u1FCC'}
+        {cc.add-range '\u1FD0', '\u1FD3'}
+        {cc.add-range '\u1FD6', '\u1FDB'} 
+        {cc.add-range '\u1FE0', '\u1FEC'}
+        {cc.add-range '\u1FF2', '\u1FF4'}
+        {cc.add-range '\u1FF6', '\u1FFC'}
+        {cc.add '\u2126'}
+        {cc.add-range '\u212A', '\u212B'} 
+        {cc.add '\u212E'}
+        {cc.add-range '\u2180', '\u2182'}
+        {cc.add-range '\u3041', '\u3094'}
+        {cc.add-range '\u30A1', '\u30FA'}
+        {cc.add-range '\u3105', '\u312C'} 
+        {cc.add-range '\uAC00', '\uD7A3'} 
+        {CharClass cc}
+      }
+  || [87] CombiningChar
+  field package constant CombiningChar:CharClass =
+      {value
+        let cc:WCharClass = {WCharClass}
+        {cc.add-range '\u0300', '\u0345'}
+        {cc.add-range '\u0360', '\u0361'} 
+        {cc.add-range '\u0483', '\u0486'}
+        {cc.add-range '\u0591', '\u05A1'}
+        {cc.add-range '\u05A3', '\u05B9'}
+        {cc.add-range '\u05BB', '\u05BD'} 
+        {cc.add '\u05BF'}
+        {cc.add-range '\u05C1', '\u05C2'}
+        {cc.add '\u05C4'}
+        {cc.add-range '\u064B', '\u0652'}
+        {cc.add '\u0670'} 
+        {cc.add-range '\u06D6', '\u06DC'}
+        {cc.add-range '\u06DD', '\u06DF'}
+        {cc.add-range '\u06E0', '\u06E4'}
+        {cc.add-range '\u06E7', '\u06E8'} 
+        {cc.add-range '\u06EA', '\u06ED'}
+        {cc.add-range '\u0901', '\u0903'}
+        {cc.add '\u093C'}
+        {cc.add-range '\u093E', '\u094C'}
+        {cc.add '\u094D'} 
+        {cc.add-range '\u0951', '\u0954'}
+        {cc.add-range '\u0962', '\u0963'}
+        {cc.add-range '\u0981', '\u0983'}
+        {cc.add '\u09BC'}
+        {cc.add '\u09BE'} 
+        {cc.add '\u09BF'}
+        {cc.add-range '\u09C0', '\u09C4'}
+        {cc.add-range '\u09C7', '\u09C8'}
+        {cc.add-range '\u09CB', '\u09CD'}
+        {cc.add '\u09D7'} 
+        {cc.add-range '\u09E2', '\u09E3'}
+        {cc.add '\u0A02'}
+        {cc.add '\u0A3C'}
+        {cc.add '\u0A3E'}
+        {cc.add '\u0A3F'}
+        {cc.add-range '\u0A40', '\u0A42'} 
+        {cc.add-range '\u0A47', '\u0A48'}
+        {cc.add-range '\u0A4B', '\u0A4D'}
+        {cc.add-range '\u0A70', '\u0A71'}
+        {cc.add-range '\u0A81', '\u0A83'} 
+        {cc.add '\u0ABC'}
+        {cc.add-range '\u0ABE', '\u0AC5'}
+        {cc.add-range '\u0AC7', '\u0AC9'}
+        {cc.add-range '\u0ACB', '\u0ACD'} 
+        {cc.add-range '\u0B01', '\u0B03'}
+        {cc.add '\u0B3C'}
+        {cc.add-range '\u0B3E', '\u0B43'}
+        {cc.add-range '\u0B47', '\u0B48'} 
+        {cc.add-range '\u0B4B', '\u0B4D'}
+        {cc.add-range '\u0B56', '\u0B57'}
+        {cc.add-range '\u0B82', '\u0B83'}
+        {cc.add-range '\u0BBE', '\u0BC2'} 
+        {cc.add-range '\u0BC6', '\u0BC8'}
+        {cc.add-range '\u0BCA', '\u0BCD'}
+        {cc.add '\u0BD7'}
+        {cc.add-range '\u0C01', '\u0C03'} 
+        {cc.add-range '\u0C3E', '\u0C44'}
+        {cc.add-range '\u0C46', '\u0C48'}
+        {cc.add-range '\u0C4A', '\u0C4D'}
+        {cc.add-range '\u0C55', '\u0C56'} 
+        {cc.add-range '\u0C82', '\u0C83'}
+        {cc.add-range '\u0CBE', '\u0CC4'}
+        {cc.add-range '\u0CC6', '\u0CC8'}
+        {cc.add-range '\u0CCA', '\u0CCD'} 
+        {cc.add-range '\u0CD5', '\u0CD6'}
+        {cc.add-range '\u0D02', '\u0D03'}
+        {cc.add-range '\u0D3E', '\u0D43'}
+        {cc.add-range '\u0D46', '\u0D48'} 
+        {cc.add-range '\u0D4A', '\u0D4D'}
+        {cc.add '\u0D57'}
+        {cc.add '\u0E31'}
+        {cc.add-range '\u0E34', '\u0E3A'}
+        {cc.add-range '\u0E47', '\u0E4E'} 
+        {cc.add '\u0EB1'}
+        {cc.add-range '\u0EB4', '\u0EB9'}
+        {cc.add-range '\u0EBB', '\u0EBC'}
+        {cc.add-range '\u0EC8', '\u0ECD'} 
+        {cc.add-range '\u0F18', '\u0F19'}
+        {cc.add '\u0F35'}
+        {cc.add '\u0F37'}
+        {cc.add '\u0F39'}
+        {cc.add '\u0F3E'}
+        {cc.add '\u0F3F'} 
+        {cc.add-range '\u0F71', '\u0F84'}
+        {cc.add-range '\u0F86', '\u0F8B'}
+        {cc.add-range '\u0F90', '\u0F95'}
+        {cc.add '\u0F97'} 
+        {cc.add-range '\u0F99', '\u0FAD'}
+        {cc.add-range '\u0FB1', '\u0FB7'}
+        {cc.add '\u0FB9'}
+        {cc.add-range '\u20D0', '\u20DC'}
+        {cc.add '\u20E1'} 
+        {cc.add-range '\u302A', '\u302F'}
+        {cc.add '\u3099'}
+        {cc.add '\u309A'} 
+        {CharClass cc}
+      }
+  
+  || [84] Letter := BaseChar | Ideographic 
+  field package constant Letter:CharClass
+  || [5]  NCNameChar ::=  
+  || Letter | Digit | CombiningChar | Extender | '.' | '-' | '_'
+  field package constant NCNameChar:CharClass
+  || [4]  NCName ::=  (Letter | '_') (NCNameChar)* 
+  || -- An XML Name, minus the ":" 
+  field package constant NCNameFirstChar:CharClass
+  field package constant NCNameBadChar:CharClass
+  
+  {constructor package {default}  
+    || [84] Letter := BaseChar | Ideographic 
+    set self.Letter =
+        {self.BaseChar.union-clone 
+            self.Ideographic
+        }
+    || [5]  NCNameChar ::=  
+    || Letter | Digit | CombiningChar | Extender | '.' | '-' | '_'
+    set self.NCNameChar =
+        {self.Letter.union-clone 
+            self.Digit, self.CombiningChar, self.Extender,
+            {CharClass ".-_"}
+        }
+    || [4]  NCName ::=  (Letter | '_') (NCNameChar)* 
+    || -- An XML Name, minus the ":" 
+    set self.NCNameFirstChar =
+        {self.Letter.union-clone 
+            {CharClass "_"}
+        }  
+    set self.NCNameBadChar =
+        {self.NCNameChar.complement-clone}
+  }
+  {method package {ncname? s:StringInterface}:bool
+    {return
+        not s.empty? and
+        self.NCNameFirstChar[s[0]] and
+        {s.find-char-class self.NCNameBadChar} == -1}
+  }
+  let package instance:#CC = null
+  
+  {define-proc package {NCName? s:StringInterface}:bool
+    {if CC.instance == null then
+        set CC.instance = {CC}}
+    {return {{non-null CC.instance}.ncname? s}}
+  }
+}
+

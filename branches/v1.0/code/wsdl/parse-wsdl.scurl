@@ -804,7 +804,8 @@
     let constant (xml-name:#XMLName, type:WSDLSchemaType,
                   min-occurs:int, max-occurs:int, nillable?:bool) =
         {self.parse-internal-element-attributes 
-            node, target-namespace, element-form-qualified?
+            node, target-namespace, element-form-qualified?,
+            local-element? = false
         }
     let constant e:WSDLSchemaElement =
         {WSDLSchemaElement xml-name, type, node,
@@ -845,11 +846,12 @@
   {method private {parse-internal-element-attributes
                       e:WSDLDOMNode,
                       target-namespace:String,
-                      element-form-qualified?:bool
+                      element-form-qualified?:bool,
+                      local-element?:bool = true
                   }:(#XMLName, WSDLSchemaType, int, int, bool)
     let constant (xml-name:#XMLName, type:WSDLSchemaType) =
-        {self.parse-element-name-and-type
-            e, target-namespace, element-form-qualified?, true
+        {self.parse-element-name-and-type  
+            e, target-namespace, element-form-qualified?, local-element? 
         }
     let constant min:int = 
         {if-non-null min = {e.get-attribute "minOccurs"} then
@@ -4030,7 +4032,7 @@
                        }:String
     {return
         {if-non-null name then
-            let p:String = {node.get-namespace-prefix node.name.namespace}
+            let p:String = {node.get-namespace-prefix name.namespace}
             {if p.empty? then name.local-name
              else {format "%s:%s", p, name.local-name}}
          else

@@ -111,7 +111,7 @@ The following changes have been made,
 - WSDL treatment of toplevel optional and nillable elements improved. 
   A consequence of this change is that the nullability of curl types
   for some fields and parameters in generated code may vary from what
-  was generated in earlier WSDK versions.}
+  was generated in earlier WSDK versions.
 
 - WSDL allows use of URN scheme in namespaces
     

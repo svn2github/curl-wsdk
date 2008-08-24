@@ -15,10 +15,10 @@
 ||| limitations under the License.
 
 ====================
-WSDK Release 1.0.7 for Curl API Version 7.0. 
+WSDK Release 1.1 for Curl API Version 7.0. 
 ====================
 
-This directory contains the 1.0.7 release of the Curl
+This directory contains the 1.1 release of the Curl
 Web Services Software Development Kit (WSDK)
 
 The Curl Web Services SDK (WSDK) provides the technologies necessary
@@ -98,10 +98,13 @@ and thus require privilege and web access to succeed.
 CHANGES
 ====================
 
-WSDK 1.0.7 CHANGES
+WSDK 1.1 CHANGES
 --------------------
 
-This WSDK Release is for use with Curl API Version 7.0.
+This WSDK Release is a maintenance release,
+for use with Curl API Version 7.0.
+
+- WSDL top level XML schema elements always namespace qualified
 
 WSDK 1.0.6 CHANGES
 --------------------

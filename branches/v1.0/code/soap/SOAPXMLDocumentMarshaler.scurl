@@ -366,8 +366,9 @@
                     let nx:XDMName = {xdm-name x}
                     {if not xval.empty? then
                         {xval.append ' '}}
-                    {xval.concat {non-null {nsd.get-prefix nx.namespace}}}
-                    {xval.append ':'}
+                    {if-non-null p = {nsd.get-prefix nx.namespace} then
+                        {xval.concat p}
+                        {xval.append ':'}}
                     {xval.concat nx.local-name}}}
             {if not xval.empty? then
                 set val = {xval.to-String}}

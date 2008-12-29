@@ -1576,6 +1576,7 @@
                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
                      }:SOAPObjectType
     let nillable?:bool = {if-non-null type then type.nillable? else true}
+    let xml-array-type:#XMLName
     let xml-type:#XMLName
     || Now look for type info.
     {for a in attributes do
@@ -1591,29 +1592,33 @@
          case SOAPArrayMarshaler.soap-1-1-array-type-attribute-name 
          do
             {if-non-null vs = a.xml-name-values then
-                set xml-type = a.xml-name-values[0]
-                let constant local-name:String = xml-type.local-name
-                || strip out the numeric stuff in the type 
-                || to make it back into a generic array type name.
-                let constant brace:int = {local-name.find '\['}
-                {if brace >= 0 then
-                    let constant new-local-name:StringBuf =
-                        {new StringBuf, efficient-size = local-name.size}
-                    {new-local-name.write-one-string local-name, length = brace}
-                    {for i:int = brace below local-name.size do
-                        let constant ch:char = local-name[i]
-                        {if not {CharClass.digit-chars.member? ch} then
-                            {new-local-name.append ch}
-                        }
-                    }
-                    set xml-type =
-                        {XMLName xml-type.namespace, {new-local-name.to-String}}
-                }
+                set xml-array-type = a.xml-name-values[0]
+                || NOTE: commented out, because the generic array type names produced 
+                || -- cause failures for multidimensional arrays
+                || -- Using specific array type names is OK.
+||--                let constant local-name:String = xml-type.local-name
+||--                || strip out the numeric stuff in the type 
+||--                || to make it back into a generic array type name.
+||--                let constant brace:int = {local-name.find '\['}
+||--                {if brace >= 0 then
+||--                    let constant new-local-name:StringBuf =
+||--                        {new StringBuf, efficient-size = local-name.size}
+||--                    {new-local-name.write-one-string local-name, length = brace}
+||--                    {for i:int = brace below local-name.size do
+||--                        let constant ch:char = local-name[i]
+||--                        {if not {CharClass.digit-chars.member? ch} then
+||--                            {new-local-name.append ch}
+||--                        }
+||--                    }
+||--                    set xml-array-type =
+||--                        {XMLName.unchecked xml-type.namespace, {new-local-name.to-String}}
+||--                }
              else
                 || XMLName was not recognized by XMLInputStream
                 || - (this should not happen)
                 || - attempt to recover it from string. although,
                 || - unfortunately, namespace mappings now unavailable
+                || == HACK == \\
                 || TODO: flush this fallback hack
                 {output {lmessage Expected xml-name-values in
                             attribute '{value a.name}'}}
@@ -1641,15 +1646,24 @@
                      else 
                         || found no match, use xs:anyType
                         SOAPTypeMapper.xml-schema-any-type}
-                {if p1 >=0 then
-                    set xmltype =
-                        {XMLName xmltype.namespace,
-                            xmltype.local-name & "[]"}}
-                set xml-type = xmltype
+                let suffix:String =
+                    {if p1 < val.size then
+                        || dimensions specified
+                        {val.tail p1}
+                     else
+                        || dimensions unspecified
+                        "[]"}
+                        
+                set xmltype =
+                        {XMLName.unchecked xmltype.namespace,
+                            xmltype.local-name & suffix}
+                set xml-array-type = xmltype
                 || == HACK == //
             }
         }
     }
+    {if-non-null xml-array-type then
+        set xml-type = xml-array-type}
     let new-type:SOAPObjectType =
         {SOAPObjectType.fill-in-from-element-name-mapper
             {new SOAPObjectType,

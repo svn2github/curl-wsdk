@@ -717,9 +717,9 @@
         {wcharclass.add-range '\u0000', '\u0008'}
         {wcharclass.add-range '\u000E', '\u001F'}
 ||--        {wcharclass.add "!\"#$%&\u0027()*+,/;<=>?@[\\]^\{\|\}~\u007F"}
-        || intentionally accepting illegal '[]' because of 
+        || intentionally accepting illegal '[,]' because of 
         || soapenc:arrayType abomination
-        {wcharclass.add "!\"#$%&\u0027()*+,/;<=>?@\\^\{\|\}~\u007F"}
+        {wcharclass.add "!\"#$%&\u0027()*+/;<=>?@\\^\{\|\}~\u007F"}
         {new CharClass, wcharclass}
     }
   }

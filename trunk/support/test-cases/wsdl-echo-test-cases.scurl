@@ -222,7 +222,8 @@
                     {stringify
                         {Test.from-keywords foo = {Foo.from-keywords id = "001"}}}
                 }
-            }, 
+            },
+            
             || nullable primitives
             || ----------
             {TestSuite {lmessage nullable primitives},
@@ -303,95 +304,6 @@
 </xs:complexType>"|,
                     {stringify
                         {Test.from-keywords}}
-                }
-            },
-            
-            || more arrays
-            || ----------
-            {TestSuite {lmessage more arrays},
-                {echo-test-cases "ArrayElement", |"
-<xs:complexType name="ArrayOfX">
-  <xs:sequence>
-    <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-  </xs:sequence>
-</xs:complexType>
-<xs:complexType name="test">
-  <xs:sequence>
-    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
-    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
-  </xs:sequence>
-</xs:complexType>>"|,
-                    {stringify
-                        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}}
-                },
-                {echo-test-cases "AnonymousArrayElement", |"
-<xs:complexType name="test">
-  <xs:sequence>
-    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
-    <xs:element name="x" minOccurs="1" maxOccurs="1">
-      <xs:complexType>
-        <xs:sequence>
-          <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-      </xs:complexType>
-    </xs:element>
-  </xs:sequence>
-</xs:complexType>>"|,
-                    {stringify
-                        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
-                },
-                {echo-test-cases "RepeatedElement", |"
-<xs:complexType name="test">
- <xs:sequence>
-   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
-   <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
- </xs:sequence>
-</xs:complexType>"|,
-                    {stringify
-                        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
-                },
-                || ~~~~~~~~~~
-                {echo-test-cases "ArrayElementNullable", |"
-<xs:complexType name="ArrayOfX">
-  <xs:sequence>
-    <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
-  </xs:sequence>
-</xs:complexType>
-<xs:complexType name="test">
-  <xs:sequence>
-    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
-    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
-  </xs:sequence>
-</xs:complexType>>"|,
-                    {stringify
-                        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}}
-                },
-                {echo-test-cases "AnonymousArrayElementNullable", |"
-<xs:complexType name="test">
-  <xs:sequence>
-    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
-    <xs:element name="x" minOccurs="1" maxOccurs="1">
-      <xs:complexType>
-        <xs:sequence>
-          <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-      </xs:complexType>
-    </xs:element>
-  </xs:sequence>
-</xs:complexType>>"|,
-                    {stringify
-                        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}}
-                },
-                {echo-test-cases "RepeatedElementNullable", |"
-<xs:complexType name="test">
- <xs:sequence>
-   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
-   <!-- <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>   -->   
-   <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
- </xs:sequence>
-</xs:complexType>"|,
-                    {stringify
-                        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}}
                 }
             },
             
@@ -698,6 +610,150 @@
                             y = null}}
                 }
             },
+            
+            || more arrays
+            || ----------
+            {TestSuite {lmessage more arrays},
+
+                || ========== \\
+                {echo-test-cases "ArrayOfArrayOfString", |"
+<xs:complexType name='ArrayOfArrayOfstring'>
+  <xs:complexContent 
+    xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' 
+    xmlns:soap11-enc='http://schemas.xmlsoap.org/soap/encoding/'>
+    <xs:restriction base='soap11-enc:Array'>
+      <xs:attribute ref='soap11-enc:arrayType' wsdl:arrayType='ArrayOfstring[]'/>
+    </xs:restriction>
+  </xs:complexContent>
+</xs:complexType>
+<xs:complexType name='ArrayOfstring'>
+  <xs:complexContent  
+    xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' 
+    xmlns:soap11-enc='http://schemas.xmlsoap.org/soap/encoding/'>
+    <xs:restriction base='soap11-enc:Array'>
+      <xs:attribute ref='soap11-enc:arrayType' wsdl:arrayType='xs:string[]'/>
+    </xs:restriction>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name='test'>
+  <xs:sequence>
+    <xs:element name='x' type='ArrayOfArrayOfstring' minOccurs='1' maxOccurs='1'/>
+  </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords x =
+                            {ArrayOfArrayOfstring {ArrayOfstring "a", "b"}, {ArrayOfstring "c", "d"}}}}
+                },
+                || ========== --
+                {echo-test-cases "ArrayOfArrayOfString2", |"
+<xs:complexType name='ArrayOfArrayOfstring'>
+  <xs:complexContent 
+    xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' 
+    xmlns:soap11-enc='http://schemas.xmlsoap.org/soap/encoding/'>
+    <xs:restriction base='soap11-enc:Array'>
+      <xs:attribute ref='soap11-enc:arrayType' wsdl:arrayType='xs:string[][]'/>
+    </xs:restriction>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name='test'>
+  <xs:sequence>
+    <xs:element name='x' type='ArrayOfArrayOfstring' minOccurs='1' maxOccurs='1'/>
+  </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords x = 
+                            {ArrayOfArrayOfstring {StringArray "a", "b"}, {StringArray "c", "d"}}}}
+                },
+                || ========== //
+
+                {echo-test-cases "ArrayElement", |"
+<xs:complexType name="ArrayOfX">
+  <xs:sequence>
+    <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+  </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}}
+                },
+                {echo-test-cases "AnonymousArrayElement", |"
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
+                },
+                {echo-test-cases "RepeatedElement", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+   <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+ </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}}
+                },
+                || ~~~~~~~~~~
+                {echo-test-cases "ArrayElementNullable", |"
+<xs:complexType name="ArrayOfX">
+  <xs:sequence>
+    <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+  </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}}
+                },
+                {echo-test-cases "AnonymousArrayElementNullable", |"
+<xs:complexType name="test">
+  <xs:sequence>
+    <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+    <xs:element name="x" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}}
+                },
+                {echo-test-cases "RepeatedElementNullable", |"
+<xs:complexType name="test">
+ <xs:sequence>
+   <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+   <!-- <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>   -->   
+   <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+ </xs:sequence>
+</xs:complexType>"|,
+                    {stringify
+                        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}}
+                }
+            },
+            
             || nil array elements
             || ----------
             {TestSuite {lmessage nil array elements},
@@ -748,6 +804,7 @@
                             success = true}}
                 }
             },
+            
             || attributes
             || ----------
             {TestSuite {lmessage attributes},
@@ -870,7 +927,6 @@
             },            
 
             |# TODO: reinstate when XDMElement marshaling works
-
     || any
     || ----------
     {TestSuite {lmessage any},

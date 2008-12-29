@@ -818,7 +818,7 @@
     let rets:FastArray = {method.invoke-n service, self.request-value}
     set self.response-value = rets[0]
     || compare round-trip result
-    || - NOTE: some special SOAP unmrahslaing special cases
+    || - NOTE: some SOAP unmarshaling special cases
     set self.match? =
             {compare-any self.response-value, self.request-value,
                 special-case =

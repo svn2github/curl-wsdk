@@ -884,6 +884,30 @@
     }
   }
 
+
+  {method private {get-unique-name
+                      base-name:XMLName,
+                      target-namespace:String = base-name.local-name,
+                      prefix:String = WSDL.type-prefix
+                  }:XMLName
+    || - vary original name suffix (or prefix) until unique
+    let name:String = base-name.local-name
+    let index:int = 1
+    {while
+        {self.names.name-exists? target-namespace, prefix, name}
+     do
+        || TODO: consider "scope" prefix using containing element(s)
+        set name =
+            {if index == 0 then
+                || special case: prefix with underscore (not used for now)
+                "_" & base-name
+             else
+                {format "%s%02d", base-name, index}}
+        {inc index}}
+    {return
+        {XMLName target-namespace, name}}
+  }
+
   {method private {parse-complex-type
                       node:WSDLDOMNode,
                       target-namespace:String,
@@ -892,26 +916,21 @@
                       element-name:#XMLName = null
                   }:WSDLSchemaType
     let attribute-form-qualified?:bool = false || TODO: argument
-    let constant name:#String = {node.get-attribute "name"}    
-    || handle anonymous type
-    let type-name:#String =
-        {if-non-null name then 
-            name
+
+    def xml-name =
+        {if-non-null name = {node.get-attribute "name"} then
+            || named type
+            {XMLName target-namespace, name}
          else
+            || anonymous type: use element name
             {if-non-null element-name then
-                || NOTE: XSD element and type namespaces are distinct
-                || - attempt to avoid clashes induced by anonymous types 
-                "_" & element-name.local-name
-             else 
-                null
+                || NOTE: local element names may not be unique
+                {self.get-unique-name element-name,
+                    target-namespace = target-namespace}
+             else
+                {wsdl-exception node = node,
+                    {message No name for complex-type}}
             }
-        }
-    
-    let constant xml-name:#XMLName =
-        {if-non-null type-name then
-            {new XMLName, target-namespace, type-name}
-         else
-            null
         }
     
     let type:#WSDLSchemaType = null    
@@ -1060,10 +1079,8 @@
         set t.abstract? = abstract?
     }
     
-    {if-non-null type-name then
-        {self.names.set-name
-            target-namespace, WSDL.type-prefix, type-name, {non-null type}
-        }
+    {self.names.set-name
+        target-namespace, WSDL.type-prefix, xml-name.local-name, {non-null type}
     }
     
     {return {non-null type}}

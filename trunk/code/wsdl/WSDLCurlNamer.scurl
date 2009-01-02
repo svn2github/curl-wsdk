@@ -114,18 +114,6 @@
         let constant upper-name:String = {buf.to-upper-clone}
         set buf[0] = upper-name[0]
         || FIXME should we try to convert name-name-name to NameNameName?
-        
-            
-        || NOTE: anonymous types (for elements) got special prefix 
-        || -- so as to avoid possible clashes with named types
-        || -- this removes the prefix, if there is no such clash
-        {if buf[0] == '_' and buf[1] == upper-name[1] then
-            let preferred-name:String = {buf.substr 1, buf.size - 1}
-            let used?:bool = {self.name-used? preferred-name, scope = scope}
-            {if not used? then
-                {buf.remove 0}}
-        }
-
     }
 
     || now see if it is a conflict, and if so, try prepending parts of

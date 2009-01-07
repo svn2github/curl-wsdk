@@ -1,25 +1,10 @@
-||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
-|||
-||| An OpenCurl project.
-
-||| Licensed under the Apache License, Version 2.0 (the "License");
-||| you may not use this file except in compliance with the License.
-||| You may obtain a copy of the License at
-||| 
-|||     http://www.apache.org/licenses/LICENSE-2.0
-||| 
-||| Unless required by applicable law or agreed to in writing, software
-||| distributed under the License is distributed on an "AS IS" BASIS,
-||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-||| See the License for the specific language governing permissions and
-||| limitations under the License.
 {curl 7.0 package}
 {package COM.CURL.WSDL.WSConnectionService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/DEV5/WSDK/code/util/WSConnection/s-wsconnection.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/util/WSConnection/s-wsconnection.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/DEV5/WSDK/code/util/WSConnection/s-wsconnection.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/util/WSConnection/s-wsconnection.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WSConnectionService {inherits WSDLHTTPRPCPostClient}
@@ -34,6 +19,32 @@
             self.service-location,
             {{Array-of any}
             },
+            {splice self.operations["get-database-names"]}
+        }
+    {return
+        responses[0] asa #ArrayOfString
+    }
+  }
+
+
+  {method public {async-get-database-names event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["get-database-names"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-database-names}:void
+    set self.operations["get-database-names"] = 
+         {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -55,43 +66,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ArrayOfString
-    }
-  }
-
-
-  {method public {async-get-database-names event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArrayOfString,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "getDatabaseNames",
-            request-operation = {XMLName "http://www.curl.com/data", "getDatabaseNames"},
-            default-namespace = "http://www.curl.com/data",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -107,6 +81,33 @@
             {{Array-of any}
                 database
             },
+            {splice self.operations["get-database-tables"]}
+        }
+    {return
+        responses[0] asa #ArrayOfString
+    }
+  }
+
+
+  {method public {async-get-database-tables database:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database
+            },
+            {splice self.operations["get-database-tables"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-database-tables}:void
+    set self.operations["get-database-tables"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"}
             },
@@ -134,50 +135,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ArrayOfString
-    }
-  }
-
-
-  {method public {async-get-database-tables database:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                database
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "database"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArrayOfString,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "getDatabaseTables",
-            request-operation = {XMLName "http://www.curl.com/data", "getDatabaseTables"},
-            default-namespace = "http://www.curl.com/data",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -194,6 +151,34 @@
                 database,
                 table
             },
+            {splice self.operations["get-fields"]}
+        }
+    {return
+        responses[0] asa #RecordFieldSpecs
+    }
+  }
+
+
+  {method public {async-get-fields database:#String, table:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database,
+                table
+            },
+            {splice self.operations["get-fields"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-fields}:void
+    set self.operations["get-fields"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "table"}
@@ -227,57 +212,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #RecordFieldSpecs
-    }
-  }
-
-
-  {method public {async-get-fields database:#String, table:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                database,
-                table
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "database"},
-                {XMLName "", "table"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"},
-                    curl-type = RecordFieldSpecs,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "getFields",
-            request-operation = {XMLName "http://www.curl.com/data", "getFields"},
-            default-namespace = "http://www.curl.com/data",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -295,44 +229,7 @@
                 query,
                 size-limit
             },
-            {{Array-of #XMLName}
-                {XMLName "", "database"},
-                {XMLName "", "query"},
-                {XMLName "", "size_limit"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
-                    curl-type = int
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "getData",
-            request-operation = {XMLName "http://www.curl.com/data", "getData"},
-            default-namespace = "http://www.curl.com/data",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true
+            {splice self.operations["get-data"]}
         }
     {return
         responses[0] asa #String
@@ -349,6 +246,18 @@
                 query,
                 size-limit
             },
+            {splice self.operations["get-data"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-data}:void
+    set self.operations["get-data"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "query"},
@@ -386,10 +295,7 @@
             default-namespace = "http://www.curl.com/data",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = true
     }
   }
 
@@ -406,6 +312,34 @@
                 database,
                 sql
             },
+            {splice self.operations["execute"]}
+        }
+    {return
+        responses[0] asa int
+    }
+  }
+
+
+  {method public {async-execute database:#String, sql:#ArrayOfString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                database,
+                sql
+            },
+            {splice self.operations["execute"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-execute}:void
+    set self.operations["execute"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "sql"}
@@ -438,57 +372,15 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa int
     }
   }
 
-
-  {method public {async-execute database:#String, sql:#ArrayOfString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                database,
-                sql
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "database"},
-                {XMLName "", "sql"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArrayOfString,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
-                    curl-type = int
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "execute",
-            request-operation = {XMLName "http://www.curl.com/data", "execute"},
-            default-namespace = "http://www.curl.com/data",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-get-database-names}
+     {self.define-get-database-tables}
+     {self.define-get-fields}
+     {self.define-get-data}
+     {self.define-execute}
   }
 
   {method public {register-types
@@ -646,7 +538,8 @@
             {abs-url "http://localhost/work/services/soap/s-wsconnection.php"}
     }
     {construct-super service-location,
-        generated-using-version = "3"    }
+        generated-using-version = "4"
+    }
   }
 }
 

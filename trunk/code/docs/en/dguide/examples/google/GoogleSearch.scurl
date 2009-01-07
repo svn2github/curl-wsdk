@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.GoogleSearch,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/docs/en/dguide/examples/google/GoogleSearch.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/docs/en/dguide/examples/google/GoogleSearch.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public GoogleSearchService {inherits WSDLHTTPRPCPostClient}
@@ -21,6 +21,34 @@
                 key,
                 url
             },
+            {splice self.operations["do-get-cached-page"]}
+        }
+    {return
+        responses[0] asa #{Array-of byte}
+    }
+  }
+
+
+  {method public {async-do-get-cached-page key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                key,
+                url
+            },
+            {splice self.operations["do-get-cached-page"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-do-get-cached-page}:void
+    set self.operations["do-get-cached-page"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "url"}
@@ -54,57 +82,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #{Array-of byte}
-    }
-  }
-
-
-  {method public {async-do-get-cached-page key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                key,
-                url
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "key"},
-                {XMLName "", "url"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "base64Binary"},
-                    curl-type = {Array-of byte},
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "urn:GoogleSearchAction",
-            request-operation = {XMLName "urn:GoogleSearch", "doGetCachedPage"},
-            default-namespace = "urn:GoogleSearch",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -121,6 +98,34 @@
                 key,
                 phrase
             },
+            {splice self.operations["do-spelling-suggestion"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-do-spelling-suggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                key,
+                phrase
+            },
+            {splice self.operations["do-spelling-suggestion"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-do-spelling-suggestion}:void
+    set self.operations["do-spelling-suggestion"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "phrase"}
@@ -154,57 +159,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {method public {async-do-spelling-suggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                key,
-                phrase
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "key"},
-                {XMLName "", "phrase"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "urn:GoogleSearchAction",
-            request-operation = {XMLName "urn:GoogleSearch", "doSpellingSuggestion"},
-            default-namespace = "urn:GoogleSearch",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -229,6 +183,42 @@
                 ie,
                 oe
             },
+            {splice self.operations["do-google-search"]}
+        }
+    {return
+        responses[0] asa #GoogleSearchResult
+    }
+  }
+
+
+  {method public {async-do-google-search key:#String, q:#String, start:int, max-results:int, filter:bool, restrict:#String, safe-search:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                key,
+                q,
+                start,
+                max-results,
+                filter,
+                restrict,
+                safe-search,
+                lr,
+                ie,
+                oe
+            },
+            {splice self.operations["do-google-search"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-do-google-search}:void
+    set self.operations["do-google-search"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "q"},
@@ -306,110 +296,13 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #GoogleSearchResult
     }
   }
 
-
-  {method public {async-do-google-search key:#String, q:#String, start:int, max-results:int, filter:bool, restrict:#String, safe-search:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                key,
-                q,
-                start,
-                max-results,
-                filter,
-                restrict,
-                safe-search,
-                lr,
-                ie,
-                oe
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "key"},
-                {XMLName "", "q"},
-                {XMLName "", "start"},
-                {XMLName "", "maxResults"},
-                {XMLName "", "filter"},
-                {XMLName "", "restrict"},
-                {XMLName "", "safeSearch"},
-                {XMLName "", "lr"},
-                {XMLName "", "ie"},
-                {XMLName "", "oe"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
-                    curl-type = int
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
-                    curl-type = int
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
-                    curl-type = bool
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
-                    curl-type = bool
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "urn:GoogleSearch", "GoogleSearchResult"},
-                    curl-type = GoogleSearchResult,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "urn:GoogleSearchAction",
-            request-operation = {XMLName "urn:GoogleSearch", "doGoogleSearch"},
-            default-namespace = "urn:GoogleSearch",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-do-get-cached-page}
+     {self.define-do-spelling-suggestion}
+     {self.define-do-google-search}
   }
 
   {method public {register-types
@@ -723,7 +616,7 @@
             {abs-url "http://api.google.com/search/beta2"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

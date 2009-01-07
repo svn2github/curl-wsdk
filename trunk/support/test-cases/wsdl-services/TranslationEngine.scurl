@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.TranslationEngine,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/TranslationEngine.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/TranslationEngine.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/TranslationEngine.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/TranslationEngine.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public TranslateService {inherits WSDLHTTPRPCPostClient}
@@ -26,6 +26,44 @@
                 language-mode,
                 text
             },
+            {splice self.operations["translate"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+    }
+  }
+  {method public {async-translate language-mode:Language, text:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                language-mode,
+                text
+            },
+            {splice self.operations["translate"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+    }
+  }
+  {method public {define-translate}:void
+    set self.operations["translate"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.webservicex.net", "LanguageMode"},
                 {XMLName "http://www.webservicex.net", "Text"}
@@ -58,62 +96,11 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
     }
   }
 
-
-  {doc-next 
-    {details 
-      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
-    }
-  }
-  {method public {async-translate language-mode:Language, text:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                language-mode,
-                text
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.webservicex.net", "LanguageMode"},
-                {XMLName "http://www.webservicex.net", "Text"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://www.webservicex.net", "Language"},
-                    curl-type = Language
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.webservicex.net", "TranslateResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.webservicex.net/Translate",
-            request-operation = {XMLName "http://www.webservicex.net", "Translate"},
-            response-operation = {XMLName "http://www.webservicex.net", "TranslateResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-translate}
   }
 
   {method public {register-types
@@ -165,7 +152,7 @@
             {abs-url "http://www.webservicex.com/TranslateService.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

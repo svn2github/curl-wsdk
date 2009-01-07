@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.DailyDilbert,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/DailyDilbert.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/DailyDilbert.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/DailyDilbert.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/DailyDilbert.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DailyDilbert {inherits WSDLHTTPRPCPostClient}
@@ -19,6 +19,32 @@
             self.service-location,
             {{Array-of any}
             },
+            {splice self.operations["daily-dilbert-image"]}
+        }
+    {return
+        responses[0] asa #{Array-of byte}
+    }
+  }
+
+
+  {method public {async-daily-dilbert-image event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["daily-dilbert-image"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-daily-dilbert-image}:void
+    set self.operations["daily-dilbert-image"] = 
+         {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -40,43 +66,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #{Array-of byte}
-    }
-  }
-
-
-  {method public {async-daily-dilbert-image event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://tempuri.org/", "DailyDilbertImageResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "base64Binary"},
-                    curl-type = {Array-of byte},
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://tempuri.org/DailyDilbertImage",
-            request-operation = {XMLName "http://tempuri.org/", "DailyDilbertImage"},
-            response-operation = {XMLName "http://tempuri.org/", "DailyDilbertImageResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -91,6 +80,32 @@
             self.service-location,
             {{Array-of any}
             },
+            {splice self.operations["daily-dilbert-image-path"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-daily-dilbert-image-path event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["daily-dilbert-image-path"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-daily-dilbert-image-path}:void
+    set self.operations["daily-dilbert-image-path"] = 
+         {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -112,44 +127,12 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
     }
   }
 
-
-  {method public {async-daily-dilbert-image-path event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://tempuri.org/", "DailyDilbertImagePathResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://tempuri.org/DailyDilbertImagePath",
-            request-operation = {XMLName "http://tempuri.org/", "DailyDilbertImagePath"},
-            response-operation = {XMLName "http://tempuri.org/", "DailyDilbertImagePathResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-daily-dilbert-image}
+     {self.define-daily-dilbert-image-path}
   }
 
   {method public {register-types
@@ -173,7 +156,7 @@
             {abs-url "http://www.esynaps.com/WebServices/DailyDiblert.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

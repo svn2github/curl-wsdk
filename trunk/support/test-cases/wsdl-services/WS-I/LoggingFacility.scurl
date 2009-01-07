@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.LoggingFacility,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public LoggingFacilityService {inherits WSDLHTTPRPCPostClient}
@@ -25,25 +25,7 @@
             {{Array-of any}
                 document
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestElement"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestType"},
-                    curl-type = LogEventRequestType,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            null,
-            soap-action = "",
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["log-event"]}
         }
     {return
 
@@ -63,6 +45,23 @@
             {{Array-of any}
                 document
             },
+            {splice self.operations["log-event"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Append an entry to the system log.
+    }
+  }
+  {method public {define-log-event}:void
+    set self.operations["log-event"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestElement"}
             },
@@ -81,10 +80,7 @@
             soap-action = "",
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -105,6 +101,43 @@
             {{Array-of any}
                 demo-user-id
             },
+            {splice self.operations["get-events"]}
+        }
+    {return
+        responses[0] asa GetEventsResponseType
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Retrieve entries from the system log with the specified userId.
+    }
+  }
+  {method public {async-get-events demo-user-id:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                demo-user-id
+            },
+            {splice self.operations["get-events"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Retrieve entries from the system log with the specified userId.
+    }
+  }
+  {method public {define-get-events}:void
+    set self.operations["get-events"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "DemoUserID"}
             },
@@ -132,56 +165,12 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa GetEventsResponseType
     }
   }
 
-
-  {doc-next 
-    {details 
-      Retrieve entries from the system log with the specified userId.
-    }
-  }
-  {method public {async-get-events demo-user-id:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                demo-user-id
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "DemoUserID"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseElement"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseType"},
-                    curl-type = GetEventsResponseType,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "",
-            request-operation = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsRequestElement"},
-            response-operation = null,
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-log-event}
+     {self.define-get-events}
   }
 
   {method public {register-types
@@ -241,7 +230,7 @@
                 {{Array-of SOAPObjectType}
                     {SOAPObjectType
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
-                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "_LogEntry"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
                         curl-type = LogEntry
                     },
                     {SOAPObjectType
@@ -272,7 +261,7 @@
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
-                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "_LogEntry"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
                     curl-type = LogEntry,
                     nillable? = true
                 },
@@ -320,7 +309,7 @@
             {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

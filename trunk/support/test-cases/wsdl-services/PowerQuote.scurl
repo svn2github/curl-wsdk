@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/PowerQuote.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/PowerQuote.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
@@ -26,6 +26,44 @@
                 stock-symbol,
                 license-key
             },
+            {splice self.operations["get-quote"]}
+        }
+    {return
+        responses[0] asa QuoteData
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+    }
+  }
+  {method public {async-get-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                stock-symbol,
+                license-key
+            },
+            {splice self.operations["get-quote"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+    }
+  }
+  {method public {define-get-quote}:void
+    set self.operations["get-quote"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbol"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -59,62 +97,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa QuoteData
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
-    }
-  }
-  {method public {async-get-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                stock-symbol,
-                license-key
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "StockSymbol"},
-                {XMLName "http://ws.cdyne.com/", "LicenseKey"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "GetQuoteResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "QuoteData"},
-                    curl-type = QuoteData,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://ws.cdyne.com/GetQuote",
-            request-operation = {XMLName "http://ws.cdyne.com/", "GetQuote"},
-            response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -136,6 +118,44 @@
                 stock-symbol,
                 license-key
             },
+            {splice self.operations["get-quick-quote"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      This method retrieves just a stock price.  Use a license key of 0 for testing.
+    }
+  }
+  {method public {async-get-quick-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                stock-symbol,
+                license-key
+            },
+            {splice self.operations["get-quick-quote"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      This method retrieves just a stock price.  Use a license key of 0 for testing.
+    }
+  }
+  {method public {define-get-quick-quote}:void
+    set self.operations["get-quick-quote"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbol"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -168,61 +188,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
-    }
-  }
-  {method public {async-get-quick-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                stock-symbol,
-                license-key
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "StockSymbol"},
-                {XMLName "http://ws.cdyne.com/", "LicenseKey"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "GetQuickQuoteResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://ws.cdyne.com/GetQuickQuote",
-            request-operation = {XMLName "http://ws.cdyne.com/", "GetQuickQuote"},
-            response-operation = {XMLName "http://ws.cdyne.com/", "GetQuickQuoteResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -244,39 +209,7 @@
                 stock-symbols,
                 license-key
             },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "StockSymbols"},
-                {XMLName "http://ws.cdyne.com/", "LicenseKey"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
-                    curl-type = GetQuoteDataSetResult,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://ws.cdyne.com/GetQuoteDataSet",
-            request-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSet"},
-            response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-quote-data-set"]}
         }
     {return
         responses[0] asa #GetQuoteDataSetResult
@@ -297,6 +230,23 @@
                 stock-symbols,
                 license-key
             },
+            {splice self.operations["get-quote-data-set"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+    }
+  }
+  {method public {define-get-quote-data-set}:void
+    set self.operations["get-quote-data-set"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbols"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -318,7 +268,7 @@
             },
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
                     nillable? = true
                 }
@@ -329,10 +279,7 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -347,6 +294,32 @@
             self.service-location,
             {{Array-of any}
             },
+            {splice self.operations["important-message"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-important-message event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["important-message"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-important-message}:void
+    set self.operations["important-message"] = 
+         {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -368,44 +341,14 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
     }
   }
 
-
-  {method public {async-important-message event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://ws.cdyne.com/", "ImportantMessageResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://ws.cdyne.com/ImportantMessage",
-            request-operation = {XMLName "http://ws.cdyne.com/", "ImportantMessage"},
-            response-operation = {XMLName "http://ws.cdyne.com/", "ImportantMessageResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-get-quote}
+     {self.define-get-quick-quote}
+     {self.define-get-quote-data-set}
+     {self.define-important-message}
   }
 
   {method public {register-types
@@ -430,7 +373,7 @@
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
                     element-name = {XMLName "http://ws.cdyne.com/", "DataSet"},
-                    xml-type = {XMLName "http://ws.cdyne.com/", "_DataSet"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "DataSet"},
                     curl-type = DataSet,
                     nillable? = true
                 },
@@ -448,7 +391,7 @@
         let constant doc-marshaler:SOAPXMLDocumentMarshaler =
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
                     nillable? = true
                 },
@@ -614,7 +557,7 @@
             {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.StockQuotesWebService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/StockQuotesWebService.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/StockQuotesWebService.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/StockQuotesWebService.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/StockQuotesWebService.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
   {doc-next 
@@ -29,6 +29,42 @@
             self.service-location,
             {{Array-of any}
             },
+            {splice self.operations["get-stocks-xmlschema"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns XML schema (XSD) in which all XML formatted stock information is in.
+    }
+  }
+  {method public {async-get-stocks-xmlschema event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["get-stocks-xmlschema"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns XML schema (XSD) in which all XML formatted stock information is in.
+    }
+  }
+  {method public {define-get-stocks-xmlschema}:void
+    set self.operations["get-stocks-xmlschema"] = 
+         {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -50,48 +86,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns XML schema (XSD) in which all XML formatted stock information is in.
-    }
-  }
-  {method public {async-get-stocks-xmlschema event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStocksXMLSchemaResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStocksXMLSchema",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStocksXMLSchema"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStocksXMLSchemaResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -115,6 +109,46 @@
                 dcm-low,
                 dcm-high
             },
+            {splice self.operations["get-stock-daily-values-by-value-xml"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified stock that are in the given value interval as XML string.
+    }
+  }
+  {method public {async-get-stock-daily-values-by-value-xml str-stock-exchange:String, str-stock:String, dcm-low:double, dcm-high:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-stock,
+                dcm-low,
+                dcm-high
+            },
+            {splice self.operations["get-stock-daily-values-by-value-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified stock that are in the given value interval as XML string.
+    }
+  }
+  {method public {define-get-stock-daily-values-by-value-xml}:void
+    set self.operations["get-stock-daily-values-by-value-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -158,74 +192,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified stock that are in the given value interval as XML string.
-    }
-  }
-  {method public {async-get-stock-daily-values-by-value-xml str-stock-exchange:String, str-stock:String, dcm-low:double, dcm-high:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                dcm-low,
-                dcm-high
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"},
-                {XMLName "http://www.gama-system.com/webservices", "dcmLow"},
-                {XMLName "http://www.gama-system.com/webservices", "dcmHigh"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByValueXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStockDailyValuesByValueXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByValueXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByValueXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -249,51 +215,7 @@
                 str-date-low,
                 str-date-high
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateLow"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateHigh"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByDateXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStockDailyValuesByDateXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByDateXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByDateXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-stock-daily-values-by-date-xml"]}
         }
     {return
         responses[0] asa #String
@@ -316,6 +238,23 @@
                 str-date-low,
                 str-date-high
             },
+            {splice self.operations["get-stock-daily-values-by-date-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified stock in the given time interval as XML string.
+    }
+  }
+  {method public {define-get-stock-daily-values-by-date-xml}:void
+    set self.operations["get-stock-daily-values-by-date-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -360,10 +299,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByDateXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -386,45 +322,7 @@
                 str-segment,
                 str-date
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strSegment"},
-                {XMLName "http://www.gama-system.com/webservices", "strDate"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStockDailyValuesXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-stock-daily-values-xml"]}
         }
     {return
         responses[0] asa #String
@@ -446,6 +344,23 @@
                 str-segment,
                 str-date
             },
+            {splice self.operations["get-stock-daily-values-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all stock values for given date as XML string.
+    }
+  }
+  {method public {define-get-stock-daily-values-xml}:void
+    set self.operations["get-stock-daily-values-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strSegment"},
@@ -484,10 +399,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -509,6 +421,44 @@
                 str-stock-exchange,
                 str-segment
             },
+            {splice self.operations["get-latest-stock-daily-values-xml"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns latest published stock values as XML string.
+    }
+  }
+  {method public {async-get-latest-stock-daily-values-xml str-stock-exchange:String, str-segment:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-segment
+            },
+            {splice self.operations["get-latest-stock-daily-values-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns latest published stock values as XML string.
+    }
+  }
+  {method public {define-get-latest-stock-daily-values-xml}:void
+    set self.operations["get-latest-stock-daily-values-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strSegment"}
@@ -542,62 +492,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns latest published stock values as XML string.
-    }
-  }
-  {method public {async-get-latest-stock-daily-values-xml str-stock-exchange:String, str-segment:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-segment
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strSegment"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValuesXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetLatestStockDailyValuesXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValuesXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValuesXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -620,44 +514,7 @@
                 str-stock,
                 str-date
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"},
-                {XMLName "http://www.gama-system.com/webservices", "strDate"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStockDailyValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-stock-daily-value"]}
         }
     {return
         responses[0] asa double
@@ -679,6 +536,23 @@
                 str-stock,
                 str-date
             },
+            {splice self.operations["get-stock-daily-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the value for the specified stock on the given date.
+    }
+  }
+  {method public {define-get-stock-daily-value}:void
+    set self.operations["get-stock-daily-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -716,10 +590,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -741,6 +612,44 @@
                 str-stock-exchange,
                 str-stock
             },
+            {splice self.operations["get-latest-stock-daily-value"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the latest published value for the specified stock.
+    }
+  }
+  {method public {async-get-latest-stock-daily-value str-stock-exchange:String, str-stock:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-stock
+            },
+            {splice self.operations["get-latest-stock-daily-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the latest published value for the specified stock.
+    }
+  }
+  {method public {define-get-latest-stock-daily-value}:void
+    set self.operations["get-latest-stock-daily-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"}
@@ -773,61 +682,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the latest published value for the specified stock.
-    }
-  }
-  {method public {async-get-latest-stock-daily-value str-stock-exchange:String, str-stock:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetLatestStockDailyValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -849,6 +703,44 @@
                 str-stock-exchange,
                 str-stock
             },
+            {splice self.operations["get-latest-stock-value"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the current value for the specified stock.
+    }
+  }
+  {method public {async-get-latest-stock-value str-stock-exchange:String, str-stock:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-stock
+            },
+            {splice self.operations["get-latest-stock-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the current value for the specified stock.
+    }
+  }
+  {method public {define-get-latest-stock-value}:void
+    set self.operations["get-latest-stock-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"}
@@ -881,61 +773,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the current value for the specified stock.
-    }
-  }
-  {method public {async-get-latest-stock-value str-stock-exchange:String, str-stock:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetLatestStockValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetLatestStockValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -958,6 +795,45 @@
                 str-stock,
                 str-date-time
             },
+            {splice self.operations["get-stock-value"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the value for the specified stock at the given time.
+    }
+  }
+  {method public {async-get-stock-value str-stock-exchange:String, str-stock:String, str-date-time:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-stock,
+                str-date-time
+            },
+            {splice self.operations["get-stock-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the value for the specified stock at the given time.
+    }
+  }
+  {method public {define-get-stock-value}:void
+    set self.operations["get-stock-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -996,68 +872,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the value for the specified stock at the given time.
-    }
-  }
-  {method public {async-get-stock-value str-stock-exchange:String, str-stock:String, str-date-time:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                str-date-time
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateTime"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStockValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStockValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1081,51 +895,7 @@
                 str-date-time-low,
                 str-date-time-high
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strStock"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateTimeLow"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateTimeHigh"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetStockValuesByDateTimeXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetStockValuesByDateTimeXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValuesByDateTimeXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValuesByDateTimeXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-stock-values-by-date-time-xml"]}
         }
     {return
         responses[0] asa #String
@@ -1148,6 +918,23 @@
                 str-date-time-low,
                 str-date-time-high
             },
+            {splice self.operations["get-stock-values-by-date-time-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified stock in the given time interval as XML string.
+    }
+  }
+  {method public {define-get-stock-values-by-date-time-xml}:void
+    set self.operations["get-stock-values-by-date-time-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -1192,10 +979,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValuesByDateTimeXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -1215,6 +999,42 @@
             self.service-location,
             {{Array-of any}
             },
+            {splice self.operations["get-indices-xmlschema"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns XML schema (XSD) in which all XML formatted index information is in.
+    }
+  }
+  {method public {async-get-indices-xmlschema event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["get-indices-xmlschema"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns XML schema (XSD) in which all XML formatted index information is in.
+    }
+  }
+  {method public {define-get-indices-xmlschema}:void
+    set self.operations["get-indices-xmlschema"] = 
+         {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -1236,48 +1056,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns XML schema (XSD) in which all XML formatted index information is in.
-    }
-  }
-  {method public {async-get-indices-xmlschema event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndicesXMLSchemaResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndicesXMLSchema",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndicesXMLSchema"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndicesXMLSchemaResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1301,6 +1079,46 @@
                 dcm-low,
                 dcm-high
             },
+            {splice self.operations["get-index-daily-values-by-value-xml"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified index that are in the given value interval as XML string.
+    }
+  }
+  {method public {async-get-index-daily-values-by-value-xml str-stock-exchange:String, str-index:String, dcm-low:double, dcm-high:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-index,
+                dcm-low,
+                dcm-high
+            },
+            {splice self.operations["get-index-daily-values-by-value-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified index that are in the given value interval as XML string.
+    }
+  }
+  {method public {define-get-index-daily-values-by-value-xml}:void
+    set self.operations["get-index-daily-values-by-value-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -1344,74 +1162,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified index that are in the given value interval as XML string.
-    }
-  }
-  {method public {async-get-index-daily-values-by-value-xml str-stock-exchange:String, str-index:String, dcm-low:double, dcm-high:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                dcm-low,
-                dcm-high
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"},
-                {XMLName "http://www.gama-system.com/webservices", "dcmLow"},
-                {XMLName "http://www.gama-system.com/webservices", "dcmHigh"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByValueXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndexDailyValuesByValueXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByValueXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByValueXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1435,51 +1185,7 @@
                 str-date-low,
                 str-date-high
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateLow"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateHigh"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByDateXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndexDailyValuesByDateXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByDateXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByDateXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-index-daily-values-by-date-xml"]}
         }
     {return
         responses[0] asa #String
@@ -1502,6 +1208,23 @@
                 str-date-low,
                 str-date-high
             },
+            {splice self.operations["get-index-daily-values-by-date-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified index in the given time interval as XML string.
+    }
+  }
+  {method public {define-get-index-daily-values-by-date-xml}:void
+    set self.operations["get-index-daily-values-by-date-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -1546,10 +1269,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByDateXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -1571,39 +1291,7 @@
                 str-stock-exchange,
                 str-date
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strDate"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndexDailyValuesXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-index-daily-values-xml"]}
         }
     {return
         responses[0] asa #String
@@ -1624,6 +1312,23 @@
                 str-stock-exchange,
                 str-date
             },
+            {splice self.operations["get-index-daily-values-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all index values for given date as XML string.
+    }
+  }
+  {method public {define-get-index-daily-values-xml}:void
+    set self.operations["get-index-daily-values-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strDate"}
@@ -1656,10 +1361,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -1680,6 +1382,43 @@
             {{Array-of any}
                 str-stock-exchange
             },
+            {splice self.operations["get-latest-index-daily-values-xml"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns latest published index values as XML string.
+    }
+  }
+  {method public {async-get-latest-index-daily-values-xml str-stock-exchange:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange
+            },
+            {splice self.operations["get-latest-index-daily-values-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns latest published index values as XML string.
+    }
+  }
+  {method public {define-get-latest-index-daily-values-xml}:void
+    set self.operations["get-latest-index-daily-values-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"}
             },
@@ -1707,55 +1446,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns latest published index values as XML string.
-    }
-  }
-  {method public {async-get-latest-index-daily-values-xml str-stock-exchange:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValuesXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetLatestIndexDailyValuesXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValuesXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValuesXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1778,44 +1468,7 @@
                 str-index,
                 str-date
             },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"},
-                {XMLName "http://www.gama-system.com/webservices", "strDate"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndexDailyValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false
+            {splice self.operations["get-index-daily-value"]}
         }
     {return
         responses[0] asa double
@@ -1837,6 +1490,23 @@
                 str-index,
                 str-date
             },
+            {splice self.operations["get-index-daily-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the value for the specified index on the given date.
+    }
+  }
+  {method public {define-get-index-daily-value}:void
+    set self.operations["get-index-daily-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -1874,10 +1544,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = false
     }
   }
 
@@ -1899,6 +1566,44 @@
                 str-stock-exchange,
                 str-index
             },
+            {splice self.operations["get-latest-index-daily-value"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the latest published value for the specified index.
+    }
+  }
+  {method public {async-get-latest-index-daily-value str-stock-exchange:String, str-index:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-index
+            },
+            {splice self.operations["get-latest-index-daily-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the latest published value for the specified index.
+    }
+  }
+  {method public {define-get-latest-index-daily-value}:void
+    set self.operations["get-latest-index-daily-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"}
@@ -1931,61 +1636,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the latest published value for the specified index.
-    }
-  }
-  {method public {async-get-latest-index-daily-value str-stock-exchange:String, str-index:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetLatestIndexDailyValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -2007,6 +1657,44 @@
                 str-stock-exchange,
                 str-index
             },
+            {splice self.operations["get-latest-index-value"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the current value for the specified index.
+    }
+  }
+  {method public {async-get-latest-index-value str-stock-exchange:String, str-index:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-index
+            },
+            {splice self.operations["get-latest-index-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the current value for the specified index.
+    }
+  }
+  {method public {define-get-latest-index-value}:void
+    set self.operations["get-latest-index-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"}
@@ -2039,61 +1727,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the current value for the specified index.
-    }
-  }
-  {method public {async-get-latest-index-value str-stock-exchange:String, str-index:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetLatestIndexValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -2116,6 +1749,45 @@
                 str-index,
                 str-date-time
             },
+            {splice self.operations["get-index-value"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the value for the specified index at the given time.
+    }
+  }
+  {method public {async-get-index-value str-stock-exchange:String, str-index:String, str-date-time:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-index,
+                str-date-time
+            },
+            {splice self.operations["get-index-value"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns the value for the specified index at the given time.
+    }
+  }
+  {method public {define-get-index-value}:void
+    set self.operations["get-index-value"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -2154,68 +1826,6 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the value for the specified index at the given time.
-    }
-  }
-  {method public {async-get-index-value str-stock-exchange:String, str-index:String, str-date-time:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                str-date-time
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateTime"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndexValueResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
-                    curl-type = double
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndexValue",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValue"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValueResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -2239,6 +1849,46 @@
                 str-date-time-low,
                 str-date-time-high
             },
+            {splice self.operations["get-index-values-by-date-time-xml"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified index in the given time interval as XML string.
+    }
+  }
+  {method public {async-get-index-values-by-date-time-xml str-stock-exchange:String, str-index:String, str-date-time-low:String, str-date-time-high:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                str-stock-exchange,
+                str-index,
+                str-date-time-low,
+                str-date-time-high
+            },
+            {splice self.operations["get-index-values-by-date-time-xml"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Method returns all values for the specified index in the given time interval as XML string.
+    }
+  }
+  {method public {define-get-index-values-by-date-time-xml}:void
+    set self.operations["get-index-values-by-date-time-xml"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -2284,77 +1934,30 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false
-        }
-    {return
-        responses[0] asa #String
     }
   }
 
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified index in the given time interval as XML string.
-    }
-  }
-  {method public {async-get-index-values-by-date-time-xml str-stock-exchange:String, str-index:String, str-date-time-low:String, str-date-time-high:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                str-date-time-low,
-                str-date-time-high
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
-                {XMLName "http://www.gama-system.com/webservices", "strIndex"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateTimeLow"},
-                {XMLName "http://www.gama-system.com/webservices", "strDateTimeHigh"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                },
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "http://www.gama-system.com/webservices", "GetIndexValuesByDateTimeXMLResult"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            null,
-            soap-action = "http://www.gama-system.com/webservices/GetIndexValuesByDateTimeXML",
-            request-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValuesByDateTimeXML"},
-            response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValuesByDateTimeXMLResponse"},
-            rpc-style? = false,
-            write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-get-stocks-xmlschema}
+     {self.define-get-stock-daily-values-by-value-xml}
+     {self.define-get-stock-daily-values-by-date-xml}
+     {self.define-get-stock-daily-values-xml}
+     {self.define-get-latest-stock-daily-values-xml}
+     {self.define-get-stock-daily-value}
+     {self.define-get-latest-stock-daily-value}
+     {self.define-get-latest-stock-value}
+     {self.define-get-stock-value}
+     {self.define-get-stock-values-by-date-time-xml}
+     {self.define-get-indices-xmlschema}
+     {self.define-get-index-daily-values-by-value-xml}
+     {self.define-get-index-daily-values-by-date-xml}
+     {self.define-get-index-daily-values-xml}
+     {self.define-get-latest-index-daily-values-xml}
+     {self.define-get-index-daily-value}
+     {self.define-get-latest-index-daily-value}
+     {self.define-get-latest-index-value}
+     {self.define-get-index-value}
+     {self.define-get-index-values-by-date-time-xml}
   }
 
   {method public {register-types
@@ -2378,7 +1981,7 @@
             {abs-url "http://www.gama-system.com/webservices/stockquotes.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

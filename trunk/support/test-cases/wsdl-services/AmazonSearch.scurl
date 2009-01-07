@@ -1,10 +1,10 @@
 {curl 7.0 package}
 {package COM.CURL.WSDL.AmazonSearch,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/AmazonSearch.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/AmazonSearch.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/support/test-cases/wsdl-services/AmazonSearch.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/AmazonSearch.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public AmazonSearchService {inherits WSDLHTTPRPCPostClient}
@@ -20,6 +20,33 @@
             {{Array-of any}
                 keyword-search-request
             },
+            {splice self.operations["keyword-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-keyword-search-request keyword-search-request:#KeywordRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                keyword-search-request
+            },
+            {splice self.operations["keyword-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-keyword-search-request}:void
+    set self.operations["keyword-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "KeywordSearchRequest"}
             },
@@ -47,50 +74,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-keyword-search-request keyword-search-request:#KeywordRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                keyword-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "KeywordSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "KeywordRequest"},
-                    curl-type = KeywordRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "KeywordSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -106,6 +89,33 @@
             {{Array-of any}
                 text-stream-search-request
             },
+            {splice self.operations["text-stream-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-text-stream-search-request text-stream-search-request:#TextStreamRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                text-stream-search-request
+            },
+            {splice self.operations["text-stream-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-text-stream-search-request}:void
+    set self.operations["text-stream-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "TextStreamSearchRequest"}
             },
@@ -133,50 +143,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-text-stream-search-request text-stream-search-request:#TextStreamRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                text-stream-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "TextStreamSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "TextStreamRequest"},
-                    curl-type = TextStreamRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "TextStreamSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -192,6 +158,33 @@
             {{Array-of any}
                 power-search-request
             },
+            {splice self.operations["power-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-power-search-request power-search-request:#PowerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                power-search-request
+            },
+            {splice self.operations["power-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-power-search-request}:void
+    set self.operations["power-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "PowerSearchRequest"}
             },
@@ -219,50 +212,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-power-search-request power-search-request:#PowerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                power-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "PowerSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "PowerRequest"},
-                    curl-type = PowerRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "PowerSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -278,6 +227,33 @@
             {{Array-of any}
                 browse-node-search-request
             },
+            {splice self.operations["browse-node-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-browse-node-search-request browse-node-search-request:#BrowseNodeRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                browse-node-search-request
+            },
+            {splice self.operations["browse-node-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-browse-node-search-request}:void
+    set self.operations["browse-node-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "BrowseNodeSearchRequest"}
             },
@@ -305,50 +281,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-browse-node-search-request browse-node-search-request:#BrowseNodeRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                browse-node-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "BrowseNodeSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "BrowseNodeRequest"},
-                    curl-type = BrowseNodeRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "BrowseNodeSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -364,6 +296,33 @@
             {{Array-of any}
                 asin-search-request
             },
+            {splice self.operations["asin-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-asin-search-request asin-search-request:#AsinRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                asin-search-request
+            },
+            {splice self.operations["asin-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-asin-search-request}:void
+    set self.operations["asin-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "AsinSearchRequest"}
             },
@@ -391,50 +350,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-asin-search-request asin-search-request:#AsinRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                asin-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "AsinSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "AsinRequest"},
-                    curl-type = AsinRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "AsinSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -450,6 +365,33 @@
             {{Array-of any}
                 blended-search-request
             },
+            {splice self.operations["blended-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductLineArray
+    }
+  }
+
+
+  {method public {async-blended-search-request blended-search-request:#BlendedRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                blended-search-request
+            },
+            {splice self.operations["blended-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-blended-search-request}:void
+    set self.operations["blended-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "BlendedSearchRequest"}
             },
@@ -477,50 +419,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductLineArray
-    }
-  }
-
-
-  {method public {async-blended-search-request blended-search-request:#BlendedRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                blended-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "BlendedSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "BlendedRequest"},
-                    curl-type = BlendedRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked "http://soap.amazon.com", "ProductLine[]"},
-                    curl-type = ProductLineArray,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "BlendedSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -536,6 +434,33 @@
             {{Array-of any}
                 upc-search-request
             },
+            {splice self.operations["upc-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-upc-search-request upc-search-request:#UpcRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                upc-search-request
+            },
+            {splice self.operations["upc-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-upc-search-request}:void
+    set self.operations["upc-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "UpcSearchRequest"}
             },
@@ -563,50 +488,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-upc-search-request upc-search-request:#UpcRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                upc-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "UpcSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "UpcRequest"},
-                    curl-type = UpcRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "UpcSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -622,6 +503,33 @@
             {{Array-of any}
                 sku-search-request
             },
+            {splice self.operations["sku-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-sku-search-request sku-search-request:#SkuRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                sku-search-request
+            },
+            {splice self.operations["sku-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-sku-search-request}:void
+    set self.operations["sku-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "SkuSearchRequest"}
             },
@@ -649,50 +557,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-sku-search-request sku-search-request:#SkuRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                sku-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "SkuSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "SkuRequest"},
-                    curl-type = SkuRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "SkuSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -708,6 +572,33 @@
             {{Array-of any}
                 author-search-request
             },
+            {splice self.operations["author-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-author-search-request author-search-request:#AuthorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                author-search-request
+            },
+            {splice self.operations["author-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-author-search-request}:void
+    set self.operations["author-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "AuthorSearchRequest"}
             },
@@ -735,50 +626,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-author-search-request author-search-request:#AuthorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                author-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "AuthorSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "AuthorRequest"},
-                    curl-type = AuthorRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "AuthorSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -794,6 +641,33 @@
             {{Array-of any}
                 artist-search-request
             },
+            {splice self.operations["artist-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-artist-search-request artist-search-request:#ArtistRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                artist-search-request
+            },
+            {splice self.operations["artist-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-artist-search-request}:void
+    set self.operations["artist-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ArtistSearchRequest"}
             },
@@ -821,50 +695,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-artist-search-request artist-search-request:#ArtistRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                artist-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ArtistSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ArtistRequest"},
-                    curl-type = ArtistRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ArtistSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -880,6 +710,33 @@
             {{Array-of any}
                 actor-search-request
             },
+            {splice self.operations["actor-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-actor-search-request actor-search-request:#ActorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                actor-search-request
+            },
+            {splice self.operations["actor-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-actor-search-request}:void
+    set self.operations["actor-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ActorSearchRequest"}
             },
@@ -907,50 +764,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-actor-search-request actor-search-request:#ActorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                actor-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ActorSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ActorRequest"},
-                    curl-type = ActorRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ActorSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -966,6 +779,33 @@
             {{Array-of any}
                 manufacturer-search-request
             },
+            {splice self.operations["manufacturer-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-manufacturer-search-request manufacturer-search-request:#ManufacturerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                manufacturer-search-request
+            },
+            {splice self.operations["manufacturer-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-manufacturer-search-request}:void
+    set self.operations["manufacturer-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ManufacturerSearchRequest"}
             },
@@ -993,50 +833,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-manufacturer-search-request manufacturer-search-request:#ManufacturerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                manufacturer-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ManufacturerSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ManufacturerRequest"},
-                    curl-type = ManufacturerRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ManufacturerSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1052,6 +848,33 @@
             {{Array-of any}
                 director-search-request
             },
+            {splice self.operations["director-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-director-search-request director-search-request:#DirectorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                director-search-request
+            },
+            {splice self.operations["director-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-director-search-request}:void
+    set self.operations["director-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "DirectorSearchRequest"}
             },
@@ -1079,50 +902,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-director-search-request director-search-request:#DirectorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                director-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "DirectorSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "DirectorRequest"},
-                    curl-type = DirectorRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "DirectorSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1138,6 +917,33 @@
             {{Array-of any}
                 exchange-search-request
             },
+            {splice self.operations["exchange-search-request"]}
+        }
+    {return
+        responses[0] asa #ListingProductDetails
+    }
+  }
+
+
+  {method public {async-exchange-search-request exchange-search-request:#ExchangeRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                exchange-search-request
+            },
+            {splice self.operations["exchange-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-exchange-search-request}:void
+    set self.operations["exchange-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ExchangeSearchRequest"}
             },
@@ -1165,50 +971,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ListingProductDetails
-    }
-  }
-
-
-  {method public {async-exchange-search-request exchange-search-request:#ExchangeRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                exchange-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ExchangeSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ExchangeRequest"},
-                    curl-type = ExchangeRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ListingProductDetails"},
-                    curl-type = ListingProductDetails,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ExchangeSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1224,6 +986,33 @@
             {{Array-of any}
                 list-mania-search-request
             },
+            {splice self.operations["list-mania-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-list-mania-search-request list-mania-search-request:#ListManiaRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                list-mania-search-request
+            },
+            {splice self.operations["list-mania-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-list-mania-search-request}:void
+    set self.operations["list-mania-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ListManiaSearchRequest"}
             },
@@ -1251,50 +1040,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-list-mania-search-request list-mania-search-request:#ListManiaRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                list-mania-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ListManiaSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ListManiaRequest"},
-                    curl-type = ListManiaRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ListManiaSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1310,6 +1055,33 @@
             {{Array-of any}
                 wishlist-search-request
             },
+            {splice self.operations["wishlist-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-wishlist-search-request wishlist-search-request:#WishlistRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                wishlist-search-request
+            },
+            {splice self.operations["wishlist-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-wishlist-search-request}:void
+    set self.operations["wishlist-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "WishlistSearchRequest"}
             },
@@ -1337,50 +1109,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-wishlist-search-request wishlist-search-request:#WishlistRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                wishlist-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "WishlistSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "WishlistRequest"},
-                    curl-type = WishlistRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "WishlistSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1396,6 +1124,33 @@
             {{Array-of any}
                 seller-profile-search-request
             },
+            {splice self.operations["seller-profile-search-request"]}
+        }
+    {return
+        responses[0] asa #SellerProfile
+    }
+  }
+
+
+  {method public {async-seller-profile-search-request seller-profile-search-request:#SellerProfileRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                seller-profile-search-request
+            },
+            {splice self.operations["seller-profile-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-seller-profile-search-request}:void
+    set self.operations["seller-profile-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "SellerProfileSearchRequest"}
             },
@@ -1423,50 +1178,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #SellerProfile
-    }
-  }
-
-
-  {method public {async-seller-profile-search-request seller-profile-search-request:#SellerProfileRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                seller-profile-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "SellerProfileSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "SellerProfileRequest"},
-                    curl-type = SellerProfileRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "SellerProfile"},
-                    curl-type = SellerProfile,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "SellerProfileSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1482,6 +1193,33 @@
             {{Array-of any}
                 seller-search-request
             },
+            {splice self.operations["seller-search-request"]}
+        }
+    {return
+        responses[0] asa #SellerSearch
+    }
+  }
+
+
+  {method public {async-seller-search-request seller-search-request:#SellerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                seller-search-request
+            },
+            {splice self.operations["seller-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-seller-search-request}:void
+    set self.operations["seller-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "SellerSearchRequest"}
             },
@@ -1509,50 +1247,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #SellerSearch
-    }
-  }
-
-
-  {method public {async-seller-search-request seller-search-request:#SellerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                seller-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "SellerSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "SellerRequest"},
-                    curl-type = SellerRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "SellerSearch"},
-                    curl-type = SellerSearch,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "SellerSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1568,6 +1262,33 @@
             {{Array-of any}
                 marketplace-search-request
             },
+            {splice self.operations["marketplace-search-request"]}
+        }
+    {return
+        responses[0] asa #MarketplaceSearch
+    }
+  }
+
+
+  {method public {async-marketplace-search-request marketplace-search-request:#MarketplaceRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                marketplace-search-request
+            },
+            {splice self.operations["marketplace-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-marketplace-search-request}:void
+    set self.operations["marketplace-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "MarketplaceSearchRequest"}
             },
@@ -1595,50 +1316,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #MarketplaceSearch
-    }
-  }
-
-
-  {method public {async-marketplace-search-request marketplace-search-request:#MarketplaceRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                marketplace-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "MarketplaceSearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "MarketplaceRequest"},
-                    curl-type = MarketplaceRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "MarketplaceSearch"},
-                    curl-type = MarketplaceSearch,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "MarketplaceSearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1654,6 +1331,33 @@
             {{Array-of any}
                 similarity-search-request
             },
+            {splice self.operations["similarity-search-request"]}
+        }
+    {return
+        responses[0] asa #ProductInfo
+    }
+  }
+
+
+  {method public {async-similarity-search-request similarity-search-request:#SimilarityRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                similarity-search-request
+            },
+            {splice self.operations["similarity-search-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-similarity-search-request}:void
+    set self.operations["similarity-search-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "SimilaritySearchRequest"}
             },
@@ -1681,50 +1385,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-similarity-search-request similarity-search-request:#SimilarityRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                similarity-search-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "SimilaritySearchRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "SimilarityRequest"},
-                    curl-type = SimilarityRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "return"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ProductInfo"},
-                    curl-type = ProductInfo,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "SimilaritySearchRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1740,6 +1400,33 @@
             {{Array-of any}
                 get-shopping-cart-request
             },
+            {splice self.operations["get-shopping-cart-request"]}
+        }
+    {return
+        responses[0] asa #ShoppingCart
+    }
+  }
+
+
+  {method public {async-get-shopping-cart-request get-shopping-cart-request:#GetShoppingCartRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                get-shopping-cart-request
+            },
+            {splice self.operations["get-shopping-cart-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-shopping-cart-request}:void
+    set self.operations["get-shopping-cart-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "GetShoppingCartRequest"}
             },
@@ -1767,50 +1454,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-get-shopping-cart-request get-shopping-cart-request:#GetShoppingCartRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                get-shopping-cart-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "GetShoppingCartRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "GetShoppingCartRequest"},
-                    curl-type = GetShoppingCartRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ShoppingCart"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ShoppingCart"},
-                    curl-type = ShoppingCart,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "GetShoppingCartRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1826,6 +1469,33 @@
             {{Array-of any}
                 clear-shopping-cart-request
             },
+            {splice self.operations["clear-shopping-cart-request"]}
+        }
+    {return
+        responses[0] asa #ShoppingCart
+    }
+  }
+
+
+  {method public {async-clear-shopping-cart-request clear-shopping-cart-request:#ClearShoppingCartRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                clear-shopping-cart-request
+            },
+            {splice self.operations["clear-shopping-cart-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-clear-shopping-cart-request}:void
+    set self.operations["clear-shopping-cart-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ClearShoppingCartRequest"}
             },
@@ -1853,50 +1523,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-clear-shopping-cart-request clear-shopping-cart-request:#ClearShoppingCartRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                clear-shopping-cart-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ClearShoppingCartRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ClearShoppingCartRequest"},
-                    curl-type = ClearShoppingCartRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ShoppingCart"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ShoppingCart"},
-                    curl-type = ShoppingCart,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ClearShoppingCartRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1912,6 +1538,33 @@
             {{Array-of any}
                 add-shopping-cart-items-request
             },
+            {splice self.operations["add-shopping-cart-items-request"]}
+        }
+    {return
+        responses[0] asa #ShoppingCart
+    }
+  }
+
+
+  {method public {async-add-shopping-cart-items-request add-shopping-cart-items-request:#AddShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                add-shopping-cart-items-request
+            },
+            {splice self.operations["add-shopping-cart-items-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-add-shopping-cart-items-request}:void
+    set self.operations["add-shopping-cart-items-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "AddShoppingCartItemsRequest"}
             },
@@ -1939,50 +1592,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-add-shopping-cart-items-request add-shopping-cart-items-request:#AddShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                add-shopping-cart-items-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "AddShoppingCartItemsRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "AddShoppingCartItemsRequest"},
-                    curl-type = AddShoppingCartItemsRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ShoppingCart"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ShoppingCart"},
-                    curl-type = ShoppingCart,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "AddShoppingCartItemsRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1998,6 +1607,33 @@
             {{Array-of any}
                 remove-shopping-cart-items-request
             },
+            {splice self.operations["remove-shopping-cart-items-request"]}
+        }
+    {return
+        responses[0] asa #ShoppingCart
+    }
+  }
+
+
+  {method public {async-remove-shopping-cart-items-request remove-shopping-cart-items-request:#RemoveShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                remove-shopping-cart-items-request
+            },
+            {splice self.operations["remove-shopping-cart-items-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-remove-shopping-cart-items-request}:void
+    set self.operations["remove-shopping-cart-items-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "RemoveShoppingCartItemsRequest"}
             },
@@ -2025,50 +1661,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-remove-shopping-cart-items-request remove-shopping-cart-items-request:#RemoveShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                remove-shopping-cart-items-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "RemoveShoppingCartItemsRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "RemoveShoppingCartItemsRequest"},
-                    curl-type = RemoveShoppingCartItemsRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ShoppingCart"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ShoppingCart"},
-                    curl-type = ShoppingCart,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "RemoveShoppingCartItemsRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -2084,6 +1676,33 @@
             {{Array-of any}
                 modify-shopping-cart-items-request
             },
+            {splice self.operations["modify-shopping-cart-items-request"]}
+        }
+    {return
+        responses[0] asa #ShoppingCart
+    }
+  }
+
+
+  {method public {async-modify-shopping-cart-items-request modify-shopping-cart-items-request:#ModifyShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                modify-shopping-cart-items-request
+            },
+            {splice self.operations["modify-shopping-cart-items-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-modify-shopping-cart-items-request}:void
+    set self.operations["modify-shopping-cart-items-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ModifyShoppingCartItemsRequest"}
             },
@@ -2111,50 +1730,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-modify-shopping-cart-items-request modify-shopping-cart-items-request:#ModifyShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                modify-shopping-cart-items-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ModifyShoppingCartItemsRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ModifyShoppingCartItemsRequest"},
-                    curl-type = ModifyShoppingCartItemsRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "ShoppingCart"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "ShoppingCart"},
-                    curl-type = ShoppingCart,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "ModifyShoppingCartItemsRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -2170,6 +1745,33 @@
             {{Array-of any}
                 get-transaction-details-request
             },
+            {splice self.operations["get-transaction-details-request"]}
+        }
+    {return
+        responses[0] asa #GetTransactionDetailsResponse
+    }
+  }
+
+
+  {method public {async-get-transaction-details-request get-transaction-details-request:#GetTransactionDetailsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                get-transaction-details-request
+            },
+            {splice self.operations["get-transaction-details-request"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-transaction-details-request}:void
+    set self.operations["get-transaction-details-request"] = 
+         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "GetTransactionDetailsRequest"}
             },
@@ -2197,51 +1799,36 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #GetTransactionDetailsResponse
     }
   }
 
-
-  {method public {async-get-transaction-details-request get-transaction-details-request:#GetTransactionDetailsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                get-transaction-details-request
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "GetTransactionDetailsRequest"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "GetTransactionDetailsRequest"},
-                    curl-type = GetTransactionDetailsRequest,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "GetTransactionDetailsResponse"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://soap.amazon.com", "GetTransactionDetailsResponse"},
-                    curl-type = GetTransactionDetailsResponse,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "http://soap.amazon.com",
-            request-operation = {XMLName "http://soap.amazon.com", "GetTransactionDetailsRequest"},
-            default-namespace = "http://soap.amazon.com",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-keyword-search-request}
+     {self.define-text-stream-search-request}
+     {self.define-power-search-request}
+     {self.define-browse-node-search-request}
+     {self.define-asin-search-request}
+     {self.define-blended-search-request}
+     {self.define-upc-search-request}
+     {self.define-sku-search-request}
+     {self.define-author-search-request}
+     {self.define-artist-search-request}
+     {self.define-actor-search-request}
+     {self.define-manufacturer-search-request}
+     {self.define-director-search-request}
+     {self.define-exchange-search-request}
+     {self.define-list-mania-search-request}
+     {self.define-wishlist-search-request}
+     {self.define-seller-profile-search-request}
+     {self.define-seller-search-request}
+     {self.define-marketplace-search-request}
+     {self.define-similarity-search-request}
+     {self.define-get-shopping-cart-request}
+     {self.define-clear-shopping-cart-request}
+     {self.define-add-shopping-cart-items-request}
+     {self.define-remove-shopping-cart-items-request}
+     {self.define-modify-shopping-cart-items-request}
+     {self.define-get-transaction-details-request}
   }
 
   {method public {register-types
@@ -7950,7 +7537,7 @@
             {abs-url "http://soap.amazon.com/onca/soap3"}
     }
     {construct-super service-location,
-        generated-using-version = "3"
+        generated-using-version = "4"
     }
   }
 }

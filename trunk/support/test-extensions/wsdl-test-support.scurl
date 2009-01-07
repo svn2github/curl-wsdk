@@ -40,6 +40,8 @@
 {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
 {import * from COM.CURL.WSDK.XML-DISPLAY}
 
+|| ====================
+
 {define-class public GenerativeTestSuite {inherits TestSuite}
   {constructor public {default ...}
     {construct-super {splice ...}}
@@ -671,220 +673,207 @@
          then non-null-type
          else type}}
 }
+
 {define-class public WSDLEchoTestCases {inherits GenerativeTestSuite}
   || spec
-  field public-get constant xsd-type-source:StringInterface
-  field public-get constant request-value-source:StringInterface
-  || variants  
-  field public-get constant accept-encoding:#String = null
-  field public service-location:Url
+  field public loc:Url
+  || variants
+  field public-get constant literal?:bool = true
+  field public-get constant document?:bool = true
   
   {constructor public {default
-                          name:String,
-                          xsd-type-source:StringInterface,
-                          request-value-source:StringInterface,
-                          accept-encoding:#String = null,
-                          || TODO: make this more relocatable
-                          service-location:Url = 
-                              {url "http://localhost/SERVER/soap-services/echo-soap.php"}
+                          loc:Url,
+                          name:String = loc.filename,                 
+                          || variants
+                          literal?:bool = true,
+                          document?:bool = true
                       }
-    set self.xsd-type-source = xsd-type-source
-    set self.request-value-source = request-value-source
-    set self.accept-encoding = accept-encoding
-    set self.service-location = service-location
+    set self.loc = loc
+    set self.literal? = literal?
+    set self.document? = document?
     {construct-super name}
   }
   {method public {generate-tests}:void
-    let accept-encoding:#String = self.accept-encoding
-    let service-location:Url = self.service-location
-    {self.add
-        {WSDLEchoTestCase self.name & " doc_lit",
-            self.xsd-type-source,
-            self.request-value-source,
-            document? = true,
-            literal? = true,
-            accept-encoding = accept-encoding,
-            service-location = service-location}}
-    {self.add
-        {WSDLEchoTestCase self.name & " rpc_lit",
-            self.xsd-type-source,
-            self.request-value-source,
-            document? = false,
-            literal? = true,
-            accept-encoding = accept-encoding,
-            service-location = service-location}}
-    {self.add
-        {WSDLEchoTestCase self.name & " rpc_enc",
-            self.xsd-type-source,
-            self.request-value-source,
-            document? = false,
-            literal? = false,
-            accept-encoding = accept-encoding,
-            service-location = service-location}}
+    def doc = {build-xml preserve-whitespace? = false, self.loc}
+    def root = doc.root
+    
+    def groups = {root.search "GROUP"}
+    {for group in groups do
+        def group-name = {group.search "@name"}.as-String
+        def suite = {TestSuite group-name}
+        {self.add suite}
+        
+        def cases = {group.search "CASE"}
+        {for case in cases do
+            def case-name = {case.search "@name"}.as-String
+            def xsd = {case.search "XSD"}.as-XDMElement
+            def xsd-src = {self.xsd-fragment xsd}
+            
+            def vals = {case.search "CURL"}
+            {for val key i in vals do
+                def val-name = {val.search "@name"}.as-String
+                def suffix =
+                    {if val-name.empty? then
+                        {if vals.size < 2 then ""
+                         else {format "%d", i + 1}}
+                     else val-name}
+                def name =
+                    {if suffix.empty? then case-name
+                     else {format "%s#%s", case-name, suffix}}
+                        
+                {suite.add 
+                    {WSDLEchoTestCase name,
+                        document? = self.document?,
+                        literal? = self.literal?,
+                        xsd-src, {val.get-text}}}
+            }
+        }
+    }
+  }
+  {method {xsd-fragment x:XDMElement}:String
+    def xsd = {x.clone}
+    {xsd.set-namespace-declaration
+        "xs", "http://www.w3.org/2001/XMLSchema"}
+    def xsd-txt = {xsd.to-XML}
+    def n-prefix = 52
+    def n-suffix = 7
+    {return
+        {xsd-txt.substr n-prefix,
+            xsd-txt.size - n-prefix - n-suffix}}
   }
 }
+
 {define-class public WSDLEchoTestCase {inherits TestCase}
   || spec
   field public-get constant xsd-type-source:StringInterface
   field public-get constant request-value-source:StringInterface
-  field public-get constant filename:String
   || variants
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
-  field public-get constant accept-encoding:#String = null
-  field public service-location:Url
   
   {constructor public {default
                           name:String,
-                          filename:String = name,
                           xsd-type-source:StringInterface,
                           request-value-source:StringInterface,                 
                           || variants
                           literal?:bool = true,
-                          document?:bool = true,
-                          accept-encoding:#String = null,
-                          service-location:Url = 
-                              {url "http://localhost/SERVER/soap-services/echo-soap.php"}
-                      } 
+                          document?:bool = true}
     set self.xsd-type-source = xsd-type-source
     set self.request-value-source = request-value-source
-    set self.filename = filename
     set self.literal? = literal?
-    set self.accept-encoding = accept-encoding
     set self.document? = document?
-    set self.accept-encoding = accept-encoding
-    set self.service-location = service-location
     {construct-super name}
   } 
   || state
-  field public-get wsdl-xml:XDMDocument = 
-      {uninitialized-value-for-type XDMDocument}
+  field public-get wsdl-xml:XDMDocument = {uninitialized-value-for-type XDMDocument}
   field public-get request-value:any
   field public-get service-package-source:StringBuf = {StringBuf}
-  field public-get service-package:OpenPackage = 
-      {uninitialized-value-for-type OpenPackage}
+  field public-get service-package:OpenPackage = {uninitialized-value-for-type OpenPackage}
   field public-get response-value:any
+  field public-get message-xml:XDMDocument = {uninitialized-value-for-type XDMDocument}
   field public-get match?:bool
-  field public-get trace-output:StringBuf = {StringBuf}
-  let xsd-template:String = |"<xs:schema
+  def xsd-template = |"<xs:schema
  xmlns:xs='http://www.w3.org/2001/XMLSchema'>
 %s
 </xs:schema>"|
   
   {method public {run}:void
     || parameters
-    let service-name:String = "TestService"
-    let method-name:String = "echo"
-    let type-name:String = "test"
+    def service-name = "TestService"
+    def method-name = "echo"
+    def type-name = "test"
+
     || synthesize WSDL
-    let xsd-type-fragment:XDMElement = 
+    def xsd-type-fragment = 
         {build-xml preserve-whitespace? = false,
             {format WSDLEchoTestCase.xsd-template, self.xsd-type-source}}.root
-    let xsd-types:XDMNodeSet = {xsd-type-fragment.search "*"}
+    def xsd-types = {xsd-type-fragment.search "*"}
     set self.wsdl-xml = 
         {make-wsdl-template 
             type-name = type-name,
             method-name = method-name,
             service-name = service-name,
             target-namespace = "http://www.example.com/",
-            || TODO: make this more relocatable
-            service-location = self.service-location,
             literal? = self.literal?,
             document? = self.document?,
             {splice xsd-types}}
-    let wloc:Url = {url "curl://temp/" & self.filename & ".wsdl"}
-    {with-open-streams out = {write-open wloc} do
+    def wbuf = {StringBuf}
+    {with-open-streams out = wbuf do
         {self.wsdl-xml.to-XML out = out}}
+    def wloc = {string-url wbuf}
+
     || generate service package
     set self.service-package-source = {StringBuf}
     set self.service-package =
         {make-service-package wloc, 
             out = self.service-package-source}
+
     || evaluate argument
     set self.request-value =
         {evaluate package = self.service-package,
             self.request-value-source}
+
     || reflect service
-    let service-class:ClassType = {self.service-package.lookup service-name} asa ClassType
-    let method:Method = {non-null {service-class.get-method method-name}}
-    let service:WSDLHTTPRPCPostClient = 
+    def service-class = {self.service-package.lookup service-name} asa ClassType
+    def service = 
         {with-compiler-directives allow-any-calls? = true do
             {service-class} asa WSDLHTTPRPCPostClient}
-    {if-non-null accept-encoding = self.accept-encoding then
-        set service.accept-encoding = accept-encoding}
-    set self.trace-output = {StringBuf}
-    set service.soap-caller.trace-stream = self.trace-output
-    || invoke service
-    let rets:FastArray = {method.invoke-n service, self.request-value}
-    set self.response-value = rets[0]
+    def format-request = {non-null {service-class.get-method "format-request"}}
+    def parse-response = {non-null {service-class.get-method "parse-response"}}
+
+    || simulate service
+    || - request
+    def req-rets = {format-request.invoke-n service, method-name, {Array self.request-value}}
+    def req-data = req-rets[0] asa HttpRequestData
+    def bytes = {req-data.request-data}
+    set self.message-xml = {build-xml {ByteArrayInputStream bytes}}
+    || - response
+    def rets = {parse-response.invoke-n service, method-name, {ByteArrayInputStream bytes}}
+    || - result
+    set self.response-value = (rets[0] asa Array)[0]
+    
     || compare round-trip result
     || - NOTE: some SOAP unmarshaling special cases
     set self.match? =
-            {compare-any self.response-value, self.request-value,
-                special-case =
-                    || null matches empty aggregate
-                    {proc {response:any, request:any}:bool
-                        {if response == null then
-                            {type-switch {type-of request}
-                             case t:ClassType do
-                                {if-non-null g = {t.get-getter "empty?"} then 
-                                    {if {g.get-value request} == true then
-                                        {return true}}}}}
-                        {return false}
-                    }}
+        {compare-any self.response-value, self.request-value,
+            special-case =
+                || null matches empty aggregate
+                {proc {response:any, request:any}:bool
+                    {if response == null then
+                        {type-switch {type-of request}
+                         case t:ClassType do
+                            {if-non-null g = {t.get-getter "empty?"} then 
+                                {if {g.get-value request} == true then
+                                    {return true}}}}}
+                    {return false}
+                }}
     {if self.match? 
      then {TestCondition.succeed}
      else {TestCondition.fail}}
   }
-  || display
-||--  {method public {display}:Visual
-||--    let wsdl-display:XDMTreeControl =
-||--        {XDMTreeControl 
-||--            {XDMTreeModel self.wsdl-xml},
-||--            open? = true}
-||--    let scurl-display:TextEditPanel =
-||--        {TextEditPanel
-||--            mode = curl-mode}
-||--    {scurl-display.load-from-stream
-||--        {self.service-package-source.to-InputStream}}
-||--    {return 
-||--        {TabContainer
-||--            {TabPane label = {lmessage value},
-||--                {HBox 
-||--                    spacing = 3px, 
-||--                    margin = 3px,
-||--                    height = {make-elastic stretchiness = 50%},
-||--                    {ScrollBox
-||--                        background = "#EEE",
-||--                        {display-any self.request-value}},
-||--                    {ScrollBox 
-||--                        background = "#EEE",
-||--                        {display-any self.response-value}}}},
-||--            {TabPane label = {monospace wsdl},
-||--                {ScrollBox hscroll? = false,
-||--                    background = "#EEE",
-||--                    wsdl-display}},
-||--            {TabPane label = {monospace scurl},
-||--                {ScrollBox
-||--                    hstretch? = true,
-||--                    background = "#EEE",
-||--                    scurl-display}},
-||--            {TabPane label = {monospace trace},
-||--                {ScrollBox
-||--                    hstretch? = true,
-||--                    background = "#EEE",
-||--                    {pre {value self.trace-output}}}}
-||--        }}
-||--  }
+  {method public {dump-service-info}:void
+    {output |"========== \\"|}
+    {output self.name}
+    {output "=========="}
+    {output self.xsd-type-source}
+    {output "=========="}
+    {output self.service-package-source}
+    {output "=========="}
+    {output self.request-value-source}
+    {output "=========="}
+    {output {self.message-xml.to-XML}}
+    {output |"========== //"|}
+  }
 }
-|| helper funtions
+
+
+|| helper functions
 {define-proc {make-service-package 
                  loc:Url, 
                  out:StringBuf = {StringBuf}
              }:OpenPackage
-    let w:WSDL = {WSDL loc}
-    let error:#Throwable = null
-    let package:OpenPackage =
+    def w = {WSDL loc}
+    def package =
         {OpenPackage 
             COM.CURL.WSDK.SOAP, 
             COM.CURL.WSDK.XML-DOCUMENT-MODEL}
@@ -892,7 +881,6 @@
     {evaluate package = package, out}
     {return package}
 }
-|| TODO: connect keywords to above
 || TODO: cleaner types input
 {define-proc {make-wsdl-template 
                  || keywords
@@ -909,23 +897,23 @@
                  ...:XDMElement
              }:XDMDocument
     || namespaces
-    let constant XS:String = "http://www.w3.org/2001/XMLSchema"
-    let constant WSDL:String = "http://schemas.xmlsoap.org/wsdl/"
-    let constant SOAP:String = "http://schemas.xmlsoap.org/wsdl/soap/"
+    def XS = "http://www.w3.org/2001/XMLSchema"
+    def WSDL = "http://schemas.xmlsoap.org/wsdl/"
+    def SOAP = "http://schemas.xmlsoap.org/wsdl/soap/"
     || shorthand
-    let constant e:{proc-type {...}:XDMElement} =
+    def e =
         {proc {...}:XDMElement
             {return {XDMElement {splice ...}}}}
     || assemble types
-    let test-types:{Array-of XDMElement} =
+    def test-types =
         {{Array-of XDMElement} test-type, {splice ...}}
     || WSDL parameters
-    let arg-name:String = "params"
-    let name:String = "TestSoap"
-    let name-in:String = "TestSoapIn"
-    let name-out:String = "TestSoapOut"
+    def arg-name = "params"
+    def name = "TestSoap"
+    def name-in = "TestSoapIn"
+    def name-out = "TestSoapOut"
     || WSDL
-    let wsdl:XDMElement =
+    def wsdl =
         {with-namespace-declarations
          do
             {extend-namespace-context 
@@ -933,21 +921,21 @@
                 wsdl = WSDL, 
                 soap = SOAP}    
             || argument element
-            let element:XDMElement =
+            def element =
                 {XDMElement "xs:element",
                     name = arg-name,
                     type = type-name}
             || variants
-            let style:String =
+            def style =
                 {if document? 
                  then "document"
                  else "rpc"}
-            let body-template:XDMElement =
+            def body-template =
                 {if literal? 
                  then {e "soap:body", use = "literal"}
                  else {e "soap:body", use = "encoded", 
                           encodingStyle = "http://schemas.xmlsoap.org/soap/encoding/"}}
-            let part-template:XDMElement =
+            def part-template =
                 {if document? 
                  then {e "wsdl:part", name = "parameters", element = arg-name}
                  else {e "wsdl:part", name = "parameters", type = type-name}}
@@ -992,3 +980,4 @@
             }} asa XDMElement
     {return {XDMDocument wsdl}}
 }
+

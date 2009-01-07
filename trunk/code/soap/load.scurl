@@ -69,15 +69,15 @@
 
 || base for generated WSDL service classes
 {include "WSDLHTTPRPCPostClient.scurl"}
+
 {doc-next ||== wsdl-service-class-version
     {purpose The format version used by generated WSDL service classes.}
     {details Checked by {docref WSDLHTTPRPCPostClient.verify-service-version}
         to ensure consitency.}
 }
-{let public constant wsdl-service-class-version:String = "3"}
+{let public constant wsdl-service-class-version:String = "4"}
 
 || public alternative to Type.array?
-
 {define-proc package {type-isa-FastArray? t:Type}:bool
     {return
         {type-switch t

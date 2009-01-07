@@ -30,6 +30,12 @@
         used to generate this class.
     }}
   field public constant generated-using-version:String
+  
+  {doc-next ||== WSDLHTTPRPCPostClient.operations
+    {purpose 
+        Characteristics of the operations defined by this web service.
+    }}
+  field public-get constant operations:{HashTable-of String, Arguments}
 
   {constructor public {default 
                           service-location:Url,
@@ -41,17 +47,21 @@
 
     set self.service-location = service-location
 
-    let constant (type-mapper:SOAPTypeMapper,
-        element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
-        xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
-        curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
-        xml-type-to-element-name:SOAPXMLTypeToElementNameMapper) =
+    set self.operations = {{HashTable-of String, Arguments}}
+
+    def (type-mapper:SOAPTypeMapper,
+         element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+         curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+         xml-type-to-element-name:SOAPXMLTypeToElementNameMapper) =
         {self.register-types}
 
+    {self.define-operations}
+
     set self.soap-caller =
-        {new SOAPHTTPRPCPostCaller,
+        {SOAPHTTPRPCPostCaller
             message-writer =
-                {new SOAPRPCMessageWriter,
+                {SOAPRPCMessageWriter
                     type-mapper = type-mapper,
                     element-name-to-xml-type = element-name-to-xml-type,
                     xml-type-to-curl-type = xml-type-to-curl-type,
@@ -59,7 +69,7 @@
                     xml-type-to-element-name = xml-type-to-element-name
                 },
             message-reader =
-                {new SOAPRPCMessageReader,
+                {SOAPRPCMessageReader
                     type-mapper = type-mapper,
                     element-name-to-xml-type = element-name-to-xml-type,
                     xml-type-to-curl-type = xml-type-to-curl-type,
@@ -120,6 +130,9 @@
                                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
                                   xml-type-to-element-name:SOAPXMLTypeToElementNameMapper)
   }
+
+  {method protected abstract open {define-operations}:void
+  }
   
   {doc-next ||== WSDLHTTPRPCPostClient.verify-service-version
     {purpose 
@@ -137,4 +150,169 @@
                 but the current version is {value wsdl-service-class-version}
             }}}
   }
+
+  {doc-next ||== WSDLHTTPRPCPostClient.parse-response
+    {purpose 
+        Process supplied response stream.}
+    {parameter method, the name of the operation}
+    {parameter in, the response stream}
+    {details
+        Useful for testing, and for diagnosing problems.
+    }}
+  {method public open {parse-response
+                          method:String,
+                          in:ByteInputStream
+                      }:(responses:{Array-of any},
+                         headers:#{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool},
+                         root-attributes:#{Array-of XMLAttribute})
+    {return
+        {self.parse-response-internal
+            in,
+            self.service-location,
+            {splice self.operations[method]}
+        }}
+  }
+
+  {doc-next ||== WSDLHTTPRPCPostClient.format-request
+    {purpose 
+        Create request data with supplied arguments.}
+    {parameter method, the name of the operation}
+    {parameter args, the method arguments}
+    {details
+        Useful for testing, and for diagnosing problems.
+    }}
+  {method public open {format-request
+                          method:String,
+                          arguments:Array
+                      }:(request-data:HttpRequestData,
+                         request-http-headers:#HttpRequestHeaders)
+    {return
+        {self.format-request-internal
+            arguments,
+            {splice self.operations[method]}
+        }}
+  }
+  
+  {method package {parse-response-internal
+                      || (async-)call arguments
+                      in:ByteInputStream,
+                      binding-url:Url,
+                      argument-names:{Array-of #XMLName},
+                      argument-types:{Array-of SOAPObjectType},
+                      response-names:{Array-of #XMLName},
+                      response-types:{Array-of SOAPObjectType},
+                      encoding:#String,
+                      repeating-elements:#{Set-of XMLName} = null,
+                      request-operation:#XMLName = null,
+                      response-operation:#XMLName = request-operation,
+                      soap-action:#String = null,
+                      write-type-attribute?:bool = true,
+                      check-type-attribute?:bool = false,
+                      ||scheme-instance-namespace:#String = null,
+                      default-namespace:#String = null,
+                      write-encoding-attribute?:bool = true,
+                      envelope-namespace:String =
+                          SOAPMessageWriter.soap-1-1-envelope-uri,
+                      request-headers:#{Array-of any} = null,
+                      request-header-names:#{Array-of #XMLName} = null,
+                      request-header-types:#{Array-of SOAPObjectType} = null,
+                      request-header-roles:#{Array-of #String} = null,
+                      request-header-must-understands:#{Array-of bool} = null,
+                      response-header-names:#{Array-of #XMLName} = null,
+                      response-header-types:#{Array-of SOAPObjectType} = null,
+                      header-attribute-namespace:String =
+                          SOAPMessageWriter.soap-1-1-envelope-uri,
+                      rpc-style?:bool = true,
+                      root-element-attributes:#{Array-of XMLToken} = null,
+                      character-encoding:CharEncoding = CharEncoding.utf8,
+                      add-content-type-charset?:bool = true
+                  }:(responses:{Array-of any},
+                     headers:#{Array-of any},
+                     header-roles:#{Array-of #String},
+                     header-must-understands:#{Array-of bool},
+                     root-attributes:#{Array-of XMLAttribute})
+    {return
+        {self.soap-caller.read-message-from-stream
+            in,
+            binding-url,
+            response-names,
+            response-types,
+            encoding,
+            response-operation = response-operation,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            header-names = response-header-names,
+            header-types = response-header-types,
+            rpc-style? = rpc-style?,
+            character-encoding = character-encoding
+        }
+    }
+  }
+  
+  {method package {format-request-internal
+                      || (async-)call arguments
+                      arguments:Array,
+                      argument-names:{Array-of #XMLName},
+                      argument-types:{Array-of SOAPObjectType},
+                      response-names:{Array-of #XMLName},
+                      response-types:{Array-of SOAPObjectType},
+                      encoding:#String,
+                      repeating-elements:#{Set-of XMLName} = null,
+                      request-operation:#XMLName = null,
+                      response-operation:#XMLName = request-operation,
+                      soap-action:#String = null,
+                      write-type-attribute?:bool = true,
+                      check-type-attribute?:bool = false,
+                      ||scheme-instance-namespace:#String = null,
+                      default-namespace:#String = null,
+                      write-encoding-attribute?:bool = true,
+                      envelope-namespace:String =
+                          SOAPMessageWriter.soap-1-1-envelope-uri,
+                      request-headers:#{Array-of any} = null,
+                      request-header-names:#{Array-of #XMLName} = null,
+                      request-header-types:#{Array-of SOAPObjectType} = null,
+                      request-header-roles:#{Array-of #String} = null,
+                      request-header-must-understands:#{Array-of bool} = null,
+                      response-header-names:#{Array-of #XMLName} = null,
+                      response-header-types:#{Array-of SOAPObjectType} = null,
+                      header-attribute-namespace:String =
+                          SOAPMessageWriter.soap-1-1-envelope-uri,
+                      rpc-style?:bool = true,
+                      root-element-attributes:#{Array-of XMLToken} = null,
+                      character-encoding:CharEncoding = CharEncoding.utf8,
+                      add-content-type-charset?:bool = true
+                  }:(request-data:HttpRequestData,
+                     request-http-headers:#HttpRequestHeaders)
+    {return
+        {self.soap-caller.setup-request-data   
+            arguments,
+            argument-names,
+            argument-types,
+            encoding,
+            repeating-elements = repeating-elements,
+            request-operation = request-operation,
+            write-type-attribute? = write-type-attribute?,
+            ||scheme-instance-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            envelope-namespace = envelope-namespace,
+            headers = request-headers,
+            header-names = request-header-names,
+            header-types = request-header-types,
+            header-roles = request-header-roles,
+            header-must-understands = request-header-must-understands,
+            header-attribute-namespace = header-attribute-namespace,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            ||request-http-headers = request-http-headers,
+            character-encoding = character-encoding,
+            add-content-type-charset? = add-content-type-charset?,
+            ||soap-action = soap-action,
+            trace-stream = self.trace-stream
+        }
+    }
+  }
+
 }

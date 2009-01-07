@@ -884,7 +884,6 @@
     }
   }
 
-
   {method private {get-unique-name
                       base-name:XMLName,
                       target-namespace:String = base-name.local-name,
@@ -932,7 +931,7 @@
                     {message No name for complex-type}}
             }
         }
-    
+     
     let type:#WSDLSchemaType = null    
     {if {node.get-attribute "mixed"} == "true" then
         set type = {self.get-xml-document-type xml-name}
@@ -990,9 +989,6 @@
                     child, xml-name, target-namespace, element-form-qualified?
                 }
          elseif {self.schema-tag-match child.name, "simpleContent"} then
-||--            || fall back to anyType
-||--            {self.approximated-tag child}
-||--            set type = {self.get-xml-document-type xml-name}
             set type =
                 {self.parse-complex-type-simple-content
                     child, xml-name, target-namespace, element-form-qualified?
@@ -2914,7 +2910,10 @@
                       }:StringArray    
     let stub-classes:StringArray = {new StringArray}
     {out.write-one-string "\|\| This file was generated with COM.CURL.WSDK.WSDL\n"}
-    {format out = out, "\|\| WSDL file: %s\n\n", self.source-url.name}
+    {format out = out, "\|\| WSDL file: %s\n\n",
+        {type-switch self.source-url.stem
+         case s:StringDirectory do "unknown"
+         else self.source-url.name}}
     {out.write-one-string
         "\{import * from COM.CURL.WSDK.SOAP\}\n"
     }
@@ -3000,8 +2999,11 @@
             let constant types:{HashTable-of WSDLSchemaType, #XMLName} =
                 {new {HashTable-of WSDLSchemaType, #XMLName}}
             
-            let binding:WSDLBinding = port.binding
-            let port-type:WSDLPortType = binding.type
+            || %%% OPERATIONS LOOP
+            || ~~~~~~~~~~~~~~~~~~~~
+            def binding = port.binding
+            def port-type = binding.type
+            def method-names = {StringArray}
             {for binding-op in binding.operations do
                 let port-op:WSDLPortOperation =
                     {if-non-null po = {port-type.find-port-operation binding-op}
@@ -3175,10 +3177,21 @@
                     }
                 }
 
-                || write method twice, sync and async
-                {for method-pass:int = 0 to 1 do
+                || %%% METHOD LOOP
+                || ~~~~~~~~~~~~~~~~~~~~
+                def name =
+                    {self.curl-namer.get-curl-name port-op.name,
+                        scope = service-class-name & '.',
+                        curl-type = "method",
+                        curl-aux-name-info = {param-type-signature.to-String}
+                    }
+                || write method twice, sync and async,
+                || using common operation definitions
+                {for method-pass:int = 0 to 2 do
 
-                    let constant async-pass?:bool = method-pass == 1
+                    def sync-pass? = method-pass == 0
+                    def async-pass? = method-pass == 1
+                    def def-pass? = method-pass == 2
 
                     {out.write-one '\n'}
                     
@@ -3186,96 +3199,100 @@
                     {self.format-documentation out,
                         {splice documentation-things}
                     }
+                    || %%% METHOD NAME
+                    || ~~~~~~~~~~~~~~~~~~~~
                     || FIXME: shouldn't method name have a namespace?
                     {format out = out,
                         "  \{method public \{%s",
-                        {self.curl-namer.get-curl-name
-                            {new XMLName,
-                                "",
-                                {if async-pass? then
-                                    "async-" & port-op.name
+                        {if async-pass? then 
+                            "async-" & name
+                         elseif def-pass? then
+                            {method-names.append name}
+                            "define-" & name
+                         else
+                            name
+                        }
+                    }
+                    || %%% METHOD ARGUMENTS
+                    || ~~~~~~~~~~~~~~~~~~~~
+                    {if not def-pass? then
+                        let first-in-param?:bool = true
+                        {for param in in-params do
+                            {if not first-in-param? then
+                                {out.write-one ','}
+                             else
+                                set first-in-param? = false
+                            }
+                            {format out = out, " %s:%s%s",
+                                param.curl-name,
+                                {if param.nullable? then
+                                    "#"
                                  else
-                                    port-op.name
-                                }
-                            },
-                            scope = service-class-name & '.',
-                            curl-type = "method",
-                            curl-aux-name-info = {param-type-signature.to-String}
+                                    ""
+                                },
+                                param.type.ref-name
+                            }
                         }
-                    }
-                    let first-in-param?:bool = true
-                    {for param in in-params do
-                        {if not first-in-param? then
-                            {out.write-one ','}
-                         else
-                            set first-in-param? = false
-                        }
-                        {format out = out, " %s:%s%s",
-                            param.curl-name,
-                            {if param.nullable? then
-                                "#"
+                        || now add the header parameters to the argument list
+                        {for param in input-header-required-params do
+                            {if not first-in-param? then
+                                {out.write-one ','}
                              else
-                                ""
-                            },
-                            param.type.ref-name
+                                set first-in-param? = false
+                            }
+                            {format out = out, " %s:%s%s",
+                                param.curl-name,
+                                {if param.nullable? then
+                                    "#"
+                                 else
+                                    ""
+                                },
+                                param.type.ref-name
+                            }
                         }
-                    }
-                    || now add the header parameters to the argument list
-                    {for param in input-header-required-params do
-                        {if not first-in-param? then
-                            {out.write-one ','}
-                         else
-                            set first-in-param? = false
-                        }
-                        {format out = out, " %s:%s%s",
-                            param.curl-name,
-                            {if param.nullable? then
-                                "#"
+                        {for param in input-header-not-required-params do
+                            {if not first-in-param? then
+                                {out.write-one ','}
                              else
-                                ""
-                            },
-                            param.type.ref-name
-                        }
-                    }
-                    {for param in input-header-not-required-params do
-                        {if not first-in-param? then
-                            {out.write-one ','}
-                         else
-                            set first-in-param? = false
-                        }
-                        let constant ref-name:String = param.type.ref-name
-                        {format out = out, " %s:%s%s = %s",
-                            param.curl-name,
-                            {if param.nullable? then
-                                "#"
-                             else
-                                ""
-                            },
-                            ref-name,
-                            {if param.nullable? then
-                                "null"
-                             elseif ref-name == "String" then
-                                |""""|
-                             else
-                                {format
-                                    "\{uninitialized-value-for-type %s\}",
-                                    ref-name
+                                set first-in-param? = false
+                            }
+                            let constant ref-name:String = param.type.ref-name
+                            {format out = out, " %s:%s%s = %s",
+                                param.curl-name,
+                                {if param.nullable? then
+                                    "#"
+                                 else
+                                    ""
+                                },
+                                ref-name,
+                                {if param.nullable? then
+                                    "null"
+                                 elseif ref-name == "String" then
+                                    |""""|
+                                 else
+                                    {format
+                                        "\{uninitialized-value-for-type %s\}",
+                                        ref-name
+                                    }
                                 }
                             }
                         }
-                    }
-
-                    {if async-pass? then
-                        {if not first-in-param? then
-                            {out.write-one ','}
-                        }
-                        {out.write-one-string
-                            " event-handler:EventHandler, ...:EventHandler"
+                        {if async-pass? then
+                            {if not first-in-param? then
+                                {out.write-one ','}
+                            }
+                            {out.write-one-string
+                                " event-handler:EventHandler, ...:EventHandler"
+                            }
                         }
                     }
                     {format out = out, "\}:"}
+                    || %%% METHOD RETURN TYPE
+                    || ~~~~~~~~~~~~~~~~~~~~
                     {if async-pass? then
                         {out.write-one-string "SOAPHTTPRPCPostAsyncWorker"}
+                     elseif def-pass? then
+                        {out.write-one-string "void"}
                      else
                         {if out-params.size + output-header-required-params.size +
                             output-header-not-required-params.size 
@@ -3330,6 +3347,9 @@
                         }
                     }
                     {out.write-one '\n'}
+                    || %%% METHOD BODY DEFS
+                    || ~~~~~~~~~~~~~~~~~~~~
+                    {if not def-pass? then
                     {if input-header-required-params.size > 0 or
                         input-header-not-required-params.size > 0
                      then
@@ -3408,6 +3428,9 @@
                             }
                         }
                     }
+                    }
+                    || %%% METHOD BODY CALL
+                    || ~~~~~~~~~~~~~~~~~~~~
                     || FIXME: Only do the body when doing the non-abstract pass
                     || save any weird types to be initialized, add that to "default"
                     || write out self.soaphttp.call with appropriate type information and
@@ -3417,6 +3440,11 @@
                         {out.write-one-string
                             "    \{return\n" &
                             "        \{self.soap-caller.async-call\n"
+                        }
+                     elseif def-pass? then
+                        {out.write-one-string
+                            "    set self.operations[\"" & name & "\"] = \n" &
+                            "         \{Arguments\n"
                         }
                      else
                         {out.write-one-string
@@ -3428,6 +3456,9 @@
                             "        \{self.soap-caller.call\n"
                         }
                     }
+                    || %%% METHOD BODY CALL INPUT ARGS
+                    || ~~~~~~~~~~~~~~~~~~~~
+                    {if not def-pass? then
                     {out.write-one-string
                         "            self.service-location,\n" &
                         "            \{\{Array-of any\}"
@@ -3445,7 +3476,16 @@
                     }
                     {out.write-one-string
                         "\n" &
-                        "            \},\n" &
+                        "            \},\n"
+                    }
+                    }
+                    || %%% METHOD BODY CALL SPEC ARGS
+                    || ~~~~~~~~~~~~~~~~~~~~
+                    {if not def-pass? then
+                        {out.write-one-string
+                            "            \{splice self.operations[\"" & name & "\"]\}"}
+                     else
+                    {out.write-one-string
                         "            \{\{Array-of #XMLName\}"
                     }
                     || write out argument names
@@ -3668,19 +3708,25 @@
                             "false"
                         }
                     }
+                    }
+                    || %%% METHOD BODY CALL FINAL ARGS
+                    || ~~~~~~~~~~~~~~~~~~~~
                     {if async-pass? then
                         {out.write-one-string
                             ",\n" &
                             "            event-handler,\n" &
                             "            ...\n"
                         }
-                     else
-                        {out.write-one '\n'}
                     }
-                    {out.write-one-string
-                        "        \}\n"
+                    {out.write-one '\n'}
+                    {if not def-pass? then
+                        {out.write-one-string
+                            "        \}\n"
+                        }
                     }
-                    {if async-pass? then
+                    || %%% METHOD BODY RETURN
+                    || ~~~~~~~~~~~~~~~~~~~~
+                    {if async-pass? or def-pass? then
                         {out.write-one-string
                             "    \}\n"
                         }
@@ -3767,6 +3813,17 @@
                 || - 'exclude-unreferenced-types? = true' 
 
             }
+            || define operations
+            {out.write-one-string
+                "  \{method protected \{define-operations\}:void\n"
+            }
+            {for name in method-names do
+                {out.write-one-string
+                    "     \{self.define-" & name & "\}\n"
+                }}
+            {out.write-one-string 
+                "  \}\n\n"}
+
             || register types for SOAP conversion
             {out.write-one-string
                 "  \{method public \{register-types\n" &

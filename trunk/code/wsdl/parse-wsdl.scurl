@@ -3350,84 +3350,84 @@
                     || %%% METHOD BODY DEFS
                     || ~~~~~~~~~~~~~~~~~~~~
                     {if not def-pass? then
-                    {if input-header-required-params.size > 0 or
-                        input-header-not-required-params.size > 0
-                     then
-                        {out.write-one-string
-                            "    let constant request-header-names:\{Array-of #XMLName\} =\n" &
-                            "        \{\{Array-of #XMLName\}"
-                        }
-                        {for param key i in input-header-required-params do
-                            {if i > 0 then
-                                {out.write-one ','}
-                            }
-                            {out.write-one '\n'}
-                            {format out = out, "            %s",
-                                {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
-                            }
-                        }
-                        {if input-header-required-params.size > 0 then
-                            {out.write-one-string "\n        "}
-                        }
-                        {out.write-one-string
-                            "\}\n" &
-                            "    let constant request-header-types:\{Array-of SOAPObjectType\} =\n" &
-                            "        \{\{Array-of SOAPObjectType\}"
-                        }
-                        || write out request header types
-                        {for param key i in input-header-required-params do
-                            {if i > 0 then
-                                {out.write-one ','}
-                            }
-                            {out.write-one '\n'}
+                        {if input-header-required-params.size > 0 or
+                            input-header-not-required-params.size > 0
+                         then
                             {out.write-one-string
-                                {param.type.soap-object-type-string tab-level = 12}
+                                "    let constant request-header-names:\{Array-of #XMLName\} =\n" &
+                                "        \{\{Array-of #XMLName\}"
+                            }
+                            {for param key i in input-header-required-params do
+                                {if i > 0 then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                                {format out = out, "            %s",
+                                    {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
+                                }
+                            }
+                            {if input-header-required-params.size > 0 then
+                                {out.write-one-string "\n        "}
+                            }
+                            {out.write-one-string
+                                "\}\n" &
+                                "    let constant request-header-types:\{Array-of SOAPObjectType\} =\n" &
+                                "        \{\{Array-of SOAPObjectType\}"
+                            }
+                            || write out request header types
+                            {for param key i in input-header-required-params do
+                                {if i > 0 then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                                {out.write-one-string
+                                    {param.type.soap-object-type-string tab-level = 12}
+                                }
+                            }
+                            {if input-header-required-params.size > 0 then
+                                {out.write-one-string "\n        "}
+                            }
+                            {out.write-one-string
+                                "\}\n" &
+                                "    let constant request-headers:\{Array-of any\} =\n" &
+                                "        \{\{Array-of any\}"
+                            }
+                            {for param key i in input-header-required-params do
+                                {if i > 0 then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                                {format out = out,
+                                    "            %s",
+                                    param.curl-name
+                                }
+                            }
+                            {if input-header-required-params.size > 0 then
+                                {out.write-one-string "\n        "}
+                            }
+                            {out.write-one-string
+                                "\}\n"
+                            }
+                            || now add any not-required headers that were actually
+                            || supplied.
+                            {for param key i in input-header-not-required-params do
+                                {format out = out,
+                                    "    \{if \{keyword-supplied? %s\} then\n" &
+                                    "        \{request-header-types.append\n" &
+                                    "%s\n" &
+                                    "        \}\n" &
+                                    "        \{request-header-names.append\n" &
+                                    "           %s\n" &
+                                    "        \}\n" &
+                                    "        \{request-headers.append %s\}\n" &
+                                    "    \}\n",
+                                    param.curl-name,
+                                    {param.type.soap-object-type-string tab-level = 12},
+                                    {WSDLSchemaType.xml-name-to-curl-code param.xml-name},
+                                    param.curl-name
+                                }
                             }
                         }
-                        {if input-header-required-params.size > 0 then
-                            {out.write-one-string "\n        "}
-                        }
-                        {out.write-one-string
-                            "\}\n" &
-                            "    let constant request-headers:\{Array-of any\} =\n" &
-                            "        \{\{Array-of any\}"
-                        }
-                        {for param key i in input-header-required-params do
-                            {if i > 0 then
-                                {out.write-one ','}
-                            }
-                            {out.write-one '\n'}
-                            {format out = out,
-                                "            %s",
-                                param.curl-name
-                            }
-                        }
-                        {if input-header-required-params.size > 0 then
-                            {out.write-one-string "\n        "}
-                        }
-                        {out.write-one-string
-                            "\}\n"
-                        }
-                        || now add any not-required headers that were actually
-                        || supplied.
-                        {for param key i in input-header-not-required-params do
-                            {format out = out,
-                                "    \{if \{keyword-supplied? %s\} then\n" &
-                                "        \{request-header-types.append\n" &
-                                "%s\n" &
-                                "        \}\n" &
-                                "        \{request-header-names.append\n" &
-                                "           %s\n" &
-                                "        \}\n" &
-                                "        \{request-headers.append %s\}\n" &
-                                "    \}\n",
-                                param.curl-name,
-                                {param.type.soap-object-type-string tab-level = 12},
-                                {WSDLSchemaType.xml-name-to-curl-code param.xml-name},
-                                param.curl-name
-                            }
-                        }
-                    }
                     }
                     || %%% METHOD BODY CALL
                     || ~~~~~~~~~~~~~~~~~~~~
@@ -3459,255 +3459,258 @@
                     || %%% METHOD BODY CALL INPUT ARGS
                     || ~~~~~~~~~~~~~~~~~~~~
                     {if not def-pass? then
-                    {out.write-one-string
-                        "            self.service-location,\n" &
-                        "            \{\{Array-of any\}"
-                    }
-                    || write out argument values
-                    {for param key i in in-params do
-                        {if i > 0 then
-                            {out.write-one ','}
+                        {out.write-one-string
+                            "            self.service-location,\n" &
+                            "            \{\{Array-of any\}"
                         }
-                        {out.write-one-string "\n"}
-                        || need to uniqify and clean names
-                        {format out = out, "                %s",
-                            param.curl-name
+                        || write out argument values
+                        {for param key i in in-params do
+                            {if i > 0 then
+                                {out.write-one ','}
+                            }
+                            {out.write-one-string "\n"}
+                            || need to uniqify and clean names
+                            {format out = out, "                %s",
+                                param.curl-name
+                            }
                         }
-                    }
-                    {out.write-one-string
-                        "\n" &
-                        "            \},\n"
-                    }
+                        {out.write-one-string
+                            "\n" &
+                            "            \},\n"
+                        }
                     }
                     || %%% METHOD BODY CALL SPEC ARGS
                     || ~~~~~~~~~~~~~~~~~~~~
                     {if not def-pass? then
+                        || header input args
+                        {if input-header-required-params.size > 0 or
+                            input-header-not-required-params.size > 0
+                         then
+                            {out.write-one-string
+                                "            request-header-names = request-header-names,\n" &
+                                "            request-header-types = request-header-types,\n" &
+                                "            request-headers = request-headers,\n"
+                            }
+                        }
+                        {if output-header-required-params.size > 0 or
+                            output-header-not-required-params.size > 0
+                         then
+                            {out.write-one-string
+                                "            response-header-names =\n" &
+                                "                \{\{Array-of #XMLName\}\n"
+                            }
+                            {for param key i in output-header-required-params do
+                                {format out = out, "                    %s",
+                                    {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
+                                }
+                                {if i < ((output-header-required-params.size +
+                                          output-header-not-required-params.size) - 1)
+                                 then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                            }
+                            {for param key i in output-header-not-required-params do
+                                {format out = out, "                    %s",
+                                    {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
+                                }
+                                {if i < (output-header-not-required-params.size - 1) then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                            }
+                            {out.write-one-string
+                                "                \},\n" &
+                                "            response-header-types =\n" &
+                                "                \{\{Array-of SOAPObjectType\}\n"
+                            }
+                            || write out response header types
+                            {for param key i in output-header-required-params do
+                                {out.write-one-string
+                                    {param.type.soap-object-type-string tab-level = 20}
+                                }
+                                {if i < ((output-header-required-params.size +
+                                          output-header-not-required-params.size) - 1)
+                                 then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                            }
+                            {for param key i in output-header-not-required-params do
+                                {out.write-one-string
+                                    {param.type.soap-object-type-string tab-level = 20}
+                                }
+                                {if i < (output-header-not-required-params.size - 1) then
+                                    {out.write-one ','}
+                                }
+                                {out.write-one '\n'}
+                            }
+                            {out.write-one-string
+                                "                \},\n"
+                            }
+                        }
+                        || operations
                         {out.write-one-string
                             "            \{splice self.operations[\"" & name & "\"]\}"}
                      else
-                    {out.write-one-string
-                        "            \{\{Array-of #XMLName\}"
-                    }
-                    || write out argument names
-                    {for param key i in in-params do
-                        {if i > 0 then
-                            {out.write-one ','}
-                        }
-                        {out.write-one-string "\n"}
-                        {format out = out, "                %s",
-                            {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
-                        }
-                    }
-                    {out.write-one-string
-                        "\n" &
-                        "            \},\n" &
-                        "            \{\{Array-of SOAPObjectType\}"
-                    }
-                    
-                    || write out argument types
-                    let repeating-element-names:{Array-of XMLName} = {{Array-of XMLName}}
-                    {for param key i in in-params do
-                        {if i > 0 then
-                            {out.write-one ','}
-                        }
-                        {out.write-one-string "\n"}
+                        || spec args
                         {out.write-one-string
-                            {param.type.soap-object-type-string tab-level = 16}
+                            "            \{\{Array-of #XMLName\}"
                         }
-                        || note repeating elements 
-                        {type-switch param.type
-                         case t:WSDLSchemaArrayType do                        
-                            {if-non-null name = t.repeating-element-name then
-                                {repeating-element-names.append name}
-                            }}
-                    }
-                    {out.write-one-string
-                        "\n" &
-                        "            \},\n" &
-                        "            \{\{Array-of #XMLName\}"
-                    }
-                    || write out response names
-                    {for param key i in out-params do
-                        {if i > 0 then
-                            {out.write-one ','}
-                        }
-                        {out.write-one-string "\n"}
-                        {format out = out, "                %s",
-                            {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
-                        }
-                    }
-                    {out.write-one-string
-                        "\n" &
-                        "            \},\n" &
-                        "            \{\{Array-of SOAPObjectType\}"
-                    }
-                    || write out response types
-                    {for param key i in out-params do
-                        {if i > 0 then
-                            {out.write-one ','}
-                        }
-                        {out.write-one-string "\n"}
-                        {out.write-one-string
-                            {param.type.soap-object-type-string tab-level = 16}
-                        }
-                    }
-                    {out.write-one-string
-                        "\n" &
-                        "            \},\n"
-                    }
-                    || find WSDLBindingOperationMessage and get encoding from it.
-                    {if-non-null soap-body-encoding then
-                        {format out = out,
-                            "            \"%s\",\n",
-                            soap-body-encoding
-                        }
-                     else
-                        {out.write-one-string
-                            "            null,\n"
-                        }
-                    }
-                    || note any repeating elements
-                    {if not repeating-element-names.empty? then
-                        {format out = out,
-                            "            repeating-elements = \n" &
-                            "                \{\{Set-of XMLName\}"
-                        }
-                        {for name key i in repeating-element-names do
+                        || write out argument names
+                        {for param key i in in-params do
                             {if i > 0 then
-                                {out.write-one ','}}
-                            {out.write-one '\n'}
-                            {format out = out, 
-                                "                    %s",
-                                {WSDLSchemaType.xml-name-to-curl-code name}
+                                {out.write-one ','}
+                            }
+                            {out.write-one-string "\n"}
+                            {format out = out, "                %s",
+                                {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
                             }
                         }
-                        {format out = out,
-                            "\n                \},\n"
+                        {out.write-one-string
+                            "\n" &
+                            "            \},\n" &
+                            "            \{\{Array-of SOAPObjectType\}"
                         }
-                    }
-
-                    {if-non-null soap-action = soap-op.soap-action then
-                        {format out = out,
-                            "            soap-action = \"%s\",\n",
-                            soap-action
+                        
+                        || write out argument types
+                        let repeating-element-names:{Array-of XMLName} = {{Array-of XMLName}}
+                        {for param key i in in-params do
+                            {if i > 0 then
+                                {out.write-one ','}
+                            }
+                            {out.write-one-string "\n"}
+                            {out.write-one-string
+                                {param.type.soap-object-type-string tab-level = 16}
+                            }
+                            || note repeating elements 
+                            {type-switch param.type
+                             case t:WSDLSchemaArrayType do                        
+                                {if-non-null name = t.repeating-element-name then
+                                    {repeating-element-names.append name}
+                                }}
                         }
-                    }
-                    {if-non-null request-operation then
-                        {format out = out,
-                            "            request-operation = %s,\n",
-                            {WSDLSchemaType.xml-name-to-curl-code
-                                request-operation
+                        {out.write-one-string
+                            "\n" &
+                            "            \},\n" &
+                            "            \{\{Array-of #XMLName\}"
+                        }
+                        || write out response names
+                        {for param key i in out-params do
+                            {if i > 0 then
+                                {out.write-one ','}
+                            }
+                            {out.write-one-string "\n"}
+                            {format out = out, "                %s",
+                                {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
                             }
                         }
-                    }
-                    {if response-operation != request-operation then
-                        {format out = out,
-                            "            response-operation = %s,\n",
-                            {if-non-null response-operation then
-                                {WSDLSchemaType.xml-name-to-curl-code
-                                    response-operation
+                        {out.write-one-string
+                            "\n" &
+                            "            \},\n" &
+                            "            \{\{Array-of SOAPObjectType\}"
+                        }
+                        || write out response types
+                        {for param key i in out-params do
+                            {if i > 0 then
+                                {out.write-one ','}
+                            }
+                            {out.write-one-string "\n"}
+                            {out.write-one-string
+                                {param.type.soap-object-type-string tab-level = 16}
+                            }
+                        }
+                        {out.write-one-string
+                            "\n" &
+                            "            \},\n"
+                        }
+                        || find WSDLBindingOperationMessage and get encoding from it.
+                        {if-non-null soap-body-encoding then
+                            {format out = out,
+                                "            \"%s\",\n",
+                                soap-body-encoding
+                            }
+                         else
+                            {out.write-one-string
+                                "            null,\n"
+                            }
+                        }
+                        || note any repeating elements
+                        {if not repeating-element-names.empty? then
+                            {format out = out,
+                                "            repeating-elements = \n" &
+                                "                \{\{Set-of XMLName\}"
+                            }
+                            {for name key i in repeating-element-names do
+                                {if i > 0 then
+                                    {out.write-one ','}}
+                                {out.write-one '\n'}
+                                {format out = out, 
+                                    "                    %s",
+                                    {WSDLSchemaType.xml-name-to-curl-code name}
                                 }
-                             else
-                                "null"
+                            }
+                            {format out = out,
+                                "\n                \},\n"
                             }
                         }
-                    }
-                    {if soap-body-output-namespace != "" then
+
+                        {if-non-null soap-action = soap-op.soap-action then
+                            {format out = out,
+                                "            soap-action = \"%s\",\n",
+                                soap-action
+                            }
+                        }
+                        {if-non-null request-operation then
+                            {format out = out,
+                                "            request-operation = %s,\n",
+                                {WSDLSchemaType.xml-name-to-curl-code
+                                    request-operation
+                                }
+                            }
+                        }
+                        {if response-operation != request-operation then
+                            {format out = out,
+                                "            response-operation = %s,\n",
+                                {if-non-null response-operation then
+                                    {WSDLSchemaType.xml-name-to-curl-code
+                                        response-operation
+                                    }
+                                 else
+                                    "null"
+                                }
+                            }
+                        }
+                        {if soap-body-output-namespace != "" then
+                            {format out = out,
+                                "            default-namespace = \"%s\",\n",
+                                soap-body-output-namespace
+                            }
+                        }
                         {format out = out,
-                            "            default-namespace = \"%s\",\n",
-                            soap-body-output-namespace
-                        }
-                    }
-                    {if input-header-required-params.size > 0 or
-                        input-header-not-required-params.size > 0
-                     then
-                        {out.write-one-string
-                            "            request-header-names = request-header-names,\n" &
-                            "            request-header-types = request-header-types,\n" &
-                            "            request-headers = request-headers,\n"
-                        }
-                    }
-                    {if output-header-required-params.size > 0 or
-                        output-header-not-required-params.size > 0
-                     then
-                        {out.write-one-string
-                            "            response-header-names =\n" &
-                            "                \{\{Array-of #XMLName\}\n"
-                        }
-                        {for param key i in output-header-required-params do
-                            {format out = out, "                    %s",
-                                {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
+                            "            rpc-style? = %s,\n",
+                            {if soap-op.style == WSDLSOAPStyle.rpc then
+                                "true"
+                             else
+                                "false"
                             }
-                            {if i < ((output-header-required-params.size +
-                                      output-header-not-required-params.size) - 1)
-                             then
-                                {out.write-one ','}
+                        }
+                        {format out = out, 
+                            "            write-type-attribute? = %s,\n",
+                            {if input-soap-body.use == WSDLSOAPUse.encoded then
+                                "true"
+                             else
+                                "false"
                             }
-                            {out.write-one '\n'}
                         }
-                        {for param key i in output-header-not-required-params do
-                            {format out = out, "                    %s",
-                                {WSDLSchemaType.xml-name-to-curl-code param.xml-name}
+                        {format out = out,
+                            "            write-encoding-attribute? = %s",
+                            {if input-soap-body.use == WSDLSOAPUse.encoded then
+                                "true"
+                             else
+                                "false"
                             }
-                            {if i < (output-header-not-required-params.size - 1) then
-                                {out.write-one ','}
-                            }
-                            {out.write-one '\n'}
                         }
-                        {out.write-one-string
-                            "                \},\n" &
-                            "            response-header-types =\n" &
-                            "                \{\{Array-of SOAPObjectType\}\n"
-                        }
-                        || write out response header types
-                        {for param key i in output-header-required-params do
-                            {out.write-one-string
-                                {param.type.soap-object-type-string tab-level = 20}
-                            }
-                            {if i < ((output-header-required-params.size +
-                                      output-header-not-required-params.size) - 1)
-                             then
-                                {out.write-one ','}
-                            }
-                            {out.write-one '\n'}
-                        }
-                        {for param key i in output-header-not-required-params do
-                            {out.write-one-string
-                                {param.type.soap-object-type-string tab-level = 20}
-                            }
-                            {if i < (output-header-not-required-params.size - 1) then
-                                {out.write-one ','}
-                            }
-                            {out.write-one '\n'}
-                        }
-                        {out.write-one-string
-                            "                \},\n"
-                        }
-                    }
-                    {format out = out,
-                        "            rpc-style? = %s,\n",
-                        {if soap-op.style == WSDLSOAPStyle.rpc then
-                            "true"
-                         else
-                            "false"
-                        }
-                    }
-                    {format out = out, 
-                        "            write-type-attribute? = %s,\n",
-                        {if input-soap-body.use == WSDLSOAPUse.encoded then
-                            "true"
-                         else
-                            "false"
-                        }
-                    }
-                    {format out = out,
-                        "            write-encoding-attribute? = %s",
-                        {if input-soap-body.use == WSDLSOAPUse.encoded then
-                            "true"
-                         else
-                            "false"
-                        }
-                    }
                     }
                     || %%% METHOD BODY CALL FINAL ARGS
                     || ~~~~~~~~~~~~~~~~~~~~

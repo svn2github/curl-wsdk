@@ -885,12 +885,13 @@
   }
 
   {method private {get-unique-name
-                      base-name:XMLName,
-                      target-namespace:String = base-name.local-name,
+                      xml-name:XMLName,
+                      target-namespace:String = xml-name.namespace,
                       prefix:String = WSDL.type-prefix
                   }:XMLName
     || - vary original name suffix (or prefix) until unique
-    let name:String = base-name.local-name
+    def base-name = xml-name.local-name
+    let name:String = base-name
     let index:int = 1
     {while
         {self.names.name-exists? target-namespace, prefix, name}

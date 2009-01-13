@@ -1,6 +1,6 @@
 ||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
 |||
-||| An OpenCurl project.
+||| Maintained by: Curl Solutions
 
 ||| Licensed under the Apache License, Version 2.0 (the "License");
 ||| you may not use this file except in compliance with the License.
@@ -14,39 +14,17 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0 manifest}
+{curl 7.0 applet}
+{applet manifest = "../../manifest.mcurl"}
+{import * from COM.CURL.WSDK.WSDL}
 
-{manifest COM.CURL.WSDL.GoogleSearch}
-
-|| all dguide material should use dguide root manifest
-{delegate-to COM.CURL.WSDK,
-    location = "../../../../../manifest.mcurl"}
-
-{component file GoogleSearch.wsdl,
-    location = "GoogleSearch.wsdl"
+{value 
+    def loc = {url "s-wsconnection.wsdl"}
+    def sloc = {url "WSConnectionService.scurl"}
+    {generate-wsdl-code loc, 
+        package-suffix = "WSConnectionService",
+        target = sloc}
 }
-
-{component file generate.curl,
-    location = "generate.curl"
-}
-
-{component file start.curl,
-    location = "start.curl"
-}
-
-{component file logo_sm.gif,
-    location = "logo_sm.gif"
-}
-
-{component package COM.CURL.WSDL.GoogleSearch,
-    location = "GoogleSearch.scurl"
-}
-
-
-
-
-
-
 
 
 

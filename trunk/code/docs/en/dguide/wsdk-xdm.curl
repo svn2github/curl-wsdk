@@ -113,7 +113,7 @@
     {heading level = 3, Namespaces}
 
     XML vocabularies avoid name conflicts by qualifying
-    names with a namespace URI. [XMLNames]
+    names with a namespace URI.
     Qualified names are expressed in XML source
     in abbreviated form based on prefix declarations.
     Curl uses {docref XDMName} to represent a qualified name
@@ -134,6 +134,27 @@
     it is resolved using a "global" applet namespace context.
     This can be temporarily extended using {docref with-namespace-declarations}
     or permanently extended using {docref extend-namespace-context}.
+
+    {code-box
+        {curl-code
+            || global prefix declarations
+            {extend-namespace-context
+                rss = "http://purl.org/rss/1.0/"
+            }
+            {XDMElement "rss:title",
+                "WSDK Developer's Guide"}
+        }}
+
+    {code-box
+        {curl-code
+            || local prefix declarations
+            {with-namespace-declarations
+                rss = "http://purl.org/rss/1.0/"
+             do
+                {XDMElement "rss:title",
+                    "WSDK Developer's Guide"}
+            }
+        }}
     
     {x-example-ref 
         title = "XML Creation -- RSS1",

@@ -209,6 +209,16 @@
     {details
         Extends the declarations in {docref xml-namespace-context}
         for the duration of the enclosed code.}
+    {for-example
+        {curl-code
+            || local prefix declarations
+            {with-namespace-declarations
+                rss = "http://purl.org/rss/1.0/"
+             do
+                {XDMElement "rss:title",
+                    "WSDK Developer's Guide"}
+            }
+        }}
 }
 {define-macro public 
     {with-namespace-declarations
@@ -236,6 +246,27 @@
         {with xml-namespace-context = {xml-namespace-context.clone} asa XDMNamespaceContext do
             {extend-namespace-context {splice ...}}
             {action}
+        }}
+}
+{doc-next ||=== extend-namespace-context
+    {purpose 
+        Define XML namespace prefix declarations.}
+    {parameter context,
+        the {docref XDMNamespaceDeclarations} to extend.}
+    {parameter ...,
+        the rest arguments are keyword value pairs,
+        associating namespace URI with prefix.}
+    {details
+        Extends the declarations in the specified context.     
+        The default context ({docref xml-namespace-context}) applies globally.}
+    {for-example
+        {curl-code
+            || global prefix declarations
+            {extend-namespace-context
+                rss = "http://purl.org/rss/1.0/"
+            }
+            {XDMElement "rss:title",
+                "WSDK Developer's Guide"}
         }}
 }
 {define-proc public {extend-namespace-context 

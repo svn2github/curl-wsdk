@@ -14,17 +14,29 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{doc-next
+{doc-next ||=== XDMName
     {purpose 
         Represents an XML "Expanded Qualified Name" 
         containing (namespace, local-name) pair
     }
+    {details
+        See {link href = {url "http://www.w3.org/TR/REC-xml-names/#NT-NCName"},
+        Namespaces in XML} specification.}
 }
 
 {define-class public serializable XDMName
   field public-get constant namespace:String
   field public-get constant local-name:String
   
+  {doc-next ||=== XDMName.default
+    {purpose Create an {ctext XDMName} object.}
+    {parameter namespace, the namespace}
+    {parameter local-name, the local name}
+    {details
+        Names are checked for conformance with NCName production from the
+        {link href = {url "http://www.w3.org/TR/REC-xml-names/#NT-NCName"},
+        Namespaces in XML} specification.}
+  }
   {factory public {default 
                       namespace:String, 
                       local-name:String
@@ -49,6 +61,23 @@
     set self.namespace = namespace
     set self.local-name = local-name
   }
+  
+  {doc-next ||=== XDMName.from-String
+    {purpose Create an {ctext XDMName} object from a string.}
+    {parameter name, a String representing the XML name}
+    {parameter namespace-context, defined namespace prefixes}
+    {details For strings using the qualified name syntax
+        {ctext "{metavar prefix}:{metavar local-part}"},
+        the namespace corresponding to the prefix will be
+        obtained from the specified {ctext namespace-context}
+        using {docref-abbr XDMNamespaceDeclarations.get-uri}.
+        It is an error to use an undeclared namespace prefix.
+
+        Use {docref extend-namespace-context} to declare prefixes globally.
+        Use {docref with-namespace-declarations} to declare prefixes for a code block.
+        Prefixes {ctext xml} and {ctext xmlns} are always allowed.
+    }
+  }
   {factory public implicit {from-String 
                                name:String,
                                namespace-context:XDMNamespaceContext = 
@@ -57,7 +86,9 @@
     let (namespace:String, local-name:String) =
         {XDMName.parse-name name, namespace-context}
     {return {XDMName namespace, local-name}}
-  } 
+  }
+  || NOTE: for use in macros, where interning will not work
+  || - because global variables are inaccessible
   {factory {from-String-internal 
                name:String,
                namespace-context:XDMNamespaceContext = 
@@ -140,8 +171,12 @@
   let package constant empty-name:XDMName = 
       {XDMName.internal "", "##empty"}
   
-  || allows making illegal names 
-  || (such as those used by soap-encoding for Array types)
+  {doc-next ||=== XDMName.unchecked
+    {purpose Create an {ctext XDMName} object, without verifying its conformance.}
+    {parameter namespace, the namespace}
+    {parameter local-name, the local name}
+    {details This allows making illegal names (such as those used by soap-encoding for Array types).}
+  }
   {factory public {unchecked 
                       namespace:String, 
                       local-name:String

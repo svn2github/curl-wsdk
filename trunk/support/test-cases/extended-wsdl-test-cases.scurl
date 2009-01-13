@@ -233,10 +233,6 @@
         {url "wsdl-services/x-services.csv"}},
 
     {TestSuite "WSDL methods",
-        || precondition
-        || NOTE: using google as proxy for arbitrary host
-        {test-host-accessible-guard "www.google.com"},
-        || TODO: guard by service inside suite; needs host in csv
         {WSDLServicesTestSuite
             {url "wsdl-services/x-methods.csv"}}
     }

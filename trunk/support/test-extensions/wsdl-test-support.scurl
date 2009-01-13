@@ -198,16 +198,21 @@
         let method:String = r["member"] asa String
         let input:String = r["input"] asa String
         let name:String = {format "%s.%s", package, class}
+        || new suite for each service
         {if suite.name != name then
             set suite = {TestSuite name}
             {self.add suite}}
-        {suite.add
+        || new test for each method
+        def test =
             {WSDLServiceMethodTestCase package, class, method,
                 input = input,
-                {self.location.merge "manifest.mcurl"}}}}
-  }
-  || enforce preconditions: network connected
-  || TODO: should really be per service - some may be local
+                {self.location.merge "manifest.mcurl"}}
+        || guard test first, if appropriate
+        {if suite.size == 0 then
+            {if-non-null guard = {test.guard-test} then
+                {suite.add guard}}}
+        {suite.add test}
+    }}
   {define-proc {load sloc:Url}:RecordSet
     let rs:RecordSet =         
         {CsvRecordSet sloc,
@@ -248,7 +253,7 @@
     {for x in {package.get-members check-imports? = false} do
         {type-switch {x.get-value}
          case class:ClassType do
-            {if {class.subtype-of? WSDLHTTPRPCPostClient} then                
+            {if {class.subtype-of? WSDLHTTPRPCPostClient} then
                 let methods:{FastArray-of ClassMember} =
                     {class.get-members search-superclasses? = false,
                         filter = WSDLServiceTestSuite.service-method?}
@@ -268,7 +273,8 @@
     {return 
         {import-package manifest = self.manifest,
             {make-package-selector self.package-name}}}
-  }  
+  }
+  || filter
   {define-proc {service-method? m:ClassMember}:bool
     let name:String = m.name
     {return
@@ -416,6 +422,33 @@
         {import-package manifest = self.manifest,
             {make-package-selector self.package-name}}}
   }  
+  || guard test enforces preconditions service accessible
+  {method {guard-test}:#TestCase
+    def service-class = self.method.declaring-class
+    def loc = {self.service-location-for service-class}
+    def host = {self.host-for loc}
+    def test =
+        {if-non-null host then
+            {test-host-accessible-guard host}
+         else null}
+    {return test}
+  }
+  {method {service-location-for service-class:ClassType}:Url
+    def service = 
+        {with-compiler-directives allow-any-calls? = true do
+            {service-class} asa WSDLHTTPRPCPostClient}
+    {return service.service-location}
+  }
+  {method {host-for loc:Url}:#String
+    {return
+        {type-switch loc.stem
+         case stem:StemHttpDirectory do
+            def host = stem.host
+            def (port, default-port?) = {stem.get-port}
+            {if default-port? then host
+             else {format "%s:%d", host, port}}
+         else null}}
+  }
 }
 || display
 || ====================

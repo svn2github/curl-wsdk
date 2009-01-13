@@ -70,14 +70,14 @@
     
     Use the {bold WSDL Services} IDE tool
     to generate a Curl web service package from the WSDL file. 
-    The generated code provides a service class which calls the SOAP bindings for a  
-    web service described by a WSDL file.
+    The generated code provides a service class which calls methods corresponding to
+    SOAP bindings for a  web service described by a WSDL file.
     
     The {bold WSDL Services} IDE tool can be installed in the Curl IDE 
     with the Tools>Configure Editors 
     command using the editor description file 
     {monospace color = "purple", tools/wsdl/editor-info.txt}
-    provided-with your WSDK distribution.
+    provided with your WSDK distribution.
     
     The web service package can also be generated programmaticallly
     using {docref generate-wsdl-code}.
@@ -128,9 +128,10 @@
     
     Web service packages, classes and methods 
     can be used like any other Curl components.
-    This service contains a single method,
+    This service contains a  method,
     {ctext get-quote}, which accepts a ticker symbol,
-    and returns the delayed quote as a float.    
+    and returns a {ctext QuoteData} structure
+    containing the {ctext last-trade-amount}.    
 
     {code-box
         {curl-code
@@ -148,7 +149,7 @@
                 let quote-data:QuoteData =
                     {service.get-quote symbol, license-key}
                 || use the result
-                let quote::double = quote-data.last-trade-amount
+                let quote:double = quote-data.last-trade-amount
                 {paragraph
                     The quote for {value symbol} is {value quote}
                 }}
@@ -440,6 +441,13 @@
         equivalents as standard Curl types, {docref XMLSimpleValue} is used.
         This gives access to the underlying String value,
         and the ascribed XML Schema datatype.
+
+        XML Schema allows for simple types to be declared 'nillable' or absent.
+        However, Curl primitive types do not admit the {docref null} value.
+        Therefore, when a nillable primitive is dictated by the WSDL schema,
+        it is represented by the {docref Nullable} wrapper,
+        and the structure that contains it is augmented by a
+        {ctext {metavar name}-specified?} getter.
     }
 
     {Table
@@ -455,11 +463,11 @@
         {xml-node xs:long}, {docref int64},
         {xml-node xs:short}, {docref int16},
         {xml-node xs:byte}, {docref int8},
-        {xml-node xs:base64Binary}, {docref {Array-of byte}},
-        {xml-node xs:hexBinary}, {docref {Array-of byte}},
+        {xml-node xs:base64Binary}, {docref ByteArray},
+        {xml-node xs:hexBinary}, {docref ByteArray},
         {cell colspan = 2, {hrule}},
         {xml-node xs:unsignedShort}, {docref uint16},
-        {xml-node xs:unsignedByte}, {docref uint8},
+        {xml-node xs:unsignedByte}, {docref byte},
         {xml-node xs:integer}, {docref int64},
         {xml-node xs:positiveinteger}, {docref int64},
         {xml-node xs:negativeinteger}, {docref int64},
@@ -543,6 +551,9 @@
     which can be used to specify that header.
     The default value, {ctext null}, indicates no
     {monospace Accept-Encoding} header.
+    For example, to request gzip compressed responses
+    from the server, use
+    {ctext set {metavar service}.accept-encoding = "gzip"}.
     
     The actual request and response XML messages
     can be useful for diagnosing web service problems.    
@@ -560,6 +571,18 @@
 {x-example-ref 
     title = "Tracing SOAP Web Service",
     {url "examples/ex-trace-stock-quote.curl"}
+}
+
+{paragraph
+    As of WSDK 1.1, the request and response XML messages
+    can be processed programmatically.
+
+    {itemize
+        {item {docref-abbr WSDLHTTPRPCPostClient.format-request}}
+        {item {docref-abbr WSDLHTTPRPCPostClient.parse-response}}
+    }
+
+    This is useful for testing, and for diagnosing problems.
 }
 
 ||--{TODO

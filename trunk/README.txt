@@ -80,12 +80,9 @@ IDE 'Tools>Configure Editors...' command.
 
 If an earlier version of WSDL Services IDE tool has been installed, 
 it must be replaced with the version in this distribution, 
-in order to function with the Curl Version 5.0 IDE. 
+in order to function with the Curl Version 7.0 IDE. 
 The generated service packages will be marked with the 
 curl version defined by their project. 
-
-If for some reason you need to use the earlier version of the tool, 
-you can use the applet 'tools/wsdl/start.curl' in that distribution.
 
 KNOWN ISSUES
 ====================
@@ -112,6 +109,11 @@ for use with Curl API Version 7.0.
 - WSDL Developer's Guide is indexed for full text search
 - XML documentation for 'XDMNamespace' improved
 - long-deprecated 'xdm-search' API has been retired
+    
+These changes affect the code generated for WSDL service packages,
+so such packages should be regenerated for use with this release.
+The 'WSDLHTTPRPCPostClient.generated-using-version' property has been 
+incremented, so that incompatible service packages can be detected.
 
 WSDK 1.0.6 CHANGES
 --------------------

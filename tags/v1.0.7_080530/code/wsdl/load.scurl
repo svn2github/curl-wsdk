@@ -1,0 +1,186 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 package}
+{package COM.CURL.WSDK.WSDL,
+    version = "1.0.4",
+    resource-directory = "../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        || Turn on maximum speed & safety.
+        stringent? = true
+    }
+}
+
+{doc
+    type = package,
+    COM.CURL.WSDK.WSDL
+    {purpose
+        The classes in this package assist developers in making
+        SOAP requests over HTTP based on a WSDL file.
+    }
+}
+
+{import * from CURL.XML.SAX.PARSER}
+{import * from COM.CURL.WSDK.SOAP}
+{import StemHttpDirectory from CURL.IO.HTTP} || for WSDLCurlNamer
+
+{include "WSDLNameTable.scurl"}
+{include "WSDLCurlNamer.scurl"}
+{include "WSDLSchemaType.scurl"}
+{include "WSDLSchema.scurl"}
+{include "WSDLSchemaGroup.scurl"}
+{include "WSDLDOM.scurl"}
+{include "WSDLNodes.scurl"}
+{include "parse-wsdl.scurl"}
+
+|| exceptions
+|| --------------------
+{doc-next
+    {purpose Encapsulates exceptions which occur processing WSDL}
+}
+{define-class public open WSDLSyntaxException {inherits Exception}
+  field public-get constant node:#WSDLDOMNode
+  {constructor public {default node:#WSDLDOMNode, message:String}
+    set self.node = node
+    {if-non-null node = self.node then
+        set message =  
+            {format "%s\n at [%s:%d]", message, node.source-url, node.line-number}}
+    {construct-super message}           
+  }
+}
+
+{doc-next
+    {purpose Throws a {docref WSDLSyntaxException}}
+}
+{define-proc public {wsdl-exception node:#WSDLDOMNode = null, message:String}:never-returns
+    {throw {WSDLSyntaxException node, message}}
+}
+
+|| code generation API
+|| --------------------
+{doc-next
+    {purpose
+        Generate curl source code for Web Service
+        described by a WSDL file.
+        
+        {parameter source,
+            the {ctext Url} of the WSDL file.}
+        {parameter target,
+            the {ctext Url} of the output.
+            Defaults to source filename with extension
+            {monospace .scurl}, in source directory
+            if its local, otherwise applet directory.}
+        {parameter package-prefix,
+            If specified, generated code will include
+            package herald, with package-name 
+            derived by appending WSDL basename to the prefix.
+            The default is {monospace "COM.CURL.WSDL."}}
+        {parameter package-suffix,
+            If specified, the final part of the package name.
+            The default is based on the service name in the WSDL file.}
+        {parameter curl-versions,
+            If specified, indicates curl versions mentioned
+            in generated package herald.  The default is
+            the versions supported by this package.}
+    }
+    {return-vals
+        The {ctext Url} of the generated file.}
+    {details
+        Uses {docref WSDL.dump-client-stubs}.}
+    {throws 
+        Errors processing the WSDL file will result in
+        {docref WSDLSyntaxException}s.
+        || TODO: describe errors and warnings
+    }
+}
+{define-proc public {generate-wsdl-code
+                        source:Url,
+                        target:#Url = null,
+                        package-prefix:#String = "COM.CURL.WSDL.",
+                        package-suffix:#String = null,
+                        curl-versions:#String = null,
+                        exclude-unreferenced-types?:bool = false
+                    }:Url
+    || determine applicable curl-versions
+    let curl-versions-string:String = 
+        {if-non-null curl-versions then 
+            || specified by caller
+            curl-versions
+         else
+            {if-non-null vs = {this-package}.meta-data.curl-versions then
+                || should be declared in WSDL package herald
+                let buf:StringBuf = {StringBuf}
+                {for v in vs do
+                    {if not buf.empty? then
+                        {buf.concat ", "}}
+                    {buf.concat {String v}}}
+                {buf.to-String}
+             else
+                || fallback to latest version (should never happen)
+                {String curl-version-number}}}
+    || package herald template
+    let constant package-herald-template:String = 
+        {format 
+            "\{curl %s package\}\n\{package %%s,\n"
+            & "    \{compiler-directives careful? = true\},\n"
+            & "    wsdl = \"%%s\"\}\n\n",
+            curl-versions-string}
+    || target location
+    let sloc:Url = 
+        {if-non-null target then 
+            || specified location
+            target
+         else
+            let loc:Url =
+                {if source.stem isa StemHttpDirectory then 
+                    || HTTP WSDL file: use applet directory
+                    {get-working-directory-url}
+                 else
+                    || local WSDL file: use that directory
+                    source}
+            {loc.merge source.basename & ".scurl"}}
+    || WSDL parser
+    let w:WSDL = {WSDL source}
+    
+    || package name
+    let package-name:#String =
+        {if-non-null package-prefix then
+            {if-non-null package-suffix 
+             then package-suffix
+             else
+                || assure proper curl name
+                {w.curl-namer.get-curl-name 
+                    {XMLName "", source.basename},
+                    curl-type = "class"}}
+         else null}
+    
+    || generate code
+    {with-open-streams
+        out = {write-open sloc} 
+     do
+        || optional package herald
+        {if-non-null package-name then
+            {format out = out, 
+                package-herald-template,
+                package-prefix & package-name,
+                source}}
+        || service classes and support types
+        {w.dump-client-stubs out, 
+            exclude-unreferenced-types? = exclude-unreferenced-types?}} 
+    || return result
+    {return sloc}
+}

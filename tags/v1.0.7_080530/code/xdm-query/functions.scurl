@@ -1,0 +1,117 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| issues 
+|| - special context accessors (position, last)
+|| - unusual cases: restargs (concat), optional trailing args (substring)
+|| - more direct curl equivalents: (true, false, not)
+
+{define-class public FunctionSpecs
+  {inherits {HashTable-of String, FunctionSpec}}
+  {constructor public {default ...:FunctionSpec}
+    {for f in ... do
+        let k:String = f.name
+        set self[k] = f}
+  }
+}
+{define-class public FunctionSpec
+  field public constant name:String
+  field public constant from-context?:bool
+  field public constant proc:any
+  field public constant type:ProcType
+  {constructor public {default name:String, proc:any, from-context?:bool = false}
+    set self.name = name
+    set self.proc = proc
+    set self.type = {type-of proc} asa ProcType
+    set self.from-context? = from-context?
+  }
+}
+{define-proc {xp-wrap src:CurlSource}:(CurlSource, String)
+    let args:{Array-of CurlSource} = {{Array-of CurlSource}}
+    let bindings:{Array-of CurlSource} = {{Array-of CurlSource}}
+    let junk:StringInterface = {src.get-text}
+    {syntax-switch src, must-match? = true
+     case {pattern 
+              {?fname:{one-of
+                          {pattern ?:identifier},
+                          || xp function which is curl reserved word
+                          {pattern not}}
+                  ?xs:{comma-sequence ?:identifier :?:identifier}
+              }:?:identifier
+                  ?body:verbatim
+              }
+     do
+        {for x in xs do
+            {syntax-switch x, must-match? = true
+             case {pattern ?name:identifier:?type:identifier} do
+                let var:Identifier = {Identifier "_" & name.name}
+                let as:Identifier = {Identifier "as-" & type.name}
+                || accept generic XPathValue argument type
+                {if args.size > 0 then 
+                    {args.append {Operator OperatorKind.Comma}}}
+                {args.append 
+                    {expand-template ?var:XPathValue}}
+                || extract appropriate specific type
+                {bindings.append 
+                    {expand-template let ?name:?type = ?var.?as
+                    }}
+            }}
+        let name:String =
+            {type-switch fname
+             case n:Identifier do n.name
+             else {{fname.get-text}.to-String}}
+        let wrapped:CurlSource =
+            {expand-template
+                {proc {?args
+                      }:XPathValue
+                    ?bindings 
+                    ?body}}
+        {return wrapped, name}}
+}
+{define-macro public {define-xp-proc 
+                         ?mods:{one-of
+                                   {pattern from-context},
+                                   {pattern }}
+                         ?src:verbatim}
+    let (wrapped:CurlSource, name:String) = {xp-wrap src}
+    let from-context?:bool = {mods.get-text} == "from-context"
+    {return
+        {expand-template
+            {FunctionSpec ?{Literal name},
+                from-context? = ?{Literal from-context?},
+                ?wrapped}
+        }}
+}
+|| function definitions
+|| ====================
+{let xp-functions:#FunctionSpecs = 
+    null
+}
+|| NOTE: using dynamic import to avoid recursive package refs
+{define-proc {get-function-specs}:FunctionSpecs
+    {return
+        {if-non-null xp-functions then 
+            xp-functions
+         else
+            let fs:FunctionSpecs =
+                {dynamic-lookup 
+                    {make-package-selector "COM.CURL.WSDK.XML-QUERY-FUNCTIONS"},
+                    "xp-functions"} asa FunctionSpecs
+            set xp-functions = fs
+            fs
+        }}
+}
+{get-function-specs}

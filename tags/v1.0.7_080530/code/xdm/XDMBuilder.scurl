@@ -1,0 +1,559 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next ||=== build-xml
+    {purpose Create an XML Document model
+        {parameter in, The input source, any of 
+            {docref Url}, {docref StringInterface}, 
+            {docref TextInputStream}, {docref ByteInputStream}}
+        {parameter validate?, Instructs the {docref SAXParser}
+            whether to validate the XML document.}
+        {parameter external-parameter-entities?, Instructs the {docref SAXParser} 
+            whether to include all external parameter entities, 
+            including the external DTD subset.}
+        {parameter parser, The {docref SAXParser} to use}
+        {parameter preserve-whitespace?, Instructs the {docref XDMBuilder} 
+            which default behavior it should follow 
+            when encountering omittable whitespace 
+            and the {monospace xml:space} rule is "default"}
+        {parameter execute-xml-include?, Instructs the {docref XDMBuilder} 
+            whether to search for and expand {monospace xi:include} nodes}
+        {parameter builder, The {docref XDMBuilder} to use}
+    }
+    {return-vals The {docref XDMDocument} created.}
+}
+
+{define-proc public {build-xml
+                        in:any,
+                        validate?:bool = false,
+                        external-parameter-entities?:bool = validate?,
+                        parser:XMLReader = {SAXParser},
+                        preserve-whitespace?:bool = true,
+                        execute-xml-include?:bool = false,
+                        builder:XDMBuilder = {XDMBuilder}
+                    }:XDMDocument
+    {return 
+        {builder.build 
+            in,
+            validate? = validate?,
+            external-parameter-entities? = external-parameter-entities?,
+            parser = parser,
+            preserve-whitespace? = preserve-whitespace?,
+            execute-xml-include? = execute-xml-include?
+            }}
+}
+
+{doc-next ||=== XDMBuilder
+    {purpose
+        Class which can create an XML Document Model 
+        from a specified input source, using {docref XDMBuilder.build}.}
+}
+
+{define-class public abstract XDMBuilder
+  {doc-next ||=== XDMBuilder.build
+    {purpose Create an XML Document model
+        {parameter in, The input source, any of 
+            {docref Url}, {docref StringInterface}, 
+            {docref TextInputStream}, {docref ByteInputStream}}
+        {parameter validate?, Instructs the {docref SAXParser}
+            whether to validate the XML document.}
+        {parameter external-parameter-entities?, Instructs the {docref SAXParser} 
+            whether to include all external parameter entities, 
+            including the external DTD subset.}
+        {parameter parser, The {docref SAXParser} to use}
+        {parameter preserve-whitespace?, Instructs the {docref XDMBuilder} 
+            which default behavior it should follow 
+            when encountering omittable whitespace 
+            and the {monospace xml:space} rule is "default"}
+        {parameter execute-xml-include?, Instructs the {docref XDMBuilder} 
+            whether to search for and expand {monospace xi:include} nodes}
+    }
+    {return-vals The {docref XDMDocument} created.}
+  }
+  {method public abstract {build
+                              in:any,
+                              validate?:bool = false,
+                              external-parameter-entities?:bool = validate?,
+                              parser:XMLReader = {SAXParser},
+                              preserve-whitespace?:bool = true,
+                              execute-xml-include?:bool = false
+                          }:XDMDocument
+  }
+  {factory public {default}:StandardXDMBuilder
+    {return {StandardXDMBuilder}}
+  }
+  || warts
+  field package called-from-xml-include?:bool = false  
+  field package input-stream:#TextInputStream
+}
+
+{doc-next ||=== StandardXDMBuilder
+    {purpose
+        The standard implementation of {docref XDMBuilder}.}
+    {details
+        Creates the following kinds of {docref XDMNode}.
+        {itemize
+            {item {docref StandardXDMDocument}}
+            {item {docref StandardXDMElement}}
+            {item {docref StandardXDMText}}
+            {item {docref StandardXDMAttribute}}
+            {item {docref StandardXDMProcessingInstruction}}}
+    }
+}
+
+{define-class public StandardXDMBuilder {inherits {GenericXDMBuilder}}
+  {constructor public {default ...}
+    {construct-super {splice ...}}
+  }
+}
+
+{doc-next ||=== GenericXDMBuilder
+    {purpose
+        A parameterized implementation of {docref XDMBuilder}.}
+    {details
+        Use type keywords to specify the particular subclass to be used
+        to represent each kind of XML item.
+        {itemize
+            {item {ctext _XDMDocument} {em-dash} {docref XDMDocument} subclass}
+            {item {ctext _XDMElement} {em-dash} {docref XDMElement} subclass}
+            {item {ctext _XDMText} {em-dash} {docref XDMText} subclass}
+            {item {ctext _XDMAttribute} {em-dash} {docref XDMAttribute} subclass}
+            {item {ctext _XDMProcessingInstruction} {em-dash} 
+                {docref XDMProcessingInstruction} subclass}}
+    }
+}
+
+{define-class public {GenericXDMBuilder 
+                       _XDMElement:ClassType = StandardXDMElement,
+                       _XDMAttribute:ClassType = StandardXDMAttribute,
+                       _XDMText:ClassType = StandardXDMText,
+                       _XDMDocument:ClassType = StandardXDMDocument,
+                       _XDMProcessingInstruction:ClassType = StandardXDMProcessingInstruction}
+  {inherits XDMBuilder, DefaultHandler}
+
+  || Flag to indicate whether we are to keep whitespace or not.
+  field package preserve-whitespace?:bool = true
+  
+  || accumulate characters for TextElement
+  field package pending-characters:StringBuf = {StringBuf}
+
+  || The current node we are parsing.
+  field protected current-node:#XDMElement
+  field protected root-node:#XDMElement
+
+  || children of the current document
+  field private _document-children:{Array-of XDMNode} = {{Array-of XDMNode}}
+  
+  || the current document
+  field private document:#XDMDocument
+  
+  || url of the current document
+  field private document-location:#Url
+  
+  || provides access to document locations
+  field protected locator:#Locator
+  
+  field constant xml-whitespace-cc:CharClass = " \t\n\r"
+  
+  || docstring inherited
+  {method public {build
+                     in:any,
+                     validate?:bool = false,
+                     external-parameter-entities?:bool = validate?,
+                     parser:XMLReader = {SAXParser},
+                     preserve-whitespace?:bool = true,
+                     execute-xml-include?:bool = false
+                 }:XDMDocument
+    
+    || Figure out the document location and InputSource to use.
+    || Account for http redirection where possible
+    let document-location:#Url
+    let input-source:InputSource =
+        {type-switch in 
+            
+         case u:Url do
+            let tis:TextInputStream = {read-open u}
+            set self.input-stream = tis
+            set document-location = 
+                {type-switch tis
+                 case h:HttpInputStreamInfo do h.url
+                 else tis.origin-url}
+            {InputSource character-stream = tis}
+            
+         case s:StringInterface do
+            {InputSource character-stream = {s.to-InputStream}}
+            
+         case tis:TextInputStream do
+            set self.input-stream = tis
+            set document-location = 
+                {type-switch tis
+                 case h:HttpInputStreamInfo do h.url
+                 else tis.origin-url}
+            {InputSource character-stream = tis}
+            
+         case bis:ByteInputStream do
+            set document-location = 
+                {type-switch bis
+                 case h:HttpInputStreamInfo do h.url
+                 else bis.origin-url}
+            {InputSource byte-stream = bis}
+            
+         else
+            {xdm-exception 
+                {lmessage Inappropriate input source for XDMBuilder: {value in}}}
+        }  
+    
+    || fallback location
+    {if document-location == null then
+        set document-location = {get-working-directory-url}
+    }
+    
+    || If we're not called from the xml-include node, then
+    || wipe out the url stack. This stack is used for making sure the
+    || xml include nodes don't create a loop.
+    {if not self.called-from-xml-include? then
+        {xml-include-call-stack.clear}
+     else
+        || Make sure the location-to-use is NOT already in the
+        || XML Include processed stack.
+        {for u:Url in xml-include-call-stack do
+            {if u == {non-null document-location} then
+                {xdm-exception 
+                    {lmessage Tried to double-parse the same location in XML Include: {value u}}}
+            }
+        }
+
+        || Save this document's location.
+        {xml-include-call-stack.push {non-null document-location}}
+    }
+    
+    set self.document = null
+    {self._document-children.clear}
+    set self.current-node = null
+    set self.root-node = null
+    set self.document-location = {non-null document-location}
+    set self.preserve-whitespace? = preserve-whitespace?
+    
+    {parser.set-content-handler self}
+    {parser.set-error-handler self}
+    {parser.set-dtd-handler self}
+    {parser.set-entity-resolver self}
+    
+    || the parser can reuse its results, because builder always copies
+    || - StringBuf -> String
+    || - (SAX)Attributes -> XDMAttributes
+    {parser.set-feature
+        "http://curl.com/sax/features/handler-parameter-reuse",
+        true
+    }
+    
+    {parser.set-feature
+        "http://xml.org/sax/features/validation",
+        validate?
+    }
+    
+    {parser.set-feature
+        "http://xml.org/sax/features/external-parameter-entities",
+        external-parameter-entities?}   
+    
+    || Don't catch exceptions - just let them get thrown.
+    {parser.parse input-source}
+    
+    || If we're doing an internal XML Include, we should pop off
+    || this location.
+    {if self.called-from-xml-include? then
+        || TODO: Should we verify that the popped element is our url?
+        let u:Url = {xml-include-call-stack.pop}
+        {if u != document-location then
+            {xdm-exception 
+                {lmessage Somehow the popped url ({value u}) 
+                    is not the same as the document-location ({value document-location})}}
+        }
+    }
+
+    {if-non-null document = self.document then        
+                
+        || include trailing processing instructions
+        {for c in self._document-children do
+            set c.document = document
+            {document.children.append c}}
+        {self._document-children.clear}
+        
+        || connect root to document
+        || - (was created disconnected to avoid change management)
+        let root:XDMElement = {non-null self.root-node}
+        set document.root = root
+        set root.document = document
+
+        || expand inclusions
+        {if execute-xml-include? then
+            {document.execute-xml-include 
+                preserve-whitespace? = preserve-whitespace?
+            }
+        }
+        
+        {type-switch document 
+         case d:StandardXDMDocument do
+            set d.suppress-events? = false}
+        
+        {return document}
+        
+     else
+        
+        {xdm-exception 
+            {lmessage Finished building the XDM Tree but somehow the XDMDocument is null}}
+    }
+  }
+  
+  {method public {set-document-locator locator:Locator}:void
+    set self.locator = locator
+  }
+
+  {getter package {keep-whitespace?}:bool
+    
+    {return      
+        self.preserve-whitespace? or        
+        self.current-node.xml-space == XMLSpace.preserve         
+    }
+  }
+  
+  {method package {flush-characters}:void
+    
+    let chars:StringBuf = self.pending-characters
+    
+    || if characters have accumulated, 
+    || add text node, and clear characters
+    {if not chars.empty? then
+        {self.current-node.append {_XDMText chars}}
+        {chars.clear}}
+  }
+  
+  {method public {characters
+                     ch:StringBuf,
+                     start:int,
+                     length:int
+                 }:void
+    
+    let chars:StringBuf = self.pending-characters
+    
+    || collect characters, unless we're ignoring whitespace,
+    || and they are initial whitespace
+    {if not chars.empty? or
+        self.keep-whitespace? or
+        not {xml-whitespace? ch}
+     then
+        {chars.write-one-string ch, start = start, length = length}
+    }
+  }
+
+  {method public {end-element
+                     namespace-URI:String,
+                     local-name:String,
+                     q-name:String
+                 }:void
+    
+    {self.flush-characters}    
+    
+    || trim "atomic" text, if requested
+    {if not self.keep-whitespace? then
+        let children:{Sequence-of XDMNode} = self.current-node.children
+        {if children.size == 1 then
+            {type-switch children[0]
+             case t:XDMText do
+                || avoid superfluous string allocation
+                let s:String = t.content
+                let trim?:bool =
+                    {switch s[0]
+                     case ' ', '\t', '\n', '\r' do true
+                     else 
+                        let n:int = s.size - 1
+                        {if n > 0 then
+                            {switch s[n]
+                             case ' ', '\t', '\n', '\r' do true
+                             else false}
+                         else false}}
+                {if trim? then
+                    set t.content =
+                        {t.content.trim-clone 
+                            trim-chars = self.xml-whitespace-cc}}}}}
+    
+    || Close out this node and reset the current-node to this
+    || node's parent.
+    {assert self.current-node != null}
+    set self.current-node = self.current-node.parent
+    
+  }
+  
+  {method public {start-element
+                     namespace-URI:String,
+                     local-name:String,
+                     q-name:String,
+                     attributes:Attributes
+                 }:void
+    
+    {self.flush-characters}
+    
+    || Reject malformed element name 
+    || -- resulting from missing prefix declaration
+    {if local-name.empty? then
+        {xdm-exception
+            {lmessage Missing prefix declaration in '{value q-name}'}}}
+    
+    || Create a node to append it to the current node
+    let node:XDMElement = 
+        {_XDMElement {XDMName namespace-URI, local-name}}
+    
+    || process the SAX-style Attributes object 
+    {self.add-attributes attributes, node}
+    
+    || If the document is null then we're at the root node.
+    {if self.document == null then
+        set self.document =
+            {_XDMDocument
+                || NOTE: use dummy root to avoid change management during creation
+                || - it will be attached on completion
+                {XDMElement XDMName.empty-name},
+                document-location = {non-null self.document-location}}
+        
+        {type-switch self.document 
+         case d:StandardXDMDocument do
+            set d.suppress-events? = true}
+        
+        || record information from declaration        
+        {type-switch self.locator
+         case loc:Locator2 do
+            set self.document.character-encoding = {loc.get-character-encoding}
+            let version:String = {loc.get-xml-version}
+            {if not version.empty? then
+                set self.document.version = version}
+         else
+            || Locator2 should be available, but just in case ...
+            {if-non-null in =  self.input-stream then
+                {if in.open? then
+                    set self.document.character-encoding = in.character-encoding
+                }}
+        }            
+        
+        || include leading processing instructions
+        {for c key i in self._document-children do
+            set c.document = self.document
+            {self.document.children.insert c, i}}
+        {self._document-children.clear}
+    }
+    
+    {if self.current-node != null then
+        {self.current-node.append node}
+     else
+        set self.root-node = node
+    }
+    
+    set self.current-node = node
+  }
+  
+  {method package {add-attributes
+                           attributes:Attributes,
+                           element:XDMElement
+                  }:void
+    
+    {for i = 0 below {attributes.get-length} do
+        let local-name:String =
+            {non-null {attributes.get-local-name i}}
+        let namespace:String =
+            {non-null {attributes.get-uri i}}
+        let value:String =
+            {non-null {attributes.get-value i}}
+        let type:String =
+            {non-null {attributes.get-type i}}
+        
+        || detect namespace declaration
+        {if {local-name.prefix? "xmlns:", ignore-case? = true} then
+            set local-name = {local-name.tail 6}
+            set namespace = "http://www.w3.org/XML/1998/XMLNS"}
+        
+        || NOTE: switch is faster        
+        let type-to-use:XDMAttributeType =
+            {switch type
+             case "UNDECLARED" do XDMAttributeType.UNDECLARED
+             case "CDATA" do XDMAttributeType.CDATA 
+             else {XDMAttributeType name = type}}
+        
+        let att:XDMAttribute =
+            {_XDMAttribute
+                {XDMName namespace, local-name},
+                value,
+                type = type-to-use
+            }
+        
+        {element.add-attribute att}
+        
+    }
+
+  }
+  
+  {method public {processing-instruction 
+                     target:String,
+                     data:#String
+                 }:void
+    
+    {self.flush-characters}
+    
+    let node:XDMProcessingInstruction = 
+        {_XDMProcessingInstruction target, 
+            {if-non-null data then data else ""}}
+    
+    {if-non-null current-node = self.current-node then
+        {current-node.append node}
+     else
+        {self._document-children.append node}}
+  }
+  
+  {method public {fatal-error e:SAXParseException}:void
+    || allows debugger access to exceptions
+    {super.fatal-error e}
+  }
+  {method public {error e:SAXParseException}:void
+    || override default, which is to ignore!
+    || TODO: collect and report in bulk on end-document
+    {super.fatal-error e}
+  }
+  {method public {warning e:SAXParseException}:void
+    {super.warning e}
+  }
+}
+
+|| XML Include
+|| --------------------
+|| The call stack -- needed to keep track of included documents
+|| so that we don't get a case where we have a circular reference
+|| list in XML:Include calls.
+{let package constant xml-include-call-stack:{Array-of Url} =
+    {new {Array-of Url}}
+}
+
+|| Global constants which help with parsing the XML Include
+|| specifications.
+{let package constant 
+    include-xmlname:XDMName =
+    {XDMName
+        "http://www.w3.org/2001/XInclude",
+        "include"
+    },
+    fallback-xmlname:XDMName =
+    {XDMName
+        "http://www.w3.org/2001/XInclude",
+        "fallback"
+    }
+}

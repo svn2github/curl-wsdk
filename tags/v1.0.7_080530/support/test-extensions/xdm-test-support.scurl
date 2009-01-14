@@ -1,0 +1,912 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 package}
+
+{package COM.CURL.WSDK.XML-TEST-SUPPORT,
+    version = "0.9",
+    resource-directory = "../../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        careful? = true
+    }
+}
+{import * from CURL.IO.SERIALIZE}
+{import * from CURL.GUI.STANDARD}
+{import * from CURL.DATA-ACCESS.BASE}
+{import * from CURL.DATA-ACCESS.CONNECTED}
+
+{import * from COM.CURL.CDU.CURL-UNIT}
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+{import * from COM.CURL.WSDK.XML-ELABORATION}
+
+{import * from COM.CURL.WSDK.XML-COMPARE}
+|| for compare-recordset
+{import * from COM.CURL.WSDK.DISPLAY-SUPPORT}
+
+|| XDM generation 
+|| --------------------
+{define-class public abstract BaseXDMDocumentTestCase {inherits TestCase}
+  field public-get constant location:Url
+  field _subject:#XDMDocument
+  {constructor public {default location:Url, name:#String = null}
+    set self.location = location
+    let actual-name:String = 
+        {if-non-null name then name
+         else self.location.filename}
+    {construct-super actual-name}
+  }
+  || delay construction until test is run
+  {getter public {subject}:XDMDocument
+    {if self._subject == null then
+        let doc:XDMDocument = xdm-documents[self.location]
+        set self._subject = doc}
+    {return {non-null self._subject}}
+  }
+  {method public {set-up}:void
+    || demand document construction
+    self.subject
+  }
+}
+{define-class public ComparisonXDMTestCase {inherits BaseXDMDocumentTestCase}
+  field public generated:XDMDocument
+  field public-get constant compare-args:Arguments
+  {constructor public {default 
+                          location:Url,
+                          compare-args:Arguments = {Arguments},
+                          name:#String = null}
+    set self.compare-args = compare-args
+    {construct-super location, name = name}
+    set self.generated = {XDMDocument {XDMElement "_empty"}}
+  }
+  {method public {duplicate}:void
+    || identity
+    set self.generated = self.subject            
+  }
+  {method public {set-up}:void
+    {super.set-up}
+    {self.duplicate}        
+  }
+  {method public {run}:void
+    || compare
+    let (match?:bool, diffs:{Array-of XDMMismatch}) = 
+        {compare-xdm-node {splice self.compare-args},
+            self.subject, self.generated}
+    {if match? then
+        {TestCondition.succeed}
+     else
+        {TestCondition.fail message = {lmessage Mismatch: {value diffs.size} variances}}}
+  }
+||--  {method public {display}:Visual
+||--    {return {xdm-comparison-display self.subject.root, self.generated.root}}
+||--  }
+}
+{define-class public WriteXDMTestCase {inherits ComparisonXDMTestCase}
+  {constructor public {default ...}
+    {construct-super {splice ...}}
+  }
+  {method public {duplicate}:void
+    || NOTE: suppress indentation so possible to compare whitespace
+    let output:String = {self.subject.to-XML indentation = -1}
+    set self.generated = {build-xml output}            
+  }
+}
+{define-class public CloneXDMTestCase {inherits ComparisonXDMTestCase}
+  {constructor public {default ...}
+    {construct-super {splice ...}}
+  }
+  {method public {duplicate}:void
+    set self.generated = {self.subject.clone}            
+  }
+}
+{define-class public SerializeXDMTestCase {inherits ComparisonXDMTestCase}
+  {constructor public {default ...}
+    {construct-super {splice ...}}
+  }
+  {method public {duplicate}:void
+    let buf:{Array-of byte} = {{Array-of byte}}
+    {with-open-streams 
+        out = {SerializeOutputStream {ByteArrayOutputStream buf}} 
+     do 
+        {out.write-one self.subject}}
+    set self.generated =
+        {with-open-streams
+            in = {SerializeInputStream {ByteArrayInputStream buf}} 
+         do
+            {in.read-one}} asa XDMDocument
+  }
+}
+{define-class public ElaborateXDMTestCase {inherits ComparisonXDMTestCase}
+  {constructor public {default ...}
+    {construct-super 
+        compare-args =
+            {Arguments
+                compare-namespace-declarations? = false,
+                compare-whitespace? = false},
+        {splice ...}}
+  }
+  {method public {duplicate}:void
+    let e:XmlElaboration =
+        || TODO: 'xml-elaboration' should recognize "adjectives"
+        {XmlElaborationDispatch 
+            {XmlElaborationTable default-action = 
+                {XmlElaborationFunction 
+                    || adjectives
+                    preserve-whitespace? = true, 
+                    attribute-mode = AttributeElaborationMode.as-attribute,
+                    {proc {name:XDMName, ...}:XDMElement
+                        {return {XDMElement name, {splice ...}}}}}
+            }}
+||--        {xml-elaboration
+||--            || TODO: 'xml-elaboration' should recognize factory and proc
+||--            {"*" {name:XDMName, ...}:XDMElement
+||--                {XDMElement name, {splice ...}}}}
+    set self.generated = 
+        {XDMDocument
+            {e.elaborate self.subject.root} asa XDMElement}
+  }
+}
+{define-class public BasicXDMTestCase {inherits TestSuite}
+  {constructor public {default location:Url}
+||--    let name:String = {TestCase.enough-namestring location}
+    {construct-super location.filename}
+    {self.add {ComparisonXDMTestCase name = "compare", location}}
+    {self.add {WriteXDMTestCase name = "write", location}}
+    {self.add {CloneXDMTestCase name = "clone", location}}
+    {self.add {SerializeXDMTestCase name = "serialize", location}}
+    {self.add {ElaborateXDMTestCase name = "elaborate", location}}
+  }
+}
+|| XDM change management
+|| --------------------
+|| tests change management by applying programmatic modifications
+|| to subject recordset, logging events, and comparing to "standard"
+{define-class public XDMSessionTestCase {inherits TestCase}
+  field public-get constant location:Url
+  field public-get constant log-location:Url
+
+  || TODO: this could be generalized 
+  || - supply "session script" proc or method override
+  {constructor public {default
+                          location:Url,
+                          log-location:Url, 
+                          name:#String = null}
+    set self.location = location
+    set self.log-location = log-location
+    let actual-name:String = 
+        {if-non-null name then name
+         else self.log-location.filename}
+    {construct-super actual-name}
+  }
+  || state
+  field _subject:#XDMDocument
+  {getter public {subject}:XDMDocument
+    {if self._subject == null then
+        set self._subject =
+            {build-xml preserve-whitespace? = false, self.location}}
+    {return {non-null self._subject}}
+  }
+  field _log:#RecordSet
+  {getter public {log}:RecordSet
+    {if self._log == null then
+        set self._log = {self.make-log self.subject}}            
+    {return {non-null self._log}}
+  }
+  field _log-standard:#RecordSet
+  {getter public {log-standard}:RecordSet
+    {if self._log-standard == null then
+        let log-fields:RecordFields = XDMSessionTestCase.log-fields
+        let log-standard:RecordSet = 
+            {CsvRecordSet self.log-location,
+                fields = log-fields}
+        set self._log-standard = log-standard}            
+    {return {non-null self._log-standard}}
+  }
+  || test protocol
+  {method public {set-up}:void
+    || demand standard
+    self.log-location
+    || clear and demand document
+    set self._subject = null
+    self.subject
+    || clear and demand log
+    set self._log = null
+    self.log
+  }
+  {method public {run}:void
+    || create form
+    let (display:Graphic, 
+         action:{proc-type {}:void}) =
+        {self.make-display}
+    || run session script
+    {action}
+    || compare event log
+    let match?:bool = {compare-recordset self.log-standard, self.log}
+    || report result
+    {if match? then
+        {TestCondition.succeed}
+     else
+        {TestCondition.fail}}
+  }
+||--  {method public {display}:Visual
+||--    {return {self.make-display}}
+||--  }
+  || implementation
+  {method {make-log doc:XDMDocument}:RecordSet
+    let event-count:int = 0
+    let log:RecordSet = 
+        {RecordSet XDMSessionTestCase.log-fields}
+    {doc.add-event-handler
+        {on e:XDMEvent do
+            let subject:String =
+                {type-switch e
+                 case e:XDMNodeModified do 
+                    {XDMPath.from-node e.node}
+                 else ""}
+            {log.append
+                {RecordData
+                    event = {type-of e}.name,
+                    subject = subject,
+                    sequence = event-count}}
+            {inc event-count}
+            {dispatch-events false}}}
+    {return log}
+  }
+  {let public constant log-fields:RecordFields =
+      {RecordFields
+          {RecordField "sequence", 
+              domain = int, modifiable? = false},
+          {RecordField "event", 
+              domain = String, modifiable? = false},
+          {RecordField "subject", 
+              domain = String, modifiable? = false}}
+  }
+  {method {make-display}:(Graphic, {proc-type {}:void})
+    || document
+    let doc:XDMDocument = self.subject
+    let root:XDMElement = doc.root
+    || set up event logging
+    let log:RecordSet = self.log
+    let rg:RecordGrid = 
+        {RecordGrid
+            height = {make-elastic},
+            record-source = log}
+    let log-expected:RecordSet = self.log-standard
+    || set up form
+    let update:EventHandler =
+        {on ValueFinished at c:TextField do
+            {c.update-data-binding "value"}}
+    let f-title:TextField = 
+        {TextField {bind value to "title"}, update}
+    let f-link:TextField = 
+        {TextField  {bind value to "link"}, update}
+    let f-description:TextField = 
+        {TextField  {bind value to "description"}, update}
+    let form:XDMForm = 
+        {XDMForm 
+            model = root,
+            use-look-and-feel? = true,
+            {Table 
+                columns = 2,
+                font-size = 8pt,
+                cell-margin = 1px,
+                width = {add-stretch},
+                {text N}, 
+                {TextDisplay {bind value to "count(../item)"}},
+                {text Title}, f-title,                
+                {text Link}, f-link, 
+                {text Description}, f-description,
+                {Frame vorigin = 0%, {text XML}},
+                {TextArea height = 1in,
+                    enabled? = false,
+                    {bind value to ".",
+                        {format xs:XDMNodeSet as
+                            {XDMWriter.write-XML xs.as-XDMNode, fragment? = true}}}},
+                {cell colspan = 2,
+                    {XDMDataBindingNavigationPanel}}
+            }}
+    || display
+    let tm:XDMTreeModel = {XDMTreeModel root}
+    let tc:XDMTreeControl = {XDMTreeControl open? = true, tm}
+    {tc.expand-node {non-null tm.root}, expand-descendants? = true}
+    || session script
+    || TODO: log navigation and data binding stages
+    let do-run:{proc-type {}:void} =
+        {proc {}:void
+            || programmatic changes
+            {root.add-attribute  error-if-exists? = false,
+                {XDMAttribute "date", {DateTime}.info.iso-date}}
+            let xs:XDMNodeSet = {root.search "channel/item/description/text()"}
+            {for x in xs do
+                {type-switch x
+                 case t:XDMText do
+                    set t.content =
+                        {{t.content.substr 0, 1
+                         }.to-upper-clone} & {t.content.tail 1}}}
+            let p:XDMProcessingInstruction =
+                {XDMProcessingInstruction "xml-stylesheet", "type='text/css'"}
+            {root.append p}
+            {p.detach}
+            {root.insert-child p, 0}
+            set p.data = p.data & "href='test.css'"
+            let x:XDMNode = {root.search "channel/item[last()]"}.as-XDMNode
+            {x.parent.append {x.clone}}
+            || navigation
+            set form.context-path = "channel/item"
+            {if form.current-index != 0 then
+                {form.do-command "move-first"}}
+            {form.do-command "move-next"}
+            {form.do-command "move-next"}
+            {form.do-command "move-previous"}
+            {form.do-command "move-last"}
+            || data binding changes
+            set f-title.value = "WSDK Samples"
+            {f-title.handle-event {ValueFinished}}
+            set f-link.value = "wsdk-samples.curl"
+            {f-link.handle-event {ValueFinished}}
+            set f-description.value = "Sample Applications"
+            {f-description.handle-event {ValueFinished}}
+            || re-expand tree after modifications
+            {tc.expand-node {non-null tm.root}, expand-descendants? = true}}
+    let do-reset:{proc-type {}:void} =
+        {proc {}:void
+            {self.set-up}
+            set doc = self.subject
+            set root = doc.root
+            set log = self.log
+            set rg.record-source = log
+            set form.model = root
+            set form.context-path = "."
+            set form.current-index = 0
+            set tm.root = {XDMTreeNode root}
+            || re-expand tree after modifications
+            {tc.expand-node {non-null tm.root}, expand-descendants? = true}}
+    let do-compare:{proc-type {}:void} =
+        {proc {}:void
+            || compare event log
+            let match?:bool = {compare-recordset log-expected, log}
+            {if not match? then
+                {popup-message
+                    {VBox
+                        {text Expected event log},
+                        {hrule},
+                        {RecordGrid record-source = log-expected}}}}}
+    || operations
+    let run-command:CommandButton =
+        {CommandButton label = {lmessage Run},
+            {on Action do
+                {do-run}}}
+    let reset-command:CommandButton =
+        {CommandButton label = {lmessage Compare},
+            {on Action do
+                {do-compare}}}
+    let compare-command:CommandButton =
+        {CommandButton label = {lmessage Reset},
+            {on Action do
+                {do-reset}}}
+    let save-command:CommandButton =
+        {CommandButton label = {lmessage Save Log},
+            {on Action do
+                {if-non-null loc = 
+                    {choose-file style = "save-as",
+                        default-location = self.log-location}
+                 then
+                    {with-open-streams out = {CsvDataWriter loc} do
+                        {for r in log do
+                            {out.write-record r}}}}}}
+    let display:Graphic =
+        {HBox
+            valign = "top",
+            vstretch? = true,
+            background = "white",
+            {VBox
+                width = {make-elastic stretchiness = 30%},
+                form,
+                {hrule},
+                {ScrollBox hscroll? = false,
+                    tc}},
+            {VBox
+                width = {make-elastic stretchiness = 70%},
+                hstretch? = true,
+                {HBox
+                    run-command,
+                    reset-command,
+                    compare-command,
+                    save-command,
+                    {Fill}},
+                rg}}
+    {return display, do-run}
+  }
+}
+|| XDMPath
+|| --------------------
+{define-proc public {xpath-test-cases name:String, in:any, ...}:TestSuite
+    let tests:TestSuite = {TestSuite name}
+    let rs:RecordSet = 
+        {type-switch in
+         case rs:RecordSet do rs
+         case loc:Url do {evaluate loc} asa RecordSet
+         else {error {message Can't make RecordSet from '{value in}'}}}
+    {for r in rs do
+        {tests.add 
+            {XPathTestCase 
+                r["loc"] asa Url, 
+                r["path"] asa String, 
+                expected = r["expected"] asa #IntArray}}}
+    {return tests}
+}
+{define-class public XPathTestCase {inherits TestCase}
+  field public-get constant location:Url
+  field public-get constant source:String
+  field protected _expected:#IntArray
+  field _subject:#XDMNode
+  field _node-index:#XDMNodeIndex
+  {constructor public {default 
+                          location:Url,
+                          source:String,
+                          expected:#IntArray = null}
+    set self.location = location
+    set self.source = source
+    set self._expected = expected
+    let name:String = self.source
+    {construct-super name}
+  }
+  || delay construction until test is run
+  {getter public {subject}:XDMNode
+    {if self._subject == null then
+        let doc:XDMDocument = xdm-documents[self.location]
+        set self._subject = doc.root}
+    {return {non-null self._subject}}
+  }
+  {getter public {node-index}:XDMNodeIndex
+    {if self._node-index == null then
+        set self._node-index = xdm-indexes[self.subject]}
+    {return {non-null self._node-index}}
+  }
+  {getter public {expected}:#IntArray
+    {return self._expected}
+  }
+  {method public {set-up}:void
+    || demand document construction
+    self.subject
+    self.node-index
+  }
+  {method public {run}:void
+    let path:XDMPath = {xpath self.source}
+    let result:XDMNodeSet = {path.search self.subject}
+    {if-non-null expected = self.expected then
+        let actual:IntArray = {self.node-index.summarize-nodeset result}
+        {if {actual.equal? expected} 
+         then {TestCondition.succeed}
+         else {TestCondition.fail}}
+     else || expected result unknown
+        {TestCondition.succeed}}
+  }
+||--  {method public {display}:Visual
+||--    {return {xpath-test-display self}}
+||--  }
+}
+|| XDMPath syntax
+|| --------------------
+{define-class public XPathSyntaxTestCase {inherits TestCase}
+  field public-get constant source:String
+  field public-get constant expected:#String
+  {constructor public {default
+                          source:String,
+                          expected:#String = "XDMPathException"}
+    set self.source = source
+    set self.expected = expected
+    {construct-super source}
+  }
+  {method public {run}:void
+    let actual:#Exception =
+        {try
+            {xpath self.source}
+            null
+         catch e:XDMPathException do e
+         catch e:XDMException do e}
+    {if-non-null actual then
+        {if-non-null expected = self.expected then
+            || TODO: compare message 
+            {TestCondition.succeed}
+         else 
+            {TestCondition.fail 
+                message = {message Expected no exception, got '{value actual}'}}}
+     else
+        {if-non-null expected = self.expected then
+            {TestCondition.fail 
+                message = {message Expected exception {value expected}, got no exception}}
+         else
+            {TestCondition.succeed}}}
+  }
+}
+{define-class public XPathValidSyntaxTestCase {inherits XPathSyntaxTestCase}
+  {constructor public {default source:String}
+    {construct-super source, expected = null}
+  }
+}  
+
+|| derive "schema" info from XML
+|| --------------------
+{define-proc public {xdm-membership 
+                        subject:XDMElement
+                    }:(
+                       {HashTable-of XDMName, {Set-of XDMName}},
+                       XDMNamespaceDeclarations)
+    
+    let members:{HashTable-of XDMName, {Set-of XDMName}} =
+        {{HashTable-of XDMName, {Set-of XDMName}}}    
+    let ns:XDMNamespaceDeclarations = {XDMNamespaceDeclarations}
+    
+    let np:int = 0
+    {for x in {subject.search "//*"} do
+        || gather namespace declarations
+        let m:XDMName = x.xmlname
+        let n:String = m.namespace
+        {if not n.empty? then
+            {if {ns.get-prefix n} == null then
+                || new namespace
+                let p?:bool =
+                    {if-non-null p =
+                        {(x asa XDMElement
+                         ).find-matching-prefix n, 
+                            check-default? = false} 
+                     then 
+                        || with known prefix: use it if possible
+                        {ns.declare-prefix? p, n}
+                     else false}
+                || unknown or duplicate prefiex: synthesize one
+                || -- this will happen for default namespace
+                {while not p? do
+                    {inc np}
+                    let q:String = {format "NS%02d", np}
+                    set p? = {ns.declare-prefix? q, n}}}}
+        || note whats contained in what        
+        {if-non-null p = x.parent then
+            let name:XDMName = p.xmlname
+            {if-non-null ms = {members.get-if-exists name} asa #{Set-of XDMName} then
+                {ms.insert m}
+             else
+                set members[name] = {{Set-of XDMName} m}}}}
+    {return members, ns}
+}
+|| document cache
+|| --------------------
+{let constant public xdm-documents:{Memoizer-of Url, XDMDocument} =
+    {{StrongMemoizer-of Url, XDMDocument}
+        {proc {loc:Url}:XDMDocument
+||--            {output {message Creating XDMDocument for {value loc}}}
+            {return {build-xml preserve-whitespace? = false, loc}}
+        }}
+}
+{let constant public xdm-indexes:{Memoizer-of XDMNode, XDMNodeIndex} =
+    {{StrongMemoizer-of XDMNode, XDMNodeIndex}
+        {proc {x:XDMNode}:XDMNodeIndex
+||--            {output {message Creating XDMNodeIndex for {value x}}}
+            {return {XDMNodeIndex x}}
+        }}
+}
+|| Memoizer whose recent results will not be garbage collected
+|| --------------------
+{define-class public {StrongMemoizer-of Td:ClassType, Tr:Type}
+  {inherits {Memoizer-of Td, Tr}}
+  field constant history:FastArray
+  field next:int
+  {constructor public {default
+                          f:{proc-type {Td}:Tr},
+                          history-size:int = 16}
+    || the array references prevent garbage collection
+    set self.history =
+        {FastArray.from-size history-size, null}
+    set self.next = 0
+    {construct-super
+        {proc {x:Td}:Tr
+            let result:Tr = {f x}
+            set self.history[self.next] = result
+            {inc self.next}
+            {if self.next >= self.history.size then
+                set self.next = 0}
+            {return result}}}
+  }
+  {method public {flush-memos}:void
+    let size:int = self.history.size
+    {self.history.clear}
+    {self.history.set-size size, null}
+    set self.next = 0
+    {super.flush-memos}
+  }
+}
+
+|| type conversion
+|| --------------------
+{let public constant IntArray:ClassType = {Array-of int}}
+
+{define-class public {ArrayDomain-of T:Type}
+  {inherits {StandardDomain-of {Array-of T}}}
+  field constant element-domain:Domain
+  {constructor public {default 
+                          element-domain:Domain = T asa Domain}
+    set self.element-domain = element-domain
+    {construct-super {{Array-of T}}, null, null, null}
+  }
+  {method public {format x:any}:String
+    let xs:{Array-of T} = x asa {Array-of T}
+    {if xs.empty? then
+        {return " "}}
+    let s:StringBuf = {StringBuf}
+    let d:Domain = self.element-domain
+    {for x in xs do
+        {if not s.empty? then
+            {s.append ' '}}
+        {s.concat {d.format x}}}
+    {return {s.to-String}}
+  }
+  {method public {parse x:String}:any
+    let xs:StringArray = {x.split}
+    {xs.filter 
+        {proc {x:String}:bool 
+            {return not x.empty?}}}
+    let d:Domain = self.element-domain
+    let ys:{Array-of T} = {{Array-of T} efficient-size = xs.size}
+    {for x in xs do
+        {ys.append {d.parse x} asa T}}
+    {return ys}
+  }
+  {method public {compare x:any, y:any}:int
+    let xs:{Array-of T} = x asa {Array-of T}
+    let ys:{Array-of T} = y asa {Array-of T}
+    let d:Domain = self.element-domain
+    {for x key i in xs do
+        {if i < ys.size then
+            let c:int = {d.compare x, ys[i]}
+            {if c != 0 then
+                || first unequal element
+                {return c}}
+         else
+            || missing y elements
+            {return 1}}}
+    || all x elements equal y elements
+    || check if y elements remain
+    {return 
+        {if ys.size == xs.size then 0 else -1}}
+  }
+  {method public {hash x:any}:int
+    let xs:{Array-of T} = x asa {Array-of T}
+    let d:Domain = self.element-domain
+    let result:int = xs.size
+    {for x in xs do
+        set result = 
+            {bit-xor result, {d.hash x}}}
+    {return result}
+  }
+}
+    
+{let public constant IntArrayDomain:ClassType =
+    {ArrayDomain-of int}
+}
+|| data schema
+|| --------------------
+{let public constant xdm-path-cases:RecordFields =
+    {RecordFields
+        {RecordField "loc", domain = any}, || Url
+        {RecordField "path", domain = String},
+        {RecordField "expected", domain = {IntArrayDomain}},
+        {RecordField "actual", domain = {IntArrayDomain}, nullable? = true},
+        {RecordField "status", domain = any, nullable? = true}
+    }
+}
+|| displays
+|| --------------------
+||--{define-proc {xpath-test-display test:XPathTestCase}:Graphic
+||--    || model
+||--    let xmldoc:XDMDocument = {non-null test.subject.document}
+||--    let xml:#XDMElement = xmldoc.root    
+||--    || model tree
+||--    let tm:XDMTreeModel = 
+||--        {XDMTreeModel xmldoc}
+||--    let tc:XDMTreeControl = 
+||--        {XDMTreeControl tm,
+||--            tree-connector-color = "silver",
+||--            selection-policy = "multiple"}
+||--    
+||--    || subset
+||--    let xs:XDMNodeSet = {XDMNodeSet}
+||--    || subset tree
+||--    let stm:XDMTreeModel = 
+||--        {XDMTreeModel null}
+||--    let stc:XDMTreeControl = 
+||--        {XDMTreeControl stm,
+||--            tree-connector-color = "silver",
+||--            xdm-text-breakable? = true,
+||--            selection-policy = "multiple"} 
+||--    
+||--    || actions
+||--    let search-status:TextDisplay = {TextDisplay}
+||--    let search-command:ComboBox =
+||--        {ComboBox
+||--            value = test.source,
+||--            width = 4in,
+||--            vorigin = 70%,
+||--            {on ValueFinished at c:ComboBox do
+||--                {with-busy-cursor
+||--                    || clear highlighted nodes
+||--                    {tc.clear-categories category = "highlight"}
+||--                    {tc.select-nothing}
+||--                    {if c.value.empty? then
+||--                        set stm.root = null
+||--                     else
+||--                        {try
+||--                            || apply specified xpath
+||--                            let w:StopWatch = {StopWatch}
+||--                            {w.start}
+||--                            set xs = {xml.search c.value}
+||--                            {w.stop}
+||--                            set search-status.value =
+||--                                {message Found {value xs.size} nodes in {w.elapsed}}
+||--                            set stm.root = xs asa XDMTreeNode
+||--                            {stc.expand-node {non-null stm.root}}
+||--                            || remember new query
+||--                            {if {c.find c.value} < 0 then
+||--                                {c.append c.value}}
+||--                         catch e:Exception do
+||--                            set search-status.value = e.message
+||--                            {popup-message e}}
+||--                    }}}}
+||--    
+||--    || display
+||--    let pane-style:Arguments =
+||--        {Arguments
+||--            border-width = 3px,
+||--            border-style = "ridge"} 
+||--    let display-full:Graphic =
+||--        {VBox
+||--            margin = 3px,
+||--            width = 2in,
+||--            tc,
+||--            {Fill}}
+||--    let display-subset:Graphic =
+||--        {VBox
+||--            margin = 3px,
+||--            {HBox
+||--                spacing = 3pt,
+||--                margin = 3pt,
+||--                {text XPath:},
+||--                search-command,
+||--                {CommandButton
+||--                    label = {message Select},
+||--                    {on Action do
+||--                        || select corresponding tree nodes
+||--                        {with-busy-cursor do
+||--                            {tc.collapse-node {non-null tm.root},
+||--                                collapse-descendants? = true}
+||--                            {for x in xs do
+||--                                let n:XDMTreeNode = tm[x]
+||--                                {tc.select-nodes additive? = true, n}}}}},
+||--                {CommandButton
+||--                    label = {message Highlight},
+||--                    {on Action do
+||--                        || highlight corresponding tree nodes
+||--                        {with-busy-cursor do
+||--                            || clear this category
+||--                            {tc.clear-categories category = "highlight"}                            
+||--                            {for x in xs do
+||--                                let n:XDMTreeNode = tm[x]
+||--                                || assure node is visible
+||--                                {if-non-null p = n.parent then
+||--                                    {tc.expand-node p,
+||--                                        expand-ancestors? = true}}
+||--                                {tc.set-category n, "highlight"}
+||--                            }}}},
+||--                {Fill},
+||--                {CommandButton
+||--                    label = {message Debug},                    
+||--                    {on Action do
+||--                        {debug-info}}}},
+||--            {ScrollBox
+||--                hstretch? = true,
+||--                hscroll? = false,
+||--                stc},
+||--            {Fill}, 
+||--            search-status} 
+||--    
+||--    || behavior
+||--    let expand-action:EventHandler =
+||--        {on Action at c:TreeControl do
+||--            {if-non-null node = c.current-node then
+||--                {with-busy-cursor
+||--                    {if {c.expanded-nodes.member? node} then
+||--                        {c.collapse-node node,
+||--                            collapse-descendants? = true}
+||--                     else
+||--                        {c.expand-node node,
+||--                            expand-descendants? = true}}}}}
+||--    {tc.add-event-handler expand-action}
+||--    {stc.add-event-handler expand-action}
+||--    
+||--    || arrangement
+||--    let main:PanedWindow =
+||--        {PanedWindow orientation = "horizontal"}
+||--    {main.add-pane 
+||--        {ScrollBox
+||--            margin = 1px,
+||--            hstretch? = true,
+||--            vstretch? = true,
+||--            {splice pane-style},
+||--            display-full}}
+||--    {main.add-pane 
+||--        {Frame 
+||--            margin = 1px,
+||--            hstretch? = true,
+||--            vstretch? = true,
+||--            {splice pane-style},
+||--            display-subset}}
+||--    {main.set-pane-sizes {{Array-of double} 30%, 70%}}
+||--    
+||--    || initialize
+||--    {search-command.handle-event {ValueFinished}}
+||--    
+||--    || display
+||--    {return 
+||--        {Frame 
+||--            background = "white",
+||--            main}
+||--    }
+||--}
+||--{define-proc {xdm-comparison-display
+||--                 this:XDMNode,
+||--                 that:XDMNode,
+||--                 ...
+||--             }:Graphic
+||--    let (diff?:bool, diffs:{Array-of XDMMismatch}) =
+||--        {compare-xdm-node this, that, {splice ...}}
+||--    
+||--    let this-model:XDMTreeModel = {XDMTreeModel this}
+||--    let that-model:XDMTreeModel = {XDMTreeModel that}
+||--    let this-display:XDMTreeControl = {XDMTreeControl open? = true, this-model}
+||--    let that-display:XDMTreeControl = {XDMTreeControl open? = true, that-model}
+||--    set this-display.background-map["mismatch"] = "pink"
+||--    set this-display.background-map["mismatch-children"] = "yellow"
+||--    set this-display.background-map["mismatch-unspecified"] = "red"
+||--    set that-display.background-map["mismatch"] = "pink"
+||--    set that-display.background-map["mismatch-children"] = "yellow"
+||--    set that-display.background-map["mismatch-unspecified"] = "red"
+||--    {for diff in diffs do
+||--        {if-non-null a = diff.a then
+||--            {this-display.set-category this-model[a], 
+||--                {switch diff.kind
+||--                 case XDMMismatchKind.Children do "mismatch-children"
+||--                 case XDMMismatchKind.Unspecified do "mismatch-unspecified"
+||--                 else "mismatch"}}}
+||--        {if-non-null b = diff.b then
+||--            {that-display.set-category that-model[b], 
+||--                {switch diff.kind
+||--                 case XDMMismatchKind.Children do "mismatch-children"
+||--                 case XDMMismatchKind.Unspecified do "mismatch-unspecified"
+||--                 else "mismatch"}}}}
+||--    {return
+||--        {HBox
+||--            valign = "top",
+||--            background = "white",
+||--            {ScrollBox
+||--                width = {make-elastic},
+||--                this-display},
+||--            {ScrollBox
+||--                width = {make-elastic},
+||--                that-display}
+||--        }}
+||--}

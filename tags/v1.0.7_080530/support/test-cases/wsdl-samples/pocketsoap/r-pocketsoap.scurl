@@ -1,0 +1,438 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{let pocketsoap-impls:RecordSet =
+    {RecordSet
+        {RecordFields
+            {RecordField "group", domain = String},
+            {RecordField "subgroup", domain = String},
+            {RecordField "server", domain = String, caption = "Server"},
+            {RecordField "wsdl", domain = String}},
+
+        || Round 2
+        || Base
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/BEA",
+            wsdl = "http://webservice.bea.com:7001/base/SoapInteropBaseService?WSDL"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/EasySoap",
+            wsdl = "http://easysoap.sourceforge.net/interopA.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/fourSfourC138",
+            wsdl = "http://www.pocketsoap.com/services/ilab.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/fourSfourC20",
+            wsdl = "http://soap.4s4c.com/ilab2/ilab.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/Frontier",
+||--            wsdl = "http://www.pocketsoap.com/registration/"
+            wsdl = "http://www.soapware.org/xmethodsInterop"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/gSOAP",
+            wsdl = "http://www.cs.fsu.edu/~engelen/soapinterop.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/kSOAP",
+            wsdl = "http://www.whitemesa.com/interop/kSOAP.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/MS.NET",
+            wsdl = "http://www.mssoapinterop.org/remoting/ServiceA.soap?wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/MSSoap20",
+            wsdl = "http://mssoapinterop.org/stk/InteropB.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/MSSoap30",
+            wsdl = "http://mssoapinterop.org/stkV3/Interop.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/NuSOAP",
+            wsdl = "http://dietrich.ganx4.com/nusoap/testbed/round2_base.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/SOAP4R",
+            wsdl = "http://www.jin.gr.jp/~nahi/Ruby/SOAP4R/SOAPBuildersInterop/SOAP4R_SOAPBuildersInteropTest_R2base.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/SOAPLite",
+            wsdl = "http://services.soaplite.com/interop2.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/SoapRMI",
+||--            wsdl = "http://www.pocketsoap.com/registration/"
+            wsdl = "http://www.extreme.indiana.edu:1568"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/SOAPx4",
+||--            wsdl = "http://www.pocketsoap.com/registration/"
+            wsdl = "http://dietrich.ganx4.com/soapx4/soap.php"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/SQLDataSOAPServer",
+            wsdl = "http://soapclient.com/interop/sqldatainterop.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/VWOpentalkSoap",
+            wsdl = "http://www.cincomsmalltalk.com:8080/CincomSmalltalkWiki/DOWNLOAD/WebServices/vwInteropSchema.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/WASPforCpp",
+            wsdl = "http://soap.systinet.net:6070/InteropService/"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/WASPforJava",
+            wsdl = "http://soap.systinet.net/ws/InteropService/"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round2Base.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/std/interop.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/Wingfoot",
+            wsdl = "http://www.wingfoot.com/interop/wingfootBase.wsdl"},
+        {RecordData
+            group = "Base",
+            subgroup = "",
+            server = "round2/Base/XSOAP",
+            wsdl = "http://www.extreme.indiana.edu/~aslom/XSOAP_1_2_SoapRMI.wsdl"},
+        || Group B
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/BEA",
+            wsdl = "http://webservice.bea.com:7001/groupb/SoapInteropGroupBService?WSDL"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/EasySoap",
+            wsdl = "http://easysoap.sourceforge.net/interopB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/fourSfourC138",
+            wsdl = "http://www.pocketsoap.com/services/ilab_b.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/fourSfourC20",
+            wsdl = "http://soap.4s4c.com/ilab2/ilab_b.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/gSOAP",
+            wsdl = "http://www.cs.fsu.edu/~engelen/interop2B.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/MS.NET",
+            wsdl = "http://www.mssoapinterop.org/remoting/ServiceB.soap?wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/MSSoap20",
+            wsdl = "http://mssoapinterop.org/stk/InteropBtyped.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/MSSoap30",
+            wsdl = "http://mssoapinterop.org/stkV3/InteropB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/NuSOAP",
+            wsdl = "http://dietrich.ganx4.com/nusoap/testbed/round2_groupb.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/SOAP4R",
+            wsdl = "http://www.jin.gr.jp/~nahi/Ruby/SOAP4R/SOAPBuildersInterop/SOAP4R_SOAPBuildersInteropTest_R2GroupB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/SOAPLite",
+            wsdl = "http://services.soaplite.com/InteropTestB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/SQLDataSOAPServer",
+            wsdl = "http://soapclient.com/interop/InteropB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/VWOpentalkSoap",
+            wsdl = "http://www.cincomsmalltalk.com:8080/CincomSmalltalkWiki/DOWNLOAD/WebServices/vwInteropR2GroupB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/WASPforCpp",
+            wsdl = "http://soap.systinet.net:6070/InteropBService/"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/WASPforJava",
+            wsdl = "http://soap.systinet.net/ws/InteropBService/"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round2GroupB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/std/interopB.wsdl"},
+        {RecordData
+            group = "GroupB",
+            subgroup = "",
+            server = "round2/GroupB/Wingfoot",
+            wsdl = "http://www.wingfoot.com/interop/wingfootGroupB.wsdl"},
+        || Group C
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/BEA",
+            wsdl = "http://webservice.bea.com:7001/groupc/SoapInteropGroupCService?WSDL"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/EasySoap",
+            wsdl = "http://easysoap.sourceforge.net/interopC.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/fourSfourC20",
+            wsdl = "http://soap.4s4c.com/ilab2/ilab_c.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/MSSoap20",
+            wsdl = "http://mssoapinterop.org/stk/InteropC.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/MSSoap30",
+            wsdl = "http://mssoapinterop.org/stkV3/InteropC.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/SOAPLite",
+            wsdl = "http://services.soaplite.com/InteropTestC.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/SQLDataSOAPServer",
+            wsdl = "http://soapclient.com/interop/interopC.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/WASPforCpp",
+            wsdl = "http://soap.systinet.net:6070/InteropCService/"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/WASPforJava",
+            wsdl = "http://soap.systinet.net/ws/InteropCService/"},
+||--            wsdl = "WASPforJava/WfJ-InteropC.wsdl"},
+        {RecordData
+            group = "GroupC",
+            subgroup = "",
+            server = "round2/GroupC/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/std/echoheadersvc.wsdl"},
+        || Round 3
+        || Group D
+        ||   Compound 1
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound1",
+            server = "round3/GroupD/Compound1/BEA",
+            wsdl = "http://webservice.bea.com:7001/compound1/Compound1?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound1",
+            server = "round3/GroupD/Compound1/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/compound1.wsdl"},
+        ||   Compound 2
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound2",
+            server = "round3/GroupD/Compound2/BEA",
+            wsdl = "http://webservice.bea.com:7001/compound2/Compound2?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound2",
+            server = "round3/GroupD/Compound2/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDCompound2.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Compound2",
+            server = "round3/GroupD/Compound2/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/compound2.wsdl"},
+        ||   DocLit
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLit",
+            server = "round3/GroupD/DocLit/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDInteroptestdoclit.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLit",
+            server = "round3/GroupD/DocLit/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/interoptestdoclit.wsdl"},
+        ||   DocLitParams
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLitParams",
+            server = "round3/GroupD/DocLitParams/BEA",
+            wsdl = "http://webservice.bea.com:7001/doclitparam/WSDLInteropTestDocLitService?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "DocLitParams",
+            server = "round3/GroupD/DocLitParams/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/interoptestdoclitparameters.wsdl"},
+        ||   Import 1
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import1",
+            server = "round3/GroupD/Import1/BEA",
+            wsdl = "http://webservice.bea.com:7001/import1/Import1?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import1",
+            server = "round3/GroupD/Import1/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDImport1.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import1",
+            server = "round3/GroupD/Import1/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/import1.wsdl"},
+        ||   Import 2
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import2",
+            server = "round3/GroupD/Import2/BEA",
+            wsdl = "http://webservice.bea.com:7001/import2/Import2?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import2",
+            server = "round3/GroupD/Import2/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDImport2.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import2",
+            server = "round3/GroupD/Import2/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/import2.wsdl"},
+        ||   Import 3
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import3",
+            server = "round3/GroupD/Import3/BEA",
+            wsdl = "http://webservice.bea.com:7001/import3/Import3?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "Import3",
+            server = "round3/GroupD/Import3/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/import3.wsdl"},
+||--            wsdl = "WhiteMesa/import3.wsdl"},
+        ||   RpcEnc
+        {RecordData
+            group = "GroupD",
+            subgroup = "RpcEnc",
+            server = "round3/GroupD/RpcEnc/BEA",
+            wsdl = "http://webservice.bea.com:7001/rpc/WSDLInteropTestRpcEncService?WSDL"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "RpcEnc",
+            server = "round3/GroupD/RpcEnc/WebMethods",
+            wsdl = "http://ewsdemo.webmethods.com/InteropTest/endpoints/Round3GroupDInteroptestrpcenc.wsdl"},
+        {RecordData
+            group = "GroupD",
+            subgroup = "RpcEnc",
+            server = "round3/GroupD/RpcEnc/WhiteMesa",
+            wsdl = "http://www.whitemesa.net/wsdl/r3/interoptestrpcenc.wsdl"},
+        || Group E
+        ||   DocLit
+        {RecordData
+            group = "GroupE",
+            subgroup = "DocLit",
+            server = "round3/GroupE/DocLit/BEA",
+            wsdl = "http://webservice.bea.com:7001/doclit/WSDLInteropTestDocLitService?WSDL"},
+        ||   LinkedList
+        {RecordData
+            group = "GroupE",
+            subgroup = "LinkedList",
+            server = "round3/GroupE/LinkedList/BEA",
+            wsdl = "http://webservice.bea.com:7001/list/WSDLInteropTestListService?WSDL"},
+        ||   RpcEnc
+        ||   NONE
+        || Group F
+        ||   TODO
+        || Round 4
+        || Faults
+        ||   SimpleDocLit
+        {RecordData
+            group = "Faults",
+            subgroup = "SimpleDocLit",
+            server = "round4/Faults/SimpleDocLit/BEA",
+            wsdl = "http://webservice.bea.com:7001/simpledoc/SimpleDocLitService?WSDL"},
+        ||   SimpleRpcEnc
+        {RecordData
+            group = "Faults",
+            subgroup = "SimpleRpcEnc",
+            server = "round4/Faults/SimpleRpcEnc/BEA",
+            wsdl = "http://webservice.bea.com:7001/simplerpc/SimpleRpcEncService?WSDL"}
+        || XSD
+        || TODO:
+||--        {RecordData
+||--            group = "XSD",
+||--            subgroup = "",
+||--            server = "round4/XSD/BEA",
+||--            wsdl = "http://webservice.bea.com:7001/Round4XSDTest/Round4XSDTest?WSDL"}
+    }
+}

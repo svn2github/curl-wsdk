@@ -1,0 +1,134 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public WSConnection {inherits Connection}
+  field public-get constant service:WSConnectionService
+  field _database-names:#StringArray
+  field constant _database-tables:{HashTable-of String, StringArray}
+  
+  {constructor public {default service-location:#Url = null}
+    set self._database-tables = {{HashTable-of String, StringArray}}
+    set self.service = 
+        {if-non-null service-location then
+            {WSConnectionService service-location = service-location}
+         else {WSConnectionService}}
+    let location:Url = self.service.service-location
+    {construct-super location}
+  }
+  || Connection protocol
+  {method public {get-database-names}:StringArray
+    {if self._database-names == null then
+        set self._database-names =
+            {self.service.get-database-names}}
+    {return {non-null self._database-names}}
+  }
+  {method public {get-tables database-name:String}:StringArray
+    let (tables:StringArray, exists?:bool) =
+        {self._database-tables.get-if-exists database-name}
+    {if not exists? then
+        set tables = 
+            {non-null {self.service.get-database-tables database-name}}
+        set self._database-tables[database-name] = tables}
+    {return tables}
+  }
+  {method public {table-exists? database-name:String, table:String}:bool
+    let tables:StringArray = {self.get-tables database-name}
+    {return {tables.find table} >= 0}
+  }
+  {method public {reset}:void
+    set self._database-names = null
+    {self._database-tables.clear}
+  }
+  {method public {get-fields
+                     database-name:String,
+                     query:String
+                 }:RecordFields
+    let specs:{Array-of RecordFieldSpec} = 
+        {non-null {self.service.get-fields database-name, query}}
+    let fields:WSRecordFields = specs asa WSRecordFields
+    {return fields}
+  }
+  {method public {create-record-set
+                     database-name:String,
+                     query:String,
+                     request-modifiable?:bool = false,
+                     size-limit:int = -1,
+                     ...:EventHandler
+                 }:ConnectedRecordSet
+    {return 
+        {WSConnectedRecordSet 
+            self,
+            database-name,
+            query,
+            request-modifiable? = request-modifiable?,
+            size-limit = size-limit,
+            ...}}
+  }
+  || BasicConnection protocol extension
+  || -- returns number of records affected
+  {method public {execute
+                     database-name:String,
+                     sql:StringArray
+                 }:int
+    {return {self.service.execute database-name, sql}}
+  }
+}
+|| decode generated SOAP structs
+{define-class WSRecordFields {inherits DefaultRecordFields}
+  {constructor {default ...}
+    {construct-super {splice ...}}
+  }
+  {factory implicit {from-spec specs:RecordFieldSpecs}:WSRecordFields
+    let fs:{Array-of RecordField} =
+        {{Array-of RecordField}}
+    {for spec in specs do
+        {fs.append spec asa WSRecordField}}
+    {return {WSRecordFields {splice fs}}}
+  }
+}
+{define-class WSRecordField {inherits DefaultRecordField}
+  field public-get primary-key?:bool 
+  {constructor {default
+                   primary-key?:bool = false,
+                   ...}
+    set self.primary-key? = primary-key?
+    {construct-super {splice ...}}
+  }
+  {factory implicit {from-spec spec:RecordFieldSpec}:WSRecordField
+    let domain:Domain = {StandardAnyDomain}
+    {try
+        {type-switch {evaluate spec.domain}
+         case d:Domain do
+            set domain = d
+         case t:Type do
+            set domain = {Domain.from-type t}
+        }
+     catch e:Exception do 
+        || report problems, forgivingly
+        {output {message Unrecognized domain '{value domain}' -- using 'any'}}
+        {output {message -- {value e}}}
+    }
+    {return 
+        {WSRecordField
+            spec.name,
+            domain = domain,
+            caption = spec.caption,
+            index-type = spec.index,
+            nullable? = spec.nullable,
+            primary-key? = spec.primary-key
+        }}
+  }
+}

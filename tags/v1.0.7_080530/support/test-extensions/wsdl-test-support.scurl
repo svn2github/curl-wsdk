@@ -1,0 +1,994 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 package}
+
+{package COM.CURL.WSDK.WSDL-TEST-SUPPORT,
+    version = "0.9",
+    resource-directory = "../../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        careful? = true
+    }
+}
+
+{import * from CURL.GUI.STANDARD}
+{import * from CURL.GUI.TEXT-EDIT}
+{import * from CURL.DATA-ACCESS.CONNECTED}
+{import * from CURL.LANGUAGE.REFLECTION}
+{import * from CURL.ENGINE.APPLET}
+
+{import * from COM.CURL.CDU.CURL-UNIT}
+
+{import * from COM.CURL.WSDK.DISPLAY-SUPPORT}
+
+{import * from COM.CURL.WSDK.WSDL}
+{import * from COM.CURL.WSDK.SOAP}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+
+{define-class public GenerativeTestSuite {inherits TestSuite}
+  {constructor public {default ...}
+    {construct-super {splice ...}}
+    {self.do-generate-tests}
+  }
+  {method public {generate-tests}:void
+  }
+  {method public {do-generate-tests}:void
+    {try
+        {self.generate-tests}
+     catch e:Exception do
+        {self.add
+            {test-case {lmessage Alert},
+                {TestCondition.fail message = 
+                    {lmessage 
+                        Unable to generate tests for '{value self.name}' : {value e.value}}
+                }}}
+    }
+  }
+}
+
+|| TODO: update services recordset ?
+
+{define-class public WSDLGenerationTestSuite {inherits GenerativeTestSuite}
+  field public-get constant location:Url
+  field public-get constant target-directory:Url
+  field public-get constant use-local-wsdl-files?:bool
+  {constructor public {default 
+                          location:Url,
+                          target-directory:Url = location.parent,
+                          use-local-wsdl-files?:bool = true}
+    set self.location = location
+    set self.target-directory = target-directory
+    set self.use-local-wsdl-files? = use-local-wsdl-files?
+||--    let name:String = {TestCase.enough-namestring location}
+    {construct-super location.filename}
+  }
+  {method public {generate-tests}:void
+    let rs:RecordSet = {WSDLGenerationTestSuite.load self.location}
+    let base-url:Url = self.target-directory
+    let http-url?:bool = {base-url.stem.name.prefix? ignore-case? = true, "http"}
+    let target-directory:Url =
+        {if http-url? 
+         then 
+            || TODO: consider {url "curl://temp"}
+            {request-local-data-permission}
+            {url "curl://local-data"}
+         else base-url}
+    {for r in rs do
+        let filename:String = r["filename"] asa String
+        let wsdl-file:String =
+            {if self.use-local-wsdl-files? 
+             then filename & ".wsdl"
+             else r["wsdl-url"] asa String}
+        {self.add
+            {WSDLGenerationTestCase
+                filename,
+                {parse-url relative-url = base-url, wsdl-file},
+                target-directory,
+                manifest-loc = {base-url.concat "manifest.mcurl"}
+            }}}
+  }
+  || TODO: use FileRecordSet
+  || -- or maybe even manifest !
+  {define-proc {load sloc:Url}:RecordSet
+    let rs:RecordSet = 
+        {CsvRecordSet sloc,
+            fields = WSDLGenerationTestSuite.services-fields}
+    || TODO: filter by category
+    let rv:RecordView = 
+        {RecordView rs,
+            sort = "name"}
+    {return rv}
+  }
+  let public constant services-fields:RecordFields =
+      {RecordFields
+          {RecordField "name", domain = String, modifiable? = false},
+          {RecordField "wsdl-url", domain = String, modifiable? = false},
+          {RecordField "filename", domain = String, modifiable? = false}
+      }
+}
+{define-class public WSDLGenerationTestCase {inherits TestCase}
+  field public-get constant location:Url
+  field public-get constant directory:Url
+  field public-get constant manifest-loc:Url
+  field public-get constant exclude-unreferenced-types?:bool
+  field package:#Package 
+  {constructor public {default 
+                          name:String, 
+                          location:Url, 
+                          directory:Url,
+                          manifest-loc:Url = {directory.concat "manifest.mcurl"},
+                          exclude-unreferenced-types?:bool = false
+                      }
+    set self.directory = directory
+    set self.location = location
+    set self.manifest-loc = manifest-loc
+    set self.exclude-unreferenced-types? = exclude-unreferenced-types?
+    {construct-super name}
+  }
+  {method public {run}:void
+    let wloc:Url = self.location
+    let basename:String = self.name
+    let sloc:Url = self.loc-scurl
+    {generate-wsdl-code wloc,
+        package-suffix = basename,
+        target = sloc,
+        exclude-unreferenced-types? = self.exclude-unreferenced-types?}     
+    || trial evaluation
+    let package:Package =
+        {import-package 
+            {make-package-selector self.package-name},
+            manifest = self.manifest}
+    set self.package = package
+  }  
+||--  {method public {display}:Visual
+||--    {return
+||--        {if-non-null package = self.package then
+||--            {api-recordgrid {curl-api-members package}}
+||--         else
+||--            {super.display}}}
+||--  }
+  || derived properties
+  {getter public {manifest}:ComponentManifest
+    {return {import-manifest self.manifest-loc}}
+  }
+  {getter public {package-name}:String
+    {return "COM.CURL.WSDL." & self.name}
+  }
+  {getter public {loc-wsdl}:Url
+    {return {self.pathname ".wsdl"}}
+  }
+  {getter public {loc-scurl}:Url
+    {return {self.pathname ".scurl"}}
+  }
+  {method {pathname extension:String}:Url
+    {return {self.directory.concat self.name & extension}}
+  }
+}
+
+{define-class public WSDLServicesTestSuite {inherits GenerativeTestSuite}
+  field public-get constant location:Url
+  {constructor public {default location:Url}
+    set self.location = location
+||--    let name:String = {TestCase.enough-namestring location}
+    {construct-super location.filename }
+  }
+  {method public {generate-tests}:void
+    let rs:RecordSet = {WSDLServicesTestSuite.load self.location}
+    let suite:TestSuite = {TestSuite ""}
+    {for r in rs do
+        let package:String = r["package"] asa String
+        let class:String = r["class"] asa String
+        let method:String = r["member"] asa String
+        let input:String = r["input"] asa String
+        let name:String = {format "%s.%s", package, class}
+        {if suite.name != name then
+            set suite = {TestSuite name}
+            {self.add suite}}
+        {suite.add
+            {WSDLServiceMethodTestCase package, class, method,
+                input = input,
+                {self.location.merge "manifest.mcurl"}}}}
+  }
+  || enforce preconditions: network connected
+  || TODO: should really be per service - some may be local
+  {define-proc {load sloc:Url}:RecordSet
+    let rs:RecordSet =         
+        {CsvRecordSet sloc,
+            fields = WSDLServicesTestSuite.methods-fields}
+    || TODO: rethink this
+    let rv:RecordView = 
+        {RecordView rs,
+            sort = "package,class,member"}
+    {return rv}
+  }
+  let public constant methods-fields:RecordFields =
+      {RecordFields
+        || method
+        {RecordField "package", domain = String},
+        {RecordField "class", domain = String},
+        {RecordField "member", domain = String},
+        || result
+        {RecordField "input", domain = String},
+        {RecordField "result", domain = any, nullable? = true},
+        {RecordField "result-type", domain = String, nullable? = true},
+        {RecordField "result-kind", domain = String, nullable? = true}
+    }
+}
+{define-class public WSDLServiceTestSuite {inherits GenerativeTestSuite}
+  || spec
+  field public-get constant package-name:String
+  field public-get constant manifest-loc:Url
+  
+  {constructor public {default
+                          package-name:String,
+                          manifest-loc:Url}
+    set self.package-name = package-name
+    set self.manifest-loc = manifest-loc
+    {construct-super name = self.package-name}
+  }
+  {method public {generate-tests}:void
+    let package:Package = self.package
+    {for x in {package.get-members check-imports? = false} do
+        {type-switch {x.get-value}
+         case class:ClassType do
+            {if {class.subtype-of? WSDLHTTPRPCPostClient} then                
+                let methods:{FastArray-of ClassMember} =
+                    {class.get-members search-superclasses? = false,
+                        filter = WSDLServiceTestSuite.service-method?}
+                {for m in methods do
+                    {self.add
+                        {WSDLServiceMethodTestCase
+                            self.package-name,
+                            class.name,
+                            m.name,
+                            self.manifest-loc}}}}}}
+  }
+  || derived properties
+  {getter public {manifest}:ComponentManifest
+    {return {import-manifest self.manifest-loc}}
+  }  
+  {getter public {package}:Package
+    {return 
+        {import-package manifest = self.manifest,
+            {make-package-selector self.package-name}}}
+  }  
+  {define-proc {service-method? m:ClassMember}:bool
+    let name:String = m.name
+    {return
+        m isa Method 
+        and name != "register-types" 
+        and not {name.prefix? "async-"}}
+  }
+}
+
+|| TODO: expected results, arguments, recordset
+
+{define-class public WSDLServiceMethodTestCase {inherits TestCase}
+  || spec
+  field public-get constant package-name:String
+  field public-get constant class-name:String
+  field public-get constant method-name:String
+  field public-get constant manifest-loc:Url
+  field public input:String = ""
+  field public service-location:#Url
+  
+  {constructor public {default
+                          package-name:String,
+                          class-name:String,
+                          method-name:String,
+                          manifest-loc:Url,
+                          input:String = "",
+                          service-location:#Url = null}
+    set self.package-name = package-name
+    set self.class-name = class-name
+    set self.method-name = method-name
+    set self.manifest-loc = manifest-loc
+    set self.input = input
+    set self.service-location = service-location
+    let name:String = {format "%s.%s", self.class-name, self.method-name}
+    {construct-super name}
+  } 
+  {method public {set-up}:void
+    || demand service method
+    self.method
+    || reset state
+    set self.result = DataBinding.unset
+  }
+  {method public {run}:void
+    let m:Method = self.method
+    {if self.input.empty? then
+        set self.input =
+            {self.args-template m}}   
+    || invoke method
+    set self.result = {self.invoke-service-method m, self.input}
+    || note result
+    let kind:String = self.result-kind
+    {switch kind
+     case "SOAPException","HttpException", "SyntaxError", "Exception" do
+        {TestCondition.fail message = kind}
+     else
+        {TestCondition.succeed message = kind}}
+  }
+||--  {method public {display}:Visual
+||--    {return {wsdl-service-method-display self}}
+||--  }
+  || state
+  field _method:#Method
+  {getter {method}:Method
+    {if self._method == null then
+        let package:Package = self.package
+        let service-class:ClassType =
+            {package.lookup self.class-name} asa ClassType
+        let method:Method = 
+            {service-class.get-method self.method-name} asa Method   
+        set self._method = method}
+    {return {non-null self._method}}
+  }
+  field result:any
+  {getter public {result-kind}:String
+    {return
+        {type-switch self.result
+         case e:SOAP-1-1-FaultException do "Fault"
+         case e:SOAPException do "SOAPException"
+         case e:HttpException do "HttpException"
+         case e:SyntaxError do "SyntaxError"
+         case e:Exception do "Exception"
+         case x:XDMNode do "XMLDocument"
+         case x:Object do 
+            let t:ClassType = {type-of x} asa ClassType                
+            {if {t.get-getter "key-type"} != null 
+             then "Association"
+             elseif {t.get-constructor "from-keywords"} != null 
+             then "SOAPStruct"
+             else "Object"}
+         case x:Null do "Null"
+         case x:{compile-time-type-of DataBinding.unset} do "Unset"
+         else 
+            {if {type-of self.result} isa EnumType 
+             then "Enum"
+             else "Primitive"}
+            
+        }}
+  }
+  || synthesize arguments 
+  {method {invoke-service-method
+              method:Method,
+              input:StringInterface,
+              package:OpenPackage =
+                  {OpenPackage method.declaring-class.package}
+          }:any 
+    {with-compiler-directives allow-any-calls? = true do
+        let service-class:ClassType = method.declaring-class
+        let service:any =
+            {if-non-null service-location = self.service-location then
+                {service-class service-location = service-location}
+             else
+                {service-class}}
+        let method-type:ProcType = method.type asa ProcType
+        let result:any = 
+            {try
+                let x:any =  {evaluate package = package, input}
+                let args:Arguments =       
+                    {type-switch x
+                     case args:Arguments do args
+                     else {Arguments x}}
+                {switch method-type.num-rets
+                 case 0, 1 do
+                    {method.invoke service, {splice args}}
+                 else
+                    || multiple values (will be FastArray)
+                    || TODO: distinguish these for display-any
+                    {method.invoke-n service, {splice args}}}
+             catch e:Exception do e}
+        {return result}}
+  }  
+  {method {args-template m:Method}:String
+    let pt:ProcType = m.type asa ProcType
+    let buf:StringBuf = {StringBuf}
+    {buf.concat "\{Arguments "}
+    {format-arguments buf, pt, indent = 4}
+    {buf.concat "\}\n"}
+    {return {buf.to-String}}      
+  }
+  || derived properties
+  {getter public {manifest}:ComponentManifest
+    {return {import-manifest self.manifest-loc}}
+  }  
+  {getter public {package}:Package
+    {return 
+        {import-package manifest = self.manifest,
+            {make-package-selector self.package-name}}}
+  }  
+}
+|| display
+|| ====================
+||--{define-proc {wsdl-service-method-display 
+||--                 self:WSDLServiceMethodTestCase
+||--             }:Graphic
+||--    let result-display:Frame =
+||--        {Frame 
+||--            font-size = 8pt,
+||--            halign = "left",
+||--            width = {add-stretch},
+||--            {display-any self.result}}
+||--    let result-frame:Frame =
+||--        {ScrollBox
+||--            hstretch? = true,
+||--            hscroll? = false,
+||--            border-width = 2px,
+||--            border-style = "sunken",
+||--            result-display}
+||--    let run-test:{proc-type {String}:void} =
+||--        {proc {input:String}:void
+||--            || TODO: how make framework do the test ?
+||--            set self.input = input
+||--            {self.run}
+||--            {result-display.add replace? = true,
+||--                {display-any self.result}}}
+||--    let edit-frame:TextEditFrame =
+||--        {TextEditFrame
+||--            width = {add-stretch},
+||--            height = {add-stretch},
+||--            font-size = 8pt,
+||--            border-width = 2px,
+||--            border-style = "sunken",
+||--            background = "#F7FBF7",
+||--            value = self.input,
+||--            {on ValueFinished at c:TextEditFrame do
+||--                {with-busy-cursor
+||--                    {run-test c.value}}}}
+||--    let edit-pane:VBox =
+||--        {VBox
+||--            edit-frame,
+||--            {HBox
+||--                spacing = 2pt,
+||--                {Fill},
+||--                {CommandButton label = {lmessage reset},
+||--                    {on Action do
+||--                        {with-busy-cursor
+||--                            let input:String = {self.args-template self.method}
+||--                            {run-test input}}}},
+||--                {CommandButton label = {lmessage run},
+||--                    {on Action do
+||--                        {with-busy-cursor
+||--                            let input:String = edit-frame.value
+||--                            {run-test input}}}}}}
+||--    let main:PanedWindow =
+||--        {PanedWindow orientation = "horizontal"}
+||--    {main.add-pane edit-pane}
+||--    {main.add-pane result-frame}
+||--    {main.set-pane-sizes {{Array-of double} 35%, 65%}}
+||--    {return
+||--        {VBox
+||--            spacing = 3pt,
+||--            hstretch? = true,
+||--            background = "white",
+||--            {HBox
+||--                valign = "top",
+||--                || signature
+||--                {paragraph
+||--                    {small {value self.package-name}}
+||--                    {italic {value self.class-name}}
+||--                    {bold {value self.method-name}}
+||--                    {monospace {value self.method.type}}},
+||--                {Fill}},
+||--            {hrule},
+||--            main}
+||--    }
+||--}
+|| TextEditPanel "pseudo control"
+|| ====================
+{define-class public TextEditFrame {inherits BaseFrame}
+  field public-get panel:TextEditPanel
+  {constructor public {default ...}
+    set self._value = {StringBuf}
+    set self.panel =
+        {TextEditPanel
+            mode = curl-mode}
+    {construct-super ...}
+    let scrollbox:ScrollBox =
+        {ScrollBox
+            hstretch? = true,
+            vstretch? = true,
+            self.panel}
+    set {scrollbox.get-vscroll}.width = 8pt
+    {self.add-internal scrollbox}
+    || no apparent public way to note changes
+    {self.panel.add-event-handler
+        {on FocusOut do
+            {if self.value-changed? then
+                {self.value-finished}}}}
+  }
+  field _value:StringBuf
+  {getter public {value}:String
+    let buf:StringBuf = {self.get-contents}
+    {return {buf.to-String}}
+  }
+  {setter public {value val:String}:void
+    let buf:StringBuf = self._value
+    {if val != buf then
+        {buf.clear}
+        {buf.concat val}
+        set self._value-changed? = false
+        {self.panel.load-from-stream 
+            {val.to-InputStream}}}
+  }
+  {method public {keyword-init-arg k:String, x:any}:void
+    {switch k
+     case "value" do
+        set self.value = x asa String
+     else {super.keyword-init-arg k, x}}
+  }
+  {method {get-contents}:StringBuf
+    let buf:StringBuf = {StringBuf}
+    {self.panel.write-to-stream buf}
+    {return buf}
+  }
+  {method public {unset-property name:String}:bool
+    {return
+        {switch name
+         case "value" do
+            set self.value = ""
+            true
+         else
+            {super.unset-property name}}}
+  }
+  field _value-changed?:bool
+  {getter {value-changed?}:bool
+    {if not self._value-changed? then
+        set self._value-changed? =
+            self._value != {self.get-contents}}
+    {return self._value-changed?}
+  }
+  {method {value-finished}:void
+    set self._value = {self.get-contents}
+    set self._value-changed? = false
+    {self.handle-event {ValueFinished}}
+  }
+}
+|| code generation
+|| ====================
+{define-proc public {format-arguments
+                        out:StringBuf,
+                        pt:ProcType,
+                        indent:int = 0
+                    }:void
+    {format-spaces out, indent}
+    let n:int = 0
+    {for a key i in pt.positional-args do
+        {if n > 0 then 
+            {out.append ','}}
+        {inc n}
+        {out.append '\n'}
+        {format-spaces out, indent}
+        {format-argument 
+            out, a.type, indent = indent}}
+    {for a key i in  pt.keyword-args do
+        {if n > 0 then 
+            {out.append ','}}
+        {inc n}
+        {out.append '\n'}
+        {format-spaces out, indent}
+        {out.concat a.name}
+        {out.concat " = "}
+        {format-argument 
+            out, a.type, indent = indent}}
+    {out.append '\n'}
+}
+{define-proc public {format-argument
+                        out:StringBuf,
+                        type:Type,
+                        indent:int = 0
+                    }:void
+    let t:Type = {non-null-type type}
+    let src:#String =
+        {if t.primitive? then
+            {switch t
+             case int do "1"
+             case int16 do "1"
+             case int64 do "1"
+             case uint8 do "0xFF"
+             case double do "0.0"
+             case float do "0.0f"
+             case bool do "true"
+             case char do "'x'"
+             case any do 
+                || surprisingly, any.primitive? == true
+                |""foo" |#any#|"|
+             else 
+                {if {type-of t} isa NumericType 
+                 then "0"
+                 else || unknown kind of primitive
+                    {format |"xxx |#%s#|"|, t}}}
+         elseif t.non-null-variant == String then |""foo""|
+         elseif t.non-null-variant == DateTime then 
+            let now:DateTimeInfo = {DateTime}.info
+            {format
+                |"{DateTime year = %s, month = %s, day = %s}"|,
+                now.year, now.month, now.day}
+         else
+            {type-switch t
+             case t:EnumType do
+                {String {t.new-from-index 0}}
+             else
+                || multiline constructor
+                null}}
+    {if-non-null src then
+        {out.concat src}
+     else
+        {type-switch t
+         case t:ClassType do
+            let c:#Constructor = null
+            || maybe SOAP struct
+            set c = {t.get-constructor "from-keywords"}
+            {if c == null then
+                set c = {t.get-constructor "default"}}
+            {if-non-null c then
+                let pt:ProcType = c.type asa ProcType
+                || hack for Array-of
+                || - add template for typical arg
+                {if-non-null e = pt.rest-args-type then                     
+                    {if-non-null k = {t.get-getter "key-type"} then
+                        {if-non-null a = {t.get-method "append"} then
+                            set pt = a.type asa ProcType}}}
+                {out.append '\{'}
+                {out.concat t.name}
+                {if c.name != "default" then
+                    {out.append '.'}
+                    {out.concat c.name}}
+                {format-arguments out, pt, indent = indent + 4}
+                {format-spaces out, indent}
+                {out.append '\}'}                 
+             else
+                || arbitrary class
+                {format |"{%s xxx}"|, t}}
+         else
+            || unknown kind of type
+            {format out = out, |"xxx |#%s#|"|, t}}}
+}
+{define-proc public {format-spaces out:StringBuf, n:int}:void
+    {for i = 0 below n do
+        {out.append ' '}}
+}
+{define-proc public {non-null-type type:Type}:Type
+    {return
+        {if-non-null non-null-type = type.non-null-variant 
+         then non-null-type
+         else type}}
+}
+{define-class public WSDLEchoTestCases {inherits GenerativeTestSuite}
+  || spec
+  field public-get constant xsd-type-source:StringInterface
+  field public-get constant request-value-source:StringInterface
+  || variants  
+  field public-get constant accept-encoding:#String = null
+  field public service-location:Url
+  
+  {constructor public {default
+                          name:String,
+                          xsd-type-source:StringInterface,
+                          request-value-source:StringInterface,
+                          accept-encoding:#String = null,
+                          || TODO: make this more relocatable
+                          service-location:Url = 
+                              {url "http://localhost/SERVER/soap-services/echo-soap.php"}
+                      }
+    set self.xsd-type-source = xsd-type-source
+    set self.request-value-source = request-value-source
+    set self.accept-encoding = accept-encoding
+    set self.service-location = service-location
+    {construct-super name}
+  }
+  {method public {generate-tests}:void
+    let accept-encoding:#String = self.accept-encoding
+    let service-location:Url = self.service-location
+    {self.add
+        {WSDLEchoTestCase self.name & " doc_lit",
+            self.xsd-type-source,
+            self.request-value-source,
+            document? = true,
+            literal? = true,
+            accept-encoding = accept-encoding,
+            service-location = service-location}}
+    {self.add
+        {WSDLEchoTestCase self.name & " rpc_lit",
+            self.xsd-type-source,
+            self.request-value-source,
+            document? = false,
+            literal? = true,
+            accept-encoding = accept-encoding,
+            service-location = service-location}}
+    {self.add
+        {WSDLEchoTestCase self.name & " rpc_enc",
+            self.xsd-type-source,
+            self.request-value-source,
+            document? = false,
+            literal? = false,
+            accept-encoding = accept-encoding,
+            service-location = service-location}}
+  }
+}
+{define-class public WSDLEchoTestCase {inherits TestCase}
+  || spec
+  field public-get constant xsd-type-source:StringInterface
+  field public-get constant request-value-source:StringInterface
+  field public-get constant filename:String
+  || variants
+  field public-get constant literal?:bool = true
+  field public-get constant document?:bool = true
+  field public-get constant accept-encoding:#String = null
+  field public service-location:Url
+  
+  {constructor public {default
+                          name:String,
+                          filename:String = name,
+                          xsd-type-source:StringInterface,
+                          request-value-source:StringInterface,                 
+                          || variants
+                          literal?:bool = true,
+                          document?:bool = true,
+                          accept-encoding:#String = null,
+                          service-location:Url = 
+                              {url "http://localhost/SERVER/soap-services/echo-soap.php"}
+                      } 
+    set self.xsd-type-source = xsd-type-source
+    set self.request-value-source = request-value-source
+    set self.filename = filename
+    set self.literal? = literal?
+    set self.accept-encoding = accept-encoding
+    set self.document? = document?
+    set self.accept-encoding = accept-encoding
+    set self.service-location = service-location
+    {construct-super name}
+  } 
+  || state
+  field public-get wsdl-xml:XDMDocument = 
+      {uninitialized-value-for-type XDMDocument}
+  field public-get request-value:any
+  field public-get service-package-source:StringBuf = {StringBuf}
+  field public-get service-package:OpenPackage = 
+      {uninitialized-value-for-type OpenPackage}
+  field public-get response-value:any
+  field public-get match?:bool
+  field public-get trace-output:StringBuf = {StringBuf}
+  let xsd-template:String = |"<xs:schema
+ xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+%s
+</xs:schema>"|
+  
+  {method public {run}:void
+    || parameters
+    let service-name:String = "TestService"
+    let method-name:String = "echo"
+    let type-name:String = "test"
+    || synthesize WSDL
+    let xsd-type-fragment:XDMElement = 
+        {build-xml preserve-whitespace? = false,
+            {format WSDLEchoTestCase.xsd-template, self.xsd-type-source}}.root
+    let xsd-types:XDMNodeSet = {xsd-type-fragment.search "*"}
+    set self.wsdl-xml = 
+        {make-wsdl-template 
+            type-name = type-name,
+            method-name = method-name,
+            service-name = service-name,
+            target-namespace = "http://www.example.com/",
+            || TODO: make this more relocatable
+            service-location = self.service-location,
+            literal? = self.literal?,
+            document? = self.document?,
+            {splice xsd-types}}
+    let wloc:Url = {url "curl://temp/" & self.filename & ".wsdl"}
+    {with-open-streams out = {write-open wloc} do
+        {self.wsdl-xml.to-XML out = out}}
+    || generate service package
+    set self.service-package-source = {StringBuf}
+    set self.service-package =
+        {make-service-package wloc, 
+            out = self.service-package-source}
+    || evaluate argument
+    set self.request-value =
+        {evaluate package = self.service-package,
+            self.request-value-source}
+    || reflect service
+    let service-class:ClassType = {self.service-package.lookup service-name} asa ClassType
+    let method:Method = {non-null {service-class.get-method method-name}}
+    let service:WSDLHTTPRPCPostClient = 
+        {with-compiler-directives allow-any-calls? = true do
+            {service-class} asa WSDLHTTPRPCPostClient}
+    {if-non-null accept-encoding = self.accept-encoding then
+        set service.accept-encoding = accept-encoding}
+    set self.trace-output = {StringBuf}
+    set service.soap-caller.trace-stream = self.trace-output
+    || invoke service
+    let rets:FastArray = {method.invoke-n service, self.request-value}
+    set self.response-value = rets[0]
+    || compare round-trip result
+    || - NOTE: some special SOAP unmrahslaing special cases
+    set self.match? =
+            {compare-any self.response-value, self.request-value,
+                special-case =
+                    || null matches empty aggregate
+                    {proc {response:any, request:any}:bool
+                        {if response == null then
+                            {type-switch {type-of request}
+                             case t:ClassType do
+                                {if-non-null g = {t.get-getter "empty?"} then 
+                                    {if {g.get-value request} == true then
+                                        {return true}}}}}
+                        {return false}
+                    }}
+    {if self.match? 
+     then {TestCondition.succeed}
+     else {TestCondition.fail}}
+  }
+  || display
+||--  {method public {display}:Visual
+||--    let wsdl-display:XDMTreeControl =
+||--        {XDMTreeControl 
+||--            {XDMTreeModel self.wsdl-xml},
+||--            open? = true}
+||--    let scurl-display:TextEditPanel =
+||--        {TextEditPanel
+||--            mode = curl-mode}
+||--    {scurl-display.load-from-stream
+||--        {self.service-package-source.to-InputStream}}
+||--    {return 
+||--        {TabContainer
+||--            {TabPane label = {lmessage value},
+||--                {HBox 
+||--                    spacing = 3px, 
+||--                    margin = 3px,
+||--                    height = {make-elastic stretchiness = 50%},
+||--                    {ScrollBox
+||--                        background = "#EEE",
+||--                        {display-any self.request-value}},
+||--                    {ScrollBox 
+||--                        background = "#EEE",
+||--                        {display-any self.response-value}}}},
+||--            {TabPane label = {monospace wsdl},
+||--                {ScrollBox hscroll? = false,
+||--                    background = "#EEE",
+||--                    wsdl-display}},
+||--            {TabPane label = {monospace scurl},
+||--                {ScrollBox
+||--                    hstretch? = true,
+||--                    background = "#EEE",
+||--                    scurl-display}},
+||--            {TabPane label = {monospace trace},
+||--                {ScrollBox
+||--                    hstretch? = true,
+||--                    background = "#EEE",
+||--                    {pre {value self.trace-output}}}}
+||--        }}
+||--  }
+}
+|| helper funtions
+{define-proc {make-service-package 
+                 loc:Url, 
+                 out:StringBuf = {StringBuf}
+             }:OpenPackage
+    let w:WSDL = {WSDL loc}
+    let error:#Throwable = null
+    let package:OpenPackage =
+        {OpenPackage 
+            COM.CURL.WSDK.SOAP, 
+            COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+    {w.dump-client-stubs out}
+    {evaluate package = package, out}
+    {return package}
+}
+|| TODO: connect keywords to above
+|| TODO: cleaner types input
+{define-proc {make-wsdl-template 
+                 || keywords
+                 type-name:String = "test",
+                 method-name:String = "echo",
+                 service-name:String = "TestService",
+                 target-namespace:String = "http://www.example.com/",
+                 service-location:Url = {url "echo-soap.php"},
+                 || variants
+                 literal?:bool = true,
+                 document?:bool = true,
+                 || types
+                 test-type:XDMElement,
+                 ...:XDMElement
+             }:XDMDocument
+    || namespaces
+    let constant XS:String = "http://www.w3.org/2001/XMLSchema"
+    let constant WSDL:String = "http://schemas.xmlsoap.org/wsdl/"
+    let constant SOAP:String = "http://schemas.xmlsoap.org/wsdl/soap/"
+    || shorthand
+    let constant e:{proc-type {...}:XDMElement} =
+        {proc {...}:XDMElement
+            {return {XDMElement {splice ...}}}}
+    || assemble types
+    let test-types:{Array-of XDMElement} =
+        {{Array-of XDMElement} test-type, {splice ...}}
+    || WSDL parameters
+    let arg-name:String = "params"
+    let name:String = "TestSoap"
+    let name-in:String = "TestSoapIn"
+    let name-out:String = "TestSoapOut"
+    || WSDL
+    let wsdl:XDMElement =
+        {with-namespace-declarations
+         do
+            {extend-namespace-context 
+                xs = XS,  
+                wsdl = WSDL, 
+                soap = SOAP}    
+            || argument element
+            let element:XDMElement =
+                {XDMElement "xs:element",
+                    name = arg-name,
+                    type = type-name}
+            || variants
+            let style:String =
+                {if document? 
+                 then "document"
+                 else "rpc"}
+            let body-template:XDMElement =
+                {if literal? 
+                 then {e "soap:body", use = "literal"}
+                 else {e "soap:body", use = "encoded", 
+                          encodingStyle = "http://schemas.xmlsoap.org/soap/encoding/"}}
+            let part-template:XDMElement =
+                {if document? 
+                 then {e "wsdl:part", name = "parameters", element = arg-name}
+                 else {e "wsdl:part", name = "parameters", type = type-name}}
+            || template
+            {e "wsdl:definitions",
+                {XDMNamespaceDeclaration "xs", XS},
+                {XDMNamespaceDeclaration "wsdl", WSDL},
+                {XDMNamespaceDeclaration "soap", SOAP},
+                {XDMNamespaceDeclaration "t", target-namespace},
+                {XDMNamespaceDeclaration "", target-namespace},
+                targetNamespace = target-namespace,
+                {e "wsdl:types",
+                    {e "xs:schema",
+                        elementFormDefault = "qualified" ,
+                        targetNamespace = target-namespace,
+                        {splice test-types},
+                        element}},
+                {e "wsdl:message", name = name-in,
+                    {part-template.clone}},
+                {e "wsdl:message", name = name-out,
+                    {part-template.clone}},
+                {e "wsdl:portType",
+                    name = name,
+                    {e "wsdl:operation", name = method-name,
+                        {e "wsdl:input", name = name-in, message = name-in},
+                        {e "wsdl:output", name = name-out, message = name-out}}},
+                {e "wsdl:binding", name = name, type = name,                
+                    {e "soap:binding",
+                        transport = "http://schemas.xmlsoap.org/soap/http",
+                        style = style},
+                    {e "wsdl:operation",
+                        name = method-name,
+                        {e "soap:operation", soapAction = "", style = style},
+                        {e "wsdl:input", name = name-in,  
+                            {body-template.clone}},
+                        {e "wsdl:output", name = name-out,
+                            {body-template.clone}}}},
+                {e "wsdl:service",
+                    name = "TestService",
+                    {e "wsdl:port", name = name, binding = name,
+                        {e "soap:address", location = service-location.name}}}
+            }} asa XDMElement
+    {return {XDMDocument wsdl}}
+}

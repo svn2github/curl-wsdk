@@ -1,0 +1,838 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next ||=== XDMDataBindingContext
+    {purpose 
+        An implementation of {docref DataBindingContext} for XML data sources.}
+}
+{define-class public abstract shared XDMDataBindingContext
+  {inherits XDMConsumer, DataBindingContext, EventTarget}
+  
+  {doc-next ||=== DataBindingContext.model
+    {purpose Specifies the XML data source for this {docref DataBindingContext}}
+  }
+  {getter public abstract {model}:#XDMNode}
+  {setter public abstract {model val:#XDMNode}:void}
+  
+  {doc-next ||=== DataBindingContext.context-path
+    {purpose Specifies what part of the {docref-abbr DataBindingContext.model}
+        is subject for path expressions in selectors}
+  }
+  {getter public abstract {context-path}:String}
+  {setter public abstract {context-path val:String}:void}
+  
+  {doc-next ||=== DataBindingContext.index
+    {purpose Specifies which node of the {docref-abbr DataBindingContext.context-nodeset}
+        is subject for path expressions in selectors}
+  }
+  {getter public abstract {current-index}:int}
+  {setter public abstract {current-index val:int}:void}
+  
+  {doc-next ||=== DataBindingContext.context-nodeset
+    {purpose The {docref XDMNodeSet} which is subject for path expressions in selectors.
+      It is the result of applying the {docref-abbr XDMDataBindingContext.context-path}
+      to the {docref-abbr XDMDataBindingContext.model}}
+  }
+  {getter public abstract {context-nodeset}:XDMNodeSet}
+  
+  {doc-next ||=== DataBindingContext.context-node
+    {purpose The {docref XDMNode} which is subject for path expressions in selectors.
+      It is the element of the {docref-abbr XDMDataBindingContext.context-nodeset}
+      corresponding to the {docref-abbr XDMDataBindingContext.current-index}}
+  }
+  {getter public abstract {context-node}:#XDMNode}
+  
+  {doc-next ||=== DataBindingContext.format-spec
+    {purpose Specifies how bound data is returned.
+        The default value is {docref XDMDataBindingFormatSpec.String}}
+    {details
+        The bound data corresponding to the selector path expression
+        is an {docref XPathValue}.  By default, it will be converted
+        according to the {docref-abbr DataBinding.property-type} of
+        the bound property.  The {ctext format-spec} is used when
+        the type is {ctext any}, or a type into which it cannot be converted.
+        
+        You can use {docref DataBinding} format expressions to 
+        convert a {docref XPathValue} into other types.
+        To get an {docref XDMNodeSet} value, use 
+        {curl-code {bind value to "selector", {format x:XPathValue as x.as-XDMNodeSet}}}
+        To get an {docref XDMNode} value, use 
+        {curl-code {bind value to "selector", {format x:XPathValue as x.as-XDMNode}}}
+    }
+  }
+  {getter public abstract {format-spec}:XDMDataBindingFormatSpec}
+  {setter public abstract {format-spec val:XDMDataBindingFormatSpec}:void}
+  
+  {doc-next ||=== DataBindingContext.default
+    {purpose Create a {docref StandardXDMDataBindingContext}}
+  }
+  {factory public {default ...}:StandardXDMDataBindingContext
+    {return {StandardXDMDataBindingContext {splice ...}}}
+  }
+  {doc-next ||=== DataBindingContext.context-changed
+    {purpose Indicate that state of this object has changed.}
+  }
+  {method protected {context-changed}:void  
+    {self.refresh}
+    {self.handle-event {ValueChanged}} || TODO: proper event
+  }
+}
+{doc-next ||=== XDMConsumer
+    {purpose
+        Superclass for classes which track changes to {docref XDMDocument}s}
+    {details
+        Known subclasses:  
+        {itemize
+            {item {docref XDMTreeModel}}
+            {item {docref XDMDataBindingContext}}}
+    }
+}
+{define-class public abstract XDMConsumer
+  field protected xdm-event-handler:EventHandler
+  {constructor public {default}
+    set self.xdm-event-handler =
+        {value 
+            let subject-ref:{WeakPointer-to XDMConsumer} =
+                {{WeakPointer-to XDMConsumer} value = self}
+            let handler:EventHandler =
+                {on e:XDMEvent at t:EventTarget do
+                    {if-non-null subject = subject-ref.value then
+                        {subject.note-xdm-event e}
+                     else
+                        {t.remove-event-handler handler}}}
+            handler}
+  }
+  || change management
+  {doc-next ||=== XDMConsumer.connect-event-handler
+    {purpose 
+        Register this object with the specified {docref XDMDocument}}
+  }
+  {method protected {connect-event-handler doc:#XDMDocument}:void
+    {if-non-null doc then
+        {doc.add-event-handler self.xdm-event-handler}}
+  }
+  {doc-next ||=== XDMConsumer.disconnect-event-handler
+    {purpose 
+        Unregister this object with the specified {docref XDMDocument}}
+  }
+  {method protected {disconnect-event-handler doc:#XDMDocument}:void
+    {if-non-null doc then
+        let h:EventHandler = self.xdm-event-handler
+        {if {doc.event-handler-present? h} then
+            {doc.remove-event-handler h}}}
+  }
+  {doc-next ||=== XDMConsumer.note-xdm-event
+    {purpose 
+        Inform this object that an {docref XDMEvent} has
+        been fired by the {docref XDMDocument} to which it is connected}
+  }
+  {method abstract protected {note-xdm-event e:XDMEvent}:void
+  }
+}
+{doc-next ||=== XDMDataBindingFormatSpec
+    {purpose 
+        Specify how a {docref XDMDataBindingContext} value should be
+        returned to a {docref DataBinding}.}
+}
+{define-enum public XDMDataBindingFormatSpec
+    String,
+    XDMNode,
+    XDMNode?,
+    XDMElement,
+    XDMElement?,
+    XDMNodeSet,
+    double,
+    bool
+}
+
+{define-class public StandardXDMDataBindingContext
+  {inherits XDMDataBindingContext}
+  
+  field namespace-declarations:XDMNamespaceDeclarations
+  
+  || construction
+  {doc-next ||=== StandardDataBindingContext.default
+    {purpose Create a {docref StandardXDMDataBindingContext}
+        {parameter model, 
+            the {docref-abbr XDMDataBindingContext.model}}
+        {parameter context-path, 
+            the {docref-abbr XDMDataBindingContext.context-path}}
+        {parameter current-index, 
+            the {docref-abbr XDMDataBindingContext.current-index}}
+        {parameter format-spec, 
+            the {docref-abbr XDMDataBindingContext.format-spec}}
+        {parameter ..., the rest arguments can specify prefix declarations 
+            for namespaces to be used in the path expression,
+            as for {docref with-namespace-declarations}}
+    }}
+  {constructor public {default 
+                          model:#XDMNode = null,
+                          context-path:String = ".",
+                          current-index:int = 0,
+                          format-spec:XDMDataBindingFormatSpec =
+                              XDMDataBindingFormatSpec.String,
+                          ...
+                      }
+    set self.namespace-declarations =
+        {XDMNamespaceDeclarations ...}
+    set self._model = model
+    set self._context-path = context-path
+    set self._current-index = 0
+    set self._format-spec = format-spec
+    {self.connect-event-handler self.document}
+    {self.context-changed}
+  }
+
+  || XDMDataBindingContext protocol
+  field _model:#XDMNode
+  {getter public {model}:#XDMNode
+    {return self._model}
+  }
+  {setter public {model val:#XDMNode}:void
+    {if val != self._model then
+        {self.disconnect-event-handler self.document}
+        set self._model = val
+        {self.connect-event-handler self.document}
+        || propagate changes
+        set self._context-nodeset = null
+        set self._context-node = null
+        {self.context-changed}
+    }}
+  field _context-path:String 
+  {getter public {context-path}:String
+    {return self._context-path}
+  }
+  {setter public {context-path val:String}:void
+    {if val != self._context-path then
+        set self._context-path = val
+        || propagate changes
+        set self._context-nodeset = null
+        set self._context-node = null
+        {self.context-changed}
+    }}
+  field _current-index:int 
+  {getter public {current-index}:int
+    {return self._current-index}
+  }
+  {setter public {current-index val:int}:void
+    {if val != self._current-index then
+        set self._current-index = val
+        || propagate changes
+        set self._context-node = null
+        {self.context-changed}}
+  }
+  field _context-nodeset:#XDMNodeSet = null
+  {getter public {context-nodeset}:XDMNodeSet
+    {if self._context-nodeset == null then
+        set self._context-nodeset =
+            {if-non-null model = self.model then
+                {self.search model, self.context-path}
+             else {XDMNodeSet}}}
+    {return {non-null self._context-nodeset}}
+  }
+  field _context-node:#XDMNode
+  {getter public {context-node}:#XDMNode
+    {if self._context-node == null then
+        let nodes:XDMNodeSet = self.context-nodeset
+        let index:int = self.current-index
+        || clamp index in bounds
+        {if index >= nodes.size then
+            set index = nodes.size - 1}
+        {if index < 0 then
+            set index = 0}
+        {if index != self._current-index then
+            set self._current-index = index}
+        {if {nodes.in-bounds? index} then
+            set self._context-node = nodes[index]}
+    }
+    {return self._context-node}
+  }
+  field _format-spec:XDMDataBindingFormatSpec
+  {getter public {format-spec}:XDMDataBindingFormatSpec
+    {return self._format-spec}
+  }
+  {setter public {format-spec val:XDMDataBindingFormatSpec}:void
+    {if val != self._format-spec then
+        set self._format-spec = val
+        {self.context-changed}}
+  }
+  || XDMDocument change management
+  || --------------------
+  {getter protected {document}:#XDMDocument
+    {return
+        {if-non-null model = self.model
+         then model.document
+         else null}}        
+  }
+  || NOTE: there's no reliable way to determine the scope of a change,
+  || -- so everything must be updated, unfortunately
+  {method protected {note-xdm-event e:XDMEvent}:void
+    || propagate changes
+    set self._context-nodeset = null
+    set self._context-node = null
+    || this will refresh bindings
+    {self.context-changed}
+  }
+  
+  || DataBindingContext protocol
+  || --------------------
+  {method public {get-data 
+                     selector:any
+                 }:(any, bool)
+    let (item:XPathValue, item?:bool) =
+        {self.get-if-exists selector asa String}
+    {return item, item?}
+  }
+  {method public {format val:any, binding:DataBinding}:any
+    let item:XPathValue = val asa XPathValue    
+    || derive 'default' setting from target property type if possible
+    || otherwise (any or other) use specified default
+    let type:Type = binding.property-type    
+    let format-spec:XDMDataBindingFormatSpec =     
+        {if type == any then
+            self.format-spec
+         elseif {(String asa Type).subtype-of? type} then
+            XDMDataBindingFormatSpec.String
+         elseif {(#XDMNode asa Type).subtype-of? type} then
+            XDMDataBindingFormatSpec.XDMNode?
+         elseif {(XDMNode asa Type).subtype-of? type} then
+            XDMDataBindingFormatSpec.XDMNode
+         elseif {(#XDMElement asa Type).subtype-of? type} then
+            XDMDataBindingFormatSpec.XDMElement?
+         elseif {(XDMElement asa Type).subtype-of? type} then
+            XDMDataBindingFormatSpec.XDMElement
+         elseif {(XDMNodeSet asa Type).subtype-of? type} then
+            XDMDataBindingFormatSpec.XDMNodeSet
+         elseif type == bool then
+            XDMDataBindingFormatSpec.bool
+         elseif type == double or type == float then
+            XDMDataBindingFormatSpec.double
+         else self.format-spec}    
+    || convert item as requested
+    let result:any =
+        {switch format-spec
+         case XDMDataBindingFormatSpec.String do 
+            item.as-String
+         case XDMDataBindingFormatSpec.XDMElement do 
+            item.as-XDMElement
+         case XDMDataBindingFormatSpec.XDMElement? do 
+            item.as-XDMElement?
+         case XDMDataBindingFormatSpec.XDMNode do 
+            item.as-XDMNode
+         case XDMDataBindingFormatSpec.XDMNode? do 
+            item.as-XDMNode?
+         case XDMDataBindingFormatSpec.XDMNodeSet do 
+            item
+         case XDMDataBindingFormatSpec.bool do 
+            item.as-bool
+         case XDMDataBindingFormatSpec.double do 
+            item.as-double
+         else null}
+    {return result}
+  }
+  {method public {update-internal
+                     ...:DataBinding
+                 }:#DataBindingValidationFailure
+    {return {self.operate-internal true, ...}}
+  }
+  {method public {validate-internal
+                     ...:DataBinding
+                 }:#DataBindingValidationFailure
+    {return {self.operate-internal false, ...}}
+  }
+  || protect against refresh induced invalidation
+  || --------------------
+  || NOTE: this overrides DataBindingContext.refresh
+  || -- which throws when an invalid binding is encountered
+  {method public {refresh ...:Object}:void
+    || gather requested bindings
+    let bindings:{Set-of DataBinding} = {self.collect-bindings ...}
+    || now refresh each, gently
+    || NOTE: they may have been detached as a result of an earlier refresh
+    || NOTE: order is indeterminate, beause of Set-of hashing
+    {for b in bindings do
+        {if b.context != null then
+            {b.refresh}}}    
+  }
+  {method {collect-bindings ...:Object}:{Set-of DataBinding}
+    let bindings:{Set-of DataBinding} = {{Set-of DataBinding}}
+    || from arguments if specified
+    {for x in ... do
+        {type-switch x
+         case b:DataBinding do
+            {bindings.insert b}
+         case t:DataBindingTarget do
+            {if-non-null bs = t.data-bindings then
+                {for b in bs do
+                    {bindings.insert b}}}
+         else {error {lmessage Unexpected argument to {value self}.refresh: {value x}}}}}
+    || otherwise, all registered bindings
+    {if bindings.empty? then
+        {for b in self.registered-bindings do
+            {bindings.insert b}}}
+    || TODO: assure validity here?
+    {return bindings}
+  }
+  || implementation
+  || --------------------
+  {method public {get-if-exists path:String}:(XPathValue, bool)
+    {type-switch self.context-node
+     case subject:XDMNode do
+        let x:XPathValue = {self.evaluate subject, path}
+        {type-switch x.value
+         case xs:XDMNodeSet do
+            {return xs, not xs.empty?}
+         else
+            {return x, true}}
+     else
+        {return {XDMNodeSet}, false}}
+  }
+  {method public {operate-internal
+                     update?:bool,
+                     ...:DataBinding
+                 }:#DataBindingValidationFailure
+    let failures:DataBindingValidationFailures =
+        {DataBindingValidationFailures}
+    let changes:{Set-of String} = {{Set-of String}}
+    {for binding in ... do
+        let fail:#DataBindingValidationFailure
+        let selector:String = binding.data-selector asa String
+        let (item:XPathValue, item?:bool) =
+            {self.get-if-exists selector}
+        {if item? then
+            || get new value
+            || NOTE: before verify, because verification induced
+            || - text addtion to empty atomic element would 
+            || - refresh, clobbering pending update
+            let val:any = {binding.get-parsed-value}
+            || item exists: verify it can be updated
+            set fail = {self.verify-updatable item}
+            {if-non-null fail  then
+                || can not update
+             else
+                {type-switch val
+                 case val:DataBindingValidationFailure do
+                    set fail = val
+                 else
+                    || validate new value
+                    || -- TODO
+                    || update, if so requested
+                    {if update? then
+                        || ensure String value
+                        let sval:String = {String val}
+                        || damp non changes
+                        {if sval != item.as-String then
+                            || note changes
+                            {changes.insert selector}
+                            || change this value
+                            {self.set-value item, sval}}}}}
+         else
+            || item does not exist
+            set fail = 
+                {DataBindingValidationFailure 
+                    binding = binding,
+                    {message Can not find '{value selector}'}}}
+        set binding.validation-failure = fail
+        {if-non-null fail then
+            {failures.append fail}}}
+    || propagate changes
+    {for change in changes do
+        let bindings:{Set-of DataBinding} =
+            {self.bindings-for change}
+        {for b in bindings do
+            {b.refresh}
+        }}
+    {return failures.result}
+  }
+  {method {search subject:XDMNode, path:String}:XDMNodeSet
+    let xpath:XDMPath = 
+        {XDMPath path,
+            {splice {self.namespace-declarations.to-Arguments}}}
+    {return {xpath.search subject}}
+  }
+  {method {evaluate subject:XDMNode, path:String}:XPathValue
+    let xpath:XDMPath = 
+        {XDMPath path,
+            {splice {self.namespace-declarations.to-Arguments}}}
+    {return {xpath.evaluate subject}}
+  }
+  {method public {bindings-for selector:any}:{Set-of DataBinding}
+    {return
+        {self.registered-bindings.filter-clone 
+            {proc {b:DataBinding}:bool
+                {return b.data-selector == selector}}}}
+  }
+  || TODO: these should be on (or under) XDMNodeSet
+  {method {verify-updatable x:XPathValue}:#DataBindingValidationFailure
+    let reason:#String = 
+        {type-switch x.value
+         case xs:XDMNodeSet do
+            {switch xs.size
+             case 0 do {message does not exist}
+             case 1 do
+                let x:#XDMNode = xs.as-XDMNode?
+                {type-switch x
+                 case t:XDMText do null
+                 case a:XDMAttribute do null
+                 case e:XDMElement do
+                    {if {self.atomic-element? e} then null
+                     else {message not atomic}}
+                 else {message Unexpected type {type-of x}}}
+             else 
+                || just do first element
+                || -- I think XForms mandates rejecting this case
+                ||{message has multiple values}
+                null}
+         else
+            {message Not an XDMNodeSet}}
+    {return 
+        {if-non-null reason then
+            {DataBindingValidationFailure 
+                {message Can not update: {value reason}}}
+         else null}}            
+  }
+  {method {set-value xs:XDMNodeSet, val:String}:void
+    || assumes prior verification
+    let subject:XDMNode = xs.as-XDMNode
+    {type-switch subject
+     case t:XDMText do 
+        set t.content = val
+     case a:XDMAttribute do 
+        set a.value = val
+     case e:XDMElement do
+        let t:XDMText = e.children[0] asa XDMText
+        set t.content = val
+    }
+  }
+  {method {atomic-element? x:XDMElement}:bool
+    {return
+        || empty elements are atomic
+        {if x.children.empty? then
+            {x.append {XDMText ""}}
+            true
+         else
+            x.children.size == 1 and
+            x.children[0] isa XDMText}}
+  }
+}
+{define-class DataBindingValidationFailures
+  {inherits {Array-of DataBindingValidationFailure}}
+  {constructor {default ...}
+    {construct-super {splice ...}}
+  }
+  {getter {result}:#DataBindingValidationFailure
+    {return 
+        {switch self.size
+         case 0 do null
+         case 1 do self[0]
+         else
+            {DataBindingMultipleValidationFailure
+                {splice self}}}}
+  }
+}
+|| XDMForm
+|| --------------------
+{doc-next ||=== XDMForm
+    {purpose
+        A container for displaying XML data}
+    {details
+        {ctext XDMForm} is a {docref XDMDataBindingContext} 
+        and uses the databinding architecture to bind its contained visuals 
+        to the {docref-abbr XDMDataBindingContext.context-nodeset} 
+        currently displayed.
+
+        To bind a contained visual to XML data, add a 
+        {docref DataBinding} to the visual which has a data-selector 
+        which is the {docref XDMPath} to the desired content. 
+        
+        See {docref bind} for more information.
+
+||--        Note that when there is no data to be displayed, 
+||--        all bindings should show their default values, 
+||--        and the entire form will be disabled.
+        
+        XDMForm is a {docref XDMDataBindingCommandContext}
+        and provides navigation commands for manipulating 
+        the {docref-abbr XDMDataBindingContext.current-index}
+        of the {docref-abbr XDMDataBindingContext.context-node}
+        in the {docref-abbr XDMDataBindingContext.context-nodeset}.
+        
+        These can be displayed using {docref XDMDataBindingNavigationPanel}.
+        
+        {ctext XDMForm}s can be nested. 
+        The {docref-abbr XDMDataBindingContext.model} of the
+        contained form can be bound to a portion of its containing form,
+        using the {docref-abbr XDMForm.ref} property.
+
+    }
+}
+{define-class public XDMForm 
+  {inherits 
+    Dialog,
+    XDMDataBindingCommandContext, 
+    StandardXDMDataBindingContext}
+  field inner-frame:Frame
+  || shorthand for nested contexts
+  field _model-binding:#DataBinding
+  {doc-next ||=== XDMForm.ref
+    {purpose
+        Shorthand for binding a nested {docref XDMForm}
+        to a portion of its containing form.}
+    {details
+        Specifies an {docref XDMPath} relative to the
+        {docref-abbr XDMDataBindingContext.context-node} 
+        of the containing form.}
+  }
+  {getter public {ref}:#String
+    {return 
+        {if-non-null b = self._model-binding 
+         then b.data-selector asa String
+         else null}}
+  }
+  {setter public {ref val:#String}:void
+    {if val != self.ref then
+        {if-non-null b = self._model-binding then
+            {self.remove-data-binding b.property-name}}
+        {if-non-null val then
+            let b:DataBinding = 
+                {bind model to val, 
+                    {format x:XPathValue as x.as-XDMNode?}}
+            {self.add-data-binding b}  
+            set self._model-binding = b}}
+  }
+  {doc-next ||=== XDMForm.default
+    {purpose
+        Create a {docref XDMForm}
+        {parameter model, 
+            the {docref-abbr XDMDataBindingContext.model}}
+        {parameter ref, 
+            the {docref-abbr XDMorm.ref} can be used for nested forms}
+        {parameter context-path, 
+            the {docref-abbr XDMDataBindingContext.context-path}}
+        {parameter current-index, 
+            the {docref-abbr XDMDataBindingContext.current-index}}
+        {parameter format-spec, 
+            the {docref-abbr XDMDataBindingContext.format-spec}}
+        {parameter namespace-declarations,
+            specifies prefix declarations 
+            for namespaces to be used in the path expression,
+            as for {docref with-namespace-declarations}}
+        {parameter look-and-feel?,
+            determines whether the appearance of the {docref Dialog}, 
+            is based on its look-and-feel object or the standard option parent.
+        }
+        {parameter ..., the rest arguments specify graphical options}}
+  }
+  {constructor public {default 
+                          model:#XDMNode = null,
+                          ref:#String = null,
+                          context-path:String = ".",
+                          current-index:int = 0,
+                          format-spec:XDMDataBindingFormatSpec =
+                              XDMDataBindingFormatSpec.String,
+                          namespace-declarations:XDMNamespaceDeclarations = 
+                              {XDMNamespaceDeclarations},
+                          use-look-and-feel?:bool = false,
+                          ...}
+    {construct-super.StandardXDMDataBindingContext
+        model = model,
+        context-path = context-path,
+        current-index = current-index,
+        format-spec = format-spec,
+        {splice {namespace-declarations.to-Arguments}}}
+    set self.inner-frame = 
+        {Frame data-binding-context = self}
+    {construct-super.Dialog use-look-and-feel? = use-look-and-feel?}
+    {self.add-internal self.inner-frame}
+    {self.process-rest-args ...}
+    {if-non-null ref then
+        set self.ref = ref}
+  }
+  || Methods to implement Frame
+  {method public {add g:any, ...}:Visual
+    {return {self.inner-frame.add g, ...}}
+  }
+  {method public open {clear}:void
+    {self.inner-frame.clear}
+  }
+  {local-option public valign:any
+    set self.inner-frame.valign = valign
+  }
+  {local-option public halign:any
+    set self.inner-frame.halign = halign
+  }
+  {local-option public hstretch?:bool
+    set self.inner-frame.hstretch? = hstretch?
+  }
+  {local-option public vstretch?:bool
+    set self.inner-frame.vstretch? = vstretch?
+  }
+}
+{doc-next ||=== XDMDataBindingCommandContext
+    {purpose 
+        Provides a context for for navigating
+        the {docref-abbr XDMDataBindingContext.context-nodeset} of
+        an {docref XDMDataBindingContext}}
+    {details
+        This is {docref CommandContext} that supports the following commands:
+        {itemize
+            {item {monospace move-first}}
+            {item {monospace move-previous}}
+            {item {monospace move-next}}
+            {item {monospace move-last}}
+        }}
+}
+{define-class public abstract XDMDataBindingCommandContext 
+  {inherits XDMDataBindingContext, CommandContext}
+  {constructor public {default}
+    {construct-super.CommandContext}
+  }
+  {method protected {context-changed}:void
+    {super.XDMDataBindingContext.context-changed}
+    {self.request-update-commands}
+  }
+  {method protected {create-command name:String}:#Command
+    {return
+        {switch name
+         case "move-first" do
+            {SimpleCommand "move-first", 
+                execute-proc =
+                    {proc {}:void
+                        set self.current-index = 0},            
+                enabled-proc =
+                    {proc {}:bool
+                        {return not self.at-first?}}}
+         case "move-previous" do
+            {SimpleCommand "move-previous",
+                execute-proc =
+                    {proc {}:void
+                        {dec self.current-index}},          
+                enabled-proc =
+                    {proc {}:bool
+                        {return not self.at-first?}}}
+         case "move-next" do
+            {SimpleCommand "move-next",
+                execute-proc =
+                    {proc {}:void
+                        {inc self.current-index}},          
+                enabled-proc =
+                    {proc {}:bool
+                        {return not self.at-last?}}}
+         case "move-last" do
+            {SimpleCommand "move-last",
+                execute-proc =
+                    {proc {}:void
+                        set self.current-index = self.context-size - 1},          
+                enabled-proc =
+                    {proc {}:bool
+                        {return not self.at-last?}} }
+         else
+            {super.CommandContext.create-command name}
+        }}
+  }
+  {getter {context-size}:int
+    {return self.context-nodeset.size}
+  }
+  {getter {at-first?}:bool
+    {return self.current-index <= 0}
+  }
+  {getter {at-last?}:bool
+    {return self.current-index >= self.context-size - 1}
+  }
+}
+|| nav-panel
+|| --------------------
+{doc-next ||=== XDMDataBindingNavigationPanel
+    {purpose
+        A panel containing standard controls for navigating
+        the {docref-abbr XDMDataBindingContext.context-nodeset} of
+        an {docref XDMDisplayContext}
+    }}
+{define-class public XDMDataBindingNavigationPanel {inherits BaseFrame}
+  field index-display:TextDisplay
+  field context-changed-handler:EventHandler
+  field _data-binding-command-context:#XDMDataBindingCommandContext
+  {nonlocal-option public data-binding-context:#DataBindingContext
+    {if-non-null xdbc = self._data-binding-command-context then
+        let h:EventHandler = self.context-changed-handler
+        {if {xdbc.event-handler-present? h} then
+            {xdbc.remove-event-handler h}}}
+    {type-switch data-binding-context 
+     case xdbc:XDMDataBindingCommandContext do
+        {xdbc.add-event-handler self.context-changed-handler}
+        set self._data-binding-command-context = xdbc
+        set self.enabled? = true
+     else
+        set self.enabled? = false}
+    {self.generate-display}
+    {self.context-changed}
+  }
+  {constructor public {default ...}
+    {construct-super.BaseFrame font-size = 0.8em, {splice ...}}
+    let char-size:Distance =
+        {self.any-to-Distance 
+            self.font-size, 
+            convert-font-relative-values? = true}
+    set self.index-display =
+        {TextDisplay 
+            width = 5 * char-size}
+    set self.context-changed-handler =
+        {on ValueChanged do
+            {self.context-changed}}
+  }
+  {method {generate-display}:void
+    {self.add-internal 
+        replace? = true,
+        {HBox
+            vstretch? = true,
+            valign = 0.5,
+            margin = 1px,
+            {self.command-button label = "\|<",
+                bound-command = {self.get-command "move-first"}},
+            {self.command-button label = "<",
+                bound-command = {self.get-command "move-previous"}},
+            self.index-display,
+            {self.command-button label = ">",
+                bound-command = {self.get-command "move-next"}},
+            {self.command-button label = ">\|",
+                bound-command = {self.get-command "move-last"}},
+            {Fill},
+            {on AttachEvent do
+                {self.context-changed}}
+        }}
+  }
+  {method {get-command name:String}:#Command
+    {return
+        {if-non-null xdbc = self._data-binding-command-context 
+         then {xdbc.get-command name}
+         else null}}
+  }
+  {method {command-button ...}:CommandButton
+    {return
+        {CommandButton {splice ...},
+            takes-focus? = false,
+            label-inset = 0px}}
+  }
+  {method {context-changed}:void
+    set self.index-display.value =
+        {if-non-null context = self._data-binding-command-context then
+            {format "%d / %d", 
+                context.current-index + 1, 
+                context.context-nodeset.size}
+         else ""}
+  }
+}
+

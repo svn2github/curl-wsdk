@@ -53,7 +53,7 @@ including some sample applets.
 -- WSDK/manifest.mcurl	WSDK library definition
 
 - tests		test suite
--- full-manual-test.curl	test suite
+-- start-tests.curl	test suite
 
 - tools		Curl IDE tool
 -- wsdl/editor-info.txt		WSDL tool definition

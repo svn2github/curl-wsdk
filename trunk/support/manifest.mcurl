@@ -58,6 +58,16 @@
     location = "test-extensions/wsdl-test-support.scurl"
 }
 
+|| test driver
+|| --------------------
+{component file start-tests.dcurl,
+    location = "start-tests.dcurl"
+}
+
+{component file start-tests.curl,
+    location = "start-tests.curl"
+}
+
 || test cases
 || --------------------
 {component file dguide-test-cases.scurl,
@@ -96,13 +106,6 @@
     location = "test-cases/extended-test-cases.scurl"
 }
 
-{component file full-manual-test.dcurl,
-    location = "full-manual-test.dcurl"
-}
-
-{component file full-manual-test.curl,
-    location = "full-manual-test.curl"
-}
 || NOTE: excluded because xmethods service is defunct
 ||--{component directory wsdl-samples,
 ||--    location = "test-cases/wsdl-samples"

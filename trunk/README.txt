@@ -52,10 +52,8 @@ including some sample applets.
 - lib		preprocessed library
 -- WSDK/manifest.mcurl	WSDK library definition
 
-- support	test suite
+- tests		test suite
 -- full-manual-test.curl	test suite
--- test-cases/wsdl-samples	sample applets
---- wsdl-samples-info.curl	sample applet documentation
 
 - tools		Curl IDE tool
 -- wsdl/editor-info.txt		WSDL tool definition
@@ -104,7 +102,16 @@ WSDK 1.1 CHANGES
 This WSDK Release is a maintenance release,
 for use with Curl API Version 7.0.
 
-- WSDL top level XML schema elements always namespace qualified
+- WSDL service classes contain methods for improved testability 
+-- format-request, parse-response
+- WSDL service classes avoid name conflicts caused by nested elements
+- WSDL top level XML schema elements are always namespace-qualified
+- SOAP ArrayType descriptors now correctly parsed
+- WSDL parsing uses correct namespace when reporting errors
+- WSConnection package is now an example
+- WSDL Developer's Guide is indexed for full text search
+- XML documentation for 'XDMNamespace' improved
+- long-deprecated 'xdm-search' API has been retired
 
 WSDK 1.0.6 CHANGES
 --------------------

@@ -106,7 +106,7 @@ for use with Curl API Version 7.0.
 - SOAP ArrayType descriptors now correctly parsed
 - WSDL parsing uses correct namespace when reporting errors
 - WSConnection package is now an example
-- WSDL Developer's Guide is indexed for full text search
+- WSDK Developer's Guide is indexed for full text search
 - XML documentation for 'XDMNamespace' improved
 - long-deprecated 'xdm-search' API has been retired
     

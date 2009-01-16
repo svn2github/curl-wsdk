@@ -15,10 +15,10 @@
 ||| limitations under the License.
 
 ====================
-WSDK Release 1.1 for Curl API Version 7.0. 
+WSDK Preview Release 1.1 for Curl API Version 7.0 Beta 3. 
 ====================
 
-This directory contains the 1.1 release of the Curl
+This directory contains the 1.1 preview of the Curl
 Web Services Software Development Kit (WSDK)
 
 The Curl Web Services SDK (WSDK) provides the technologies necessary
@@ -37,14 +37,31 @@ DIRECTORIES
 The distribution is organized into directories which each serve a
 specific purpose.
 
-Source Development
+Deployable Library
+--------------------
+ 
+The 'deploy' directory contains a preprocessed library 
+for use in deployed applications.
+
+- COM.CURL.WSDK.1.1/manifest.mcurl   	WSDK library definition
+
+Documentation
 --------------------
 
-The 'wsdk-source' directory contains all source code for WSDK modules,
-and could be used for modifying the WSDK itself. It also contains
-a preprocessed library for use in deployed applications,
-a Curl IDE tool for WSDL processing, and a complete test suite,
-including some sample applets.
+The 'docs-install' directory contains library directories
+prepared for addition to the Curl Documentation Viewer
+using the IDE 'Install Documentation' command.
+The directories include both documentation
+and preprocessed library.
+
+- COM.CURL.WSDK.1.1/manifest.mcurl   	WSDK library doc definition
+
+Source Code
+--------------------
+
+The 'src' directory contains all source code for WSDK modules,
+and could be used for modifying the WSDK itself. 
+It also includes test suites, and some sample applets.
 
 - code		source code
 -- code/project.cprj	Curl IDE project
@@ -55,24 +72,15 @@ including some sample applets.
 - tests		test suite
 -- start-tests.curl	test suite
 
+- build		build applets
+
 - tools		Curl IDE tool
 -- wsdl/editor-info.txt		WSDL tool definition
-
-Documentation Installation
---------------------
-
-The 'docs-install' directory contains library directories
-prepared for addition to the Curl Documentation Viewer
-using the IDE 'Install Documentation' command.
-The directories include both documentation
-and linked source code
-
-- WSDK/manifest.mcurl   	WSDK library doc definition
 
 Tool Installation
 --------------------
 
-The wsdl-source/tools' directory contains a WSDL Service 
+The 'src/tools' directory contains a WSDL Service 
 tool prepared for addition to the Curl IDE using the 
 IDE 'Tools>Configure Editors...' command.
 

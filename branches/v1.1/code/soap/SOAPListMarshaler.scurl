@@ -1,0 +1,142 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPListMarshaler.curl
+
+|| SOAPListMarshaler
+{define-class public open SOAPListMarshaler
+  {inherits SOAPMarshaler}
+  field public constant item-type:SOAPObjectType
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          item-type:SOAPObjectType
+                      }
+    {construct-super.SOAPMarshaler type}
+    set self.item-type = item-type
+  }
+
+  {method public open {default-marshal
+                          stream:XMLOutputStream,
+                          val:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPMarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          marshal-proc:SOAPTypeMapper.MarshalProc,
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:(worked?:bool)
+    {self.check-type type, true}
+    
+    let out:StringBuf = {StringBuf}
+    {with-compiler-directives 
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do 
+        || TODO: verify input type
+        || - this works with Array, or null, or anything iterable
+        {if-non-null val then
+            {for x key i in val do
+                {if i > 0 then
+                    {out.append ' '}}
+                {out.concat 
+                    {marshal-to-string x,
+                        self.item-type,
+                        current-mapper,
+                        curl-type-to-xml-type
+                    }}
+                
+            }
+        }
+    }
+
+    || handle as string
+    let worked?:bool =
+        {any-string-marshal-proc 
+            stream, out, type, encoding, 
+            context, current-mapper, curl-type-to-xml-type,
+            write-type-attribute? = write-type-attribute?,
+            multiple-reference = multiple-reference}
+    
+    {return worked?}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          default-encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          || TODO: where would this be overridden ?
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+
+    let (object:any, worked?:bool) = 
+        {any-string-unmarshal-proc 
+            stream, attributes, type,
+            default-encoding, context, current-mapper, xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?}
+    
+    {if worked? then
+        {type-switch object
+         case str:StringInterface do
+            let item-type:Type = 
+                {if-non-null type = self.item-type.curl-type
+                 then type
+                 else String} 
+            {with-compiler-directives allow-any-calls? = true do
+                let xs:any = {new {Array-of.construct item-type}}
+                {for s in {str.split} do
+                    {if not s.empty? then
+                        let x:any =
+                            {unmarshal-from-string s, self.item-type, 
+                                current-mapper, xml-type-to-curl-type}
+                        {xs.append x}}}
+                {return xs, true}
+            }
+         case x:Null do
+            || assuming nullability already confirmed
+            {return null, true}
+         else
+            || TODO: should this throw or return failure?
+            {error {lmessage Unexpected type for list: '{value object}'}}
+        }
+     else
+        {return null, false}
+    }
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {new {Array-of #String}, null, efficient-size = 1}}
+  }
+}
+
+
+
+

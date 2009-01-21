@@ -1,0 +1,104 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}            
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+||--{include "../dguide-utils/guide-header.scurl"}
+{define-text-format docref as monospace}
+
+{include "../dguide-utils/support.scurl"}
+
+{heading ||chapter
+    ||index = {HeadingIndex primary-key="Book Finder Demo"},
+    Book Finder Demo
+}
+{paragraph ||summary 
+    The Book Finder Demonstration applet shows a simple way to make use of
+    several web services in one integrated Curl applet.
+}
+
+{heading level = 2,
+    How to Run the Book Finder Demo
+}
+{paragraph
+    Running the Book Finder Demo is a two stage process because the demo
+    requires that the Curl sources representing the web services are in place.
+    In order to generate those Curl sources, run generate-wsdl-files.curl.
+}
+{heading level = 4,
+    Generating WSDL Curl Source Packages
+}
+{paragraph
+    The location of the WSDL files for the required web services are specified
+    in the generate-wsdl-files applet. It attempts to locate the WSDL files and
+    then generates Curl source packages in a wsdl/ subdirectory. The
+    generate-wsdl-files.curl applet {italic {bold must}} be run from the
+    filesystem in order to write the Curl sources to disk.
+}
+{center {image source = {url "generation.jpg"}}}
+{paragraph
+    Once the generated Curl sources are in place, the Book Finder Demonstration
+    applet (start.curl) can be run. The applet does not need to write anything
+    to disk, so it can be run either over http or from the filesystem, but it
+    will require privilege in order to make web service calls. See the Web
+    Services documentation for more information.
+}
+
+{privilege-note}
+
+{heading level = 2,
+    Finding Books
+}
+{paragraph
+    The Book Finder Demo provides the ability to search for books two ways. One
+    is using an ISBN number. Enter an ISBN number in the {docref TextField}
+    labeled "ISBN Search:", select a vendor from the {docref DropdownList}, then
+    click the ISBN "Go" button. The {docref RecordGrid} will display the book
+    with that ISBN number as returned by the web service supplied by the vendor
+    you select. If you select "All" vendors, then data from all available
+    vendors will be displayed.
+}
+{paragraph
+    You can also search by keyword. Enter the keyword(s) of interest into the
+    {docref TextField} labeled "Keyword Search:", select a vendor from the
+    {docref DropdownList}, then click the keyword "Go" button. The
+    {docref RecordGrid} will display the books associated with the keyword(s) as
+    returned by the web service supplied by the vendor you select. If you select
+    "All" vendors, then data from all available vendors will be displayed.
+}
+{paragraph
+    NOTE: The services offering ISBN searches do not all offer keyword searches.
+}
+{heading level = 2,
+    Asynchronous versus Synchronous
+}
+{paragraph
+    The sources generated for each service contain both synchronous and
+    asynchronous methods. The Book Finder Demo uses the asynchronous methods by
+    default. This allows a timeout to be more easily implemented so that server
+    delays and other connection-related delays can be handled sooner and more
+    gracefully. The synchronous implementations are more straightforward and
+    easier to understand, but are less easily controlled by the application
+    developer and subject the user to potentially long delays.
+}
+{heading level = 2,
+    Functional Schematic
+}
+{center {image source = {url "demo.jpg"}}}
+
+||--{curl-copyright}
+

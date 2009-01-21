@@ -1,0 +1,265 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPEnumMarshaler
+
+|| FIXME should this be called DefaultSOAPEnumMarshaler
+
+|| FIXME do we wedge this into the mappers automatically
+||      (base on Curl type only, assuming that XML type is right)
+
+{doc-next
+    {purpose
+        A class to handle marshaling and unmarshaling enums.
+    }
+    {notes
+        You must register one explicitly for the appropriate
+        {docref SOAPObjectType}.
+    }
+}
+{define-class public open SOAPEnumMarshaler
+  {inherits SOAPMarshaler}
+
+  field private constant use-value?:bool
+  field private constant use-name?:bool
+  field private constant use-index?:bool
+  field private constant value-type:#SOAPObjectType
+
+  {let package constant name-type:SOAPObjectType =
+    {builtin-soap-curl-type-to-xml-type-mapper.curl-type-to-xml-type
+        {new SOAPObjectType, curl-type = String}
+    }
+  }
+  {let package constant index-type:SOAPObjectType =
+    {builtin-soap-curl-type-to-xml-type-mapper.curl-type-to-xml-type
+        {new SOAPObjectType, curl-type = int}
+    }
+  }
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          || default is really use-value? but we don't want
+                          || to require use-value? = false in overriding calls.
+                          use-value?:bool = false,
+                          use-name?:bool = false,
+                          use-index?:bool = false,
+                          value-type:#SOAPObjectType = null,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper
+                      }
+    {construct-super.SOAPMarshaler type}
+    {if not (use-value? or use-name? or use-index?) then
+        || NB this is a dangerous default if the values are of different
+        || types.  Because we can only unmarshal if all values are of the
+        || same type.
+        set use-value? = true
+    }
+    || only one must be set...
+    {if not (use-value? and use-name?) and
+        not (use-value? and use-index?) and
+        not (use-name? and use-index?)
+     then
+        set self.use-value? = use-value?
+        set self.use-name? = use-name?
+        set self.use-index? = use-index?
+     else
+        {throw-soap-exception
+            {localize "Only one of use-value?, use-name?, use-index? must be specified."}
+        }
+    }
+    set self.value-type =
+        {if use-value? then
+            {if-non-null value-type then
+                {if value-type.xml-type == null then
+                    {curl-type-to-xml-type.curl-type-to-xml-type
+                        value-type
+                    }
+                 else
+                    value-type
+                }
+             else
+                let constant enum-type:EnumType = type.curl-type asa EnumType
+                || default to type of the value in the element at index 0
+                {curl-type-to-xml-type.curl-type-to-xml-type
+                    {with-compiler-directives allow-any-calls? = true do
+                        {new SOAPObjectType,
+                            curl-type =
+                                {type-of
+                                    {enum-type.new-from-index 0}.value
+                                }
+                        }
+                    } || compiler-directives
+                }
+            }
+         else
+            null
+        }
+  }
+
+  {method public open {default-marshal
+                          stream:XMLOutputStream,
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPMarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          marshal-proc:SOAPTypeMapper.MarshalProc,
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:(worked?:bool)
+    {self.check-type type, true}
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    {if value == null then
+        {marshal-write-nil-type stream, type}
+        {return true}
+    }
+
+    let constant new-type:SOAPObjectType =
+        {if self.use-name? then
+            SOAPEnumMarshaler.name-type
+         elseif self.use-index? then
+            SOAPEnumMarshaler.index-type
+         elseif self.use-value? then
+            {non-null self.value-type}
+         else
+            || can't happen...
+            {throw-soap-exception
+                {localize 
+                    "One of use-value?, use-name?, use-index? must be specified."
+                }
+            }
+        }
+    let constant new-value:any =
+        {with-compiler-directives allow-any-calls? = true do
+            {if self.use-name? then
+                value.name
+             elseif self.use-index? then
+                value.index
+             elseif self.use-value? then
+                value.value
+             else
+                || can't happen...
+                {throw-soap-exception
+                    {localize
+                        "One of use-value?, use-name?, use-index? must be specified."
+                    }
+                }
+            }
+        }
+    {current-mapper.marshal
+        stream,
+        new-value,
+        new-type,
+        encoding, || default? (multiple urls poss.)
+        context,
+        current-mapper,
+        curl-type-to-xml-type,
+        || we have already handled writing type, if appropriate.
+        write-type-attribute? = false,
+        multiple-reference = multiple-reference
+    }
+    {return true}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          default-encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+    {if type.curl-type == any or
+        type.curl-type == Object or type.curl-type == #Object
+     then
+        set type =
+            {SOAPObjectType.clone-with type, curl-type = self.type.curl-type}
+    }
+
+    {if-non-null attributes then
+        {if check-type-attribute? then
+            {unmarshal-check-type-attribute
+                attributes,
+                {non-null type.xml-type}
+            }
+        }
+    }
+
+    let constant new-type:SOAPObjectType =
+        {if self.use-name? then
+            SOAPEnumMarshaler.name-type
+         elseif self.use-index? then
+            SOAPEnumMarshaler.index-type
+         elseif self.use-value? then
+            {non-null self.value-type}
+         else
+            || can't happen...
+            {throw-soap-exception
+                {localize
+                    "One of use-value?, use-name?, use-index? must be specified."
+                }
+            }
+        }
+    let constant value:any =
+        {current-mapper.unmarshal
+            stream,
+            attributes,
+            new-type,
+            default-encoding,
+            context,
+            current-mapper,
+            xml-type-to-curl-type,
+            || already checked if appropriate
+            check-type-attribute? = false
+        }
+    {return
+        {if self.use-name? then
+            {(type.curl-type asa EnumType).new-from-name value asa String}
+         elseif self.use-index? then
+            {(type.curl-type asa EnumType).new-from-index value asa int}
+         elseif self.use-value? then
+            {(type.curl-type asa EnumType).new-from-value value}
+         else
+            || can't happen...
+            {throw-soap-exception
+                {localize
+                    "One of use-value?, use-name?, use-index? must be specified."
+                }
+            }
+        },
+        true
+    }
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {new {Array-of #String}, null, efficient-size = 1}}
+  }
+
+}

@@ -1,0 +1,150 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 applet}
+{applet manifest = "../manifest.mcurl"}
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+{include "display-support.scurl"}
+
+|| sample
+|| --------------------
+{value 
+    || prefix declarations
+    {extend-namespace-context
+        rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        rss = "http://purl.org/rss/1.0/",
+        dc = "http://purl.org/dc/elements/1.1/",
+        content = "http://purl.org/rss/1.0/modules/content/"}
+    || feed sources
+    let locations:StringArray = 
+        {StringArray
+            "xmlorgnews.rss", || local copy, in case we're not connected
+            "http://www.oreillynet.com/meerkat/?_fl=rss10&t=ALL&c=47",     
+            "http://www.oasis-open.org/news/rss/news_archives.rss",
+            "http://www.xml.org/xml/news/xmlorgnews.rss"}
+    let rss-filters:{Array-of FileDialogFilter} =
+        {{Array-of FileDialogFilter}
+            {FileDialogFilter "RSS",
+                {{Array-of FileDialogTypeFilter}
+                    {FileDialogTypeFilter "rss"}}}}
+    || XML data binding
+    let form:XDMForm = {XDMForm height = 4in}
+    || feed selection
+    let location-control:ComboBox =
+        {ComboBox 
+            {splice locations},
+            width = 4in,
+            vorigin = 70%,
+            {on ValueFinished at c:ComboBox do
+                let model:#XDMElement = null
+                set form.model = null
+                {with-busy-cursor
+                    {try
+                        || load XML 
+                        let loc:Url = {url c.value}
+                        let xml:XDMElement =
+                            {build-xml preserve-whitespace? = false, loc}.root
+                        || verify RSS 1.0 namespace
+                        {if xml.xmlname == {XDMName.from-String "rdf:RDF"} then
+                            set model = xml
+                         else
+                            {popup-message {message Not an RSS 1.0 file}}}
+                     catch e:Exception do
+                        || report any error (e.g. not XML)
+                        {popup-message
+                            {text Unable to read XML{br} {value e}}}}
+                    {if-non-null model then
+                        || success: set data binding context
+                        set form.model = model
+                        || and remember new user selection
+                        {if {c.find c.value} < 0 then
+                            {c.append c.value}}}}}}
+    let display:VBox =
+        {VBox
+            spacing = 3pt,
+            hstretch? = true,
+            {heading level = 1, RSS Viewer},
+            || feed selection
+            {HBox
+                spacing = 3pt,
+                {text RSS Feed},
+                location-control,            
+                {CommandButton label = {message Choose},
+                    {on Action do 
+                        {if-non-null loc =
+                            {choose-location   
+                                default-location = {url locations[0]},
+                                filters = rss-filters}
+                         then 
+                            {location-control.set-value-with-events loc.name}
+                        }}}},
+            || site header
+            {XDMForm 
+                ref = "rss:channel", 
+                {VBox
+                    {LinkFrame
+                        font-size = 12pt,
+                        font-weight = "bold",
+                        {bind value to "rss:title"},
+                        {bind href to "rss:link",
+                            {format x:XDMNodeSet as {url x.as-String}}}},                  
+                    {DisplayFrame
+                        {bind value to "rss:description"}}}},
+            || current entry
+            {XDMForm 
+                ref = ".",
+                context-path = ".//rss:item",
+                {VBox 
+                    font-size = 9pt, 
+                    hstretch? = true, 
+                    || navigation panel
+                    {XDMDataBindingNavigationPanel},
+                    {hrule},           
+                    || current entry
+                    {LinkFrame
+                        font-size = 10pt,
+                        font-weight = "bold",
+                        target = "_blank",
+                        {bind value to "rss:title"},
+                        {bind href to "rss:link",
+                            {format x:XDMNodeSet as {url x.as-String}}}},
+                    {paragraph
+                        {DisplayFrame
+                            font-size = 0.8em,
+                            {bind value to "dc:date",
+                                {format x:XDMNodeSet as {DateTime x.as-String}.info.iso-date}}}
+                        {DisplayFrame
+                            {bind value to "dc:creator"}}},
+                    || different feeds use different tags
+                    || - many use "rss:description"  
+                    || - some use "content:encoded" 
+                    || so we just display both
+                    {DisplayFrame
+                        {bind value to "rss:description"}},
+                    {DisplayFrame
+                        {bind value to "content:encoded",
+                            {format x:XDMNodeSet as {get-html-text x.as-String}}}},
+                    {Fill}
+                }}}
+    || prepare form and display
+    {form.add display}
+    {location-control.set-value-with-events locations[0]}
+    form
+}
+

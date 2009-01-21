@@ -1,0 +1,137 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+
+{define-class public serializable StandardXDMAttribute 
+  {inherits XDMAttribute, StandardXDMNode}
+  field package constant _xmlname:XDMName
+  field private _value:String = ""
+  field private _type:XDMAttributeType = XDMAttributeType.UNDECLARED
+  
+  {getter public {xmlname}:XDMName
+    {return self._xmlname}
+  }
+
+  {getter public {value}:String
+    {return self._value}
+  }
+  {setter public {value value:String}:void
+    {self.assure-modifiable}
+    set self._value = value
+    {self.trigger-xdm-event {XDMNodeModified self}}
+  }
+
+  {getter public {type}:XDMAttributeType
+    {return self._type}
+  }
+  {setter private {type type:XDMAttributeType}:void
+    set self._type = type
+  }
+
+  {getter public {prefix}:String
+    let prefix:#String = 
+        {if self.namespace.empty? then 
+            ""
+         else
+            {if-non-null parent = self.parent then
+                {parent.find-matching-prefix self.namespace, 
+                    check-default? = false}
+             else
+                null
+            }
+        }
+    {if-non-null prefix then
+        {return prefix}
+     else
+        {xdm-exception
+            {lmessage Missing prefix declaration for
+                '{value self.namespace}'}}}
+  }
+  
+  {doc-next
+    {purpose
+        Constructs an instance of a {docref XDMAttribute} from the arguments.
+        {parameter name, the full name (prefix and local-name) of the attribute}
+        {parameter value, the value of the attribute}
+        {parameter type, the type of the attribute defined in the DTD, 
+            XDMAttributeType.UNDECLARED if none is specified}
+    }
+  }
+  {constructor public {default
+                          name:XDMName,
+                          value:String,
+                          type:XDMAttributeType = 
+                              XDMAttributeType.UNDECLARED
+                      }
+    
+    set self._value = value
+    set self._type = type
+    set self._xmlname = name
+  }
+  
+  {method public {get-text}:String
+    {return self.value}
+  }
+  
+  {method public {detach}:void
+    || NOTE: change management by parent
+    {if-non-null p = self.parent then
+        {p.remove-attribute self.xmlname}
+    }    
+  }
+
+  {method public {clone}:StandardXDMAttribute
+    {return
+        {StandardXDMAttribute
+            self.xmlname,
+            self.value,
+            type = self.type
+        }
+    }
+  }
+
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+
+    {out.write-one-string self.qualified-name}
+    {out.write-one-string "=\'"}
+    {format-xml-string out = out, self.value}
+    {out.write-one-string "\'"}
+    
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+  
+  {method public {object-describe 
+                     out:TextOutputStream, locale:Locale}:void
+    let prefix-available?:bool = 
+        (self.namespace.empty? or
+         (self.parent != null and
+          {{non-null self.parent}.find-matching-prefix 
+              self.namespace,  check-default? = false} != null) )
+    {wrap-object-description out = out, self,  
+        description =
+            {if prefix-available?
+             then self.qualified-name
+             else {String self.xmlname}}}
+  }
+  
+}

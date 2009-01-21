@@ -1,0 +1,142 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{curl 6.0 applet}
+{applet manifest = "../manifest.mcurl"}
+
+{define-text-format command-name as
+    text with 
+    font-family = "monospace",
+    color = "purple"
+}
+
+{heading level = 3,
+    XMethods test preparation
+}
+
+Run {link href = {url "t-xmethods.curl"}, t-xmethods.curl}
+
+This invokes the XMethods listing service to obtain
+all services registered with 
+{link href = {url "http://www.xmethods.com"}, xmethods.com}.
+(almost 400 at this writing)
+
+Summary information is available for each service,
+together with links to the WSDL file,
+and to the online "Try It" page from SOAPScope.
+
+|| filter somehow -- does this work?
+
+Run the {command-name Copy ...} command.
+
+This makes a local copy of each referenced WSDL file
+in a new directory (by default, {command-name xmethods})
+(inaccessible files and html files are rejected)
+and creates a summary file ({command-name services.csv})
+and a curl manifest ({command-name manifest.mcurl})
+
+These files are the basis for code generation
+and service exececution tests.  
+
+{heading level = 3,
+    XMethods code generation Test
+}
+
+Run {link href = {url "t-xmethods-work.curl"}, t-xmethods-work.curl}
+
+The copied services are displayed.
+
+Use the {command-name Run} command to generate curl code for 
+the selected service record.  
+
+A summary of the service API will be displayed
+when code is successfully generated.
+Otherwise, any error will be noted.
+
+In addition, a test applet is generated,
+which includes expressions to call each
+service method, with synthesized arguments.
+This can be used as a basis for devloping
+a sample applet using the service.
+
+Some of these services are out of date,
+or contain WSDL files which can not be processed.
+
+{italic Note: if the recordgrid is filtered or sorted 
+on columns which will be changed by code generation,
+the display may be confusing.  Its best to sort by name.}
+
+Use the {command-name Run All} command to generate curl code 
+for all the (currently visible) services.
+(More than 350 service classes with around 1500 methods
+are generated at this writing.)
+
+{italic Note: Once code has been generated, it is not necessary
+to regenerate.  Use the 'Generate?' checkbutton
+to force code regeneration whenever a service is selected.}
+
+Use the 'Save As' command to update the summary files
+with the result of the code generation. 
+This will create/update two files (services.csv and methods.csv)
+describing the services and their methods.
+
+Any exceptions during code generation are caught and displayed.
+For debugging, it may be useful to "break on exception"
+using the IDE "Exceptions" pane.
+
+{heading level = 3,
+    XMethods service execution Test
+}
+
+Run {link href = {url "t-xmethods-run.curl"}, t-xmethods-run.curl}
+
+Each method from the generated services is displayed.
+
+Use the 'Test Current' command to invoke the selected method.
+By default arguments of the appropriate type will be syntehsized.
+You can edit the arguments in the TextEditPanel on the lower left.
+
+The result will be recorded and displayed,
+together with summary information (type and category).
+The display is based on the type:
+XML content (WSDL types xs:anyType, and xs:string
+which appear to be XML syntax) are displayed using xdm-display.
+Arrays of generated structure classes are displayed
+using RecordGrid of RecordSet-for.
+Collection classes are displayed with their keys and elements.
+Other classes are displayed with their public fields.
+Primitives are displayed as they would be printed.
+Exceptions are caught, and displayed, in pink, 
+with their public fields.
+
+Use the 'Test All' command to attempt to invoke
+all the (currently visible) methods.
+
+Each method record includes its type signature,
+which can be used to filter the display,
+so that you can view (and run) only methods
+with a single String argument, for example.
+
+Use the 'Save As' command to update the summary file
+with any changed argument lists, and the results of
+the method invocations. (These are not saved as objects,
+of course, but as strings.  Such results are displayed
+with a light gray background when the applet is next run.)
+
+Any exceptions during code generation are caught and displayed.
+For debugging, it may be useful to "break on exception"
+using the IDE "Exceptions" pane.
+
+

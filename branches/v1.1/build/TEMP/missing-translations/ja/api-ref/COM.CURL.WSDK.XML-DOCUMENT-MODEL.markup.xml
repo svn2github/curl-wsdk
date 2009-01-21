@@ -1,0 +1,2186 @@
+<?xml version="1.0" encoding="Shift_JIS" standalone="yes"?>
+<translation-dictionary version="2">
+
+<string>
+<original>A container for displaying XML data</original>
+<translation>A container for displaying XML data</translation>
+<comment>XDMForm</comment>
+</string>
+
+<string>
+<original>A panel containing standard controls for navigating
+        the {docref-abbr XDMDataBindingContext.context-nodeset} of
+        an {docref XDMDisplayContext}</original>
+<translation>A panel containing standard controls for navigating the <opaque>{docref-abbr XDMDataBindingContext.context-nodeset}</opaque> of an <opaque>{docref XDMDisplayContext}</opaque></translation>
+<comment>XDMDataBindingNavigationPanel</comment>
+</string>
+
+<string>
+<original>A parameterized implementation of {docref XDMBuilder}.</original>
+<translation>A parameterized implementation of <opaque>{docref XDMBuilder}</opaque>.</translation>
+<comment>GenericXDMBuilder</comment>
+</string>
+
+<string>
+<original>A pointer to the document that contains this node.</original>
+<translation>A pointer to the document that contains this node.</translation>
+<comment>XDMNode.document</comment>
+</string>
+
+<string>
+<original>A pointer to the parent node of this node, if any.</original>
+<translation>A pointer to the parent node of this node, if any.</translation>
+<comment>XDMNode.parent</comment>
+</string>
+
+<string>
+<original>Adding a XDMAttribute to the XDMAttributes object directly.
+
+        {example
+            title = {text Add XDMAttribute to XDMAttributes},
+            || Import the XDM package
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Create an element node.
+            {let element:XDMElement = {XDMElement "name"}}
+            
+            || And add an attribute to it.
+            {element.add-attribute {XDMAttribute "attribute", "value"}}
+            || Add a second attribute to it's XDMAttributes object.
+            {element.attributes.add-attribute {XDMAttribute "attribute2", "value2"}}
+            
+            || Then query for the attribute.
+            {element.attribute-exists? {XDMName "", "attribute2"}}
+        }</original>
+<translation><p>Adding a XDMAttribute to the XDMAttributes object directly.</p>
+<p><curl name="example"><opaque>title=</opaque><curl name="text">Add XDMAttribute to XDMAttributes</curl><opaque>,
+            || Import the XDM package
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Create an element node.
+            {let element:XDMElement = {XDMElement "name"}}
+            
+            || And add an attribute to it.
+            {element.add-attribute {XDMAttribute "attribute", "value"}}
+            || Add a second attribute to it's XDMAttributes object.
+            {element.attributes.add-attribute {XDMAttribute "attribute2", "value2"}}
+            
+            || Then query for the attribute.
+            {element.attribute-exists? {XDMName "", "attribute2"}}
+        </opaque></curl></p></translation>
+<comment>XDMAttributes.add-attribute</comment>
+</string>
+
+<string>
+<original>Adds the attribute to the element's collection of attributes.
+        {parameter attribute, The attribute to add}</original>
+<translation>Adds the attribute to the element's collection of attributes. <curl name="parameter"><opaque>attribute,</opaque>The attribute to add</curl></translation>
+<comment>XDMElement.add-attribute</comment>
+</string>
+
+<string>
+<original>Adds the specified XDMAttribute to the collection
+        {parameter attribute, The attribute to add}
+        {parameter error-if-exists?, Throw an error if an attribute 
+            with an identical XDMName exists in the collection already}</original>
+<translation>Adds the specified XDMAttribute to the collection <curl name="parameter"><opaque>attribute,</opaque>The attribute to add</curl> <curl name="parameter"><opaque>error-if-exists?,</opaque>Throw an error if an attribute with an identical XDMName exists in the collection already</curl></translation>
+<comment>XDMAttributes.add-attribute</comment>
+</string>
+
+<string>
+<original>An Array-of the ancestors of this node</original>
+<translation>An Array-of the ancestors of this node</translation>
+<comment>XDMNode.get-ancestors</comment>
+</string>
+
+<string>
+<original>An XML document is standalone if it has no dependency
+        on "external markup definitions".</original>
+<translation>An XML document is standalone if it has no dependency on "external markup definitions".</translation>
+<comment>XDMDocument.standalone?</comment>
+</string>
+
+<string>
+<original>An implementation of {docref DataBindingContext} for XML data sources.</original>
+<translation>An implementation of <opaque>{docref DataBindingContext}</opaque> for XML data sources.</translation>
+<comment>XDMDataBindingContext</comment>
+</string>
+
+<string>
+<original>An ordered array of the matching nodes.</original>
+<translation>An ordered array of the matching nodes.</translation>
+<comment>XDMElement.get-elements</comment>
+</string>
+
+<string>
+<original>An {ctext XPath} value may be one of
+        {itemize
+            {item {docref XDMNodeSet}}
+            {item {docref String}}
+            {item {docref double}}
+            {item {docref bool}}}
+        Values are converted between different types 
+        according to XPath 1.0 conversion rules.</original>
+<translation>An <opaque>{ctext XPath}</opaque> value may be one of <curl name="itemize"><curl name="item"><opaque>{docref XDMNodeSet}</opaque></curl> <curl name="item"><opaque>{docref String}</opaque></curl> <curl name="item"><opaque>{docref double}</opaque></curl> <curl name="item"><opaque>{docref bool}</opaque></curl></curl> Values are converted between different types according to XPath 1.0 conversion rules.</translation>
+<comment>XDMNodeSet</comment>
+</string>
+
+<string>
+<original>An {docref XDMNodeSet} containing the nodes matched
+        by the path expression.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XDMNodeSet.as-String}}
+            {item {docref-abbr XDMNodeSet.as-XDMNode}}
+            {item {docref-abbr XDMNodeSet.as-XDMNode?}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement?}}
+            {item {docref-abbr XDMNodeSet.as-double}}
+            {item {docref-abbr XDMNodeSet.as-bool}}
+        }</original>
+<translation>An <opaque>{docref XDMNodeSet}</opaque> containing the nodes matched by the path expression. This result provides conversion accessors for XPath data types: <curl name="itemize"><curl name="item"><opaque>{docref-abbr XDMNodeSet.as-String}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-XDMNode}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-XDMNode?}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-XDMElement}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-XDMElement?}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-double}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-bool}</opaque></curl></curl></translation>
+<comment>XDMNode.search</comment>
+</string>
+
+<string>
+<original>An {docref XDMNodeSet} containing the result of the search.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XDMNodeSet.as-String}}
+            {item {docref-abbr XDMNodeSet.as-node}}
+            {item {docref-abbr XDMNodeSet.as-double}}
+            {item {docref-abbr XDMNodeSet.as-bool}}
+        }</original>
+<translation>An <opaque>{docref XDMNodeSet}</opaque> containing the result of the search. This result provides conversion accessors for XPath data types: <curl name="itemize"><curl name="item"><opaque>{docref-abbr XDMNodeSet.as-String}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-node}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-double}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-bool}</opaque></curl></curl></translation>
+<comment>XDMPath.search</comment>
+</string>
+
+<string>
+<original>An {docref XPathValue} containing the result computed
+        by the path expression.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XPathValue.as-XDMNodeSet}}
+            {item {docref-abbr XPathValue.as-String}}
+            {item {docref-abbr XPathValue.as-XDMNode}}
+            {item {docref-abbr XPathValue.as-XDMNode?}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement}}
+            {item {docref-abbr XDMNodeSet.as-XDMElement?}}
+            {item {docref-abbr XPathValue.as-double}}
+            {item {docref-abbr XPathValue.as-bool}}
+        }</original>
+<translation>An <opaque>{docref XPathValue}</opaque> containing the result computed by the path expression. This result provides conversion accessors for XPath data types: <curl name="itemize"><curl name="item"><opaque>{docref-abbr XPathValue.as-XDMNodeSet}</opaque></curl> <curl name="item"><opaque>{docref-abbr XPathValue.as-String}</opaque></curl> <curl name="item"><opaque>{docref-abbr XPathValue.as-XDMNode}</opaque></curl> <curl name="item"><opaque>{docref-abbr XPathValue.as-XDMNode?}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-XDMElement}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-XDMElement?}</opaque></curl> <curl name="item"><opaque>{docref-abbr XPathValue.as-double}</opaque></curl> <curl name="item"><opaque>{docref-abbr XPathValue.as-bool}</opaque></curl></curl></translation>
+<comment>XDMNode.evaluate</comment>
+</string>
+
+<string>
+<original>An {docref XPathValue} containing the value of the expression.
+        This result provides conversion accessors for XPath data types:
+        {itemize
+            {item {docref-abbr XDMNodeSet.as-String}}
+            {item {docref-abbr XDMNodeSet.as-node}}
+            {item {docref-abbr XDMNodeSet.as-double}}
+            {item {docref-abbr XDMNodeSet.as-bool}}
+        }</original>
+<translation>An <opaque>{docref XPathValue}</opaque> containing the value of the expression. This result provides conversion accessors for XPath data types: <curl name="itemize"><curl name="item"><opaque>{docref-abbr XDMNodeSet.as-String}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-node}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-double}</opaque></curl> <curl name="item"><opaque>{docref-abbr XDMNodeSet.as-bool}</opaque></curl></curl></translation>
+<comment>XDMPath.evaluate</comment>
+</string>
+
+<string>
+<original>Appends the node to this parent's list of children
+        {parameter child, the node to append}</original>
+<translation>Appends the node to this parent's list of children <curl name="parameter"><opaque>child,</opaque>the node to append</curl></translation>
+<comment>XDMElement.append</comment>
+</string>
+
+<string>
+<original>Appends the specifed {docref XDMNodeSet} to the {docref XDMNodeSet}.</original>
+<translation>Appends the specifed <opaque>{docref XDMNodeSet}</opaque> to the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.concat</comment>
+</string>
+
+<string>
+<original>Appends the specifed {docref XDMNode} to the {docref XDMNodeSet}.</original>
+<translation>Appends the specifed <opaque>{docref XDMNode}</opaque> to the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.append</comment>
+</string>
+
+<string>
+<original>Apply this {ctext XDMPath} expression to an {docref XDMNode}.</original>
+<translation>Apply this <opaque>{ctext XDMPath}</opaque> expression to an <opaque>{docref XDMNode}</opaque>.</translation>
+<comment>XDMPath.search</comment>
+</string>
+
+<string>
+<original>Calculates the base url of this element node. 
+        The base url is calculated by (from the XML Base specification):
+
+        The rules for determining the base URI can be summarized as follows 
+        (highest priority to lowest):
+        {itemize
+            {item The base URI is embedded in the document's content.}
+            {item The base URI is that of the encapsulating entity 
+                (message, document, or none).}
+            {item The base URI is the URI used to retrieve the entity.}
+            {item The base URI is defined by the context of the application.}
+        }</original>
+<translation><p>Calculates the base url of this element node. The base url is calculated by (from the XML Base specification):</p>
+<p>The rules for determining the base URI can be summarized as follows (highest priority to lowest): <curl name="itemize"><curl name="item">The base URI is embedded in the document's content.</curl> <curl name="item">The base URI is that of the encapsulating entity (message, document, or none).</curl> <curl name="item">The base URI is the URI used to retrieve the entity.</curl> <curl name="item">The base URI is defined by the context of the application.</curl></curl></p></translation>
+<comment>XDMElement.get-base-url</comment>
+</string>
+
+<string>
+<original>Checks if the collection is empty</original>
+<translation>Checks if the collection is empty</translation>
+<comment>XDMAttributes.empty?</comment>
+</string>
+
+<string>
+<original>Class which can create an XML Document Model 
+        from a specified input source, using {docref XDMBuilder.build}.</original>
+<translation>Class which can create an XML Document Model from a specified input source, using <opaque>{docref XDMBuilder.build}</opaque>.</translation>
+<comment>XDMBuilder</comment>
+</string>
+
+<string>
+<original>Clears out all of the attributes</original>
+<translation>Clears out all of the attributes</translation>
+<comment>XDMAttributes.clear</comment>
+</string>
+
+<string>
+<original>Clears out all of the namespace assignments on this node</original>
+<translation>Clears out all of the namespace assignments on this node</translation>
+<comment>XDMElement.clear-namespace-declarations</comment>
+</string>
+
+<string>
+<original>Clones a copy of this object</original>
+<translation>Clones a copy of this object</translation>
+<comment>XDMObject.clone</comment>
+</string>
+
+<string>
+<original>Compare this {ctext XPathValue} with another for equality.
+        {parameter other, the other {ctext XPathValue}.}</original>
+<translation>Compare this <opaque>{ctext XPathValue}</opaque> with another for equality. <curl name="parameter"><opaque>other,</opaque>the other <opaque>{ctext XPathValue}</opaque>.</curl></translation>
+<comment>XPathValue.equal?</comment>
+</string>
+
+<string>
+<original>Compare this {ctext XPathValue}.
+        {parameter c, the criterion for comparison}.
+        {parameter other, the other {ctext XPathValue}.}</original>
+<translation>Compare this <opaque>{ctext XPathValue}</opaque>. <curl name="parameter"><opaque>c,</opaque>the criterion for comparison</curl>. <curl name="parameter"><opaque>other,</opaque>the other <opaque>{ctext XPathValue}</opaque>.</curl></translation>
+<comment>XPathValue.compares?</comment>
+</string>
+
+<string>
+<original>Compare this {docref XDMNodeSet} with another value.
+        {parameter c, the criterion for comparison}.
+        {parameter other, the other value.}</original>
+<translation>Compare this <opaque>{docref XDMNodeSet}</opaque> with another value. <curl name="parameter"><opaque>c,</opaque>the criterion for comparison</curl>. <curl name="parameter"><opaque>other,</opaque>the other value.</curl></translation>
+<comment>XDMNodeSet.compares?</comment>
+</string>
+
+<string>
+<original>Compare two nodes by document order.</original>
+<translation>Compare two nodes by document order.</translation>
+<comment>XDMDocument.nodes-ordered?</comment>
+</string>
+
+<string>
+<original>Concatenates the supplied content to this text's existing content
+        {parameter content, the content to concatenate}</original>
+<translation>Concatenates the supplied content to this text's existing content <curl name="parameter"><opaque>content,</opaque>the content to concatenate</curl></translation>
+<comment>XDMText.concat</comment>
+</string>
+
+<string>
+<original>Construct this object.</original>
+<translation>Construct this object.</translation>
+<comment>XDMNodeAdded.default</comment>
+</string>
+
+<string>
+<original>Constructs a new element node with the 
+        supplied name (fully qualified) and attributes
+        {parameter name, the qualified name to use to create this node 
+            (can be in the form of a prefix:local-name pair)}</original>
+<translation>Constructs a new element node with the supplied name (fully qualified) and attributes <curl name="parameter"><opaque>name,</opaque>the qualified name to use to create this node (can be in the form of a prefix:local-name pair)</curl></translation>
+<comment>XDMElement.default</comment>
+</string>
+
+<string>
+<original>Constructs a new element node with the supplied name (fully qualified) and attributes
+        {parameter name, the qualified name to use to create this node (can be in the form of a prefix:local-name pair)}</original>
+<translation>Constructs a new element node with the supplied name (fully qualified) and attributes <curl name="parameter"><opaque>name,</opaque>the qualified name to use to create this node (can be in the form of a prefix:local-name pair)</curl></translation>
+<comment>StandardXDMElement.default</comment>
+</string>
+
+<string>
+<original>Constructs an instance of a {ctext XDMNamespaceDeclaration}.
+        {parameter prefix, the prefix  of the declaration}
+        {parameter namespace, the namespace of the declaration}</original>
+<translation>Constructs an instance of a <opaque>{ctext XDMNamespaceDeclaration}</opaque>. <curl name="parameter"><opaque>prefix,</opaque>the prefix of the declaration</curl> <curl name="parameter"><opaque>namespace,</opaque>the namespace of the declaration</curl></translation>
+<comment>XDMNamespaceDeclaration.default</comment>
+</string>
+
+<string>
+<original>Constructs an instance of a {docref XDMAttribute} from the arguments.
+        {parameter name, the full name (prefix and local-name) of the attribute}
+        {parameter value, the value of the attribute}
+        {parameter type, the type of the attribute defined in the DTD, 
+            XDMAttributeType.UNDECLARED if none is specified}</original>
+<translation>Constructs an instance of a <opaque>{docref XDMAttribute}</opaque> from the arguments. <curl name="parameter"><opaque>name,</opaque>the full name (prefix and local-name) of the attribute</curl> <curl name="parameter"><opaque>value,</opaque>the value of the attribute</curl> <curl name="parameter"><opaque>type,</opaque>the type of the attribute defined in the DTD, XDMAttributeType.UNDECLARED if none is specified</curl></translation>
+<comment>StandardXDMAttribute.default</comment>
+</string>
+
+<string>
+<original>Contructs a XDMDocument with the assigned root node 
+        and (optional) document-location.
+        {parameter root, The root of the XML tree.}
+        {parameter document-location, (optional) The assigned location 
+            of the XML document - or the applet's URL if not supplied.}</original>
+<translation>Contructs a XDMDocument with the assigned root node and (optional) document-location. <curl name="parameter"><opaque>root,</opaque>The root of the XML tree.</curl> <curl name="parameter"><opaque>document-location,</opaque>(optional) The assigned location of the XML document - or the applet's URL if not supplied.</curl></translation>
+<comment>XDMDocument.default</comment>
+</string>
+
+<string>
+<original>Contructs an {docref XDMDocument}
+        with the specified root node and (optional) document-location.
+        {parameter root, The root of the XML tree.}
+        {parameter document-location, (optional) 
+            sets the location of the XML document.
+            If not specified, the URL of the applet.}
+        {parameter modifiable?, 
+            specifies {docref-abbr StandardXDMDocument.modifiable?}.}
+        {parameter pending-events-limit, 
+            specifies {docref-abbr StandardXDMDocument.pending-events-limit}.}
+        {parameter key-attribute,
+            specifies the attribute (if any) used for unique identifiers.
+            If specified, this enables {docref-abbr XDMDocument.get-element-by-id}
+            and the XPath equivalent ({monospace id()})}</original>
+<translation>Contructs an <opaque>{docref XDMDocument}</opaque> with the specified root node and (optional) document-location. <curl name="parameter"><opaque>root,</opaque>The root of the XML tree.</curl> <curl name="parameter"><opaque>document-location,</opaque>(optional) sets the location of the XML document. If not specified, the URL of the applet.</curl> <curl name="parameter"><opaque>modifiable?,</opaque>specifies <opaque>{docref-abbr StandardXDMDocument.modifiable?}</opaque>.</curl> <curl name="parameter"><opaque>pending-events-limit,</opaque>specifies <opaque>{docref-abbr StandardXDMDocument.pending-events-limit}</opaque>.</curl> <curl name="parameter"><opaque>key-attribute,</opaque>specifies the attribute (if any) used for unique identifiers. If specified, this enables <opaque>{docref-abbr XDMDocument.get-element-by-id}</opaque> and the XPath equivalent (<curl name="monospace">id()</curl>)</curl></translation>
+<comment>StandardXDMDocument.default</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref #XDMElement}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref #XDMElement}</opaque></translation>
+<comment>XDMNodeSet.as-XDMElement?</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref #XDMNode}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref #XDMNode}</opaque></translation>
+<comment>XDMNodeSet.as-XDMNode?</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref String}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref String}</opaque></translation>
+<comment>XDMNodeSet.as-String</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref XDMElement}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref XDMElement}</opaque></translation>
+<comment>XDMNodeSet.as-XDMElement</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref XDMNode}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref XDMNode}</opaque></translation>
+<comment>XDMNodeSet.as-XDMNode</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref bool}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref bool}</opaque></translation>
+<comment>XDMNodeSet.as-bool</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref double}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref double}</opaque></translation>
+<comment>XDMNodeSet.as-double</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XDMNodeSet} to a {docref int}</original>
+<translation>Convert this <opaque>{ctext XDMNodeSet}</opaque> to a <opaque>{docref int}</opaque></translation>
+<comment>XDMNodeSet.as-int</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref #XDMElement}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref #XDMElement}</opaque></translation>
+<comment>XPathValue.as-XDMElement?</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref #XDMNode}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref #XDMNode}</opaque></translation>
+<comment>XPathValue.as-XDMNode?</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref String}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref String}</opaque></translation>
+<comment>XPathValue.as-String</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref XDMElement}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref XDMElement}</opaque></translation>
+<comment>XPathValue.as-XDMElement</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref XDMNodeSet}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref XDMNodeSet}</opaque></translation>
+<comment>XPathValue.as-XDMNodeSet</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref XDMNode}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref XDMNode}</opaque></translation>
+<comment>XPathValue.as-XDMNode</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref XPathValue}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref XPathValue}</opaque></translation>
+<comment>XPathValue.as-XPathValue</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref bool}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref bool}</opaque></translation>
+<comment>XPathValue.as-bool</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref double}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref double}</opaque></translation>
+<comment>XPathValue.as-double</comment>
+</string>
+
+<string>
+<original>Convert this {ctext XPathValue} to a {docref int}</original>
+<translation>Convert this <opaque>{ctext XPathValue}</opaque> to a <opaque>{docref int}</opaque></translation>
+<comment>XPathValue.as-int</comment>
+</string>
+
+<string>
+<original>Create a {docref StandardXDMDataBindingContext}</original>
+<translation>Create a <opaque>{docref StandardXDMDataBindingContext}</opaque></translation>
+<comment>XDMDataBindingContext.default</comment>
+</string>
+
+<string>
+<original>Create a {docref StandardXDMDataBindingContext}
+        {parameter model, 
+            the {docref-abbr XDMDataBindingContext.model}}
+        {parameter context-path, 
+            the {docref-abbr XDMDataBindingContext.context-path}}
+        {parameter current-index, 
+            the {docref-abbr XDMDataBindingContext.current-index}}
+        {parameter format-spec, 
+            the {docref-abbr XDMDataBindingContext.format-spec}}
+        {parameter ..., the rest arguments can specify prefix declarations 
+            for namespaces to be used in the path expression,
+            as for {docref with-namespace-declarations}}</original>
+<translation>Create a <opaque>{docref StandardXDMDataBindingContext}</opaque> <curl name="parameter"><opaque>model,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.model}</opaque></curl> <curl name="parameter"><opaque>context-path,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.context-path}</opaque></curl> <curl name="parameter"><opaque>current-index,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.current-index}</opaque></curl> <curl name="parameter"><opaque>format-spec,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.format-spec}</opaque></curl> <curl name="parameter"><opaque>...,</opaque>the rest arguments can specify prefix declarations for namespaces to be used in the path expression, as for <opaque>{docref with-namespace-declarations}</opaque></curl></translation>
+<comment>StandardXDMDataBindingContext.default</comment>
+</string>
+
+<string>
+<original>Create a {docref XDMForm}
+        {parameter model, 
+            the {docref-abbr XDMDataBindingContext.model}}
+        {parameter ref, 
+            the {docref-abbr XDMorm.ref} can be used for nested forms}
+        {parameter context-path, 
+            the {docref-abbr XDMDataBindingContext.context-path}}
+        {parameter current-index, 
+            the {docref-abbr XDMDataBindingContext.current-index}}
+        {parameter format-spec, 
+            the {docref-abbr XDMDataBindingContext.format-spec}}
+        {parameter namespace-declarations,
+            specifies prefix declarations 
+            for namespaces to be used in the path expression,
+            as for {docref with-namespace-declarations}}
+        {parameter look-and-feel?,
+            determines whether the appearance of the {docref Dialog}, 
+            is based on its look-and-feel object or the standard option parent.
+        }
+        {parameter ..., the rest arguments specify graphical options}</original>
+<translation>Create a <opaque>{docref XDMForm}</opaque> <curl name="parameter"><opaque>model,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.model}</opaque></curl> <curl name="parameter"><opaque>ref,</opaque>the <opaque>{docref-abbr XDMorm.ref}</opaque> can be used for nested forms</curl> <curl name="parameter"><opaque>context-path,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.context-path}</opaque></curl> <curl name="parameter"><opaque>current-index,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.current-index}</opaque></curl> <curl name="parameter"><opaque>format-spec,</opaque>the <opaque>{docref-abbr XDMDataBindingContext.format-spec}</opaque></curl> <curl name="parameter"><opaque>namespace-declarations,</opaque>specifies prefix declarations for namespaces to be used in the path expression, as for <opaque>{docref with-namespace-declarations}</opaque></curl> <curl name="parameter"><opaque>look-and-feel?,</opaque>determines whether the appearance of the <opaque>{docref Dialog}</opaque>, is based on its look-and-feel object or the standard option parent.</curl> <curl name="parameter"><opaque>...,</opaque>the rest arguments specify graphical options</curl></translation>
+<comment>XDMForm.default</comment>
+</string>
+
+<string>
+<original>Create an XML Document model
+        {parameter in, The input source, any of 
+            {docref Url}, {docref StringInterface}, 
+            {docref TextInputStream}, {docref ByteInputStream}}
+        {parameter validate?, Instructs the {docref SAXParser}
+            whether to validate the XML document.}
+        {parameter external-parameter-entities?, Instructs the {docref SAXParser} 
+            whether to include all external parameter entities, 
+            including the external DTD subset.}
+        {parameter parser, The {docref SAXParser} to use}
+        {parameter preserve-whitespace?, Instructs the {docref XDMBuilder} 
+            which default behavior it should follow 
+            when encountering omittable whitespace 
+            and the {monospace xml:space} rule is "default"}
+        {parameter execute-xml-include?, Instructs the {docref XDMBuilder} 
+            whether to search for and expand {monospace xi:include} nodes}</original>
+<translation>Create an XML Document model <curl name="parameter"><opaque>in,</opaque>The input source, any of <opaque>{docref Url}</opaque>, <opaque>{docref StringInterface}</opaque>, <opaque>{docref TextInputStream}</opaque>, <opaque>{docref ByteInputStream}</opaque></curl> <curl name="parameter"><opaque>validate?,</opaque>Instructs the <opaque>{docref SAXParser}</opaque> whether to validate the XML document.</curl> <curl name="parameter"><opaque>external-parameter-entities?,</opaque>Instructs the <opaque>{docref SAXParser}</opaque> whether to include all external parameter entities, including the external DTD subset.</curl> <curl name="parameter"><opaque>parser,</opaque>The <opaque>{docref SAXParser}</opaque> to use</curl> <curl name="parameter"><opaque>preserve-whitespace?,</opaque>Instructs the <opaque>{docref XDMBuilder}</opaque> which default behavior it should follow when encountering omittable whitespace and the <curl name="monospace">xml:space</curl> rule is "default"</curl> <curl name="parameter"><opaque>execute-xml-include?,</opaque>Instructs the <opaque>{docref XDMBuilder}</opaque> whether to search for and expand <curl name="monospace">xi:include</curl> nodes</curl></translation>
+<comment>XDMBuilder.build</comment>
+</string>
+
+<string>
+<original>Create an XML Document model
+        {parameter in, The input source, any of 
+            {docref Url}, {docref StringInterface}, 
+            {docref TextInputStream}, {docref ByteInputStream}}
+        {parameter validate?, Instructs the {docref SAXParser}
+            whether to validate the XML document.}
+        {parameter external-parameter-entities?, Instructs the {docref SAXParser} 
+            whether to include all external parameter entities, 
+            including the external DTD subset.}
+        {parameter parser, The {docref SAXParser} to use}
+        {parameter preserve-whitespace?, Instructs the {docref XDMBuilder} 
+            which default behavior it should follow 
+            when encountering omittable whitespace 
+            and the {monospace xml:space} rule is "default"}
+        {parameter execute-xml-include?, Instructs the {docref XDMBuilder} 
+            whether to search for and expand {monospace xi:include} nodes}
+        {parameter builder, The {docref XDMBuilder} to use}</original>
+<translation>Create an XML Document model <curl name="parameter"><opaque>in,</opaque>The input source, any of <opaque>{docref Url}</opaque>, <opaque>{docref StringInterface}</opaque>, <opaque>{docref TextInputStream}</opaque>, <opaque>{docref ByteInputStream}</opaque></curl> <curl name="parameter"><opaque>validate?,</opaque>Instructs the <opaque>{docref SAXParser}</opaque> whether to validate the XML document.</curl> <curl name="parameter"><opaque>external-parameter-entities?,</opaque>Instructs the <opaque>{docref SAXParser}</opaque> whether to include all external parameter entities, including the external DTD subset.</curl> <curl name="parameter"><opaque>parser,</opaque>The <opaque>{docref SAXParser}</opaque> to use</curl> <curl name="parameter"><opaque>preserve-whitespace?,</opaque>Instructs the <opaque>{docref XDMBuilder}</opaque> which default behavior it should follow when encountering omittable whitespace and the <curl name="monospace">xml:space</curl> rule is "default"</curl> <curl name="parameter"><opaque>execute-xml-include?,</opaque>Instructs the <opaque>{docref XDMBuilder}</opaque> whether to search for and expand <curl name="monospace">xi:include</curl> nodes</curl> <curl name="parameter"><opaque>builder,</opaque>The <opaque>{docref XDMBuilder}</opaque> to use</curl></translation>
+<comment>build-xml</comment>
+</string>
+
+<string>
+<original>Create an {ctext XDMPath} from the specified XPath {ctext String}
+        {parameter query, the XPath 1.0 expression},
+        {parameter ..., keyword arguments can specify prefix declarations 
+            for namespaces to be used in the path expression,
+            as for {docref with-namespace-declarations}}</original>
+<translation>Create an <opaque>{ctext XDMPath}</opaque> from the specified XPath <opaque>{ctext String}</opaque> <curl name="parameter"><opaque>query,</opaque>the XPath 1.0 expression</curl>, <curl name="parameter"><opaque>...,</opaque>keyword arguments can specify prefix declarations for namespaces to be used in the path expression, as for <opaque>{docref with-namespace-declarations}</opaque></curl></translation>
+<comment>XDMPath.default</comment>
+</string>
+
+<string>
+<original>Create an {docref XDMName} in this namespace.</original>
+<translation>Create an <opaque>{docref XDMName}</opaque> in this namespace.</translation>
+<comment>StandardXDMNamespaceDeclaration.xmlname-for</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue} from a {docref String}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque> from a <opaque>{docref String}</opaque>.</translation>
+<comment>XPathValue.from-String</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue} from a {docref bool}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque> from a <opaque>{docref bool}</opaque>.</translation>
+<comment>XPathValue.from-bool</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue} from a {docref double}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque> from a <opaque>{docref double}</opaque>.</translation>
+<comment>XPathValue.from-double</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue} from a {docref int}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque> from a <opaque>{docref int}</opaque>.</translation>
+<comment>XPathValue.from-int</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue} from an {docref XDMNodeSet}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque> from an <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XPathValue.from-XDMNodeSet</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue} from an {docref XDMNode}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque> from an <opaque>{docref XDMNode}</opaque>.</translation>
+<comment>XPathValue.from-XDMNode</comment>
+</string>
+
+<string>
+<original>Create an {docref XPathValue}.</original>
+<translation>Create an <opaque>{docref XPathValue}</opaque>.</translation>
+<comment>XPathValue.default</comment>
+</string>
+
+<string>
+<original>Create this {ctext XDMNodeSet}.</original>
+<translation>Create this <opaque>{ctext XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.default</comment>
+</string>
+
+<string>
+<original>Creates the following kinds of {docref XDMNode}.
+        {itemize
+            {item {docref StandardXDMDocument}}
+            {item {docref StandardXDMElement}}
+            {item {docref StandardXDMText}}
+            {item {docref StandardXDMAttribute}}
+            {item {docref StandardXDMProcessingInstruction}}}</original>
+<translation>Creates the following kinds of <opaque>{docref XDMNode}</opaque>. <curl name="itemize"><curl name="item"><opaque>{docref StandardXDMDocument}</opaque></curl> <curl name="item"><opaque>{docref StandardXDMElement}</opaque></curl> <curl name="item"><opaque>{docref StandardXDMText}</opaque></curl> <curl name="item"><opaque>{docref StandardXDMAttribute}</opaque></curl> <curl name="item"><opaque>{docref StandardXDMProcessingInstruction}</opaque></curl></curl></translation>
+<comment>StandardXDMBuilder</comment>
+</string>
+
+<string>
+<original>Defines global XML namespace prefix declarations.</original>
+<translation>Defines global XML namespace prefix declarations.</translation>
+<comment>xml-namespace-context</comment>
+</string>
+
+<string>
+<original>Deletes all {docref XDMNode}s from the {docref XDMNodeSet}.</original>
+<translation>Deletes all <opaque>{docref XDMNode}</opaque>s from the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.clear</comment>
+</string>
+
+<string>
+<original>Determines whether the supplied argument contains
+        only XML whitespace characters
+        (' ', '\\t', '\\n', '\\r')</original>
+<translation>Determines whether the supplied argument contains only XML whitespace characters (' ', '\\t', '\\n', '\\r')</translation>
+<comment>xml-whitespace?</comment>
+</string>
+
+<string>
+<original>Encapsulates exceptions which occur 
+        while parsing XDM Path expressions</original>
+<translation>Encapsulates exceptions which occur while parsing XDM Path expressions</translation>
+<comment>XDMPathException</comment>
+</string>
+
+<string>
+<original>Encapsulates exceptions which occur inside the XDM package</original>
+<translation>Encapsulates exceptions which occur inside the XDM package</translation>
+<comment>XDMException</comment>
+</string>
+
+<string>
+<original>Evaluate a path expression for this node.
+        {parameter path, The {docref XDMPath} expression to be evaluated.}</original>
+<translation>Evaluate a path expression for this node. <curl name="parameter"><opaque>path,</opaque>The <opaque>{docref XDMPath}</opaque> expression to be evaluated.</curl></translation>
+<comment>XDMNode.evaluate</comment>
+</string>
+
+<string>
+<original>Evaluate this {ctext XDMPath} expression for an {docref XDMNode}.</original>
+<translation>Evaluate this <opaque>{ctext XDMPath}</opaque> expression for an <opaque>{docref XDMNode}</opaque>.</translation>
+<comment>XDMPath.evaluate</comment>
+</string>
+
+<string>
+<original>Execute some code with specified XML namespace prefix declarations.</original>
+<translation>Execute some code with specified XML namespace prefix declarations.</translation>
+<comment>with-namespace-declarations</comment>
+</string>
+
+<string>
+<original>Explicitly and implicitly place XDMText nodes into an XML tree.
+        {example
+            title = {text Add XDMText to an XML Tree},
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMElement "child-node"},
+                    {XDMText "Here is some text"},
+                    {XDMElement "second-child-node"},
+                    "Here also is some text"
+                }
+            }
+
+            {pre {root.to-XML}}
+        }</original>
+<translation>Explicitly and implicitly place XDMText nodes into an XML tree. <curl name="example"><opaque>title=</opaque><curl name="text">Add XDMText to an XML Tree</curl><opaque>,
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMElement "child-node"},
+                    {XDMText "Here is some text"},
+                    {XDMElement "second-child-node"},
+                    "Here also is some text"
+                }
+            }
+
+            {pre {root.to-XML}}
+        </opaque></curl></translation>
+<comment>XDMText</comment>
+</string>
+
+<string>
+<original>Extends the declarations in {docref xml-namespace-context}
+        for the duration of the enclosed code.</original>
+<translation>Extends the declarations in <opaque>{docref xml-namespace-context}</opaque> for the duration of the enclosed code.</translation>
+<comment>with-namespace-declarations</comment>
+</string>
+
+<string>
+<original>Find element with specified ID.</original>
+<translation>Find element with specified ID.</translation>
+<comment>XDMDocument.get-element-by-id</comment>
+</string>
+
+<string>
+<original>Finds the first ancestor where {curl-code {thunk a}} is true 
+        - null if none are found.
+        {parameter thunk, the procedure to apply as the test case.}</original>
+<translation>Finds the first ancestor where <opaque>{curl-code {thunk a}}</opaque> is true - null if none are found. <curl name="parameter"><opaque>thunk,</opaque>the procedure to apply as the test case.</curl></translation>
+<comment>XDMNode.find-ancestor</comment>
+</string>
+
+<string>
+<original>Finds the index at which a node with the specified XDMName 
+        exists in the parent's list of children.
+        {parameter xmlname, the name of the node to search for}</original>
+<translation>Finds the index at which a node with the specified XDMName exists in the parent's list of children. <curl name="parameter"><opaque>xmlname,</opaque>the name of the node to search for</curl></translation>
+<comment>XDMElement.find-by-name</comment>
+</string>
+
+<string>
+<original>Finds the index at which the specified node exists in the 
+        parent's list of children.
+        {parameter child, the node to search for}</original>
+<translation>Finds the index at which the specified node exists in the parent's list of children. <curl name="parameter"><opaque>child,</opaque>the node to search for</curl></translation>
+<comment>XDMElement.find</comment>
+</string>
+
+<string>
+<original>Finds the namespace which matches the supplied prefix.
+        {parameter prefix, The prefix to search for}</original>
+<translation>Finds the namespace which matches the supplied prefix. <curl name="parameter"><opaque>prefix,</opaque>The prefix to search for</curl></translation>
+<comment>XDMAttributes.find-matching-namespace</comment>
+</string>
+
+<string>
+<original>Finds the prefix which matches the supplied namespace.
+        {parameter namespace, The namespace to search for}</original>
+<translation>Finds the prefix which matches the supplied namespace. <curl name="parameter"><opaque>namespace,</opaque>The namespace to search for</curl></translation>
+<comment>XDMAttributes.find-matching-prefix</comment>
+</string>
+
+<string>
+<original>Generates declarations for any namespaces 
+        without an in-scope declaration.
+        {parameter default-context, will be checked for prefixes}
+        {parameter include-descendants?, whether to check recursively}</original>
+<translation>Generates declarations for any namespaces without an in-scope declaration. <curl name="parameter"><opaque>default-context,</opaque>will be checked for prefixes</curl> <curl name="parameter"><opaque>include-descendants?,</opaque>whether to check recursively</curl></translation>
+<comment>XDMElement.generate-namespace-declarations</comment>
+</string>
+
+<string>
+<original>Get a character string representing the contents of this XML node</original>
+<translation>Get a character string representing the contents of this XML node</translation>
+<comment>XDMNode.get-text</comment>
+</string>
+
+<string>
+<original>Gets the ancestors of this node.</original>
+<translation>Gets the ancestors of this node.</translation>
+<comment>XDMNode.get-ancestors</comment>
+</string>
+
+<string>
+<original>Gets the attribute with the specified XDMName, if any
+        {parameter xmlname, The name to search for}</original>
+<translation>Gets the attribute with the specified XDMName, if any <curl name="parameter"><opaque>xmlname,</opaque>The name to search for</curl></translation>
+<comment>XDMElement.get-attribute</comment>
+</string>
+
+<string>
+<original>Gets the child at the specified index
+        {parameter index, The index of the child to return}</original>
+<translation>Gets the child at the specified index <curl name="parameter"><opaque>index,</opaque>The index of the child to return</curl></translation>
+<comment>XDMElement.get-child-by-index</comment>
+</string>
+
+<string>
+<original>Gets the root of the XML tree in which this node exists.</original>
+<translation>Gets the root of the XML tree in which this node exists.</translation>
+<comment>XDMNode.get-root</comment>
+</string>
+
+<string>
+<original>Gets the value of the attribute with the specified XDMName, if any
+        {parameter xmlname, The name to search for}</original>
+<translation>Gets the value of the attribute with the specified XDMName, if any <curl name="parameter"><opaque>xmlname,</opaque>The name to search for</curl></translation>
+<comment>XDMElement.get-attribute-value</comment>
+</string>
+
+<string>
+<original>Helper class to hold a Set-of XDMAttribute objects and 
+        provide easy ways to query the for the existence of
+        XDMAttributes by value or name.</original>
+<translation>Helper class to hold a Set-of XDMAttribute objects and provide easy ways to query the for the existence of XDMAttributes by value or name.</translation>
+<comment>XDMAttributes</comment>
+</string>
+
+<string>
+<original>If returning true, then the walk should continue 
+        - but false would stop the walk.</original>
+<translation>If returning true, then the walk should continue - but false would stop the walk.</translation>
+<comment>XDMElement.walk-children</comment>
+</string>
+
+<string>
+<original>Indicate that state of this object has changed.</original>
+<translation>Indicate that state of this object has changed.</translation>
+<comment>XDMDataBindingContext.context-changed</comment>
+</string>
+
+<string>
+<original>Indicate whether changes to the contents are allowed.</original>
+<translation>Indicate whether changes to the contents are allowed.</translation>
+<comment>XDMNode.modifiable?</comment>
+</string>
+
+<string>
+<original>Indicates a change to the contents of an {docref XDMDocument}.</original>
+<translation>Indicates a change to the contents of an <opaque>{docref XDMDocument}</opaque>.</translation>
+<comment>XDMNodesChanged</comment>
+</string>
+
+<string>
+<original>Indicates a change to the contents of an {docref XDMNode}</original>
+<translation>Indicates a change to the contents of an <opaque>{docref XDMNode}</opaque></translation>
+<comment>XDMNodeModified</comment>
+</string>
+
+<string>
+<original>Indicates attempt to modify an {docref XDMNode}
+        which is not {docref XDMDocument.modiifiable?}</original>
+<translation>Indicates attempt to modify an <opaque>{docref XDMNode}</opaque> which is not <opaque>{docref XDMDocument.modiifiable?}</opaque></translation>
+<comment>XDMNotModifiableException</comment>
+</string>
+
+<string>
+<original>Indicates the addition of an {docref XDMNode}</original>
+<translation>Indicates the addition of an <opaque>{docref XDMNode}</opaque></translation>
+<comment>XDMNodeAdded</comment>
+</string>
+
+<string>
+<original>Indicates the contents of an {docref XDMDocument} 
+        have been substantially changed.</original>
+<translation>Indicates the contents of an <opaque>{docref XDMDocument}</opaque> have been substantially changed.</translation>
+<comment>XDMNodesBulkChanges</comment>
+</string>
+
+<string>
+<original>Indicates the removal of an {docref XDMNode}</original>
+<translation>Indicates the removal of an <opaque>{docref XDMNode}</opaque></translation>
+<comment>XDMNodeRemoved</comment>
+</string>
+
+<string>
+<original>Indicates whether its argument is a valid index in the {docref XDMNodeSet}.</original>
+<translation>Indicates whether its argument is a valid index in the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.in-bounds?</comment>
+</string>
+
+<string>
+<original>Inform this object that an {docref XDMEvent} has
+        been fired by the {docref XDMDocument} to which it is connected</original>
+<translation>Inform this object that an <opaque>{docref XDMEvent}</opaque> has been fired by the <opaque>{docref XDMDocument}</opaque> to which it is connected</translation>
+<comment>XDMConsumer.note-xdm-event</comment>
+</string>
+
+<string>
+<original>Inserts the node into the list of the parent's children at the specified index
+        {parameter child, the node to insert}
+        {parameter index, the index at which to do the insertion}</original>
+<translation>Inserts the node into the list of the parent's children at the specified index <curl name="parameter"><opaque>child,</opaque>the node to insert</curl> <curl name="parameter"><opaque>index,</opaque>the index at which to do the insertion</curl></translation>
+<comment>XDMElement.insert-child</comment>
+</string>
+
+<string>
+<original>Instructs the XDMDocument to walk the tree, 
+        following and including any XML:Include nodes</original>
+<translation>Instructs the XDMDocument to walk the tree, following and including any XML:Include nodes</translation>
+<comment>XDMDocument.execute-xml-include</comment>
+</string>
+
+<string>
+<original>Invalid syntax is indicated by an {docref XDMPathException}.</original>
+<translation>Invalid syntax is indicated by an <opaque>{docref XDMPathException}</opaque>.</translation>
+<comment>XDMPath.default</comment>
+</string>
+
+<string>
+<original>Known subclasses:  
+        {itemize
+            {item {docref XDMTreeModel}}
+            {item {docref XDMDataBindingContext}}}</original>
+<translation>Known subclasses: <curl name="itemize"><curl name="item"><opaque>{docref XDMTreeModel}</opaque></curl> <curl name="item"><opaque>{docref XDMDataBindingContext}</opaque></curl></curl></translation>
+<comment>XDMConsumer</comment>
+</string>
+
+<string>
+<original>Macro form for creating an {docref XDMPath}.</original>
+<translation>Macro form for creating an <opaque>{docref XDMPath}</opaque>.</translation>
+<comment>xpath</comment>
+</string>
+
+<string>
+<original>Makes the keys of the collection iterable</original>
+<translation>Makes the keys of the collection iterable</translation>
+<comment>XDMAttributes.keys-to-Iterator</comment>
+</string>
+
+<string>
+<original><![CDATA[Path expressions use the XPath language,
+        where clauses separated by slashes represent steps
+        along axes from the subject node.
+        {itemize
+            {item {bold axes}
+                {itemize
+                    {item {ctext /} {em-dash} 
+                        the children of the current node}
+                    {item {ctext //} {em-dash} 
+                        the current node and all its descendants}
+                    {item {ctext .} {em-dash} 
+                        the current node}
+                    {item {ctext ..} {em-dash} 
+                        the parent of the current node}
+                    {item {ctext @} {em-dash} 
+                        the attributes of the current node}
+                    {item {ctext /ancestor::} {em-dash} 
+                        the ancestors of the current node}
+                    {item {ctext /ancestor-or-self::} {em-dash} 
+                        the current node and its ancestors}
+                    {item {ctext /descendant::} {em-dash} 
+                        the descendants of the current node}
+                    {item {ctext /descendant-or-self::} {em-dash} 
+                        the current node and its descendants}
+                }}
+            {item {bold selectors}
+                {itemize
+                    {item {ctext *} {em-dash} 
+                        any element}
+                    {item {ctext {metavar name}} {em-dash} 
+                        elements with specified name and no namespace}
+                    {item {ctext {metavar namespace}:{metavar name}} {em-dash}
+                        elements with specified namespace and name}
+||--                    {item {ctext *:{metavar name}} {em-dash}
+||--                        elements with any namespace and specifed name}
+||--                    {item {ctext {metavar namespace}:*} {em-dash}
+||--                        elements with spcified namespace and any name}
+                }}
+            {item {bold predicates} of the form
+                [{metavar path-expression}]
+                can filter the results af each step.
+                The path expression is evaluated relative to each selected node.
+            }
+            {item {bold operators}, using XPath semantics
+                {itemize
+                    {item {monospace and, or} {em-dash} 
+                        boolean operations}
+                    {item {monospace =, !=} {em-dash} 
+                        equality comparisons}
+                    {item {monospace <, <=, =>, >} {em-dash} 
+                        order comparisons}
+                    {item {monospace +, -, *, div, mod} {em-dash} 
+                        arithmetic operations}
+                    {item {monospace \|} {em-dash} 
+                        set operations}
+                }}
+            {item {bold functions} {em-dash}
+                functions defined by XPath 1.0
+                
+                {italic Not implemented in this release:}
+                {itemize
+                    {item {monospace id}}
+                    {item {monospace lang}}
+                    {item {monospace substring} third argument is required}
+                }}
+            {item {bold literals} {em-dash}
+                {monospace String}, {monospace double}.}
+        }]]></original>
+<translation>Path expressions use the XPath language, where clauses separated by slashes represent steps along axes from the subject node. <curl name="itemize"><curl name="item"><b>axes</b> <curl name="itemize"><curl name="item"><opaque>{ctext /}</opaque> <opaque>{em-dash}</opaque> the children of the current node</curl> <curl name="item"><opaque>{ctext //}</opaque> <opaque>{em-dash}</opaque> the current node and all its descendants</curl> <curl name="item"><opaque>{ctext .}</opaque> <opaque>{em-dash}</opaque> the current node</curl> <curl name="item"><opaque>{ctext ..}</opaque> <opaque>{em-dash}</opaque> the parent of the current node</curl> <curl name="item"><opaque>{ctext @}</opaque> <opaque>{em-dash}</opaque> the attributes of the current node</curl> <curl name="item"><opaque>{ctext /ancestor::}</opaque> <opaque>{em-dash}</opaque> the ancestors of the current node</curl> <curl name="item"><opaque>{ctext /ancestor-or-self::}</opaque> <opaque>{em-dash}</opaque> the current node and its ancestors</curl> <curl name="item"><opaque>{ctext /descendant::}</opaque> <opaque>{em-dash}</opaque> the descendants of the current node</curl> <curl name="item"><opaque>{ctext /descendant-or-self::}</opaque> <opaque>{em-dash}</opaque> the current node and its descendants</curl></curl></curl> <curl name="item"><b>selectors</b> <curl name="itemize"><curl name="item"><opaque>{ctext *}</opaque> <opaque>{em-dash}</opaque> any element</curl> <curl name="item"><opaque>{ctext {metavar name}}</opaque> <opaque>{em-dash}</opaque> elements with specified name and no namespace</curl> <curl name="item"><opaque>{ctext {metavar namespace}:{metavar name}}</opaque> <opaque>{em-dash}</opaque> elements with specified namespace and name</curl></curl></curl> <curl name="item"><b>predicates</b> of the form [<opaque>{metavar path-expression}</opaque>] can filter the results af each step. The path expression is evaluated relative to each selected node.</curl> <curl name="item"><b>operators</b>, using XPath semantics <curl name="itemize"><curl name="item"><curl name="monospace">and, or</curl> <opaque>{em-dash}</opaque> boolean operations</curl> <curl name="item"><curl name="monospace">=, !=</curl> <opaque>{em-dash}</opaque> equality comparisons</curl> <curl name="item"><curl name="monospace"><![CDATA[<, <=, =>, >]]></curl> <opaque>{em-dash}</opaque> order comparisons</curl> <curl name="item"><curl name="monospace">+, -, *, div, mod</curl> <opaque>{em-dash}</opaque> arithmetic operations</curl> <curl name="item"><curl name="monospace">\|</curl> <opaque>{em-dash}</opaque> set operations</curl></curl></curl> <curl name="item">
+<p><b>functions</b> <opaque>{em-dash}</opaque> functions defined by XPath 1.0</p>
+<p><i>Not implemented in this release:</i> <curl name="itemize"><curl name="item"><curl name="monospace">id</curl></curl> <curl name="item"><curl name="monospace">lang</curl></curl> <curl name="item"><curl name="monospace">substring</curl> third argument is required</curl></curl></p>
+</curl> <curl name="item"><b>literals</b> <opaque>{em-dash}</opaque> <curl name="monospace">String</curl>, <curl name="monospace">double</curl>.</curl></curl></translation>
+<comment>XDMPath</comment>
+</string>
+
+<string>
+<original>Prevent this object from firing {docref XDMEvent}s at itself.</original>
+<translation>Prevent this object from firing <opaque>{docref XDMEvent}</opaque>s at itself.</translation>
+<comment>StandardXDMDocument.suppress-events?</comment>
+</string>
+
+<string>
+<original>Prints the object out in valid XML format
+        {parameter out, The output stream to use, if any}
+        {parameter indentation, The amount of per-line indentation to use, 
+            if any (useful for easy-reading format)
+            {itemize
+                {item positive integer specifies numebr of spaces to indent}
+                {item 0 means no indentation}
+                {item -1 means no line breaks at all}}
+        }</original>
+<translation>Prints the object out in valid XML format <curl name="parameter"><opaque>out,</opaque>The output stream to use, if any</curl> <curl name="parameter"><opaque>indentation,</opaque>The amount of per-line indentation to use, if any (useful for easy-reading format) <curl name="itemize"><curl name="item">positive integer specifies numebr of spaces to indent</curl> <curl name="item">0 means no indentation</curl> <curl name="item">-1 means no line breaks at all</curl></curl></curl></translation>
+<comment>XDMObject.to-XML</comment>
+</string>
+
+<string>
+<original>Provides a context for for navigating
+        the {docref-abbr XDMDataBindingContext.context-nodeset} of
+        an {docref XDMDataBindingContext}</original>
+<translation>Provides a context for for navigating the <opaque>{docref-abbr XDMDataBindingContext.context-nodeset}</opaque> of an <opaque>{docref XDMDataBindingContext}</opaque></translation>
+<comment>XDMDataBindingCommandContext</comment>
+</string>
+
+<string>
+<original>Records "document order" for an {docref XDMDocument}</original>
+<translation>Records "document order" for an <opaque>{docref XDMDocument}</opaque></translation>
+<comment>XDMNodeIndex</comment>
+</string>
+
+<string>
+<original>Register this object with the specified {docref XDMDocument}</original>
+<translation>Register this object with the specified <opaque>{docref XDMDocument}</opaque></translation>
+<comment>XDMConsumer.connect-event-handler</comment>
+</string>
+
+<string>
+<original>Removes the attribute specified by the supplied XDMName
+        {parameter xmlname, the name of the attribute to remove}
+        {parameter error-if-missing?, should it throw an error 
+            if no attribute exists with the specified name}</original>
+<translation>Removes the attribute specified by the supplied XDMName <curl name="parameter"><opaque>xmlname,</opaque>the name of the attribute to remove</curl> <curl name="parameter"><opaque>error-if-missing?,</opaque>should it throw an error if no attribute exists with the specified name</curl></translation>
+<comment>XDMAttributes.remove-attribute</comment>
+</string>
+
+<string>
+<original>Removes the namespace assignment for the 
+        attribute which matches this prefix.
+        {parameter prefix, the prefix of the namespace definition to rmove}</original>
+<translation>Removes the namespace assignment for the attribute which matches this prefix. <curl name="parameter"><opaque>prefix,</opaque>the prefix of the namespace definition to rmove</curl></translation>
+<comment>XDMElement.remove-namespace-declaration</comment>
+</string>
+
+<string>
+<original>Removes the specified attribute
+        {parameter attribute, The attribute to remove}
+        {parameter error-if-missing?, Should an error be thrown 
+            if there is no matching attribute}</original>
+<translation>Removes the specified attribute <curl name="parameter"><opaque>attribute,</opaque>The attribute to remove</curl> <curl name="parameter"><opaque>error-if-missing?,</opaque>Should an error be thrown if there is no matching attribute</curl></translation>
+<comment>XDMElement.remove-attribute</comment>
+</string>
+
+<string>
+<original>Removes the specified child
+        {parameter child, The child to remove}</original>
+<translation>Removes the specified child <curl name="parameter"><opaque>child,</opaque>The child to remove</curl></translation>
+<comment>XDMElement.remove-child</comment>
+</string>
+
+<string>
+<original>Removes this Node from the XML tree</original>
+<translation>Removes this Node from the XML tree</translation>
+<comment>XDMNode.detach</comment>
+</string>
+
+<string>
+<original>Represent a group of XML namespace prefix declarations.</original>
+<translation>Represent a group of XML namespace prefix declarations.</translation>
+<comment>XDMNamespaceDeclarations</comment>
+</string>
+
+<string>
+<original>Represents an XML "Expanded Qualified Name" 
+        containing (namespace, local-name) pair</original>
+<translation>Represents an XML "Expanded Qualified Name" containing (namespace, local-name) pair</translation>
+<comment>XDMName</comment>
+</string>
+
+<string>
+<original>Represents an XML namespace prefix declaration</original>
+<translation>Represents an XML namespace prefix declaration</translation>
+<comment>XDMNamespaceDeclaration</comment>
+</string>
+
+<string>
+<original>Represents an attribute to an element in an XML document</original>
+<translation>Represents an attribute to an element in an XML document</translation>
+<comment>XDMAttribute</comment>
+</string>
+
+<string>
+<original>Represents an element node in an XML document.</original>
+<translation>Represents an element node in an XML document.</translation>
+<comment>XDMElement</comment>
+</string>
+
+<string>
+<original>Represents the {docref XDMNode}s 
+        resulting from an {docref XDMPath} search.</original>
+<translation>Represents the <opaque>{docref XDMNode}</opaque>s resulting from an <opaque>{docref XDMPath}</opaque> search.</translation>
+<comment>XDMNodeSet</comment>
+</string>
+
+<string>
+<original>Returns all of the elements (direct children and, optionally, descendants) 
+        of the node which match the supplied arguments.
+        {parameter xmlname, The name of the element for which to search.}
+        {parameter attribute-xmlname, The name of an attribute for which to search.}
+        {parameter attribute-value, The value of an attribute for which to search.}
+        {parameter include-descendants?, Indicates whether the result should include 
+            only direct children or all descendants of the node.}</original>
+<translation>Returns all of the elements (direct children and, optionally, descendants) of the node which match the supplied arguments. <curl name="parameter"><opaque>xmlname,</opaque>The name of the element for which to search.</curl> <curl name="parameter"><opaque>attribute-xmlname,</opaque>The name of an attribute for which to search.</curl> <curl name="parameter"><opaque>attribute-value,</opaque>The value of an attribute for which to search.</curl> <curl name="parameter"><opaque>include-descendants?,</opaque>Indicates whether the result should include only direct children or all descendants of the node.</curl></translation>
+<comment>XDMElement.get-elements</comment>
+</string>
+
+<string>
+<original>Returns an Iterator containing all the items in the {docref XDMNodeSet}.</original>
+<translation>Returns an Iterator containing all the items in the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.to-Iterator</comment>
+</string>
+
+<string>
+<original>Returns an Iterator containing each index in the {docref XDMNodeSet}.</original>
+<translation>Returns an Iterator containing each index in the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.keys-to-Iterator</comment>
+</string>
+
+<string>
+<original>Returns an {ctext XDMPath} expression from the root 
+        to the specified node.</original>
+<translation>Returns an <opaque>{ctext XDMPath}</opaque> expression from the root to the specified node.</translation>
+<comment>XDMPath.from-node</comment>
+</string>
+
+<string>
+<original>Returns the XDMAttribute specified by xmlname
+        {parameter xmlname, the XDMName to use}</original>
+<translation>Returns the XDMAttribute specified by xmlname <curl name="parameter"><opaque>xmlname,</opaque>the XDMName to use</curl></translation>
+<comment>XDMAttributes.get-attribute</comment>
+</string>
+
+<string>
+<original>Returns the set of nodes which should replace 
+        this node in an XML:Include included instance. 
+        Note, if this node is not an XML:Include node, 
+        this method throws an XDMException.</original>
+<translation>Returns the set of nodes which should replace this node in an XML:Include included instance. Note, if this node is not an XML:Include node, this method throws an XDMException.</translation>
+<comment>XDMDocument.get-xml-include-result-nodes</comment>
+</string>
+
+<string>
+<original>Returns the value of the attribute specified by xmlname
+        {parameter xmlname, the XDMName to use}</original>
+<translation>Returns the value of the attribute specified by xmlname <curl name="parameter"><opaque>xmlname,</opaque>the XDMName to use</curl></translation>
+<comment>XDMAttributes.get</comment>
+</string>
+
+<string>
+<original>Returns the {docref XDMNode} corresponding to the specifed index.</original>
+<translation>Returns the <opaque>{docref XDMNode}</opaque> corresponding to the specifed index.</translation>
+<comment>XDMNodeSet.get</comment>
+</string>
+
+<string>
+<original>Search this node using a path expression.
+        {parameter path, The {docref XDMPath} expression to be applied.}</original>
+<translation>Search this node using a path expression. <curl name="parameter"><opaque>path,</opaque>The <opaque>{docref XDMPath}</opaque> expression to be applied.</curl></translation>
+<comment>XDMNode.search</comment>
+</string>
+
+<string>
+<original>Searches for an attribute with xmlname, 
+        returning it's value and true if found. 
+        Otherwise, returns an undefined String and false
+        {parameter xmlname, the XDMName to use}</original>
+<translation>Searches for an attribute with xmlname, returning it's value and true if found. Otherwise, returns an undefined String and false <curl name="parameter"><opaque>xmlname,</opaque>the XDMName to use</curl></translation>
+<comment>XDMAttributes.get-if-exists</comment>
+</string>
+
+<string>
+<original>Searches for an attribute with xmlname, returning it and true if found. 
+        Otherwise, returns an undefined XDMAttribute object and false
+        {parameter xmlname, the XDMName to use}</original>
+<translation>Searches for an attribute with xmlname, returning it and true if found. Otherwise, returns an undefined XDMAttribute object and false <curl name="parameter"><opaque>xmlname,</opaque>the XDMName to use</curl></translation>
+<comment>XDMAttributes.get-attribute-if-exists</comment>
+</string>
+
+<string>
+<original>Set this flag to true to request that this object suppress 
+        {docref XDMEvent}s that might otherwise be fired 
+        and deliver them in bulk when the flag is restored to false.</original>
+<translation>Set this flag to true to request that this object suppress <opaque>{docref XDMEvent}</opaque>s that might otherwise be fired and deliver them in bulk when the flag is restored to false.</translation>
+<comment>StandardXDMDocument.batch-events?</comment>
+</string>
+
+<string>
+<original>Sets the namespace assignment on this node.
+        {parameter prefix, The prefix of the namespace binding}
+        {parameter namespace, The value of the namespace to bind}
+        {parameter error-if-exists?, Should an error be thrown 
+            if there already is a binding for this prefix}</original>
+<translation>Sets the namespace assignment on this node. <curl name="parameter"><opaque>prefix,</opaque>The prefix of the namespace binding</curl> <curl name="parameter"><opaque>namespace,</opaque>The value of the namespace to bind</curl> <curl name="parameter"><opaque>error-if-exists?,</opaque>Should an error be thrown if there already is a binding for this prefix</curl></translation>
+<comment>XDMElement.set-namespace-declaration</comment>
+</string>
+
+<string>
+<original>Shorthand for binding a nested {docref XDMForm}
+        to a portion of its containing form.</original>
+<translation>Shorthand for binding a nested <opaque>{docref XDMForm}</opaque> to a portion of its containing form.</translation>
+<comment>XDMForm.ref</comment>
+</string>
+
+<string>
+<original>Specifies an XML path expression.</original>
+<translation>Specifies an XML path expression.</translation>
+<comment>XDMPath</comment>
+</string>
+
+<string>
+<original>Specifies an {docref XDMPath} relative to the
+        {docref-abbr XDMDataBindingContext.context-node} 
+        of the containing form.</original>
+<translation>Specifies an <opaque>{docref XDMPath}</opaque> relative to the <opaque>{docref-abbr XDMDataBindingContext.context-node}</opaque> of the containing form.</translation>
+<comment>XDMForm.ref</comment>
+</string>
+
+<string>
+<original>Specifies criterion for comparing {docref XPathValue}s.</original>
+<translation>Specifies criterion for comparing <opaque>{docref XPathValue}</opaque>s.</translation>
+<comment>XPathValueComparison</comment>
+</string>
+
+<string>
+<original>Specifies how bound data is returned.
+        The default value is {docref XDMDataBindingFormatSpec.String}</original>
+<translation>Specifies how bound data is returned. The default value is <opaque>{docref XDMDataBindingFormatSpec.String}</opaque></translation>
+<comment>XDMDataBindingContext.format-spec</comment>
+</string>
+
+<string>
+<original>Specifies the XML data source for this {docref DataBindingContext}</original>
+<translation>Specifies the XML data source for this <opaque>{docref DataBindingContext}</opaque></translation>
+<comment>XDMDataBindingContext.model</comment>
+</string>
+
+<string>
+<original>Specifies what part of the {docref-abbr DataBindingContext.model}
+        is subject for path expressions in selectors</original>
+<translation>Specifies what part of the <opaque>{docref-abbr DataBindingContext.model}</opaque> is subject for path expressions in selectors</translation>
+<comment>XDMDataBindingContext.context-path</comment>
+</string>
+
+<string>
+<original>Specifies whether {docref XDMEvent}s should be delivered individually.</original>
+<translation>Specifies whether <opaque>{docref XDMEvent}</opaque>s should be delivered individually.</translation>
+<comment>StandardXDMDocument.batch-events?</comment>
+</string>
+
+<string>
+<original>Specifies which node of the {docref-abbr DataBindingContext.context-nodeset}
+        is subject for path expressions in selectors</original>
+<translation>Specifies which node of the <opaque>{docref-abbr DataBindingContext.context-nodeset}</opaque> is subject for path expressions in selectors</translation>
+<comment>XDMDataBindingContext.current-index</comment>
+</string>
+
+<string>
+<original>Specify how a {docref XDMDataBindingContext} value should be
+        returned to a {docref DataBinding}.</original>
+<translation>Specify how a <opaque>{docref XDMDataBindingContext}</opaque> value should be returned to a <opaque>{docref DataBinding}</opaque>.</translation>
+<comment>XDMDataBindingFormatSpec</comment>
+</string>
+
+<string>
+<original>Splices the Array of nodes into the parent's 
+        children at the specified index.
+        {parameter children, the nodes to splice into the parent}
+        {parameter index, the index at which to insert the nodex}</original>
+<translation>Splices the Array of nodes into the parent's children at the specified index. <curl name="parameter"><opaque>children,</opaque>the nodes to splice into the parent</curl> <curl name="parameter"><opaque>index,</opaque>the index at which to insert the nodex</curl></translation>
+<comment>XDMElement.splice-children</comment>
+</string>
+
+<string>
+<original>Superclass for classes which track changes to {docref XDMDocument}s</original>
+<translation>Superclass for classes which track changes to <opaque>{docref XDMDocument}</opaque>s</translation>
+<comment>XDMConsumer</comment>
+</string>
+
+<string>
+<original>Superclass for {docref XDMDocument} notification events.</original>
+<translation>Superclass for <opaque>{docref XDMDocument}</opaque> notification events.</translation>
+<comment>XDMEvent</comment>
+</string>
+
+<string>
+<original>Tells if a particular node is a child of this parent
+        {parameter child, the node to search for}</original>
+<translation>Tells if a particular node is a child of this parent <curl name="parameter"><opaque>child,</opaque>the node to search for</curl></translation>
+<comment>XDMElement.member?</comment>
+</string>
+
+<string>
+<original>Tells if an attribute with the specified XDMName exists in the collection
+        {parameter xmlname, the XDMName to use}</original>
+<translation>Tells if an attribute with the specified XDMName exists in the collection <curl name="parameter"><opaque>xmlname,</opaque>the XDMName to use</curl></translation>
+<comment>XDMAttributes.key-exists?</comment>
+</string>
+
+<string>
+<original>Tells if the parent has no children</original>
+<translation>Tells if the parent has no children</translation>
+<comment>XDMElement.empty?</comment>
+</string>
+
+<string>
+<original>Tells if this node is the root node in the XML tree.</original>
+<translation>Tells if this node is the root node in the XML tree.</translation>
+<comment>XDMNode.root?</comment>
+</string>
+
+<string>
+<original>Tells whether this element node has an 
+        attribute with the supplied XDMName
+        {parameter xmlname, The name to search for}</original>
+<translation>Tells whether this element node has an attribute with the supplied XDMName <curl name="parameter"><opaque>xmlname,</opaque>The name to search for</curl></translation>
+<comment>XDMElement.attribute-exists?</comment>
+</string>
+
+<string>
+<original>Tells whether this element node has an attribute with the supplied value
+        {parameter value, The value to search for}</original>
+<translation>Tells whether this element node has an attribute with the supplied value <curl name="parameter"><opaque>value,</opaque>The value to search for</curl></translation>
+<comment>XDMElement.attribute-value-exists?</comment>
+</string>
+
+<string>
+<original>The "with-namespace-declarations" macro uses the following syntax:
+        {ctext
+            {with-namespace-declarations
+                {metavar prefix} = {metavar "namespace"}
+                [, {metavar prefix} = {metavar "namespace"}]*
+             do
+                {metavar body}
+            }
+        }</original>
+<translation>The "with-namespace-declarations" macro uses the following syntax: <opaque>{ctext {with-namespace-declarations
+                {metavar prefix} = {metavar "namespace"}
+                [, {metavar prefix} = {metavar "namespace"}]*
+             do
+                {metavar body}
+            }
+        }</opaque></translation>
+<comment>with-namespace-declarations</comment>
+</string>
+
+<string>
+<original>The "xpath" macro uses the following syntax:
+        {ctext
+            {xpath
+                [{metavar prefix} = {metavar "namespace"}
+                 [, {metavar prefix} = {metavar "namespace"}]*]
+                {metavar xpath-expression}
+            }
+        }</original>
+<translation>The "xpath" macro uses the following syntax: <opaque>{ctext {xpath
+                [{metavar prefix} = {metavar "namespace"}
+                 [, {metavar prefix} = {metavar "namespace"}]*]
+                {metavar xpath-expression}
+            }
+        }</opaque></translation>
+<comment>xpath</comment>
+</string>
+
+<string>
+<original>The Association of prefix-to-namespace declarations on this element</original>
+<translation>The Association of prefix-to-namespace declarations on this element</translation>
+<comment>XDMElement.namespace-declarations</comment>
+</string>
+
+<string>
+<original>The String value and true, if found, undefined and false otherwise.</original>
+<translation>The String value and true, if found, undefined and false otherwise.</translation>
+<comment>XDMAttributes.get-if-exists</comment>
+</string>
+
+<string>
+<original>The Type of the value.</original>
+<translation>The Type of the value.</translation>
+<comment>XPathValue.type</comment>
+</string>
+
+<string>
+<original>The Url of the source document</original>
+<translation>The Url of the source document</translation>
+<comment>XDMDocument.document-location</comment>
+</string>
+
+<string>
+<original>The XDMAttribute, if found. If not, exception is thrown.</original>
+<translation>The XDMAttribute, if found. If not, exception is thrown.</translation>
+<comment>XDMAttributes.get-attribute</comment>
+</string>
+
+<string>
+<original>The XDMName of this element</original>
+<translation>The XDMName of this element</translation>
+<comment>XDMNode.xmlname</comment>
+</string>
+
+<string>
+<original>The XDMNode which is the root of the tree.</original>
+<translation>The XDMNode which is the root of the tree.</translation>
+<comment>XDMNode.get-root</comment>
+</string>
+
+<string>
+<original>The XML String representation, 
+        if no output stream was specified.</original>
+<translation>The XML String representation, if no output stream was specified.</translation>
+<comment>XDMObject.to-XML</comment>
+</string>
+
+<string>
+<original>The abstract class which represents a node in an XML tree.</original>
+<translation>The abstract class which represents a node in an XML tree.</translation>
+<comment>XDMNode</comment>
+</string>
+
+<string>
+<original>The affected {docref XDMNode}.</original>
+<translation>The affected <opaque>{docref XDMNode}</opaque>.</translation>
+<comment>XDMNodeModified.node</comment>
+</string>
+
+<string>
+<original>The attribute and true, if found, undefined and false otherwise.</original>
+<translation>The attribute and true, if found, undefined and false otherwise.</translation>
+<comment>XDMAttributes.get-attribute-if-exists</comment>
+</string>
+
+<string>
+<original>The attribute's value, if any</original>
+<translation>The attribute's value, if any</translation>
+<comment>XDMElement.get-attribute-value</comment>
+</string>
+
+<string>
+<original>The attribute, if any</original>
+<translation>The attribute, if any</translation>
+<comment>XDMElement.get-attribute</comment>
+</string>
+
+<string>
+<original>The bound data corresponding to the selector path expression
+        is an {docref XPathValue}.  By default, it will be converted
+        according to the {docref-abbr DataBinding.property-type} of
+        the bound property.  The {ctext format-spec} is used when
+        the type is {ctext any}, or a type into which it cannot be converted.
+        
+        You can use {docref DataBinding} format expressions to 
+        convert a {docref XPathValue} into other types.
+        To get an {docref XDMNodeSet} value, use 
+        {curl-code {bind value to "selector", {format x:XPathValue as x.as-XDMNodeSet}}}
+        To get an {docref XDMNode} value, use 
+        {curl-code {bind value to "selector", {format x:XPathValue as x.as-XDMNode}}}</original>
+<translation><p>The bound data corresponding to the selector path expression is an <opaque>{docref XPathValue}</opaque>. By default, it will be converted according to the <opaque>{docref-abbr DataBinding.property-type}</opaque> of the bound property. The <opaque>{ctext format-spec}</opaque> is used when the type is <opaque>{ctext any}</opaque>, or a type into which it cannot be converted.</p>
+<p>You can use <opaque>{docref DataBinding}</opaque> format expressions to convert a <opaque>{docref XPathValue}</opaque> into other types. To get an <opaque>{docref XDMNodeSet}</opaque> value, use <opaque>{curl-code {bind value to "selector", {format x:XPathValue as x.as-XDMNodeSet}}}</opaque> To get an <opaque>{docref XDMNode}</opaque> value, use <opaque>{curl-code {bind value to "selector", {format x:XPathValue as x.as-XDMNode}}}</opaque></p></translation>
+<comment>XDMDataBindingContext.format-spec</comment>
+</string>
+
+<string>
+<original>The calculated base url</original>
+<translation>The calculated base url</translation>
+<comment>XDMElement.get-base-url</comment>
+</string>
+
+<string>
+<original>The character encoding from the XML declaration.</original>
+<translation>The character encoding from the XML declaration.</translation>
+<comment>XDMDocument.character-encoding</comment>
+</string>
+
+<string>
+<original>The child at the index, if any</original>
+<translation>The child at the index, if any</translation>
+<comment>XDMElement.get-child-by-index</comment>
+</string>
+
+<string>
+<original>The cloned copy</original>
+<translation>The cloned copy</translation>
+<comment>XDMObject.clone</comment>
+</string>
+
+<string>
+<original>The collection of attributes associated with this element, if any</original>
+<translation>The collection of attributes associated with this element, if any</translation>
+<comment>XDMElement.attributes</comment>
+</string>
+
+<string>
+<original>The content of this text node</original>
+<translation>The content of this text node</translation>
+<comment>XDMText.content</comment>
+</string>
+
+<string>
+<original>The data of this processing instruction node</original>
+<translation>The data of this processing instruction node</translation>
+<comment>XDMProcessingInstruction.data</comment>
+</string>
+
+<string>
+<original>The element to which this collection of attributes is associated.</original>
+<translation>The element to which this collection of attributes is associated.</translation>
+<comment>XDMAttributes.element</comment>
+</string>
+
+<string>
+<original>The encapsulating class for a Text node in an XML document.</original>
+<translation>The encapsulating class for a Text node in an XML document.</translation>
+<comment>XDMText</comment>
+</string>
+
+<string>
+<original>The following example shows how to add a XDMAttribute to a XDMElement.
+
+        {example
+            title = {text How to add a XDMAttribute to a XDMElement},
+            
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+            
+            || Create an element node.
+            {let element:XDMElement = {XDMElement "name"}}
+            
+            || And add an attribute to it.
+            {element.add-attribute {XDMAttribute "attribute", "value"}}
+            
+            || Then query for the attribute.
+            {element.attribute-exists? {XDMName "", "attribute"}}
+            
+        }</original>
+<translation><p>The following example shows how to add a XDMAttribute to a XDMElement.</p>
+<p><curl name="example"><opaque>title=</opaque><curl name="text">How to add a XDMAttribute to a XDMElement</curl><opaque>,
+            
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+            
+            || Create an element node.
+            {let element:XDMElement = {XDMElement "name"}}
+            
+            || And add an attribute to it.
+            {element.add-attribute {XDMAttribute "attribute", "value"}}
+            
+            || Then query for the attribute.
+            {element.attribute-exists? {XDMName "", "attribute"}}
+            
+        </opaque></curl></p></translation>
+<comment>XDMAttribute</comment>
+</string>
+
+<string>
+<original>The following example shows how to programmatically build an XML tree.
+
+        {example
+            title = {text Programmatically Build an XML Tree},
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Build an XML tree declaratively.
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMAttribute "attribute", "value"},
+                    {XDMElement
+                        "child-node",
+                        {XDMElement
+                            "another-child-node",
+                            {XDMAttribute "child-attribute", "child-value"}
+                        },
+                        {XDMElement "yet-another-child-node"}
+                    },
+                    {XDMElement "final-child-node"}
+                }
+            }
+
+            || Print out the XML structure.
+            {pre {root.to-XML}}
+        }</original>
+<translation><p>The following example shows how to programmatically build an XML tree.</p>
+<p><curl name="example"><opaque>title=</opaque><curl name="text">Programmatically Build an XML Tree</curl><opaque>,
+            || Import the XDM package.
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+            || Build an XML tree declaratively.
+            {let root:XDMElement =
+                {XDMElement
+                    "root",
+                    {XDMAttribute "attribute", "value"},
+                    {XDMElement
+                        "child-node",
+                        {XDMElement
+                            "another-child-node",
+                            {XDMAttribute "child-attribute", "child-value"}
+                        },
+                        {XDMElement "yet-another-child-node"}
+                    },
+                    {XDMElement "final-child-node"}
+                }
+            }
+
+            || Print out the XML structure.
+            {pre {root.to-XML}}
+        </opaque></curl></p></translation>
+<comment>StandardXDMElement.default</comment>
+</string>
+
+<string>
+<original>The index of the node in the parent's list of children, 
+        or -1 if it is not in the parent.</original>
+<translation>The index of the node in the parent's list of children, or -1 if it is not in the parent.</translation>
+<comment>XDMElement.find</comment>
+</string>
+
+<string>
+<original>The iteration of the keys (xmlnames) 
+        of the attributes in the collection</original>
+<translation>The iteration of the keys (xmlnames) of the attributes in the collection</translation>
+<comment>XDMAttributes.keys-to-Iterator</comment>
+</string>
+
+<string>
+<original>The local-name of this element</original>
+<translation>The local-name of this element</translation>
+<comment>XDMNode.local-name</comment>
+</string>
+
+<string>
+<original>The matching node, if any.</original>
+<translation>The matching node, if any.</translation>
+<comment>XDMNode.find-ancestor</comment>
+</string>
+
+<string>
+<original>The maximum number of {docref XDMEvent}s which will be
+        individually reported during 
+        {docref-abbr StandardXDMDocument.batch-update?} processing.</original>
+<translation>The maximum number of <opaque>{docref XDMEvent}</opaque>s which will be individually reported during <opaque>{docref-abbr StandardXDMDocument.batch-update?}</opaque> processing.</translation>
+<comment>StandardXDMDocument.pending-events-limit</comment>
+</string>
+
+<string>
+<original>The namespace assignment if found. If not, the empty string.</original>
+<translation>The namespace assignment if found. If not, the empty string.</translation>
+<comment>XDMAttributes.find-matching-namespace</comment>
+</string>
+
+<string>
+<original>The namespace for this element</original>
+<translation>The namespace for this element</translation>
+<comment>XDMNode.namespace</comment>
+</string>
+
+<string>
+<original>The number of attributes in the collection</original>
+<translation>The number of attributes in the collection</translation>
+<comment>XDMAttributes.size</comment>
+</string>
+
+<string>
+<original>The number of {docref XDMNode}s in the {docref XDMNodeSet}.</original>
+<translation>The number of <opaque>{docref XDMNode}</opaque>s in the <opaque>{docref XDMNodeSet}</opaque>.</translation>
+<comment>XDMNodeSet.size</comment>
+</string>
+
+<string>
+<original>The ordered list of children held in this node.</original>
+<translation>The ordered list of children held in this node.</translation>
+<comment>XDMDocument.children</comment>
+</string>
+
+<string>
+<original>The package provides an API for generic Curl XML document object model building, 
+        querying, and programmatically modifying. 
+        The tree can be automatically built from a Url, 
+        a String holding an XML structure, a TextInputStream, or a ByteInputStream, 
+        or may be programmatically constructed from scratch.</original>
+<translation>The package provides an API for generic Curl XML document object model building, querying, and programmatically modifying. The tree can be automatically built from a Url, a String holding an XML structure, a TextInputStream, or a ByteInputStream, or may be programmatically constructed from scratch.</translation>
+<comment>COM.CURL.WSDK.XML-DOCUMENT-MODEL</comment>
+</string>
+
+<string>
+<original>The prefix if found. If not, null.</original>
+<translation>The prefix if found. If not, null.</translation>
+<comment>XDMAttributes.find-matching-prefix</comment>
+</string>
+
+<string>
+<original>The prefix of this element, 
+        or null if no namespace declaration is found</original>
+<translation>The prefix of this element, or null if no namespace declaration is found</translation>
+<comment>XDMNode.prefix</comment>
+</string>
+
+<string>
+<original>The qualified name of this element (prefix:local-name)</original>
+<translation>The qualified name of this element (prefix:local-name)</translation>
+<comment>XDMNode.qualified-name</comment>
+</string>
+
+<string>
+<original>The removed {docref XDMNode}.</original>
+<translation>The removed <opaque>{docref XDMNode}</opaque>.</translation>
+<comment>XDMNodeRemoved.removed</comment>
+</string>
+
+<string>
+<original>The root node in the document. 
+        Note that it must be a XDMElement node because valid XML documents 
+        must have one, and only one, element root node</original>
+<translation>The root node in the document. Note that it must be a XDMElement node because valid XML documents must have one, and only one, element root node</translation>
+<comment>XDMDocument.root</comment>
+</string>
+
+<string>
+<original>The source XPath expression.</original>
+<translation>The source XPath expression.</translation>
+<comment>XDMPath.source</comment>
+</string>
+
+<string>
+<original>The standard implementation of {docref XDMBuilder}.</original>
+<translation>The standard implementation of <opaque>{docref XDMBuilder}</opaque>.</translation>
+<comment>StandardXDMBuilder</comment>
+</string>
+
+<string>
+<original>The superclass for all XDM classes involved in the XML tree.</original>
+<translation>The superclass for all XDM classes involved in the XML tree.</translation>
+<comment>XDMObject</comment>
+</string>
+
+<string>
+<original>The target of this processing instruction node</original>
+<translation>The target of this processing instruction node</translation>
+<comment>XDMProcessingInstruction.target</comment>
+</string>
+
+<string>
+<original>The top-level XDMDocument of an XML document. 
+        An XML tree has a single root node 
+        and optional processing instructions, DTDs, and comments. 
+        Although currently not implemented, 
+        support for these optional elements would be held in the XDMDocument.</original>
+<translation>The top-level XDMDocument of an XML document. An XML tree has a single root node and optional processing instructions, DTDs, and comments. Although currently not implemented, support for these optional elements would be held in the XDMDocument.</translation>
+<comment>XDMDocument</comment>
+</string>
+
+<string>
+<original>The type of this attribute</original>
+<translation>The type of this attribute</translation>
+<comment>XDMAttribute.type</comment>
+</string>
+
+<string>
+<original>The value of the XDMAttribute, if found. If not, exception is thrown.</original>
+<translation>The value of the XDMAttribute, if found. If not, exception is thrown.</translation>
+<comment>XDMAttributes.get</comment>
+</string>
+
+<string>
+<original>The value of this attribute</original>
+<translation>The value of this attribute</translation>
+<comment>XDMAttribute.value</comment>
+</string>
+
+<string>
+<original>The value.</original>
+<translation>The value.</translation>
+<comment>XPathValue.value</comment>
+</string>
+
+<string>
+<original>The xml:base value assigned to this element, if any</original>
+<translation>The xml:base value assigned to this element, if any</translation>
+<comment>XDMElement.assigned-base-url</comment>
+</string>
+
+<string>
+<original>The xml:lang value applicable to this element</original>
+<translation>The xml:lang value applicable to this element</translation>
+<comment>XDMElement.xml-lang</comment>
+</string>
+
+<string>
+<original>The xml:lang value assigned to this element, if any</original>
+<translation>The xml:lang value assigned to this element, if any</translation>
+<comment>XDMElement.xml-lang-declaration</comment>
+</string>
+
+<string>
+<original>The xml:space value applicable to this element</original>
+<translation>The xml:space value applicable to this element</translation>
+<comment>XDMElement.xml-space</comment>
+</string>
+
+<string>
+<original>The xml:space value assigned to this element, if any</original>
+<translation>The xml:space value assigned to this element, if any</translation>
+<comment>XDMElement.xml-space-declaration</comment>
+</string>
+
+<string>
+<original>The {docref XDMDocument} created.</original>
+<translation>The <opaque>{docref XDMDocument}</opaque> created.</translation>
+<comment>XDMBuilder.build</comment>
+</string>
+
+<string>
+<original>The {docref XDMNodeSet} which is subject for path expressions in selectors.
+      It is the result of applying the {docref-abbr XDMDataBindingContext.context-path}
+      to the {docref-abbr XDMDataBindingContext.model}</original>
+<translation>The <opaque>{docref XDMNodeSet}</opaque> which is subject for path expressions in selectors. It is the result of applying the <opaque>{docref-abbr XDMDataBindingContext.context-path}</opaque> to the <opaque>{docref-abbr XDMDataBindingContext.model}</opaque></translation>
+<comment>XDMDataBindingContext.context-nodeset</comment>
+</string>
+
+<string>
+<original>The {docref XDMNode} which is subject for path expressions in selectors.
+      It is the element of the {docref-abbr XDMDataBindingContext.context-nodeset}
+      corresponding to the {docref-abbr XDMDataBindingContext.current-index}</original>
+<translation>The <opaque>{docref XDMNode}</opaque> which is subject for path expressions in selectors. It is the element of the <opaque>{docref-abbr XDMDataBindingContext.context-nodeset}</opaque> corresponding to the <opaque>{docref-abbr XDMDataBindingContext.current-index}</opaque></translation>
+<comment>XDMDataBindingContext.context-node</comment>
+</string>
+
+<string>
+<original>The {docref xpath} macro can be used to create an {ctext XDMPath} object.
+        When the expression is a compile-time constant,
+        this allows invalid syntax to be reported as a {docref SyntaxError},
+        with reference to the invalid source expression.</original>
+<translation>The <opaque>{docref xpath}</opaque> macro can be used to create an <opaque>{ctext XDMPath}</opaque> object. When the expression is a compile-time constant, this allows invalid syntax to be reported as a <opaque>{docref SyntaxError}</opaque>, with reference to the invalid source expression.</translation>
+<comment>XDMPath.default</comment>
+</string>
+
+<string>
+<original>The {monospace standalone} declaration from the XML declaration.</original>
+<translation>The <curl name="monospace">standalone</curl> declaration from the XML declaration.</translation>
+<comment>XDMDocument.standalone?</comment>
+</string>
+
+<string>
+<original>The {monospace version} declaration from the XML declaration.</original>
+<translation>The <curl name="monospace">version</curl> declaration from the XML declaration.</translation>
+<comment>XDMDocument.version</comment>
+</string>
+
+<string>
+<original>This examples illustrates how to create an XDMDocument 
+        with a root node and print out the resulting XML tree.
+        
+        || TODO: doesn't deploy as example
+||--        {example
+||--            title = {text Create and Print an XML tree},
+        {curl-code
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+            
+            {let doc:XDMDocument =
+                {XDMDocument
+                    {XDMElement
+                        "root",
+                        {XDMElement "child-node"},
+                        "Here is some text"
+                    }
+                }
+            }
+            
+            {pre {doc.to-XML}}
+        }</original>
+<translation><p>This examples illustrates how to create an XDMDocument with a root node and print out the resulting XML tree.</p>
+<p><opaque>{curl-code
+            {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+            
+            {let doc:XDMDocument =
+                {XDMDocument
+                    {XDMElement
+                        "root",
+                        {XDMElement "child-node"},
+                        "Here is some text"
+                    }
+                }
+            }
+            
+            {pre {doc.to-XML}}
+        }</opaque></p></translation>
+<comment>XDMDocument</comment>
+</string>
+
+<string>
+<original>This is {docref CommandContext} that supports the following commands:
+        {itemize
+            {item {monospace move-first}}
+            {item {monospace move-previous}}
+            {item {monospace move-next}}
+            {item {monospace move-last}}
+        }</original>
+<translation>This is <opaque>{docref CommandContext}</opaque> that supports the following commands: <curl name="itemize"><curl name="item"><curl name="monospace">move-first</curl></curl> <curl name="item"><curl name="monospace">move-previous</curl></curl> <curl name="item"><curl name="monospace">move-next</curl></curl> <curl name="item"><curl name="monospace">move-last</curl></curl></curl></translation>
+<comment>XDMDataBindingCommandContext</comment>
+</string>
+
+<string>
+<original>Throws a {docref XDMException}</original>
+<translation>Throws a <opaque>{docref XDMException}</opaque></translation>
+<comment>xdm-exception</comment>
+</string>
+
+<string>
+<original>Throws a {docref XDMPathxception}</original>
+<translation>Throws a <opaque>{docref XDMPathxception}</opaque></translation>
+<comment>xdmq-exception</comment>
+</string>
+
+<string>
+<original>Traverses the ancestors of this node, applying thunk to each node.
+        {parameter thunk, the procedure to apply}</original>
+<translation>Traverses the ancestors of this node, applying thunk to each node. <curl name="parameter"><opaque>thunk,</opaque>the procedure to apply</curl></translation>
+<comment>XDMNode.walk-ancestors</comment>
+</string>
+
+<string>
+<original>Traverses the children, applying thunk to each node.
+        {parameter thunk, The procedure to apply to each node. 
+            If returning true, then the walk should continue 
+            - but false would stop the walk.}
+        {parameter include-descedants?, Indicates whether all descedants 
+            (the children of children) should be included.}</original>
+<translation>Traverses the children, applying thunk to each node. <curl name="parameter"><opaque>thunk,</opaque>The procedure to apply to each node. If returning true, then the walk should continue - but false would stop the walk.</curl> <curl name="parameter"><opaque>include-descedants?,</opaque>Indicates whether all descedants (the children of children) should be included.</curl></translation>
+<comment>XDMElement.walk-children</comment>
+</string>
+
+<string>
+<original>Typically constructed automatically by the builder 
+        or programmatically by a programmer, 
+        once added to an element node it is checked for validity 
+        (no two idential names, etc) and held at the node in XDMAttributes.</original>
+<translation>Typically constructed automatically by the builder or programmatically by a programmer, once added to an element node it is checked for validity (no two idential names, etc) and held at the node in XDMAttributes.</translation>
+<comment>XDMAttribute</comment>
+</string>
+
+<string>
+<original>Typically used by subclasses during construction.</original>
+<translation>Typically used by subclasses during construction.</translation>
+<comment>StandardXDMDocument.suppress-events?</comment>
+</string>
+
+<string>
+<original>Unregister this object with the specified {docref XDMDocument}</original>
+<translation>Unregister this object with the specified <opaque>{docref XDMDocument}</opaque></translation>
+<comment>XDMConsumer.disconnect-event-handler</comment>
+</string>
+
+<string>
+<original>Use type keywords to specify the particular subclass to be used
+        to represent each kind of XML item.
+        {itemize
+            {item {ctext _XDMDocument} {em-dash} {docref XDMDocument} subclass}
+            {item {ctext _XDMElement} {em-dash} {docref XDMElement} subclass}
+            {item {ctext _XDMText} {em-dash} {docref XDMText} subclass}
+            {item {ctext _XDMAttribute} {em-dash} {docref XDMAttribute} subclass}
+            {item {ctext _XDMProcessingInstruction} {em-dash} 
+                {docref XDMProcessingInstruction} subclass}}</original>
+<translation>Use type keywords to specify the particular subclass to be used to represent each kind of XML item. <curl name="itemize"><curl name="item"><opaque>{ctext _XDMDocument}</opaque> <opaque>{em-dash}</opaque> <opaque>{docref XDMDocument}</opaque> subclass</curl> <curl name="item"><opaque>{ctext _XDMElement}</opaque> <opaque>{em-dash}</opaque> <opaque>{docref XDMElement}</opaque> subclass</curl> <curl name="item"><opaque>{ctext _XDMText}</opaque> <opaque>{em-dash}</opaque> <opaque>{docref XDMText}</opaque> subclass</curl> <curl name="item"><opaque>{ctext _XDMAttribute}</opaque> <opaque>{em-dash}</opaque> <opaque>{docref XDMAttribute}</opaque> subclass</curl> <curl name="item"><opaque>{ctext _XDMProcessingInstruction}</opaque> <opaque>{em-dash}</opaque> <opaque>{docref XDMProcessingInstruction}</opaque> subclass</curl></curl></translation>
+<comment>GenericXDMBuilder</comment>
+</string>
+
+<string>
+<original>Use {docref with-namespace-declarations} 
+        to declare prefixes temporarily</original>
+<translation>Use <opaque>{docref with-namespace-declarations}</opaque> to declare prefixes temporarily</translation>
+<comment>xml-namespace-context</comment>
+</string>
+
+<string>
+<original>Used by {docref CommandButton}s in {docref XDMDataBindingNavigationPanel}</original>
+<translation>Used by <opaque>{docref CommandButton}</opaque>s in <opaque>{docref XDMDataBindingNavigationPanel}</opaque></translation>
+<comment>CompactCommandButtonUI</comment>
+</string>
+
+<string>
+<original>Used for value conversion in evaluation of XML path expressions</original>
+<translation>Used for value conversion in evaluation of XML path expressions</translation>
+<comment>XPathValue</comment>
+</string>
+
+<string>
+<original>Whether an attribute with xmlname exists</original>
+<translation>Whether an attribute with xmlname exists</translation>
+<comment>XDMAttributes.key-exists?</comment>
+</string>
+
+<string>
+<original>Whether any namespace declarations were generated.</original>
+<translation>Whether any namespace declarations were generated.</translation>
+<comment>XDMElement.generate-namespace-declarations</comment>
+</string>
+
+<string>
+<original>Whether the attribute name exists or not</original>
+<translation>Whether the attribute name exists or not</translation>
+<comment>XDMElement.attribute-exists?</comment>
+</string>
+
+<string>
+<original>Whether the attribute value exists or not</original>
+<translation>Whether the attribute value exists or not</translation>
+<comment>XDMElement.attribute-value-exists?</comment>
+</string>
+
+<string>
+<original>Whether the node is a child or not</original>
+<translation>Whether the node is a child or not</translation>
+<comment>XDMElement.member?</comment>
+</string>
+
+<string>
+<original>Whether the {docref XDMNodeSet} contains no {docref XDMNode}s.</original>
+<translation>Whether the <opaque>{docref XDMNodeSet}</opaque> contains no <opaque>{docref XDMNode}</opaque>s.</translation>
+<comment>XDMNodeSet.empty?</comment>
+</string>
+
+<string>
+<original>XDMDocument is either instantiated explicitly 
+        or the result of a call to {docref XDMBuilder.build}.</original>
+<translation>XDMDocument is either instantiated explicitly or the result of a call to <opaque>{docref XDMBuilder.build}</opaque>.</translation>
+<comment>XDMDocument</comment>
+</string>
+
+<string>
+<original>{ctext XDMEvent}s are fired by {ctext XDMDocument}s at 
+    themselves in order to indicate changes to their contents.
+
+    Known subclasses: 
+    {itemize
+        {item {docref XDMNodesChanged}}
+        {itemize
+            {item {docref XDMNodesBulkChanges}}
+            {item {docref XDMNodeModified}}
+            {itemize
+                {item {docref XDMNodeAdded}}
+                {item {docref XDMNodeRemoved}}
+            }
+        }
+    }</original>
+<translation><p><opaque>{ctext XDMEvent}</opaque>s are fired by <opaque>{ctext XDMDocument}</opaque>s at themselves in order to indicate changes to their contents.</p>
+<p>Known subclasses: <curl name="itemize"><curl name="item"><opaque>{docref XDMNodesChanged}</opaque></curl> <curl name="itemize"><curl name="item"><opaque>{docref XDMNodesBulkChanges}</opaque></curl> <curl name="item"><opaque>{docref XDMNodeModified}</opaque></curl> <curl name="itemize"><curl name="item"><opaque>{docref XDMNodeAdded}</opaque></curl> <curl name="item"><opaque>{docref XDMNodeRemoved}</opaque></curl></curl></curl></curl></p></translation>
+<comment>XDMEvent</comment>
+</string>
+
+<string>
+<original>{ctext XDMForm} is a {docref XDMDataBindingContext} 
+        and uses the databinding architecture to bind its contained visuals 
+        to the {docref-abbr XDMDataBindingContext.context-nodeset} 
+        currently displayed.
+
+        To bind a contained visual to XML data, add a 
+        {docref DataBinding} to the visual which has a data-selector 
+        which is the {docref XDMPath} to the desired content. 
+        
+        See {docref bind} for more information.
+
+||--        Note that when there is no data to be displayed, 
+||--        all bindings should show their default values, 
+||--        and the entire form will be disabled.
+        
+        XDMForm is a {docref XDMDataBindingCommandContext}
+        and provides navigation commands for manipulating 
+        the {docref-abbr XDMDataBindingContext.current-index}
+        of the {docref-abbr XDMDataBindingContext.context-node}
+        in the {docref-abbr XDMDataBindingContext.context-nodeset}.
+        
+        These can be displayed using {docref XDMDataBindingNavigationPanel}.
+        
+        {ctext XDMForm}s can be nested. 
+        The {docref-abbr XDMDataBindingContext.model} of the
+        contained form can be bound to a portion of its containing form,
+        using the {docref-abbr XDMForm.ref} property.</original>
+<translation><p><opaque>{ctext XDMForm}</opaque> is a <opaque>{docref XDMDataBindingContext}</opaque> and uses the databinding architecture to bind its contained visuals to the <opaque>{docref-abbr XDMDataBindingContext.context-nodeset}</opaque> currently displayed.</p>
+<p>To bind a contained visual to XML data, add a <opaque>{docref DataBinding}</opaque> to the visual which has a data-selector which is the <opaque>{docref XDMPath}</opaque> to the desired content.</p>
+<p>See <opaque>{docref bind}</opaque> for more information.</p>
+<p>XDMForm is a <opaque>{docref XDMDataBindingCommandContext}</opaque> and provides navigation commands for manipulating the <opaque>{docref-abbr XDMDataBindingContext.current-index}</opaque> of the <opaque>{docref-abbr XDMDataBindingContext.context-node}</opaque> in the <opaque>{docref-abbr XDMDataBindingContext.context-nodeset}</opaque>.</p>
+<p>These can be displayed using <opaque>{docref XDMDataBindingNavigationPanel}</opaque>.</p>
+<p><opaque>{ctext XDMForm}</opaque>s can be nested. The <opaque>{docref-abbr XDMDataBindingContext.model}</opaque> of the contained form can be bound to a portion of its containing form, using the <opaque>{docref-abbr XDMForm.ref}</opaque> property.</p></translation>
+<comment>XDMForm</comment>
+</string>
+
+<string>
+<original>{itemize
+            {item
+                {code CDATA} signifies an attribute defined as CDATA in an XML DTD.
+            }
+            {item
+                {code ENTITIES} signifies an attribute defined as ENTITIES in an XML DTD.
+            }
+            {item
+                {code ENTITY} signifies an attribute defined as ENTITY in an XML DTD.
+            }
+            {item
+                {code ID} signifies an attribute defined as ID in an XML DTD.
+            }
+            {item
+                {code IDREF} signifies an attribute defined as IDREF in an XML DTD.
+            }
+            {item
+                {code IDREFS} signifies an attribute defined as IDREFS in an XML DTD.
+            }
+            {item
+                {code NMTOKEN} signifies an attribute defined as NMTOKEN in an XML DTD.
+            }
+            {item
+                {code NMTOKENS} signifies an attribute defined as NMTOKENS in an XML DTD.
+            }
+            {item
+                {code NOTATION} signifies an attribute defined as NOTATION in an XML DTD.
+            }
+            {item
+                {code UNDECLARED} signifies an attribute undefined in an XML DTD.
+            }
+        }</original>
+<translation><curl name="itemize"><curl name="item"><opaque>{code CDATA}</opaque> signifies an attribute defined as CDATA in an XML DTD.</curl> <curl name="item"><opaque>{code ENTITIES}</opaque> signifies an attribute defined as ENTITIES in an XML DTD.</curl> <curl name="item"><opaque>{code ENTITY}</opaque> signifies an attribute defined as ENTITY in an XML DTD.</curl> <curl name="item"><opaque>{code ID}</opaque> signifies an attribute defined as ID in an XML DTD.</curl> <curl name="item"><opaque>{code IDREF}</opaque> signifies an attribute defined as IDREF in an XML DTD.</curl> <curl name="item"><opaque>{code IDREFS}</opaque> signifies an attribute defined as IDREFS in an XML DTD.</curl> <curl name="item"><opaque>{code NMTOKEN}</opaque> signifies an attribute defined as NMTOKEN in an XML DTD.</curl> <curl name="item"><opaque>{code NMTOKENS}</opaque> signifies an attribute defined as NMTOKENS in an XML DTD.</curl> <curl name="item"><opaque>{code NOTATION}</opaque> signifies an attribute defined as NOTATION in an XML DTD.</curl> <curl name="item"><opaque>{code UNDECLARED}</opaque> signifies an attribute undefined in an XML DTD.</curl></curl></translation>
+<comment>XDMAttributeType</comment>
+</string>
+
+<string>
+<original>{itemize
+            {item
+                {code default} is set when an attribute "xml:space = 'default'" is encoutered.
+            }
+            {item
+                {code preserve} is set when an attribute "xml:space = 'preserve'" is encoutered.
+            }
+            {item
+                {code undefined} is only used to specify the lack of an XMLSpace definition
+            }
+        }</original>
+<translation><curl name="itemize"><curl name="item"><opaque>{code default}</opaque> is set when an attribute "xml:space = 'default'" is encoutered.</curl> <curl name="item"><opaque>{code preserve}</opaque> is set when an attribute "xml:space = 'preserve'" is encoutered.</curl> <curl name="item"><opaque>{code undefined}</opaque> is only used to specify the lack of an XMLSpace definition</curl></curl></translation>
+<comment>XMLSpace</comment>
+</string>
+
+</translation-dictionary>

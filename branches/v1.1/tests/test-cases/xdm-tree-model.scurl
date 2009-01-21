@@ -1,0 +1,88 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+{import * from CURL.GUI.STANDARD}
+
+{define-proc public {verify-XDMTreeModel
+                        tm:XDMTreeModel
+                    }:(bool, {Set-of XDMNode}, {Set-of XDMNode})
+    || NOTE: assumes nondegenerate TreeModel
+    let subject:XDMNode = tm.root.node-data asa XDMNode
+    let ns:XDMNodeSet = {subject.search "descendant-or-self::node()"}
+    || subject nodes
+    let xs:{Set-of XDMNode} = {{Set-of XDMNode}}
+    {for n in ns do
+        {xs.insert n}}
+    || model nodes
+    let ys:{Set-of XDMNode} = {{Set-of XDMNode}}
+    {tm.walk-nodes
+        {proc {tn:TreeNode }:bool
+            {type-switch tn.node-data
+             case n:XDMNode do
+                {if tn isa XDMTreeNode then
+                    {ys.insert n}}}
+            {return false}}}
+    || differences
+    let xms:{Set-of XDMNode} = {xs.difference-clone ys}
+    let yms:{Set-of XDMNode} = {ys.difference-clone xs}
+    || should be none
+    let ok?:bool = xms.empty? and yms.empty?
+    {return ok?, xms, yms}
+}
+{define-proc {XDMTreeModel-test-case
+                 name:String,
+                 xml:String,
+                 path:XDMPath,
+                 action:{proc-type {XDMNode}:void}
+             }:TestCase
+    {return
+        {test-case name,
+            let doc:XDMDocument = {build-xml preserve-whitespace? = false, xml}
+            let tm:XDMTreeModel = {XDMTreeModel doc}
+            let x:XDMNode = {doc.search path}.as-XDMNode
+            {action x}
+            {TestCondition.assert message = {lmessage mismatch},
+                {verify-XDMTreeModel tm}}
+        }}
+}
+
+{value    
+    let xml:String = "<x><x1/><x2/></x>"
+    let path:XDMPath = "x/x1"
+    {TestSuite "XDMTreeModelt",
+        {XDMTreeModel-test-case "detach",
+            xml, path,
+            {proc {x:XDMNode}:void
+                {x.detach}}},
+        {XDMTreeModel-test-case "remove-child",
+            xml, path,
+            {proc {x:XDMNode}:void
+                {x.parent.remove-child x}}},
+        {XDMTreeModel-test-case "append", 
+            xml, path,
+            {proc {x:XDMNode}:void
+                {x.parent.append x}}},
+        {XDMTreeModel-test-case "insert-child",
+            xml, path,
+            {proc {x:XDMNode}:void
+                {x.parent.insert-child x, 1}}},
+        {XDMTreeModel-test-case "splice-children",
+            xml, path,
+            {proc {x:XDMNode}:void
+                {x.parent.splice-children {{Array-of XDMNode} x}, 1}}}
+    }}

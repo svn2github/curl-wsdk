@@ -1,0 +1,87 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 package}
+{package COM.CURL.WSDK.SOAP,
+    version = "1.0.8",
+    resource-directory = "../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        || Turn on maximum speed & safety.
+        stringent? = true
+    }
+}
+
+{doc
+    type = package,
+    COM.CURL.WSDK.SOAP
+    {purpose
+        The classes in this package assist developers in making
+        SOAP requests over HTTP.
+    }
+}
+
+{import * from CURL.IO.HTTP}
+{import * from CURL.XML.SAX.PARSER}
+{import * from CURL.UTIL.BASE64}
+{import * from CURL.IO.ZSTREAM}
+
+{import InstanceMaker from CURL.LANGUAGE.REFLECTION}
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import public 
+    XDMElement 
+    from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+|| replacements for built-in SOAP substrate
+{include "xml-streams.scurl"}
+
+|| SOAP processing
+{include "SOAPException.scurl"}
+{include "SOAPObjectType.scurl"}
+{include "SOAPTypeMapper.scurl"}
+{include "SOAPContext.scurl"}
+{include "BuiltinSOAPTypeMapper.scurl"}
+{include "SOAPMarshaler.scurl"}
+{include "SOAPStructMarshaler.scurl"}
+{include "SOAPArrayMarshaler.scurl"}
+{include "SOAPEnumMarshaler.scurl"}
+{include "SOAPListMarshaler.scurl"}
+{include "SOAPNamedFieldsMarshaler.scurl"}
+{include "SOAPXMLDocumentMarshaler.scurl"}
+{include "SOAPAliasMarshaler.scurl"}
+{include "SOAPMessageWriter.scurl"}
+{include "SOAPMessageReader.scurl"}
+{include "SOAPHTTP.scurl"}
+
+|| base for generated WSDL service classes
+{include "WSDLHTTPRPCPostClient.scurl"}
+
+{doc-next ||== wsdl-service-class-version
+    {purpose The format version used by generated WSDL service classes.}
+    {details Checked by {docref WSDLHTTPRPCPostClient.verify-service-version}
+        to ensure consitency.}
+}
+{let public constant wsdl-service-class-version:String = "4"}
+
+|| public alternative to Type.array?
+{define-proc package {type-isa-FastArray? t:Type}:bool
+    {return
+        {type-switch t
+         case p:ParameterizedType do p.template == FastArray-of
+         else false}}
+}
+

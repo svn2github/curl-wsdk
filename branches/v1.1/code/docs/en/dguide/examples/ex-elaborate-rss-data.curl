@@ -1,0 +1,67 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-ELABORATION}
+
+{value
+    || load XML source
+    let loc:Url = {url "wsdk-dguide.rss"}
+    let xml:XDMElement =
+        {build-xml preserve-whitespace? = false, loc}.root
+
+    || define the transformation
+    let e:XmlElaboration =
+        {xml-elaboration
+            {"rss" {version:String = "", channel:RecordSet}:RecordSet
+                || just return the channel
+                channel}
+            {"channel" {title:String = "", 
+                           link:String = "", description:String = "",
+                           ...:RecordData}:RecordSet
+                {RecordSet
+                    || explicit structure, not declared in source
+                    {RecordFields
+                        {RecordField "title", domain = String},
+                        {RecordField "description", domain = String},
+                        {RecordField "link", domain = String}},
+                    || records corresponding to items
+                    ...}}
+            || contents will be treated as keywords
+            {"item" RecordData}
+            || treat these tags as keywords
+            {"title" XmlKeywordPrototype}
+            {"link" XmlKeywordPrototype}
+            {"description" XmlKeywordPrototype}
+            || other tags will be ignored
+        }
+    
+    || transform the source
+    let recordset:RecordSet =
+        {e.elaborate xml}
+    
+    || Display the data
+    {RecordGrid 
+        width = 20cm,
+        height = 8cm,
+        alternate-row-background = "#cceecc",
+        record-source = recordset,
+        {RecordGridColumn "title", width = 6cm},
+        {RecordGridColumn "description", width = 7cm},
+        {RecordGridColumn "link", width = 6cm}}
+}

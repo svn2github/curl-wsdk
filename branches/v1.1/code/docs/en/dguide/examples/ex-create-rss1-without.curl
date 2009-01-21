@@ -1,0 +1,97 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+
+{value
+    || namespaces and xmlnames
+    let RDF:String = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    let rdf-rdf:XDMName = {XDMName RDF, "rdf"}
+    let rdf-about:XDMName = {XDMName RDF, "about"}
+    let rdf-Seq:XDMName = {XDMName RDF, "Seq"}
+    let rdf-li:XDMName = {XDMName RDF, "li"}
+    let rdf-resource:XDMName = {XDMName RDF, "resource"}
+    let RSS:String = "http://purl.org/rss/1.0/"
+    let rss-item:XDMName = {XDMName RSS, "item"}
+    let rss-items:XDMName = {XDMName RSS, "items"}
+    let rss-channel:XDMName = {XDMName RSS, "channel"}
+    let rss-title:XDMName = {XDMName RSS, "title"}
+    let rss-link:XDMName = {XDMName RSS, "link"}
+    let rss-description:XDMName = {XDMName RSS, "description"}
+    || create model
+    let location:String = {url ".."}.name
+    let xml:XDMElement =
+        {XDMElement rdf-rdf,
+            || MISSING namespace declaration attributes
+            || attributes
+            {XDMAttribute rdf-about, location},
+            || contents
+            {XDMElement rss-channel,
+                {XDMElement rss-title,
+                    "WSDK Developer's Guide"},
+                {XDMElement rss-link, location},
+                {XDMElement rss-description,
+                    "Curl Web Services Development Kit"},               
+                || index
+                {XDMElement rss-items,
+                    {XDMElement rdf-Seq,
+                        {XDMElement rdf-li,
+                            {XDMAttribute rdf-resource, "wsdk-xdm.curl"}},
+                        {XDMElement rdf-li,
+                            {XDMAttribute rdf-resource, "wsdk-wsdl.curl"}},
+                        {XDMElement rdf-li,
+                            {XDMAttribute rdf-resource, "wsdk-extras.curl"}},
+                        {XDMElement rdf-li,
+                            {XDMAttribute rdf-resource, "wsdk-standards.curl"}}
+                    }}, 
+                || items
+                {XDMElement rss-item,
+                    {XDMElement rss-title, "WSDK XML Document Model"},
+                    {XDMElement rss-link, "wsdk-xdm.curl"},
+                    {XDMElement rss-description,
+                        "working with XML"}},
+                {XDMElement rss-item,
+                    {XDMElement rss-title, "WSDK Web Services"},
+                    {XDMElement rss-link, "wsdk-wsdl.curl"},
+                    {XDMElement rss-description,
+                        "working with WSDL and SOAP"}},
+                {XDMElement rss-item,
+                    {XDMElement rss-title, "WSDK Extras"},
+                    {XDMElement rss-link, "wsdk-extras.curl"},
+                    {XDMElement rss-description,
+                        "useful adapters"}},
+                {XDMElement rss-item,
+                    {XDMElement rss-title, "WSDK Standards"},
+                    {XDMElement rss-link, "wsdk-standards.curl"},
+                    {XDMElement rss-description,
+                        "applicable standards"}
+                }}
+        }
+    {VBox
+        font-size = 8pt,
+        spacing = 2px,
+        {XDMTreeControl open? = true, xml},
+        {hrule},
+        {ScrollBox 
+            height = 3in, 
+            width = 5.5in,
+            border-width = 1px,
+            {pre {value {xml.to-XML}}}}
+    }
+}

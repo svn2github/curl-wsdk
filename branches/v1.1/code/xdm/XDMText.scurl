@@ -1,0 +1,73 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+
+{define-class public serializable StandardXDMText 
+  {inherits XDMText, StandardXDMNode}
+  field private _content:String
+
+  {getter public {content}:String
+    {return self._content}
+  }
+  {setter public {content content:StringInterface}:void
+    {self.assure-modifiable}
+    set self._content = {content.to-String}
+    {self.trigger-xdm-event {XDMNodeModified self}}
+  }
+  
+  {constructor public {default content:StringInterface}
+    set self._content = {content.to-String}
+  }
+  
+  {method public {get-text}:String
+    {return self.content}
+  }
+  
+  {getter public {xmlname}:XDMName
+    {return XDMName.text-name}
+  }
+  
+  {getter public {prefix}:String
+    {return ""}
+  }
+
+  {getter public {qualified-name}:String
+    {return self.xmlname.local-name}
+  }
+
+  {method public {concat content:StringInterface}:void
+    || NOTE: change management via setter
+    set self.content = self._content & content
+  }
+
+  {method public {clone}:StandardXDMText
+    {return {StandardXDMText self.content}}
+  }
+
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+    
+    {format-xml-string self.content, out = out}
+    
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+}

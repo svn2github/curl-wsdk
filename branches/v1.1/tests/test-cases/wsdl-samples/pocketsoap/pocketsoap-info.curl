@@ -1,0 +1,95 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}            
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+||--{include "../dguide-utils/guide-header.scurl"}
+{define-text-format docref as monospace}
+
+{include "../dguide-utils/support.scurl"}
+
+{heading ||chapter
+    ||index = {HeadingIndex primary-key="Pocketsoap Interoperability Tests"},
+    Pocketsoap Interoperability Tests
+}
+{paragraph ||summary 
+    The WSDK has been tested for interoperability using many of the tests listed
+    at {link
+           href = {url "http://www.pocketsoap.com/registration/services.aspx"},
+           Pocketsoap}.
+}
+
+{heading level = 2,
+    How the Pocketsoap Testing Area is Structured
+}
+{paragraph
+    The Pocketsoap interoperability tests are organized by round, group, and
+    subgroup, so the direcory structure here has adopted that organization.
+    Test applets are provided at the topmost level for all rounds and at the
+    round level for all groups and subgroups in that round.
+}
+{paragraph
+    Testing web services is a two stage process. First the web service's
+    description language (WSDL) file needs to be processed to generate Curl
+    sources on the client. Once these Curl source packages are in place, the
+    web service methods can be tested.
+}
+{heading level = 2,
+    Generating Curl Source Packages
+}
+{paragraph
+    The applets named t-generate-*.curl are the applets used to generate the
+    Curl source packages. These must be run from the filesystem in order to
+    write the Curl sources to disk. These generation applets take, as input,
+    a resource file (r-*.scurl) which specifies the services to generate. When
+    the generation applet is run the user can select which of these WSDL files
+    to generate. Clicking "Generate & Load" generates the Curl source package
+    for each selected WSDL file and attempts to load the package. Errors are
+    reported to the {docref RecordGrid} in the status column. A manifest
+    containing the successfully generated services is also created.
+}
+{heading level = 2,
+    Downloading WSDL Files Locally
+}
+{paragraph
+    A separate applet, t-download-pocketsoap-wsdl-files.curl, is provided as
+    a development convenience. Sometimes it is helpful to have the WSDL files
+    stored locally to avoid issues associated with connecting to a remote host,
+    especially in iterative development scenarios. This is most helpful when
+    changes are being made to code that performs the WSDL generation, but is not
+    particularly helpful when developing code that is actually making calls to
+    the live web services.
+}
+{heading level = 2,
+    Making Web Service Calls
+}
+{paragraph
+    Once the services have been represented by Curl sources (by following the
+    generation process described above) the methods the services support can be
+    tested. The applets named s-*.curl allow a user to do this and take, as
+    input, the manifest generated above. The user can select which methods to
+    test from among these services.
+}
+{paragraph
+    These applets do not write anything to disk and can be run over http or from
+    the filesystem.
+}
+
+{privilege-note}
+
+||--{curl-copyright}
+

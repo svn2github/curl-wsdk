@@ -1,0 +1,393 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+{applet manifest = "manifest.mcurl"}
+
+{include "r-pocketsoap.scurl"}
+
+{define-proc {update-import buf:StringBuf, new-import:Url}:StringBuf
+    || Find the location
+    let single-quote?:bool = false
+    let index:int = {buf.find-string "location=\""}
+    {if index != -1 then
+        || Skip past location="
+        {inc index, 10}
+     else
+        || Maybe they used a space
+        set index = {buf.find-string "location =\""}
+        {if index != -1 then
+            || Skip past location ="
+            {inc index, 11}
+         else
+            || Maybe they used 2 spaces
+            set index = {buf.find-string "location = \""}
+            {if index != -1 then
+                || Skip past location = "
+                {inc index, 12}
+             else
+                || Maybe they used a single quote
+                set index = {buf.find-string "location=\'"}
+                {if index != -1 then
+                    set single-quote? = true
+                    || Skip past location='
+                    {inc index, 10}
+                 else
+                    || Maybe they used a space
+                    set index = {buf.find-string "location =\'"}
+                    {if index != -1 then
+                        set single-quote? = true
+                        || Skip past location ='
+                        {inc index, 11}
+                     else
+                        || Maybe they used 2 spaces
+                        set index = {buf.find-string "location = \'"}
+                        {if index != -1 then
+                            set single-quote? = true
+                            || Skip past location = '
+                            {inc index, 12}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    || If index is still -1 at this point, then the buffer is wrong, somehow
+    let close-quote-index:int =
+        {if single-quote? then
+            {buf.find-string "\'", starting-index = index}
+         else
+            {buf.find-string "\"", starting-index = index}
+        }
+    || Extract the leading string
+    let str1:String = {buf.substr 0, index}
+    || Prepare the new location string
+    let location-str:String = new-import.filename
+    || Extract the trailing string
+    let str2:String =
+        {buf.substr close-quote-index, buf.size - close-quote-index}
+    || Build the return string
+    let ret-buf:StringBuf = {new StringBuf, str1 & location-str & str2}
+    {return ret-buf}
+}
+
+{define-proc {uniquify-import-out-url iu:Url, us:UrlArray, q:int}:Url
+    let ru:Url = iu
+    {for u in us do
+        {if ru == u then
+            set ru = {get-import-out-url iu, q}
+            set ru = {uniquify-import-out-url ru, us, q + 1}
+        }
+    }
+    {return ru}
+}
+
+{define-proc {get-import-out-url u:Url, uniquifier:int}:Url
+    let basename:String = u.basename
+    let extension:String = u.extension
+    set basename = basename & uniquifier
+    let filename:String = basename & extension
+    {return {u.merge filename}}
+}
+
+{define-proc {get-location buf:StringBuf}:String
+    let single-quote?:bool = false
+    let index:int = {buf.find-string "location=\""}
+    {if index != -1 then
+        || Skip past location="
+        {inc index, 10}
+     else
+        || Maybe they used a space
+        set index = {buf.find-string "location =\""}
+        {if index != -1 then
+            || Skip past location ="
+            {inc index, 11}
+         else
+            || Maybe they used 2 spaces
+            set index = {buf.find-string "location = \""}
+            {if index != -1 then
+                || Skip past location = "
+                {inc index, 12}
+             else
+                || Maybe they used a single quote
+                set index = {buf.find-string "location=\'"}
+                {if index != -1 then
+                    set single-quote? = true
+                    || Skip past location='
+                    {inc index, 10}
+                 else
+                    || Maybe they used a space
+                    set index = {buf.find-string "location =\'"}
+                    {if index != -1 then
+                        set single-quote? = true
+                        || Skip past location ='
+                        {inc index, 11}
+                     else
+                        || Maybe they used 2 spaces
+                        set index = {buf.find-string "location = \'"}
+                        {if index != -1 then
+                            set single-quote? = true
+                            || Skip past location = '
+                            {inc index, 12}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    || If index is still -1 at this point, then the buffer is wrong, somehow
+    let close-quote-index:int =
+        {if single-quote? then
+            {buf.find-string "\'", starting-index = index}
+         else
+            {buf.find-string "\"", starting-index = index}
+        }
+    let ret-str:String = {buf.substr index, (close-quote-index - index)}
+    {return ret-str}
+}
+
+{define-proc {create-path u:Url}
+    {if-non-null u.local-filename then
+        {try
+            {u.parent-dir.url.resolve}
+         catch mfe:MissingFileException do
+            {try
+                {create-Directory
+                    u.parent-dir.url,
+                    create-missing-parents? = true
+                }
+             catch e:Exception do
+                {popup-message e}
+            }
+        }
+     else
+        {popup-message "The target url must represent a local file."}
+    }
+}
+
+{define-proc {write-wsdl-file in:Url, out:Url}:String
+    {create-path out}
+    let import-table:{HashTable-of Url, Url} =
+        {new {HashTable-of Url, Url}}
+    let ret-str:String = "Succeeded"
+    let tis:#TextInputStream
+    let tos:#TextOutputStream
+    {try
+        set tis = {read-open in}
+||--        set tos = {write-open error-if-exists? = true, out}
+        set tos = {write-open out}
+        let buf:#StringBuf = {tis.read-line}
+        {while buf != null do
+            || If another file was imported, get it and write it out as well.
+            || NOTE: Try to put it in the appropriate relative location
+            || NOTE: In some cases, the location may need to be
+            ||       modified in the import line. E.G., if the location
+            ||       is an http location, the local file will need to
+            ||       change that to refer to a local file.
+            {if {buf.find-string "<import"} != -1 or
+                {buf.find-string "<wsdl:import"} != -1
+             then
+                {if {buf.find-string "location"} != -1 then
+                    || Keep track of the Urls we're writing
+                    || to so we can prevent duplicates.
+                    let output-urls:UrlArray = {new UrlArray, out}
+
+                    || Get the location string from the import
+                    let import-in-str:String = {get-location {non-null buf}}
+                    || Create a Url from it. This Url will either be remote
+                    || or local, and we respond differently to each.
+                    let import-in:Url = {url import-in-str}
+                    let import-out:Url = {url ""}
+                    || Use wsdl-writer-import-url in the call to write-wsdl-file
+                    let wsdl-writer-import-url:Url = import-in
+                    {if-non-null import-in.local-filename then
+                        || The import location was relative, so we want the
+                        || import's output Url to be relative to WSDL file's Url
+                        || NOTE: This isn't entirely necessary, but it's
+                        ||       slightly more consistent with the original
+                        ||       WSDL file's approach to the import, and saves
+                        ||       some work modifying the WSDL file (see below).
+                        set import-out = {out.merge import-in-str}
+                        set wsdl-writer-import-url = {in.merge import-in-str}
+                     else
+                        || The import location was remote, so we don't care
+                        || about relativity. The import's output Url can be
+                        || in the same directory as the WSDL file's Url.
+                        set import-out = {out.merge import-in.filename}
+                        || Update the WSDL file's import
+                        || line to point to the new file
+                        set buf = {update-import {non-null buf}, import-out}
+                    }
+                    || Now make sure the output Url is
+                    || unique so nothing is overwritten.
+                    let uniquifier:int = 0
+                    set import-out = {uniquify-import-out-url
+                                         import-out, output-urls, uniquifier}
+                    || Now append the new and unique Url to the list of Urls
+                    {output-urls.append import-out}
+
+                    || Make sure the directory we're writing to exists
+                    let dir-url:Url = {url import-out.parent-dir-name}
+                    {try
+                        {dir-url.resolve}
+                     catch mfe:MissingFileException do
+                        {create-Directory
+                            dir-url,
+                            create-missing-parents? = true,
+                            error-if-exists? = false
+                        }
+                    }
+
+                    || Save off the import file to be written later
+                    || NOTE: I've done it this way instead of recursively
+                    ||       to avoid having too many HttpConnections open.
+                    set import-table[wsdl-writer-import-url] = import-out
+                }
+            }
+            {tos.write-one-string {non-null buf}}
+            {tos.write-one-string "\n"}
+            set buf = {tis.read-line}
+        }
+     catch e:Exception do
+        set ret-str = {String e}
+     finally
+        {if-non-null tis then
+            {tis.close}
+        }
+        {if-non-null tos then
+            {tos.close}
+        }
+    }
+    {for outu key inu in import-table do
+        {write-wsdl-file inu, outu}
+    }
+    {return ret-str}
+}
+
+{define-proc {get-loc-and-sloc r:Record}:(loc:Url, sloc:Url)
+    let tloc:Url = {url "./foo"}
+    let loc:Url = {url r["wsdl"]}
+    let server:String = r["server"]
+    set tloc = {url "./" & server & "/"}
+    let fname:String =
+        {if not loc.filename.empty? then
+            loc.filename
+         else
+            let index:int =
+                {server.find search-direction = "backward", '/'}
+            {if index != -1 then
+                {if index < server.size then
+                    {server.tail index + 1}
+                 else
+                    {server.tail index}
+                }
+             else
+                server
+            }
+        }
+    let sloc:Url = {{tloc.set-filename fname}.set-extension ".wsdl"}
+    {return loc, sloc}
+}
+
+{value
+    let results:RecordSet =
+        {RecordSet
+            {RecordFields
+                {RecordField "Download?", domain = bool, default-value = true},
+                {RecordField "server", domain = String},
+                {RecordField "wsdl", domain = String},
+                {RecordField "file", domain = String},
+                {RecordField "status", domain = String}
+            }
+        }
+
+    {for r in pocketsoap-impls do
+        let server:String = r["server"]
+        let (loc:Url, sloc:Url) = {get-loc-and-sloc r}
+
+        let data:RecordData =
+            {RecordData
+                server = server,
+                wsdl = loc.name,
+                file = sloc.filename
+            }
+
+        {results.append data}
+    }
+    let rg:RecordGrid = 
+        {RecordGrid 
+            record-source = results,
+            height = 3.5in,
+            width = {make-elastic},
+            automatic-columns? = false,
+            {RecordGridColumn "Download?", width = .75in},
+            {RecordGridColumn "server", width = 1.5in},
+            {RecordGridColumn "wsdl", width = 2.5in},
+            {RecordGridColumn "file", width = 1.75in},
+            {RecordGridColumn "status", width = {make-elastic}}
+        }
+    {VBox
+        spacing = 3px,
+        hstretch? = true,
+        {text-width-display rg},
+        {HBox
+            {Fill},
+            {CommandButton label = "Select All",
+                {on Action do
+                    {for res in results do
+                        set res["Download?"] = true
+                    }
+                }
+            },
+            {CommandButton label = "Deselect All",
+                {on Action do
+                    {for res in results do
+                        set res["Download?"] = false
+                    }
+                }
+            },
+            {Fill}
+        },
+        {HBox
+            {Fill},
+            {CommandButton label = "Download",
+                {on Action do
+                    {for res in results do
+                        set res["status"]= ""
+                    }
+                    {dispatch-events false}
+                    let rv:RecordView =
+                        {new RecordView,
+                            results,
+                            filter = {new RecordData, Download? = true}
+                        }
+                    || Download
+                    {for r in rv do
+                        let (loc:Url, sloc:Url) = {get-loc-and-sloc r}
+                        {try
+                            let status:String = {write-wsdl-file loc, sloc}
+                            set r["status"] = status
+                         catch e:Exception do
+                            set r["status"] = {String e}
+                        }
+                        {dispatch-events false}
+                    }
+                }
+            },
+            {Fill}
+        }
+    }
+}

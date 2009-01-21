@@ -1,0 +1,524 @@
+<ROOT xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+
+  <GROUP name='primitives'>
+    <CASE name='int'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:integer'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>1</CURL>
+      <CURL>0</CURL>
+      <CURL>-1</CURL>
+    </CASE>            
+    <CASE name='bool'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:boolean'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>true</CURL>
+      <CURL>false</CURL>
+    </CASE>            
+    <CASE name='double'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:double'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>12.3</CURL>
+      <CURL>12.3E02</CURL>
+      <CURL>12.3E-02</CURL>
+      <CURL>-12.3</CURL>
+      <CURL>-12.3E02</CURL>
+      <CURL>-12.3E-02</CURL>
+    </CASE>            
+    <CASE name='String'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:string'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>"foo"</CURL>
+      <CURL name="Empty">""</CURL>
+    </CASE>            
+    <CASE name='dateTime'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:dateTime'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>
+        {DateTime "2005-11-01 12:34"}
+      </CURL>
+    </CASE> 
+    <CASE name='date'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:date'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>
+        {DateTime.date "2005-11-01"}
+      </CURL>
+    </CASE>            
+    <CASE name='time'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:time'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>
+        {XMLSimpleValue "12:34", {XMLSimpleType {XDMName "http://www.w3.org/2001/XMLSchema", "time"}}}
+        ||{{XMLSimpleValue-for "time"} "12:34"}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='structs'>
+    <CASE name='Struct'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1"}
+      </CURL>
+    </CASE>            
+    <CASE name='StructN'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1"}
+      </CURL>
+      <CURL>
+        {Test.from-keywords id = null}
+      </CURL>
+    </CASE>              
+    <CASE name='Struct01'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string' minOccurs='0' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1"}
+      </CURL>
+    </CASE>            
+    <CASE name='Struct11'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string' minOccurs='1' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1"}
+      </CURL>
+    </CASE>            
+    <CASE name='Struct01N'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string' minOccurs='0' maxOccurs='1' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1"}
+      </CURL>
+    </CASE>            
+    <CASE name='Struct11N'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string' minOccurs='1' maxOccurs='1' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1"}
+      </CURL>
+    </CASE>            
+    <CASE name='AnonymousType'>
+      <XSD>
+        <xs:element name='Foo'>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name='ID' type='xs:string'/> 
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='Foo'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords foo = {Foo.from-keywords id = "001"}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  
+  <GROUP name='nullable primitives'>
+    <CASE name='Struct01_'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:int' minOccurs='0' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = 1}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+    </CASE> 
+    <CASE name='Struct11N_'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:int' minOccurs='1' maxOccurs='1' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = 1}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+    </CASE> 
+    <CASE name='StructEnum'>
+      <XSD>
+        <xs:simpleType name='Status'>
+          <xs:restriction base='xs:string'>
+            <xs:enumeration value='a'/>
+            <xs:enumeration value='b'/>
+            <xs:enumeration value='c'/>
+          </xs:restriction>
+        </xs:simpleType>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='status' type='Status' minOccurs='0' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords status = "a"}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='optional element'>
+    <CASE name='optional element'>
+      <XSD>
+        <xs:element name='q' type='xs:string'/>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='q' minOccurs='0'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q="Q"}
+      </CURL>
+      <CURL name='missing'>
+        {Test.from-keywords}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords q = null}
+      </CURL>
+    </CASE>
+    <CASE name='nillable element'>
+      <XSD>
+        <xs:element name='q' type='xs:string'/>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='q' nillable='true'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords}
+      </CURL>
+    </CASE>
+    <CASE name='nillable toplevel element missing'>
+      <XSD>
+        <xs:element name='q' type='xs:string' nillable='true'/>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='q'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL name='null'>
+        {Test.from-keywords q = "Q"}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords q = null}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='nested elements'>
+    <CASE name='nested elements'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:int'/>
+
+            <xs:element name='AddressInfo'>
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name='ID' type='xs:int'/>
+                  <xs:element name='Address'>
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name='Address' type='xs:string'/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+
+            <xs:element name='ContactInfo'>
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name='ID' type='xs:int'/>
+                  <xs:element name='Address'>
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name='Address' type='xs:anyURI'/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>        
+      <CURL>
+        {Test.from-keywords id = 1, address-info = 
+        {AddressInfo.from-keywords address = 
+        {Address.from-keywords address = "anywhere"}}, contact-info = 
+        {ContactInfo.from-keywords address =
+        {Address01.from-keywords address = {url "http://example.com"}}}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='attributes'>
+    <CASE name='attribute'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+          <xs:attribute name='ID' type='xs:string'/> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1", name = "foo"}
+      </CURL>
+    </CASE>            
+    <CASE name='attribute-ref'>
+      <XSD>
+        <xs:attribute name='ID' type='xs:string'/> 
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+          <xs:attribute ref='ID'/> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1", name = "foo"}
+      </CURL>
+    </CASE>            
+    <CASE name='attribute-ref-t'>
+      <XSD>
+        <xs:attribute name='ID' type='xs:string'/> 
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+          <xs:attribute ref='t:ID'/> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1", name = "foo"}
+      </CURL>
+    </CASE>            
+    <CASE name='attribute-ref-tt'>
+      <XSD>
+        <xs:attribute name='ID' type='xs:string'/> 
+        <xs:complexType name='Foo'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+          <xs:attribute ref='t:ID'/> 
+        </xs:complexType>
+        <xs:complexType name='Bar'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+          <xs:attribute ref='t:ID'/> 
+        </xs:complexType>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='foo' type='Foo'/> 
+            <xs:element name='bar' type='Bar'/> 
+          </xs:sequence> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords foo = {Foo.from-keywords id = "1", name = "x"}, bar = {Bar.from-keywords id = "1", name = "y"}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='attribute group'>
+    <CASE name='single attribute'>
+      <XSD>
+        <xs:attributeGroup name='EntityId'>
+          <xs:attribute name='id' type='xs:string'/>
+        </xs:attributeGroup>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Description' type='xs:string'/>
+          </xs:sequence>
+          <xs:attributeGroup ref='EntityId'/>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords description = "this", id = "001"}
+      </CURL>
+    </CASE>
+    <CASE name='three attributes'>
+      <XSD>
+        <xs:attributeGroup name='PaginatedListAttributes'>
+          <xs:attribute type='xs:int' name='count'/>
+          <xs:attribute type='xs:int' name='totalRecordCount'/>
+          <xs:attribute type='xs:int' name='startIndex'/>
+        </xs:attributeGroup>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='val' type='xs:string' minOccurs='0' maxOccurs='unbounded'/>
+          </xs:sequence>
+          <xs:attributeGroup ref='PaginatedListAttributes'/>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords count = 1, start-index = 1, total-record-count = 10, val = 
+        {{Array-of String} "this"}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='simpleContent'>
+    <CASE name='simpleContent'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'/> 
+          </xs:simpleContent>
+          <xs:attribute name='ID' type='xs:string'/> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1", content = "foo"}
+      </CURL>
+    </CASE>            
+    <CASE name='simpleContentList'>
+      <XSD>
+        <xs:simpleType name='Foo'>
+          <xs:list>
+            <xs:simpleType>
+              <xs:restriction base='xs:string'>
+                <xs:enumeration value='A'/>
+                <xs:enumeration value='B'/>
+                <xs:enumeration value='C'/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:list>
+        </xs:simpleType>
+        <xs:complexType name='test'>
+          <xs:simpleContent>
+            <xs:extension base='Foo'/> 
+          </xs:simpleContent>
+          <xs:attribute name='ID' type='xs:string'/> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1", content = {Foo "A", "B"}}
+      </CURL>
+      <CURL name='empty'>
+        {Test.from-keywords id = "1", content = {Foo}}
+      </CURL>
+    </CASE>
+  </GROUP>
+  
+  <GROUP name='lists'>
+    <CASE name='ListEnum'>
+      <XSD>
+        <xs:simpleType name='Theme'>
+          <xs:restriction base='xs:string'>
+            <xs:enumeration value='A'/>
+            <xs:enumeration value='B'/>
+            <xs:enumeration value='C'/>
+          </xs:restriction>
+        </xs:simpleType>
+        <xs:simpleType name='test'>
+          <xs:list itemType='Theme'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>
+        {{Array-of Theme} Theme.a, Theme.b}
+      </CURL>
+    </CASE>
+    <CASE name='AnonymousListEnum'>
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:list>
+            <xs:simpleType>
+              <xs:restriction base='xs:string'>
+                <xs:enumeration value='A'/>
+                <xs:enumeration value='B'/>
+                <xs:enumeration value='C'/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:list>
+        </xs:simpleType>
+      </XSD>
+      <CURL>
+        {StringArray "A", "B"}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+</ROOT>

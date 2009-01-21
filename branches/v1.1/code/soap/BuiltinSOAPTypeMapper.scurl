@@ -1,0 +1,3825 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class package sealed BuiltinSOAPTypeMapper
+  {inherits TableSOAPTypeMapper}
+
+  || leave these as package...
+  {let package constant old-xml-schema-instance-uri:String =
+    "http://www.w3.org/1999/XMLSchema-instance"
+  }
+  {let public constant old-xml-schema-uri:String =
+    "http://www.w3.org/1999/XMLSchema"
+  }
+  || do not make public
+  {let package constant old-xml-schema-type:XMLName =
+    {new XMLName, BuiltinSOAPTypeMapper.old-xml-schema-instance-uri, "type"},
+  }
+  || do not make public
+  {let package constant old-xml-schema-instance-nil:XMLName =
+    {new XMLName, BuiltinSOAPTypeMapper.old-xml-schema-instance-uri, "nil"},
+  }
+
+
+  || FIXME add other string types
+  || FIXME do subclasses of string... (all go through normalized,
+  || so need to add normalize support first) (NMTOKEN etc)
+  || Should any of the string subclasses be doable to/from XMLName?
+  || Or for the plural ones, to arrays of strings?
+
+
+  {constructor package {default
+                       }
+    {construct-super.TableSOAPTypeMapper}
+
+
+    || FIXME: make big tables so that there is just one loop for all
+    || standard multiple curl-types to one xml-type and a few others for
+    || custom stuff.
+
+    || short cut to let us loop over all similar types
+    let constant real-xml-types:{FastArray-of XMLName} =
+        {new {FastArray-of XMLName},
+            SOAPTypeMapper.xml-schema-float-type,
+            SOAPTypeMapper.xml-schema-double-type,
+            SOAPTypeMapper.xml-schema-decimal-type
+        }
+    let constant real-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            float asa Type,
+            double asa Type,
+            any asa Type,
+            Null
+        }
+    {for curl-type in real-curl-types do
+        {for xml-type in real-xml-types do
+            {self.set-marshal-proc
+                {new SOAPObjectType,
+                    xml-type = xml-type,
+                    curl-type = curl-type
+                },
+                null,
+                float-double-marshal-proc
+            }
+            {self.set-unmarshal-proc
+                {new SOAPObjectType,
+                    xml-type = xml-type,
+                    curl-type = curl-type
+                },
+                null,
+                float-double-unmarshal-proc
+            }
+        }
+    }
+
+    || short cut to let us loop over all similar types
+    let constant integral-xml-types:{FastArray-of XMLName} =
+        {new {FastArray-of XMLName},
+            SOAPTypeMapper.xml-schema-integer-type,
+            SOAPTypeMapper.xml-schema-long-type,
+            SOAPTypeMapper.xml-schema-int-type,
+            SOAPTypeMapper.xml-schema-non-negative-integer-type,
+            SOAPTypeMapper.xml-schema-non-positive-integer-type,
+            SOAPTypeMapper.xml-schema-negative-integer-type,
+            SOAPTypeMapper.xml-schema-positive-integer-type,
+            SOAPTypeMapper.xml-schema-unsigned-int-type,
+            SOAPTypeMapper.xml-schema-unsigned-long-type,
+
+            SOAPTypeMapper.xml-schema-short-type,
+            SOAPTypeMapper.xml-schema-byte-type,
+            SOAPTypeMapper.xml-schema-unsigned-short-type,
+            SOAPTypeMapper.xml-schema-unsigned-byte-type
+        }
+    || offset of items in integral-curl-types verses their match in
+    || integral-xml-type
+    let constant specific-integral-curl-types-offset:int = 9
+    let constant specific-integral-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            (int16 asa Type),
+            (int8 asa Type),
+            (uint16 asa Type),
+            (uint8 asa Type)
+        }
+    let constant general-integral-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            int64 asa Type,
+            || FIXME: we end up putting an int64 in here all of the time,
+            || really it should be a type that better matches the curl type
+            any asa Type,
+            int asa Type,
+            Null
+        }
+    {for curl-type in general-integral-curl-types do
+        {for xml-type in integral-xml-types do
+            {self.set-marshal-proc
+                {new SOAPObjectType,
+                    xml-type = xml-type,
+                    curl-type = curl-type
+                },
+                null,
+                any-int-marshal-proc
+            }
+            {self.set-unmarshal-proc
+                {new SOAPObjectType,
+                    xml-type = xml-type,
+                    curl-type = curl-type
+                },
+                null,
+                any-int-unmarshal-proc
+            }
+        }
+    }
+
+    || now add mappings for the smaller int types
+    {for curl-type key i:int in specific-integral-curl-types do
+        let constant xml-type:XMLName =
+            integral-xml-types[i + specific-integral-curl-types-offset]
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type = xml-type,
+                curl-type = curl-type
+            },
+            null,
+            any-int-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type = xml-type,
+                curl-type = curl-type
+            },
+            null,
+            any-int-unmarshal-proc
+        }
+    }
+
+    let constant string-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            String,
+            StringBuf,
+            StringInterface,
+            Null
+        }
+    {for curl-type key i:int in string-curl-types do
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type = SOAPTypeMapper.xml-schema-string-type,
+                curl-type = curl-type
+            },
+            null,
+            any-string-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type = SOAPTypeMapper.xml-schema-string-type,
+                curl-type = curl-type
+            },
+            null,
+            any-string-unmarshal-proc
+        }
+    }
+    || short cut to let us loop over all similar any types
+    let constant any-xml-types:{FastArray-of XMLName} =
+        {new {FastArray-of XMLName},
+||--            SOAPTypeMapper.xml-schema-any-type,
+            SOAPTypeMapper.xml-schema-any-simple-type,
+            SOAPTypeMapper.xml-schema-simple-type,
+            SOAPTypeMapper.xml-schema-complex-type
+        }
+    || FIXME should we also do Object or #Object as an any type?
+    || (Right now there is no searching of the class hierarchy so
+    || someone would have to ask for that in their type, the
+    || xml-type-to-curl-type mappers will not ever come up with that.)
+    {for xml-type in any-xml-types do
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type = xml-type,
+                curl-type = (any asa Type)
+            },
+            null,
+            any-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type = xml-type,
+                curl-type = (any asa Type)
+            },
+            null,
+            any-unmarshal-proc
+        }
+    }
+    let constant binary-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            ByteVec,
+            {Array-of byte},
+            {FastArray-of int8},
+            {Array-of int8}
+        }
+    let constant base64-binary-xml-types:{FastArray-of XMLName} =
+        {new {FastArray-of XMLName},
+            SOAPTypeMapper.soap-1-1-encoding-base64-type,
+            SOAPTypeMapper.xml-schema-base64-binary-type
+        }
+    {for curl-type in binary-curl-types do
+        {for base64-xml-type in base64-binary-xml-types do
+            {self.set-marshal-proc
+                {new SOAPObjectType,
+                    xml-type = base64-xml-type,
+                    curl-type = curl-type
+                },
+                null,
+                base64-binary-marshal-proc
+            }
+            {self.set-unmarshal-proc
+                {new SOAPObjectType,
+                    xml-type = base64-xml-type,
+                    curl-type = curl-type
+                },
+                null,
+                base64-binary-unmarshal-proc
+            }
+        }
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-hex-binary-type,
+                curl-type = curl-type
+            },
+            null,
+            hex-binary-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-hex-binary-type,
+                curl-type = curl-type
+            },
+            null,
+            hex-binary-unmarshal-proc
+        }
+    }
+    let constant boolean-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            bool,
+            int64,
+            int,
+            uint16,
+            int16,
+            byte,
+            String
+        }
+
+    {for curl-type in boolean-curl-types do
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-boolean-type,
+                curl-type = curl-type
+            },
+            null,
+            boolean-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-boolean-type,
+                curl-type = curl-type
+            },
+            null,
+            boolean-unmarshal-proc
+        }
+    }
+    let constant datetime-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            DateTime,
+            DateTimeData,
+            DateTimeInfo
+        }
+    {for curl-type in datetime-curl-types do
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-datetime-type,
+                curl-type = curl-type
+            },
+            null,
+            datetime-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-datetime-type,
+                curl-type = curl-type
+            },
+            null,
+            datetime-unmarshal-proc
+        }
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-date-type,
+                curl-type = curl-type
+            },
+            null,
+            datetime-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-date-type,
+                curl-type = curl-type
+            },
+            null,
+            datetime-unmarshal-proc
+        }
+    }
+    let constant anyuri-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            String,
+            Url,
+||--            SimpleUrl,
+            PrivilegedUrl
+        }
+    {for curl-type in anyuri-curl-types do
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-anyuri-type,
+                curl-type = curl-type
+            },
+            null,
+            uri-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-anyuri-type,
+                curl-type = curl-type
+            },
+            null,
+            uri-unmarshal-proc
+        }
+    }
+    || FIXME: should String really be in here...
+    let constant qname-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+            XMLName,
+            String
+        }
+    {for curl-type in qname-curl-types do
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-qname-type,
+                curl-type = curl-type
+            },
+            null,
+            qname-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type =
+                    SOAPTypeMapper.xml-schema-qname-type,
+                curl-type = curl-type
+            },
+            null,
+            qname-unmarshal-proc
+        }
+    }
+    || XMLSimpleValue types
+    {for xml-type in BuiltinSOAPTypeMapper.simple-xml-types do
+        let t:Type = {XMLSimpleValue-for.construct xml-type.local-name}
+        {self.set-marshal-proc
+            {new SOAPObjectType,
+                xml-type = xml-type,
+                curl-type = t
+            },
+            null,
+            any-simple-xml-value-marshal-proc
+        }
+        {self.set-unmarshal-proc
+            {new SOAPObjectType,
+                xml-type = xml-type,
+                curl-type = t
+            },
+            null,
+            any-simple-xml-value-unmarshal-proc
+        }
+    }
+
+  }
+  
+  let constant package simple-xml-types:{FastArray-of XMLName} =
+      {new {FastArray-of XMLName},
+        || now "date" uses DateTime.date
+||--        {XMLName SOAPTypeMapper.xml-schema-uri, "date"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "time"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "duration"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gYear"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gYearMonth"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gMonth"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gMonthDay"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "Day"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "normalizedString"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "token"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "language"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "Name"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "NCName"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "ENTITY"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "ENTITIES"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKEN"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKENS"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "ID"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "IDREF"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "IDREFS"}
+        
+      }
+
+||--  || tell if type looks like one of the non-specific mappings
+||--  {define-proc package {strange-curl-type? curl-type:#Type}:bool
+||--    {return
+||--        curl-type == null or
+||--        curl-type == Null or
+||--        curl-type == (any asa Type) or
+||--        curl-type == (Arguments asa Type) or
+||--        curl-type == ({Array-of any} asa Type) or
+||--        curl-type == ({FastArray-of any} asa Type) or
+||--        curl-type == ({HashTable-of String, any} asa Type) or
+||--        curl-type == ({Array-of XMLToken} asa Type)
+||--    }
+||--  }
+||--
+||--  || tell if type looks like one of the non-specific mappings
+||--  {define-proc package {strange-xml-type? xml-type:#XMLName}:bool
+||--    || FIXME: get name spaces, add other values...
+||--    {return
+||--        xml-type == null or
+||--        xml-type.local-name == "anyType" or
+||--        xml-type.local-name == "anySimpleType" or
+||--        xml-type.local-name == "simpleType" or
+||--        xml-type.local-name == "complexType" or
+||--        xml-type.local-name == "element"
+||--    }
+||--  }
+
+  {method public open {marshal
+                          stream:XMLOutputStream,
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          marshal-context:SOAPMarshalContext,
+                            || should this default to self?
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          || should mapper do this?
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:void
+    {if type.xml-type.namespace == BuiltinSOAPTypeMapper.old-xml-schema-uri
+     then
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                xml-type =
+                    {new XMLName,
+                        SOAPTypeMapper.xml-schema-uri,
+                        type.xml-type.local-name
+                    }
+            }
+    }
+    let marshal-proc:#SOAPTypeMapper.MarshalProc =
+        {self.get-marshal-proc type, encoding}
+    {if marshal-proc == null and
+        ({type.xml-type.local-name.find '\['} >= 0 or 
+         type.xml-type == SOAPArrayMarshaler.soap-1-1-array-type-name)
+     then
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {new SOAPArrayMarshaler,
+                type,
+                curl-type-to-xml-type = curl-type-to-xml-type
+            }
+        {array-marshaler.type-mapper-register
+            self, marshal? = true, unmarshal? = false
+        }
+        set marshal-proc = {self.get-marshal-proc type, encoding}
+    }
+    || if it is SOAP-ENC xml-type, then just treat it like they said
+    || SOAPTypeMapper.xml-schema-uri
+    {if marshal-proc == null and
+        type.xml-type.namespace == SOAPTypeMapper.soap-1-1-encoding-uri
+     then
+        set marshal-proc =
+            {self.get-marshal-proc
+                {SOAPObjectType.clone-with
+                    type,
+                    xml-type =
+                        {new XMLName,
+                            SOAPTypeMapper.xml-schema-uri,
+                            type.xml-type.local-name
+                        }
+                },
+                encoding
+            }
+    }
+    || if we found a marshal-proc, try and run it
+    {if-non-null marshal-proc then
+        let constant worked?:bool =
+            {marshal-proc
+                stream,
+                value,
+                type,
+                encoding,
+                marshal-context,
+                current-mapper,
+                curl-type-to-xml-type,
+                write-type-attribute? = write-type-attribute?,
+                multiple-reference = multiple-reference
+            }
+        || if it worked, return
+        {if worked? then
+            {return}
+        }
+    }
+    {throw-marshal-exception
+        {lformat
+            "Could not find a way to marshal %s to %y.",
+            type.curl-type, type.xml-type
+        }
+    }
+  }
+
+  {method public open {unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          unmarshal-context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper, || NOT in unmarshal
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:any
+    {if type.xml-type.namespace == BuiltinSOAPTypeMapper.old-xml-schema-uri
+     then
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                xml-type =
+                    {new XMLName,
+                        SOAPTypeMapper.xml-schema-uri,
+                        type.xml-type.local-name
+                    }
+            }
+    }
+    let unmarshal-proc:#SOAPTypeMapper.UnmarshalProc =
+        {self.get-unmarshal-proc type, encoding}
+
+    {if unmarshal-proc == null and
+        {type.xml-type.local-name.find '\['} >= 0
+     then
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {new SOAPArrayMarshaler,
+                type,
+                xml-type-to-curl-type = xml-type-to-curl-type
+            }
+        {array-marshaler.type-mapper-register
+            self, unmarshal? = true, marshal? = false
+        }
+        set unmarshal-proc = {self.get-unmarshal-proc type, encoding}
+    }
+
+    {if unmarshal-proc == null and
+        type.xml-type == SOAPArrayMarshaler.soap-1-1-array-type-name
+     then
+        set unmarshal-proc = builtin-arraytype-unmarshal-proc
+    }
+    {if unmarshal-proc == null and
+        type.xml-type.namespace == SOAPTypeMapper.soap-1-1-encoding-uri
+     then
+        set unmarshal-proc =
+            {self.get-unmarshal-proc
+                {SOAPObjectType.clone-with
+                    type,
+                    xml-type =
+                        {new XMLName,
+                            SOAPTypeMapper.xml-schema-uri,
+                            type.xml-type.local-name
+                        }
+                },
+                encoding
+            }
+    }
+
+    || if we found an unmarshal-proc, try and run it
+    {if-non-null unmarshal-proc then
+        let constant (ret:any, worked?:bool) =
+            {unmarshal-proc
+                stream,
+                attributes,
+                type,
+                encoding,
+                unmarshal-context,
+                current-mapper,
+                xml-type-to-curl-type,
+                check-type-attribute? = check-type-attribute?
+            }
+        || if it worked, return value unmarshaled
+        {if worked? then
+            {return ret}
+        }
+    }
+    {throw-unmarshal-exception
+        {lformat
+            "No unmarshal proc found for %y to %s.",
+            type.xml-type, type.curl-type.name
+        }
+    }
+  }
+
+}
+
+{let public constant builtin-soap-type-mapper:SOAPTypeMapper =
+    {new BuiltinSOAPTypeMapper}
+}
+
+{define-proc package {marshal-type-check
+                         type:SOAPObjectType
+                     }:void
+    {if type.xml-type == null then
+        {throw-marshal-exception
+            {localize "XML type must not be null for marshaling."}
+        }
+    }
+    {if type.curl-type == null then
+        {throw-marshal-exception
+            {localize "Curl type must not be null for marshaling."}
+        }
+    }
+}
+
+{define-proc package {unmarshal-type-check
+                         type:SOAPObjectType
+                     }:void
+    {if type.xml-type == null then
+        {throw-unmarshal-exception
+            {localize "XML type must not be null for unmarshaling."}
+        }
+    }
+    {if type.curl-type == null then
+        {throw-unmarshal-exception
+            {localize "Curl type must not be null for unmarshaling."}
+        }
+    }
+}
+
+
+{define-proc package {marshal-write-type-attribute
+                        stream:XMLOutputStream, type:SOAPObjectType
+                     }:void
+    {stream.write-one
+        {new XMLAttribute.with-xml-name-values,
+            SOAPTypeMapper.xml-schema-type,
+            {new {Array-of XMLName}, {non-null type.xml-type}}
+        }
+    }
+}
+
+|| Should this take the type and insist that it be nillable? ?
+{define-proc package {marshal-write-nil-type
+                        stream:XMLOutputStream,
+                        type:SOAPObjectType
+                     }:void
+    {if not type.nillable? then
+        {throw-marshal-exception
+            {localize "XML type does not allow null, but value is null."}
+        }
+    }
+    {stream.write-one
+        {new XMLAttribute,
+            SOAPTypeMapper.xml-schema-instance-nil,
+            "true"
+        }
+    }
+}
+
+{define-proc package {unmarshal-check-type-attribute
+                        attributes:{Array-of XMLAttribute},
+                        xml-type:XMLName
+                     }:void
+    {for a in attributes do
+        {if a.name == SOAPTypeMapper.xml-schema-type or
+            a.name == BuiltinSOAPTypeMapper.old-xml-schema-type
+         then
+            {if a.xml-name-values == null or a.xml-name-values.size != 1 or
+                a.xml-name-values[0] != xml-type
+             then
+                {throw-unmarshal-exception
+                    {lformat
+                        "XML type attribute %y did not match expected type %y.",
+                        a, xml-type
+                    }
+                }
+            }
+            {break}
+        }
+    }
+}
+
+{define-proc package {unmarshal-read-characters
+                         stream:XMLInputStream
+                     }:#XMLCharacters
+    {while true do
+        let constant (token:XMLToken, eof?:bool) = {stream.read-one}
+        {if eof? then
+            {throw-unmarshal-exception
+                {localize "Got to end of stream when characters were expected."}
+            }
+        }
+        {type-switch token
+         case characters:XMLCharacters do
+            {return characters}
+         case end-element:XMLEndElement do
+            {stream.unread-one end-element}
+            {return null}
+         else
+            {throw-unmarshal-exception
+                {lformat
+                    "Final non-attributes token was not an expected type %s.",
+                    token
+                }
+            }
+        }
+    }
+}
+
+{define-proc package {unmarshal-check-if-nil?
+                        attributes:{Array-of XMLAttribute},
+                        type:SOAPObjectType
+                     }:bool
+    let null?:bool = false
+    {for a in attributes do
+        {if a.name == SOAPTypeMapper.xml-schema-instance-nil or
+            a.name == BuiltinSOAPTypeMapper.old-xml-schema-instance-nil
+         then
+            {if a.value == "true" then
+                set null? = true
+                {break}
+            }
+        }
+    }
+    {if null? and not type.nillable? then
+        {dump "TODO", "Null xml type not expected.", type.curl-type}
+||--        {throw-marshal-exception
+||--            {localize "Null xml type not expected."}
+||--        }
+    }
+    {return null?}
+}
+
+{define-proc package {unmarshal-get-id-href
+                        attributes:{Array-of XMLAttribute},
+                        unmarshal-context:SOAPUnmarshalContext
+                     }:(id:#String, href:#String)
+    let constant id-attribute-name:XMLName = unmarshal-context.id-attribute-name
+    let constant reference-attribute-name:XMLName =
+        unmarshal-context.reference-attribute-name
+    let id:#String, href:#String
+    {for a in attributes do
+        let constant name:XMLName = a.name
+        {if name == id-attribute-name or
+            name.local-name == id-attribute-name.local-name
+         then
+            set id = a.value asa String
+            {if href != null then
+                {break}
+            }
+         elseif name == reference-attribute-name or
+            name.local-name == reference-attribute-name.local-name
+         then
+            set href = a.value asa String
+            {if id != null then
+                {break}
+            }
+        }
+    }
+    {return id, href}
+}
+
+
+{define-proc package {float-double-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant type-of-value:Type = {type-of value}
+    let constant float?:bool =
+        type-of-value == (float asa Type) or
+        type.xml-type == SOAPTypeMapper.xml-schema-float-type
+    let constant null?:bool = type-of-value == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+    }
+    || Should we check that type of value matches type.curl-type?
+    || cast everything to a double...
+    let f:double
+    {try
+        set f = value asa double
+     catch e:CastException do
+        {throw-marshal-exception
+            {lformat
+                "float and double marshal proc could not handle strangely " &
+                "typed value %s.",
+                value
+            }
+        }
+    }
+    {stream.write-one
+        {new XMLCharacters,
+            {if {nan? f} then
+                "NaN"
+             else
+                {switch f
+                 case 0.0 do
+                    "0"
+                 case -0.0 do
+                    "-0"
+                 case infinity do
+                    "INF"
+                 case -infinity do
+                    "-INF"
+                 else
+                    {if type.xml-type.local-name == "decimal" then
+                        {format
+                            {if float? then
+                                "%.8f"
+                             else || is a double
+                                "%.18f"
+                            },
+                            f
+                        }
+                     else
+                        let constant exp-double:double = {floor {log10 {abs f}}}
+                        let constant exp:int = exp-double asa int
+                        let constant f2:double = f / {pow 10, exp-double}
+                        let constant fraction-format:String =
+                            {if float? then
+                                "%.8G"
+                             else || is a double
+                                "%.18G"
+                            }
+                        {if exp != 0 then
+                            {format fraction-format & "E%d", f2, exp}
+                         else
+                            {format fraction-format, f2}
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {return true}
+}
+
+{define-proc package {float-double-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            double,
+            {proc {obj:any, type:Type}:any
+                {return obj}
+            },
+            {proc {
+                           characters:#XMLCharacters,
+                           type:Type
+                       }:(any, any)
+                {if-non-null characters then
+                    let constant string:String =
+                        {characters.characters.trim-clone}
+                    {if string.size <= 0 then
+                        {throw-unmarshal-exception
+                            {localize "Empty double or float value."}
+                        }
+                    }
+                    let value:double =
+                        {switch string
+                         case "NaN" do
+                            nan
+                         case "INF" do
+                            infinity
+                         case "-INF" do
+                            -infinity
+                         else
+                            let constant (v:double, nchars:int, flow?:bool) =
+                                {string.to-double}
+                            || check character not consumed by to-double are whitespace
+                            {if nchars < string.size then
+                                {throw-unmarshal-exception
+                                    {lformat
+                                        "Error converting \'%s\' to a double or float.",
+                                        string
+                                    }
+                                }
+                            }
+                            v
+                        }
+                    {return value, value}
+||--                    {if type == (float asa Type) then
+||--                        {return value asa float}
+||--                     else
+||--                        {return value}
+||--                    }
+                 else
+                    {throw-unmarshal-exception
+                        {localize "Empty double or float value."}
+                    }
+                }
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {any-int-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+    }
+    || Should we check that type of value matches type.curl-type?
+    || Instead we just let format decide if it looks anything like an int
+    {try
+        {stream.write-one
+            {new XMLCharacters,
+|| ISSUE check spec on format
+                {format "%d", value}
+            }
+        }
+     catch e:FormatFailedException do
+        {throw-marshal-exception
+            {lformat
+                "int marshal proc could not handle strangely typed value %s.",
+                value
+            }
+        }
+    }
+    {return true}
+}
+
+{define-proc package {any-int-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+
+    {return
+        {refable-unmarshal-proc
+            int64,
+            {proc {obj:any, type:Type}:any
+                {return obj}
+            },
+            {proc {
+                           characters:#XMLCharacters,
+                           type:Type
+                       }:(any, any)
+                {if-non-null characters then
+                    let constant string:String = characters.characters
+                    let constant (value:int64, nchars:int, flow?:bool) =
+                        {string.to-int64}
+                    || check character not consumed by to-int are whitespace
+                    {for i = nchars below string.size do
+                        {if not {CharClass.whitespace-chars.member? string[i]}
+                         then
+                            {throw-unmarshal-exception
+                                {lformat
+                                    "Error converting \'%s\' to an integer.",
+                                    string
+                                }
+                            }
+                        }
+                    }
+                    {if nchars > 0 then
+                        let val:any = 
+                            {try
+                                value asa type
+                             catch e:OverflowException do
+                                {throw-unmarshal-exception
+                                    {lformat
+                                        "Error converting \'%s\' to a %s.",
+                                        value, type
+                                    }
+                                }
+                            }
+                        {return val, val}
+                    }                    
+||--                    {if nchars > 0 then
+||--                        {switch type
+||--                         case (int asa Type) do
+||--                            {return value asa int}
+||--                         case (any asa Type), (int64 asa Type) do
+||--                            {return value}
+||--                         else
+||--                            {try
+||--                                {return value asa type}
+||--                            catch e:OverflowException do
+||--                                {throw-unmarshal-exception
+||--                                    {lformat
+||--                                        "Error converting \'%s\' to a %s.",
+||--                                        value, type
+||--                                    }
+||--                                }
+||--                            }
+||--                        }
+||--                    }
+                }
+                {throw-unmarshal-exception {localize "Empty int value."}}
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {boolean-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant type-of-value:Type = {type-of value}
+    let constant null?:bool = type-of-value == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+    }
+    || Should we check that type of value matches type.curl-type?
+    let constant string:String =
+        {type-switch value
+         case b:bool do
+            || NOTE: The "canonical" values, per XSD are "true" and "false"
+            || but SOAPENC schema restricts this to "1"/"0" for 'mustUnderstand' attribute
+            {if b then
+                "1"
+             else
+                "0"
+            }
+         case s:String do
+            {if s == "false" or s == "0" then
+                "false"
+             elseif s == "true" or s == "1" then
+                "true"
+             else
+                {throw-marshal-exception
+                    {lformat
+                        "Unknown boolean string value '%s', expected " &
+                        "'true', 'false', '1' or '0'.",
+                        s
+                    }
+                }
+            }
+         else
+            {if {type-of value} isa NumericType then
+                {if (value asa int) == 0 then
+                    "false"
+                 else
+                    "true"
+                }
+             else
+                {throw-marshal-exception
+                    {lformat
+                        "Unable to convert value to something that can " &
+                        "be boolean %s.",
+                        value
+                    }
+                }
+            }
+        }
+
+    {stream.write-one {new XMLCharacters, string}}
+    {return true}
+}
+
+{define-proc package {boolean-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            bool,
+            {proc {obj:any, type:Type}:any
+                {return obj}
+            }, 
+            {proc {characters:#XMLCharacters,
+                   type:Type
+                  }:(any, any)
+                {if-non-null characters then
+                    let constant string:String =
+                        {characters.characters.trim-clone}
+                    let bool-value?:bool = string == "true" or string == "1"
+                    let val:any =
+                        {switch type
+                         case bool do
+                            bool-value?
+                         case String do
+                            {if bool-value? then
+                                "true"
+                             else
+                                "false"
+                            }
+                         else
+                            || TODO produce a real error if curl-type is not a
+                            || numeric type.
+                            {if bool-value? then
+                                1
+                             else
+                                0
+                            } asa type
+                        }
+                    {return val, val}
+                 else
+                    {throw-marshal-exception {localize "Empty boolean value."}}
+                }
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+|| NOTE: this is no longer called: we allow primitive types from multiref encoding
+||--{define-proc package {unrefable-unmarshal-proc
+||--                         default-type:Type,
+||--                         value-decode-proc:
+||--                            {proc-type {
+||--                                           characters:#XMLCharacters,
+||--                                           type:Type
+||--                                       }:(any)
+||--                            },
+||--                         || stream must be after the XMLStartElement, so that
+||--                         || it can write out attributes of the element for type
+||--                         || information.  It will write out the attributes and
+||--                         || the character data, but not the XMLEndElement
+||--                         stream:XMLInputStream,
+||--                         attributes:#{Array-of XMLAttribute},
+||--
+||--                         || xml-type and curl-type required
+||--                         type:SOAPObjectType,
+||--
+||--                         encoding:#String, || default? (multiple urls poss.)
+||--                         unmarshal-context:SOAPUnmarshalContext,
+||--                         current-mapper:SOAPTypeMapper,
+||--                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+||--                         || should mapper do this?
+||--                         check-type-attribute?:bool = false
+||--                     }:(value:any, worked?:bool)
+||--    {unmarshal-type-check type}
+||--    {if type.curl-type == any or
+||--        type.curl-type == Object or type.curl-type == #Object
+||--     then
+||--        set type = {SOAPObjectType.clone-with type, curl-type = default-type}
+||--    }
+||--    let constant characters:#XMLCharacters =
+||--        {unmarshal-read-characters stream}
+||--    {if-non-null attributes then
+||--        {if check-type-attribute? then
+||--            {unmarshal-check-type-attribute
+||--                attributes,
+||--                {non-null type.xml-type}
+||--            }
+||--        }
+||--        let constant null?:bool = {unmarshal-check-if-nil? attributes, type}
+||--        {if null? then
+||--            {return null, true}
+||--        }
+||--        let constant (id:#String, href:#String) =
+||--            {unmarshal-get-id-href attributes, unmarshal-context}
+||--        {if href != null then
+||--            {throw-marshal-exception {localize "Unexpected href attribute."}}
+||--        }
+||--    }
+||--    {return {value-decode-proc characters, {non-null type.curl-type}}, true}
+||--}
+
+{define-proc package {any-string-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    let string:#String = null
+    {if not null? then
+        {type-switch value
+         case s:String do
+            set string = s
+         case si:StringInterface do
+            set string = {si.to-String}
+         else
+            {try
+                set string = {format "%s", value}
+            catch e:FormatFailedException do
+                {throw-marshal-exception
+                    {lformat
+                        "string marshal proc could not handle strangely typed "&
+                        "value %s.",
+                        value
+                    }
+                }
+            }
+        }
+    }
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            string,
+            type,
+            encoding,
+            marshal-context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            any-string-marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        {if string != "" then
+            {stream.write-one {new XMLCharacters, {non-null string}}}
+        }
+    }
+    {return true}
+}
+
+{define-proc package {any-string-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            #String,
+            {proc {obj:any, type:Type}:any
+                {return obj}
+            },
+            {proc {
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(ref-object:any, return-object:any)
+                    let constant string:String =
+                        {if-non-null characters then
+                            characters.characters
+                         else
+                            ""
+                        }
+                    {return string, string}
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {any-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    let constant curl-type:Type = {type-of value}
+    {if curl-type == Null then
+        {marshal-write-nil-type stream, type}
+        {return true}
+    }
+    let new-type:SOAPObjectType =
+        {new SOAPObjectType,
+            curl-type =
+                {if type.curl-type != null and
+                    type.curl-type != (any asa Type)
+                 then
+                    curl-type
+                 else
+                    type.curl-type
+                },
+            nillable? = type.nillable?
+        }
+    set new-type = {curl-type-to-xml-type.curl-type-to-xml-type new-type}
+    || will throw if can't do it, which isn't ideal, but is ok
+    || FIXME should we catch and return false?
+    {current-mapper.marshal
+        stream,
+        value,
+        new-type,
+        encoding, || default? (multiple urls poss.)
+        marshal-context,
+        current-mapper,
+        curl-type-to-xml-type,
+        || we need to try and tell the other side what type this
+        || thing really is, so we must write out type attributes.
+        write-type-attribute? = true,
+        multiple-reference = multiple-reference
+    }
+    {return true}
+}
+
+|| TODO should the element-name-to-xml-type mappers treat the any xml types as
+|| being like a null type (ie they will over write them if they know what
+|| type something should be)?
+{define-proc package {any-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {if-non-null attributes then
+        let constant null?:bool = {unmarshal-check-if-nil? attributes, type}
+        {if null? then
+            {return null, true}
+        }
+        let constant new-type:SOAPObjectType =
+            {any-find-type-from-attributes
+                type,
+                attributes,
+                xml-type-to-curl-type
+            }
+        {return
+            {current-mapper.unmarshal
+                stream,
+                attributes,
+                new-type,
+                encoding,
+                unmarshal-context,
+                current-mapper,
+                xml-type-to-curl-type,
+                || we already checked it...
+                check-type-attribute? = false
+            },
+            true
+        }
+    }
+    || not a return null, false because there is no recovery, and we
+    || know why things are mal-formed.
+    {throw-unmarshal-exception
+        {localize 
+            "Unable to unmarshal an any, because it has no type attributes, " &
+            "perhaps the value should be given a type with NO xml-type, so "&
+            "that the element name can be used to figure out the type."
+        }
+    }
+    {return null, false}
+}
+
+{define-proc package {any-find-type-from-attributes
+                         type:#SOAPObjectType,
+                         attributes:{Array-of XMLAttribute},
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+                     }:SOAPObjectType
+    let nillable?:bool = {if-non-null type then type.nillable? else true}
+    let xml-array-type:#XMLName
+    let xml-type:#XMLName
+    || Now look for type info.
+    {for a in attributes do
+        {switch a.name
+         case SOAPTypeMapper.xml-schema-type,
+            BuiltinSOAPTypeMapper.old-xml-schema-type
+         do
+            set xml-type = a.xml-name-values[0]
+         case SOAPTypeMapper.xml-schema-instance-nil,
+            BuiltinSOAPTypeMapper.old-xml-schema-instance-nil
+         do
+            set nillable? = (a.value == "true")
+         case SOAPArrayMarshaler.soap-1-1-array-type-attribute-name 
+         do
+            {if-non-null vs = a.xml-name-values then
+                set xml-array-type = a.xml-name-values[0]
+                || NOTE: commented out, because the generic array type names produced 
+                || -- cause failures for multidimensional arrays
+                || -- Using specific array type names is OK.
+||--                let constant local-name:String = xml-type.local-name
+||--                || strip out the numeric stuff in the type 
+||--                || to make it back into a generic array type name.
+||--                let constant brace:int = {local-name.find '\['}
+||--                {if brace >= 0 then
+||--                    let constant new-local-name:StringBuf =
+||--                        {new StringBuf, efficient-size = local-name.size}
+||--                    {new-local-name.write-one-string local-name, length = brace}
+||--                    {for i:int = brace below local-name.size do
+||--                        let constant ch:char = local-name[i]
+||--                        {if not {CharClass.digit-chars.member? ch} then
+||--                            {new-local-name.append ch}
+||--                        }
+||--                    }
+||--                    set xml-array-type =
+||--                        {XMLName.unchecked xml-type.namespace, {new-local-name.to-String}}
+||--                }
+             else
+                || XMLName was not recognized by XMLInputStream
+                || - (this should not happen)
+                || - attempt to recover it from string. although,
+                || - unfortunately, namespace mappings now unavailable
+                || == HACK == \\
+                || TODO: flush this fallback hack
+                {output {lmessage Expected xml-name-values in
+                            attribute '{value a.name}'}}
+                let val:String = a.value asa String
+                let p0:int = {val.find ':'} + 1
+                let p1:int = {val.find '\['}
+                {if p1 < 0 then set p1 = val.size}
+                let xtype:#XMLName = null
+                let name:String = {val.substr p0, p1 - p0}
+                let mapping:DefaultSOAPXMLTypeToCurlTypeMapper = 
+                    xml-type-to-curl-type asa DefaultSOAPXMLTypeToCurlTypeMapper
+                {for key k in mapping.table do
+                    {if k.local-name == name then
+                        set xtype = k
+                        {break}}}
+                {if xtype == null then
+                    {type-switch mapping.chain 
+                     case mapping:BuiltinSOAPXMLTypeToCurlTypeMapper do
+                        {for key k in mapping.table do
+                            {if k.local-name == name then
+                                set xtype = k
+                                {break}}}}}
+                let xmltype:XMLName = 
+                    {if-non-null xtype then xtype
+                     else 
+                        || found no match, use xs:anyType
+                        SOAPTypeMapper.xml-schema-any-type}
+                let suffix:String =
+                    {if p1 < val.size then
+                        || dimensions specified
+                        {val.tail p1}
+                     else
+                        || dimensions unspecified
+                        "[]"}
+                        
+                set xmltype =
+                        {XMLName.unchecked xmltype.namespace,
+                            xmltype.local-name & suffix}
+                set xml-array-type = xmltype
+                || == HACK == //
+            }
+        }
+    }
+    {if-non-null xml-array-type then
+        set xml-type = xml-array-type}
+    let new-type:SOAPObjectType =
+        {SOAPObjectType.fill-in-from-element-name-mapper
+            {new SOAPObjectType,
+                nillable? = nillable?,
+                xml-type = xml-type,
+                curl-type =
+                    {if type != null and type.curl-type != any then
+                        type.curl-type
+                     else
+                        null
+                    }
+            },
+            null,
+            xml-type-to-curl-type
+        }
+    {if new-type.curl-type == null then
+        set new-type =
+            {SOAPObjectType.clone-with
+                new-type,
+                curl-type =
+                    {if-non-null type then
+                        {if-non-null curl-type = type.curl-type then
+                            curl-type
+                         else
+                             any asa Type
+                        }
+                     else
+                         any asa Type
+                    }
+            }
+    }
+    {return new-type}
+}
+|| NOTE: used by SOAPStructMarshaler for runtime subtypes
+{define-proc package {get-xsi-type attributes:{Array-of XMLAttribute}}:#XMLName
+    {for a in attributes do
+        {switch a.name
+         case SOAPTypeMapper.xml-schema-type,
+            BuiltinSOAPTypeMapper.old-xml-schema-type
+         do
+            {return a.xml-name-values[0]}}}
+    {return null}
+}
+|| NOTE: used by SOAPStructMarshaler for runtime subtypes
+{define-proc package {find-subtype-from-attributes
+                         type:SOAPObjectType,
+                         attributes:{Array-of XMLAttribute},
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+                     }:SOAPObjectType
+    {return
+        || get xsi:type attribute
+        {if-non-null xsi-type = {get-xsi-type attributes} then
+            || find corresponding curl type
+            let new-type:SOAPObjectType =
+                {xml-type-to-curl-type.xml-type-to-curl-type 
+                    {SOAPObjectType.clone-with type,
+                        xml-type = xsi-type}}
+            || it should be a subtype
+            {if-non-null old-curl-type = type.curl-type then
+                {if-non-null new-curl-type = new-type.curl-type then
+                    {if {new-curl-type.subtype-of? old-curl-type} then
+                        new-type
+                     else
+                        || fallback if its not
+                        {output 
+                            {message 
+                                Unexpected xsi:type in SOAP response:
+                                using declared type '{value old-curl-type}'
+                                because '{value new-curl-type}' is not a subtype.}}
+                        type}
+                    || should not happen
+                 else type}
+             else type}
+         else
+            || no xsi:type attribute: use original type
+            type}}    
+}
+
+{define-proc package {base64-binary-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            value,
+            type,
+            encoding,
+            marshal-context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            any-string-marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        let constant array:{Array-of byte} = {object-to-array-of-byte value}
+        {stream.write-one {new XMLCharacters, {base64-encode array}}}
+    }
+    {return true}
+}
+
+{define-proc package {base64-binary-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            {Array-of byte},
+            {proc {obj:any, type:Type}:any
+                {return
+                    {type-switch obj
+                     case array:{Array-of byte} do
+                        {array-of-byte-to-type array, type}
+                     else
+                        obj
+                    }
+                }
+            },
+            {proc {
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(ref-object:any, return-object:any)
+                let constant array:{Array-of byte} =
+                    {if-non-null characters then
+                        {base64-decode characters.characters}
+                     else
+                        {new {Array-of byte}.from-size, 0, 0 asa byte}
+                    }
+                {return array, {array-of-byte-to-type array, type}}
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {array-of-byte-to-type
+                         array:{Array-of byte},
+                         type:Type
+                     }:Object
+    {return
+        {switch type
+         case ByteVec, #ByteVec do
+            array.underlying-FastArray
+         case {Array-of byte}, #{Array-of byte} do
+            array
+         case {FastArray-of int8}, #{FastArray-of int8} do
+            let int8vec:{FastArray-of int8} =
+                {new {FastArray-of int8}.from-size, array.size, 0 asa int8}
+            {for b key index in array do
+                set int8vec[index] = b asa int8
+            }
+            int8vec
+         case {Array-of int8}, #{Array-of int8} do
+            let int8array:{Array-of int8} =
+                {new {Array-of int8}.from-size, array.size, 0 asa int8}
+            {for b key index in array do
+                set int8array[index] = b asa int8
+            }
+            int8array
+         else
+            {throw-unmarshal-exception
+                {lformat
+                    "unmarshaling of binary data not legal for type %s.",
+                    type
+                }
+            }
+        }
+    }
+}
+
+{define-proc package {object-to-array-of-byte
+                         value:any
+                     }:{Array-of byte}
+    {return
+        {type-switch value
+         case bytevec:ByteVec do
+            {new {Array-of byte}.from-FastArray, bytevec}
+         case array:{Array-of byte} do
+            array
+         case int8vec:{FastArray-of int8} do
+            let array:{Array-of byte} =
+                {new {Array-of byte}.from-size, int8vec.size, 0 asa byte}
+            {for i key index in int8vec do
+                set array[index] = i asa byte
+            }
+            array
+         case int8array:{Array-of int8} do
+            let array:{Array-of byte} =
+                {new {Array-of byte}.from-size, int8array.size, 0 asa byte}
+            {for i key index in int8array do
+                set array[index] = i asa byte
+            }
+            array
+         else
+            || TODO could support weird types like ByteInputStream here,
+            {throw-marshal-exception
+                {lformat
+                    "binary marshaling not legal for type %s.",
+                    {type-of value}
+                }
+            }
+        }
+    }
+}
+
+{define-proc package {hex-binary-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            value,
+            type,
+            encoding,
+            marshal-context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            any-string-marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        let constant array:{Array-of byte} = {object-to-array-of-byte value}
+        let constant buf:StringBuf =
+            {new StringBuf, efficient-size = array.size * 2}
+        {for b in array do
+            {format out = buf, "%02X", b}
+        }
+        {stream.write-one {new XMLCharacters, buf}}
+    }
+    {return true}
+}
+
+{define-proc package {hex-binary-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            #{Array-of byte},
+            {proc {obj:any, type:Type}:any
+                {return
+                    {type-switch obj
+                     case array:{Array-of byte} do
+                        {array-of-byte-to-type array, type}
+                     else
+                        obj
+                    }
+                }
+            },
+            {proc {
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(ref-object:any, return-object:any)
+                let constant array:{Array-of byte} =
+                    {if-non-null characters then
+                        let constant string:String = characters.characters
+                        let constant array:{Array-of byte} =
+                            {new {Array-of byte},
+                                efficient-size = string.size div 2
+                            }
+                        let constant buf:StringBuf =
+                            {new StringBuf, efficient-size = 2}
+                        || if there is an uneven number of hex digits we just
+                        || drop the last one.
+                        {for ch in string do
+                            {if not {CharClass.whitespace-chars.member? ch} then
+                                {buf.append ch}
+                                {if buf.size >= 2 then
+                                    {array.append
+                                        {buf.to-int radix = 16} asa byte
+                                    }
+                                    {buf.clear}
+                                }
+                            }
+                        }
+                        array
+                     else
+                        {new {Array-of byte}.from-size, 0, 0 asa byte}
+                    }
+                {return array, {array-of-byte-to-type array, type}}
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {datetime-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    let info:#DateTimeInfo = null
+    {if not null? then
+        set info =
+            {type-switch value
+             case dt:DateTime do
+                dt.info
+             case d:DateTimeData do
+                {new DateTime, zone = DateTimeZone.utc, d}.info
+             case i:DateTimeInfo do
+                || FIXME: should be able to just pass the info in,
+                || but there is some sort of bug here...
+                i
+             else
+                {throw-marshal-exception
+                    {lformat
+                        "dateTime can not marshal a %s.",
+                        {type-of value}
+                    }
+                }
+            }
+    }
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            info,
+            type,
+            encoding,
+            marshal-context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            any-string-marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then        
+        {if type.xml-type == SOAPTypeMapper.xml-schema-date-type then
+            || just date
+            let constant date-string:String =
+                {format "%04d-%02d-%02d",
+                    info.year, info.month, info.day}
+            {stream.write-one {new XMLCharacters, date-string}}
+         else
+            || dateTime
+            || -- fraction must be >= 0.0 and < 1.0
+            let constant fraction:double = info.fraction
+            let constant fraction-string:String =
+                {if fraction == 0.0 or fraction == -0.0 then
+                    ""
+                 else
+                    || format the fraction as a float, choping off the leading 0
+                    {format ".%06d", info.microsecond}
+                }
+            let constant timezone-string:String =
+                {if info.utc-offset-minutes == 0 then
+                    "Z"
+                 else
+                    let tmp:String = info.utc-offset-string
+                    {tmp.substr 0, 3} & ':' & {tmp.tail 3}
+                }
+            let constant date-string:String =
+                {format "%04d-%02d-%02dT%02d:%02d:%02d%s%s",
+                    info.year, info.month, info.day,
+                    info.hour, info.minute, info.second, fraction-string,
+                    timezone-string
+                }
+            {stream.write-one {new XMLCharacters, date-string}}
+        }
+    }
+    {return true}
+}
+
+{define-proc package {datetime-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    
+    let xsd-date?:bool = type.xml-type == SOAPTypeMapper.xml-schema-date-type 
+
+    {return
+        {refable-unmarshal-proc
+            #DateTime,
+            {proc {obj:any, type:Type}:any
+                {return
+                    {type-switch obj
+                     case datetime:DateTime do
+                        {datetime-to-type datetime, type}
+                     else
+                        obj
+                    }
+                }
+            },
+            {proc {
+                   characters:#XMLCharacters,
+                   type:Type
+                  }:(ref-object:any, return-object:any)
+                {if-non-null characters then                  
+                    
+                    let constant s:String = 
+                        {characters.characters.trim-clone}
+                    
+                    let dt:DateTime =
+                        {if xsd-date? then
+                            || just Date, canonicalized
+                            {DateTime.date s}
+                            
+                         else                            
+                            || DateTime knows how to parse ISO 8601 strings, so just
+                            || let it do its thing.
+                            || FIXME: we don't handle timezone-less data right, DateTime
+                            || puts things in the local timezone.  No obvious solution
+                            || because the Curl types can't represent no timezone.
+                            || But we insist on UTC when there isn't a timezone.
+                            let timezone:#DateTimeZone = null
+                            {if s[s.size - 1] != 'Z' then
+                                {if s.size < 6 or
+                                    (s[s.size - 6] != '-' and s[s.size - 6] != '+') or
+                                    s[s.size - 3] != ':'
+                                 then
+                                    set timezone = DateTimeZone.utc
+                                }
+                            }
+
+                            {DateTime s, zone = timezone}
+                        }
+                    {return dt,
+                        {datetime-to-type dt, type}
+                    }
+                 else
+                    {throw-unmarshal-exception
+                        {localize "Illegal empty dateTime value"}
+                    }
+                }
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {datetime-to-type datetime:DateTime, type:Type}:Object
+    {return
+        {switch type
+         case DateTime, #DateTime do
+            datetime
+         case DateTimeData, #DateTimeData do
+            datetime.data
+         case DateTimeInfo, #DateTimeInfo do
+            datetime.info
+         else
+            {throw-unmarshal-exception
+                {lformat
+                    "Unable to store a dateTime value into a %s.",
+                    type
+                }
+            }
+        }
+    }
+}
+
+{define-proc package {uri-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            value,
+            type,
+            encoding,
+            marshal-context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            any-string-marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        {stream.write-one
+            {new XMLCharacters,
+                {type-switch value
+                 case uri:Url do
+                    uri.name
+                 else
+                    {format "%s", value}
+                }
+            }
+        }
+    }
+    {return true}
+}
+
+{define-proc package {uri-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            #Url,
+            {proc {obj:any, type:Type}:any
+                {type-switch obj
+                 case s:String do
+                    {if {type.subtype-of? #Url} then
+                        {return {abs-url s}}
+                    }
+                 case u:Url do
+                    {if type == String or type == #String then
+                        {return u.name}
+                    }
+                }
+                {throw-unmarshal-exception
+                    {lformat
+                        "Unexpected ref-ed object for a Url is a " &
+                        "suprising type %s.",
+                        type
+                    }
+                }
+            },
+            {proc {
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(ref-object:any, return-object:any)
+
+                let uri:#Url =
+                    {if-non-null characters then
+                        let constant string:String =
+                            {characters.characters.trim-clone}
+                        {if {abs-url? string} then
+                            {abs-url string}
+                         else
+                            {stream.origin-url.merge string}
+                        }
+                     else
+                        stream.origin-url
+                    }
+                {return
+                    uri,
+                    {if {type.subtype-of? #Url} then
+                        uri
+                     elseif type == String or type == #String then
+                        uri.name
+                     else
+                        {throw-unmarshal-exception
+                            {lformat
+                                "anyURI can not be stored in a %s.",
+                                type
+                            }
+                        }
+                    }
+                }
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {qname-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    {marshal-type-check type}
+    let constant null?:bool = {type-of value} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            value,
+            type,
+            encoding,
+            marshal-context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            any-string-marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        {stream.write-one
+            {type-switch value
+             case xml-name:XMLName do
+                {new XMLCharacters,
+                    xml-name.local-name,
+                    xml-name-values = {new {Array-of XMLName}, xml-name}
+                }
+             else
+                || This isn't really a qname, but we will do it as a String...
+                {new XMLCharacters, {format "%s", value}}
+            }
+        }
+    }
+    {return true}
+}
+
+{define-proc package {qname-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {return
+        {refable-unmarshal-proc
+            #XMLName,
+            {proc {obj:any, type:Type}:any
+                {type-switch obj
+                 case s:String do
+                    {if {type.subtype-of? #XMLName} then
+                        {return {XMLName "", s}}
+                    }
+                 case xml-name:XMLName do
+                    {if type == String or type == #String then
+                        || this is a sketchy conversion...
+                        {return xml-name.namespace & ':' & xml-name.local-name}
+                     }
+                }
+                {throw-unmarshal-exception
+                    {lformat
+                        "Unexpected ref-ed object for a QName is " &
+                        "a suprising type %s.",
+                        type
+                    }
+                }
+            },
+            {proc {
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(ref-object:any, return-object:any)
+                    let string:#String
+                    let constant xml-name:XMLName =
+                        {if-non-null characters then
+                            set string = characters.characters
+                            {if-non-null xml-name-values =
+                                characters.xml-name-values
+                            then
+                                xml-name-values[0]
+                            else
+                                {new XMLName, "", characters.characters}
+                            }
+                         else
+                            set string = ""
+                            {new XMLName, "", ""}
+                        }
+                    {return
+                        xml-name,
+                        {if {type.subtype-of? #XMLName} then
+                            xml-name
+                         else
+                            string
+                        }
+                    }
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+
+{define-proc package {refable-unmarshal-proc
+                         default-type:Type,
+                         refed-object-convertor-proc:
+                            {proc-type {object:any, type:Type}:any},
+                         object-decode-proc:
+                            {proc-type {
+                                           characters:#XMLCharacters,
+                                           type:Type
+                                       }:(ref-object:any,
+                                          return-object:any)
+                            },
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {unmarshal-type-check type}
+    {if type.curl-type == any or
+        type.curl-type == Object or type.curl-type == #Object
+     then
+        set type = {SOAPObjectType.clone-with type, curl-type = default-type}
+    }
+    let constant characters:#XMLCharacters =
+        {unmarshal-read-characters stream}
+    let id:#String, href:#String
+    let null?:bool = false
+    {if-non-null attributes then
+        {if check-type-attribute? then
+            {unmarshal-check-type-attribute
+                attributes, {non-null type.xml-type}
+            }
+        }
+
+        set null? = {unmarshal-check-if-nil? attributes, type}
+
+        set (id, href) =
+            {unmarshal-get-id-href attributes, unmarshal-context}
+        {if-non-null href then
+            {if null? then
+                {throw-unmarshal-exception
+                    {localize "null xml type with an href attribute."}
+                }
+            }
+            let constant (obj:any, status:SOAPUnmarshalObjectStatus) =
+                {unmarshal-context.get-object href}
+            || may return a SOAPUnmarshalObjectState
+            || ignoring any content, and just going with href...
+            let constant curl-type:Type = {non-null type.curl-type}
+            {if not obj isa SOAPUnmarshalObjectState and
+                not obj isa curl-type and
+                (curl-type.non-null-variant == null or
+                    not obj isa {non-null curl-type.non-null-variant}) and
+                (curl-type.null-variant == null or
+                    not obj isa {non-null curl-type.null-variant})
+             then
+                {return
+                    {refed-object-convertor-proc obj, curl-type},
+                    true
+                }
+             else
+                {return obj, true}
+            }
+        }
+    }
+
+    let ref-object:any = null
+    let return-object:any = null
+    {if not null? then
+        set (ref-object, return-object) =
+            {object-decode-proc characters, {non-null type.curl-type}}
+    }
+    {if-non-null id then
+        {unmarshal-context.set-object
+            '#' & id, ref-object, SOAPUnmarshalObjectStatus.complete
+        }
+    }
+    {return return-object, true}
+}
+
+
+{define-proc package {marshal-handle-id-href
+                         stream:XMLOutputStream,
+                         object:any,
+                         type:SOAPObjectType,
+                         encoding:#String,
+                         marshal-context:SOAPMarshalContext,
+                         multiple-reference:SOAPTypeMultipleReference,
+                         default-multiple-reference:SOAPTypeMultipleReference,
+                         marshal-proc:SOAPTypeMapper.MarshalProc,
+                         write-type-attribute?:bool = true
+                     }:SOAPTypeMultipleReference
+    
+    || multiref is disallowed for use='literal'
+    let use-literal?:bool = encoding == null
+    {if use-literal? then
+        {return SOAPTypeMultipleReference.single}}
+    
+    let constant null?:bool = object == null
+    {if multiple-reference == SOAPTypeMultipleReference.unknown then
+        {if type.multiple-reference != SOAPTypeMultipleReference.unknown then
+            set multiple-reference = type.multiple-reference
+        }
+    }
+    let id:#String
+    {if multiple-reference == SOAPTypeMultipleReference.unknown and not null?
+     then
+        || see if it is already defined, if so, change to
+        || SOAPTypeMultipleReference.multiple-reference
+        || else change to SOAPTypeMultipleReference.single
+        || Or should this just set it to multiple-instance
+        set id = {marshal-context.get-id {non-null object}}
+        {if id != null then
+            set multiple-reference =
+                SOAPTypeMultipleReference.multiple-reference
+        }
+    }
+    {if multiple-reference == SOAPTypeMultipleReference.unknown then
+        set multiple-reference = default-multiple-reference
+    }
+    {if multiple-reference == SOAPTypeMultipleReference.multiple then
+        set multiple-reference = SOAPTypeMultipleReference.multiple-reference
+    }
+    || handle id/href stuff for non-null things
+    {if-non-null object then
+        {if multiple-reference == SOAPTypeMultipleReference.multiple-reference
+         then
+            || Add an href attribute
+            {if id == null then
+                set id = {marshal-context.get-id object}
+                || if missing element name, which we need for later marshaling,
+                || fill it in for built in types.
+                {if type.element-name == null then
+                    set type =
+                        {SOAPObjectType.fill-in-from-curl-type-mapper
+                            type,
+                            null,
+                            builtin-soap-xml-type-to-element-name-mapper
+                        }
+                }
+                || if it doesn't have an id yet, then we promise to be
+                || its marshaller when the time comes
+                {if id == null then
+                    {marshal-context.set-marshaler
+                        object,
+                        marshal-proc,
+                        type,
+                        encoding,
+                        write-type-attribute? = write-type-attribute?
+                    }
+                }
+            }
+            let constant current-id:String =
+                {if-non-null id then
+                    id
+                else
+                    || set-marshaller call will have made an id
+                    {non-null
+                        {marshal-context.get-id object, create-if-missing? = true}
+                    }
+                }
+            {stream.write-one
+                {new XMLAttribute,
+                    marshal-context.reference-attribute-name,
+                    current-id
+                }
+            }
+         elseif multiple-reference ==
+            SOAPTypeMultipleReference.multiple-instance
+         then
+            || Add an id attribute
+            let current-id:String =
+                {if-non-null id then
+                    id
+                else
+                    || set-marshaller call will have made an id
+                    {non-null
+                        {marshal-context.get-id object, create-if-missing? = true}
+                    }
+                }
+            {if current-id[0] == '#' then
+                set current-id = {current-id.tail 1}
+            }
+            {stream.write-one
+                {new XMLAttribute,
+                    marshal-context.id-attribute-name,
+                    current-id
+                }
+            }
+            || it is written, no need for context to remember it.
+            {marshal-context.clear-marshaler object}
+        }
+    } || not null?
+    {return multiple-reference}
+}
+|| ====================
+|| string / simpleType conversion
+|| --------------------
+|| necessary for list types and for attributes
+|| unfortunately, marshal/unmarshal code works at XMLToken level
+|| thus these hacky adapters
+|| TODO: refactor string conversions using Domain format/parse
+{define-proc package {marshal-to-string 
+                         v:any, 
+                         soap-type:SOAPObjectType,
+                         current-mapper:SOAPTypeMapper,
+                         curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+             }:String
+    let out:StringBuf = {StringBuf}
+    let stream:XMLOutputStream = {XMLOutputStream out}
+    {current-mapper.marshal
+        stream,
+        v,
+        soap-type,
+        null,        
+        empty-marshal-context,
+        current-mapper,
+        curl-type-to-xml-type,
+        write-type-attribute? = false,
+        multiple-reference = SOAPTypeMultipleReference.single
+    }
+    {return {out.to-String}}
+}
+{define-proc package {unmarshal-from-string 
+                         string:String, 
+                         soap-type:SOAPObjectType,
+                         type-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+                     }:any
+    let stream:XMLInputStream =
+        {XMLInputStream.from-Tokens
+            {{Array-of XMLToken}
+                {XMLCharacters string},
+                {XMLEndElement}
+            }}
+    let val:any =
+        {type-mapper.unmarshal 
+            stream,
+            null,
+            soap-type,
+            null,
+            empty-unmarshal-context,
+            type-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = false
+        }
+    {return val}
+}
+{let package constant empty-marshal-context:SOAPMarshalContext = 
+    {DefaultSOAPMarshalContext}
+}
+{let package constant empty-unmarshal-context:SOAPUnmarshalContext = 
+    {DefaultSOAPUnmarshalContext}
+}
+|| ====================
+|| other XML Schema primitives
+|| --------------------
+|| There's no specific Curl class for these
+|| Representation is simply a String plus XML type ascription
+
+{doc-next ||=== XMLSimpleValue
+    {purpose 
+        Represent a value associated with an XSD schema simple type.}
+    {details
+        Used by SOAP Web Service methods which refer to types 
+        that do not map directly to a standard Curl type:
+        {itemize            
+        || now 'xsd:date' uses DateTime.date
+||--            {item xsd:date}
+            {item xsd:time}
+            {item xsd:duration}
+            {item xsd:gYear}
+            {item xsd:gYearMonth}
+            {item xsd:gMonth}
+            {item xsd:gMonthDay}
+            {item xsd:Day}
+            {item xsd:normalizedString}
+            {item xsd:token}
+            {item xsd:language}
+            {item xsd:Name}
+            {item xsd:NCName}
+            {item xsd:ENTITY}
+            {item xsd:ENTITIES}
+            {item xsd:NMTOKEN}
+            {item xsd:NMTOKENS}
+            {item xsd:ID}
+            {item xsd:IDREF}
+            {item xsd:IDREFS}
+        }}
+}
+{define-class public open XMLSimpleValue
+  {doc-next ||=== XMLSimpleValue.value
+    {purpose The string value.}
+  }
+  field public-get constant value:String
+  {doc-next ||=== XMLSimpleValue.xml-type
+    {purpose The XML Schema type ascribed to this value.}
+  }
+  field public-get constant xml-type:XMLSimpleType
+  
+  {doc-next ||=== XMLSimpleValue.default
+    {purpose Construct this object.
+        {parameter val, The string value 
+            for {docref-abbr XMLSimpleValue.name}.}
+        {parameter xml-type, The XML Schema type ascribed to this value
+            for {docref-abbr XMLSimpleValue.xml-type}.}
+    }
+  }
+  {constructor public {default 
+                          val:String,
+                          xml-type:XMLSimpleType}
+    set self.value = val
+    set self.xml-type = xml-type
+  }  
+  {method public open {object-describe out:TextOutputStream, locale:Locale}:void
+    {out.write-one-string self.value}
+  }  
+  {method public open {object-describe-for-debugging
+                          out:TextOutputStream, 
+                          locale:Locale
+                      }:void
+    {format out = out, locale = locale,
+        |"[XMLSimpleValue (%s) "%s"]"|, 
+        self.xml-type.name.local-name, 
+        self.value}
+  }
+}
+{define-class public open {XMLSimpleValue-for T:String}
+  {inherits XMLSimpleValue}
+  {constructor public implicit {default val:String}
+    let xml-type:XMLSimpleType = 
+        {XMLSimpleType {XMLName SOAPTypeMapper.xml-schema-uri, T}}
+    {construct-super val, xml-type}
+  }
+  {factory public implicit {from-simple-value 
+                               xval:XMLSimpleValue
+                           }:{XMLSimpleValue-for T}
+    || TODO: reject different type ascription
+||--    {if strict? then
+||--        let xtype:XMLType = xval.type
+||--        let t:String = xtype.name.local-name
+||--        {if T != t then
+||--            {wsdl-exception
+||--                {hlmessage Can not convert to {XMLSimpleValue-for T}
+||--                    from {value xtype}}}
+||--        }}
+    {return {{XMLSimpleValue-for T} xval.value}}
+  }
+}
+{doc-next ||=== XMLType
+    {purpose 
+        Describe XML Schema type associated with an {docref XMLValue}.}
+}
+{define-class public open abstract XMLType
+  
+  {factory public implicit {default 
+                               name:XMLName
+                           }:XMLSimpleType
+    {return {XMLSimpleType name}}
+  }
+  
+  {doc-next ||=== XMLType.name
+    {purpose 
+        The {docref XDMName} of this XML Schema type}
+  }
+  {getter public abstract open {name}:XMLName}
+  
+  || TODO: validate, parse, format
+  
+  {method public open {object-describe
+                          out:TextOutputStream, 
+                          locale:Locale
+                      }:void
+    {format out = out, locale = locale,
+      |"[%s "%s"]"|, 
+      {type-of self}, 
+      self.name}
+  }
+}
+
+{doc-next ||=== XMLSimpleType
+    {purpose 
+        Describe XML Schema simple type.}
+    {details
+        Used for type ascriptions in an {docref XMLSimpleValue}.}
+}
+{define-class public open XMLSimpleType {inherits XMLType}
+  field package constant _name:XMLName
+  
+  {doc-next ||=== XMLSimpleType.default
+    {purpose Construct this object.
+        {parameter xml-type, The XML Schema type
+            for {docref-abbr XMLSimpleType.name}}
+    }
+  }
+  {constructor public |#implicit#| {default name:XMLName}
+    set self._name = name
+  }
+  
+  || TODO: should this be forgiving of null xml-type?
+  {constructor public |#implicit#| {from-soap-type type:SOAPObjectType}   
+    set self._name = 
+        {if-non-null name = type.xml-type then 
+            name
+         else 
+            SOAPTypeMapper.xml-schema-string-type}
+  }
+  
+  {doc-next ||=== XMLSimpleType.name
+    {purpose 
+        The {docref XDMName} of this XML Schema simple type}
+  }
+  {getter public open {name}:XMLName
+    {return self._name}
+  }
+  
+  || TODO: validate, parse, format
+}
+
+|| marshal / unmarshal as string
+{define-proc package {any-simple-xml-value-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   val:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+                     }:(worked?:bool)  
+    || TODO: verify suitable xml-type?
+    || TODO: how much automagic conversion?
+    
+    || extract string (lexical value space) 
+    let string-value:#String =
+        {type-switch val
+         case xval:XMLSimpleValue do
+            xval.value
+         case nval:Null do
+            null
+         case sval:StringInterface do
+            || enforce validity of arbitrary string
+            let xml-type:XMLSimpleType =
+                {XMLSimpleType.from-soap-type type}                
+            {XMLSimpleValue {sval.to-String}, xml-type}.value
+         else
+            {error {lmessage Unexpected type for XMLSimpleValue: {value val}}}
+        }
+    || handle as string
+    let worked?:bool =
+        {any-string-marshal-proc stream, string-value,
+            type, encoding, 
+            marshal-context, current-mapper,
+            curl-type-to-xml-type,
+            write-type-attribute? = write-type-attribute?,
+            multiple-reference = multiple-reference
+        }
+    {return worked?}
+}
+
+{define-proc package {any-simple-xml-value-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    
+    let constant xml-type:XMLSimpleType =
+        {XMLSimpleType.from-soap-type type}
+   
+    {return
+        {refable-unmarshal-proc 
+            #String,
+            || related-object-converter-proc
+            {proc {obj:any, type:Type}:any
+                || TODO: verify type id subtype of XMLSimpleValue
+                {return obj}
+            },
+            || object-decode-proc
+            {proc {characters:#XMLCharacters, type:Type
+                  }:(ref-object:any, return-object:any)
+                || TODO: verify type id subtype of XMLSimpleValue
+                let constant string:String =
+                    {if-non-null characters then
+                        characters.characters
+                     else
+                        ""}
+                let constant val:XMLSimpleValue =
+                    {XMLSimpleValue string, xml-type}
+                {return val, val}
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+|| ====================
+|| Nullable wrapper
+|| --------------------
+|| Curl does not have a way to represent an unspecified primitive
+|| This wrapper is used for that purpose in generated SOAP structs
+|| -- see WSDLSchemaClassType - code generation
+|| -- see SOAPStructMarshaler - null detection
+{doc-next ||=== Nullable
+    {purpose 
+        Represent a primitive value that might be unspecified.}
+    {details
+        Used for generated SOAP structure classes, 
+        when field corresponding to an element
+        that is optional (minOccurs='0') or nillable (xsi:nil='true')
+        is a Curl type that does not admit a null value.}
+}
+{define-class public open {Nullable T:Type}
+  field package constant _value:T
+  {doc-next ||=== Nullable.value?
+    {purpose Returns a {ctext bool} indicating whether the value is specified.}}
+  field public-get constant value?:bool
+  {doc-next ||=== Nullable.default
+    {purpose Construct this object with a value.}}
+  {constructor public implicit {default val:T}
+    set self._value = val
+    set self.value? = true
+  }
+  {doc-next ||=== Nullable.from-null
+    {purpose Construct this object with an unspecified value.}}
+  {constructor public implicit {from-null val:Null}
+    set self._value = {uninitialized-value-for-type T}
+    set self.value? = false
+  }
+  {doc-next ||=== Nullable.value
+    {purpose Returns the value, if specified, otherwise error.}}
+  {getter public open {value}:T
+    {if not self.value? then
+        {error {message Object {value self} has no value}}}
+    {return self._value}
+  }
+  {doc-next ||=== Nullable.value-or-default
+    {purpose Returns the value, if specified, otherwise the default value for its type.}}
+  {getter public open {value-or-default}:T
+    {return self._value}
+  }
+  {doc-next ||=== Nullable.value-as-any
+    {purpose Returns the value, if specified, otherwise null.}}
+  {getter public open {value-as-any}:any
+    {return {if self.value? then self._value else null}}
+  }
+  {doc-next ||=== Nullable.value-if-exists
+    {purpose Returns the value, along with an indication of whether it was specified.}}
+  {method public open {value-if-exists}:(T, bool)
+    {return self._value, self.value?}
+  }
+  {doc-next ||=== Nullable.type
+    {purpose Returns the type of value.}}
+  {getter public open {type}:Type
+    {return T}
+  }
+  {method public open {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, locale = locale, "[%s %s]", {type-of self}, 
+        self.value-as-any}
+    }
+}
+|| ====================
+
+|| define built in mappers
+|| --------------------
+{let public constant builtin-soap-xml-type-to-element-name-mapper:
+    SOAPXMLTypeToElementNameMapper =
+    {new BuiltinSOAPXMLTypeToElementNameMapper}
+}
+
+{do
+    let constant table:TableSOAPXMLTypeToElementNameMapper =
+        (builtin-soap-xml-type-to-element-name-mapper asa
+         BuiltinSOAPXMLTypeToElementNameMapper)
+    || FIXME: do a table for some of this stuff?
+    || add default mappings.
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-float-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "float"},
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-int-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "int"},
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-double-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "double"},
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-string-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "string"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-boolean-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "boolean"},
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "base64Binary"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.soap-1-1-encoding-base64-type,
+        SOAPTypeMapper.soap-1-1-encoding-base64-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-hex-binary-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "hexBinary"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-any-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "anyType"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-datetime-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "dateTime"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-date-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "date"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-anyuri-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "anyURI"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPTypeMapper.xml-schema-qname-type,
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "QName"},
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-xml-type-to-element-name
+        SOAPArrayMarshaler.soap-1-1-array-type-name,
+        SOAPArrayMarshaler.soap-1-1-array-type-name,
+        SOAPTypeMultipleReference.unknown
+    }
+    || XMLSimpleValue types    
+    {for t in BuiltinSOAPTypeMapper.simple-xml-types do
+        {table.set-xml-type-to-element-name
+            t,
+            {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, t.local-name},
+            SOAPTypeMultipleReference.unknown
+        }
+    }
+}
+
+{let public constant builtin-soap-element-name-to-xml-type-mapper:
+    SOAPElementNameToXMLTypeMapper =
+    {new BuiltinSOAPElementNameToXMLTypeMapper}
+}
+
+{do
+    let constant table:BuiltinSOAPElementNameToXMLTypeMapper =
+        (builtin-soap-element-name-to-xml-type-mapper asa
+         BuiltinSOAPElementNameToXMLTypeMapper)
+    || FIXME: do a table for some of this stuff?
+    || add default mappings.
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "float"},
+        SOAPTypeMapper.xml-schema-float-type,
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "int"},
+        SOAPTypeMapper.xml-schema-int-type,
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "double"},
+        SOAPTypeMapper.xml-schema-double-type,
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "string"},
+        SOAPTypeMapper.xml-schema-string-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "boolean"},
+        SOAPTypeMapper.xml-schema-boolean-type,
+        SOAPTypeMultipleReference.single
+    }
+    {table.set-element-name-to-xml-type
+        SOAPTypeMapper.soap-1-1-encoding-base64-type,
+        SOAPTypeMapper.soap-1-1-encoding-base64-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "base64Binary"},
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "hexBinary"},
+        SOAPTypeMapper.xml-schema-hex-binary-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "anyType"},
+        SOAPTypeMapper.xml-schema-any-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "anySimpleType"},
+        SOAPTypeMapper.xml-schema-any-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "dateTime"},
+        SOAPTypeMapper.xml-schema-datetime-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "date"},
+        SOAPTypeMapper.xml-schema-date-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "anyURI"},
+        SOAPTypeMapper.xml-schema-anyuri-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "QName"},
+        SOAPTypeMapper.xml-schema-qname-type,
+        SOAPTypeMultipleReference.unknown
+    }
+    {table.set-element-name-to-xml-type
+        SOAPArrayMarshaler.soap-1-1-array-type-name,
+        SOAPArrayMarshaler.soap-1-1-array-type-name,
+        SOAPTypeMultipleReference.unknown
+    }
+    || XMLSimpleValue types
+    {for t in BuiltinSOAPTypeMapper.simple-xml-types do
+        {table.set-element-name-to-xml-type
+            {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, t.local-name},
+            t,
+            SOAPTypeMultipleReference.unknown
+        }
+    }
+}
+
+{define-class package BuiltinSOAPCurlTypeToXMLTypeMapper
+  {inherits TableSOAPCurlTypeToXMLTypeMapper}
+
+  {method public open {curl-type-to-xml-type
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+
+    let constant new-type:SOAPObjectType =
+        {if type.curl-type.can-be-null? and
+            type.curl-type.non-null-variant != null
+         then
+            {SOAPObjectType.clone-with
+                type,
+                curl-type = type.curl-type.non-null-variant,
+                nillable? = true
+            }
+         else
+            type
+        }
+    set type = {super.curl-type-to-xml-type new-type}
+    let changed?:bool = type != new-type
+    
+    {if not changed? then
+        || maybe an array type
+        let constant array-type:SOAPObjectType =
+            {SOAPObjectType.fill-in-for-array-type type,
+                curl-type-to-xml-type = self}
+        set changed? = array-type != new-type
+        set type = array-type
+    }
+    {if changed? then
+        {if type.curl-type != null and type.curl-type.can-be-null? and
+            not type.nillable?
+         then
+            set type =
+                {SOAPObjectType.clone-with
+                    type,
+                    nillable? = true
+                }
+        }
+    }
+    {return type}
+  }
+}
+
+{let public constant builtin-soap-curl-type-to-xml-type-mapper:
+    SOAPCurlTypeToXMLTypeMapper =
+    {new BuiltinSOAPCurlTypeToXMLTypeMapper}
+}
+
+{do
+    let constant table:TableSOAPCurlTypeToXMLTypeMapper =
+        (builtin-soap-curl-type-to-xml-type-mapper asa
+         TableSOAPCurlTypeToXMLTypeMapper)
+    || FIXME: do a table for some of this stuff?
+    || add default mappings.
+    {table.set-curl-type-to-xml-type
+        (float asa Type),
+        SOAPTypeMapper.xml-schema-float-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        (double asa Type),
+        SOAPTypeMapper.xml-schema-double-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        (int asa Type),
+        SOAPTypeMapper.xml-schema-int-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        (int64 asa Type),
+        SOAPTypeMapper.xml-schema-long-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        String,
+        SOAPTypeMapper.xml-schema-string-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        int16,
+        SOAPTypeMapper.xml-schema-short-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        uint16,
+        SOAPTypeMapper.xml-schema-unsigned-short-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        bool,
+        SOAPTypeMapper.xml-schema-boolean-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        ByteVec,
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        {Array-of byte},
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        {FastArray-of int8},
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        {Array-of int8},
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    || add missing int types...
+    || TODO should any really be in here?
+    
+    {table.set-curl-type-to-xml-type
+        StandardXDMElement, ||any,
+        SOAPTypeMapper.xml-schema-any-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+
+    {table.set-curl-type-to-xml-type
+        DateTime,
+        SOAPTypeMapper.xml-schema-datetime-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        DateTimeData,
+        SOAPTypeMapper.xml-schema-datetime-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        DateTimeInfo,
+        SOAPTypeMapper.xml-schema-datetime-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        DateTime,
+        SOAPTypeMapper.xml-schema-date-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        DateTimeData,
+        SOAPTypeMapper.xml-schema-date-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        DateTimeInfo,
+        SOAPTypeMapper.xml-schema-date-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    
+    {table.set-curl-type-to-xml-type
+        Url,
+        SOAPTypeMapper.xml-schema-anyuri-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+||--    {table.set-curl-type-to-xml-type
+||--        SimpleUrl,
+||--        SOAPTypeMapper.xml-schema-anyuri-type,
+||--        SOAPTypeMultipleReference.unknown,
+||--        true
+||--    }
+    {table.set-curl-type-to-xml-type
+        PrivilegedUrl,
+        SOAPTypeMapper.xml-schema-anyuri-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        XMLName,
+        SOAPTypeMapper.xml-schema-qname-type,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }    
+    || XMLSimpleValue types
+    {for t in BuiltinSOAPTypeMapper.simple-xml-types do
+        {table.set-curl-type-to-xml-type
+            {XMLSimpleValue-for.construct t.local-name},
+            t,
+            SOAPTypeMultipleReference.unknown,
+            true
+        }
+    }
+}
+{define-class package BuiltinSOAPXMLTypeToCurlTypeMapper
+  {inherits TableSOAPXMLTypeToCurlTypeMapper}
+
+  {method public open {xml-type-to-curl-type
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    {if type.xml-type.namespace == BuiltinSOAPTypeMapper.old-xml-schema-uri
+     then
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                xml-type =
+                    {new XMLName,
+                        SOAPTypeMapper.xml-schema-uri,
+                        type.xml-type.local-name
+                    }
+            }
+    }
+    let constant new-type:SOAPObjectType = {super.xml-type-to-curl-type type}
+    || looks like an array type
+    {if type == new-type and {type.xml-type.local-name.find '\['} >= 0 then
+        || it will figure out the curl-type if possible
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {new SOAPArrayMarshaler,
+                type,
+                xml-type-to-curl-type = self
+            }
+        {return array-marshaler.type}
+    }
+    {return new-type}
+  }
+}
+
+{let public constant builtin-soap-xml-type-to-curl-type-mapper:
+    SOAPXMLTypeToCurlTypeMapper =
+    {new BuiltinSOAPXMLTypeToCurlTypeMapper}
+}
+
+{do
+    let constant table:TableSOAPXMLTypeToCurlTypeMapper =
+        (builtin-soap-xml-type-to-curl-type-mapper asa
+         TableSOAPXMLTypeToCurlTypeMapper)
+
+    || FIXME: do a table for some of this stuff?
+    || add default mappings.
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-float-type,
+        (float asa Type),
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-double-type,
+        (double asa Type),
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-int-type,
+        (int asa Type),
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-long-type,
+        (int64 asa Type),
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-string-type,
+        String,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-short-type,
+        int16,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-unsigned-short-type,
+        uint16,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    || add missing int types...
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-boolean-type,
+        bool,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-base64-binary-type,
+        {Array-of byte},
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.soap-1-1-encoding-base64-type,
+        {Array-of byte},
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-hex-binary-type,
+        {Array-of byte},
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+||--    {table.set-xml-type-to-curl-type
+||--        SOAPTypeMapper.xml-schema-any-type,
+||--        any,
+||--        SOAPTypeMultipleReference.unknown,
+||--        true
+||--    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-any-simple-type,
+        any,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-datetime-type,
+        DateTime,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-date-type,
+        DateTime,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-anyuri-type,
+        Url,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+||--    {table.set-xml-type-to-curl-type
+||--        SOAPTypeMapper.xml-schema-anyuri-type,
+||--        SimpleUrl,
+||--        SOAPTypeMultipleReference.unknown,
+||--        true
+||--    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-anyuri-type,
+        PrivilegedUrl,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-qname-type,
+        XMLName,
+        SOAPTypeMultipleReference.unknown,
+        true
+    }    
+    || XMLSimpleValue types
+    {for t in BuiltinSOAPTypeMapper.simple-xml-types do
+        {table.set-xml-type-to-curl-type
+            t,
+            {XMLSimpleValue-for.construct t.local-name},
+            SOAPTypeMultipleReference.unknown,
+            true
+        }
+    }
+}
+
+
+{define-class package sealed BuiltinSOAPElementNameToXMLTypeMapper
+  {inherits TableSOAPElementNameToXMLTypeMapper}
+
+  {constructor package {default}
+    {construct-super.TableSOAPElementNameToXMLTypeMapper}
+  }
+
+}
+
+{define-class package sealed BuiltinSOAPXMLTypeToElementNameMapper
+  {inherits TableSOAPXMLTypeToElementNameMapper}
+
+  {constructor package {default}
+    {construct-super.TableSOAPXMLTypeToElementNameMapper}
+  }
+
+  {method public open {xml-type-to-element-name
+                          || xml-type must be set, fills in element-name, may
+                          || change multi-ref (?)
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    {if type.xml-type.namespace == BuiltinSOAPTypeMapper.old-xml-schema-uri
+     then
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                xml-type =
+                    {new XMLName,
+                        SOAPTypeMapper.xml-schema-uri,
+                        type.xml-type.local-name
+                    }
+            }
+    }
+    let constant new-type:SOAPObjectType =
+        {super.xml-type-to-element-name type}
+    || looks like an array type
+    {if new-type == type and {type.xml-type.local-name.find '\['} >= 0 then
+        {return
+            {SOAPObjectType.clone-with
+                type,
+                || NB element name is same as type name for this one,
+                || but we don't use normal type name for this type.
+                element-name = SOAPArrayMarshaler.soap-1-1-array-type-name
+            }
+        }
+    }
+    {return new-type}
+  }
+}
+|| register XDMElement for generic XML document
+{do
+    let constant any-curl-types:{FastArray-of Type} =
+        {new {FastArray-of Type},
+||--            StandardXDMElement,
+            any
+        }
+    {for curl-type in any-curl-types do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {new SOAPXMLDocumentMarshaler,
+                {new SOAPObjectType,
+                    xml-type = {new XMLName, "http://www.w3.org/2001/XMLSchema", "anyType"},
+                    curl-type = curl-type,
+                    nillable? = true
+                }
+            }
+
+        {doc-marshaler.register
+            type-mapper = 
+                (builtin-soap-type-mapper 
+                 asa TableSOAPTypeMapper),
+            element-name-to-xml-type-mapper = 
+                (builtin-soap-element-name-to-xml-type-mapper
+                 asa TableSOAPElementNameToXMLTypeMapper),
+            xml-type-to-curl-type-mapper = 
+                (builtin-soap-xml-type-to-curl-type-mapper
+                 asa TableSOAPXMLTypeToCurlTypeMapper),
+            curl-type-to-xml-type-mapper = 
+                (builtin-soap-curl-type-to-xml-type-mapper
+                 asa TableSOAPCurlTypeToXMLTypeMapper),     
+            xml-type-to-element-name-mapper = 
+                (builtin-soap-xml-type-to-element-name-mapper
+                 asa TableSOAPXMLTypeToElementNameMapper)
+        }
+        
+    }
+}
+
+{let public constant simple-xml-types:{FastArray-of XMLName} =
+    BuiltinSOAPTypeMapper.simple-xml-types
+}
+
+|| Where should the big lump of constants go?  (cbarber says top level them
+|| since they have soap- in their names...)
+
+|| Need to doc supported types.
+||
+|| FIX XMLStartDocument to take encoding (and standalone)...And use it...
+||      (will need to add hooks for HTTP stuff to call...)
+
+|| add union support (or can any already do it with NamedField?
+||      do they have special type choosing? (element names?))
+||      (Looks like choosing is auto-magic or based on type attributes, lets
+||      leave this one for now.)
+|| NOTATION (XMLName?)
+
+|| Can we make thing that takes proc for marshall?
+
+|| impossible things with normal Curl types, should we add types?
+||      duration (impossible without a new type)
+||      various date time things (dateTime without timezone, time, date all seem
+||           impossible without a new type)
+

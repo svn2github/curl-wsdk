@@ -1,0 +1,86 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 applet}
+{applet manifest = "../manifest.mcurl",
+    {compiler-directives careful? = true}}
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{include "xml-client.scurl"}
+{do 
+    {extend-namespace-context 
+        s = "http://schemas.xmlsoap.org/soap/envelope/",
+        n = "http://ws.cdyne.com/"}
+}
+{heading level = 3, Delayed Stock Quote Web Service}
+{value
+    let request-loc:Url = {url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
+    let request-template-loc:Url = {url "stock-quote.xml"}
+    let request-doc:XDMDocument = 
+        {build-xml preserve-whitespace? = false, request-template-loc}
+    let request:XDMDocument = {request-doc.clone}
+    let request-context:XDMDataBindingContext =
+        {XDMDataBindingContext model = request,
+            context-path = "/s:Envelope/s:Body/n:GetQuote"}
+    let status-display:MessageDisplay = {MessageDisplay}
+    let display:XDMForm = 
+        {XDMForm
+            context-path = "/s:Envelope/s:Body/n:GetQuoteResponse/n:GetQuoteResult",
+            {Table columns = 3,
+                || choose symbol
+                {text Symbol},
+                {ComboBox vorigin = 70%,
+                    tooltip = {text Choose a ticker symbol},
+                    || some popular tech stocks
+                    data-model = {DefaultListModel "IBM", "MSFT", "ORCL", "SUNW"},
+                    || request binding
+                    data-binding-context = request-context,
+                    {bind value to "n:StockSymbol"},
+                    || call the service
+                    {on ValueFinished at c:ComboBox do
+                        {with-busy-cursor
+                            || update request template
+                            {c.update-data-binding "value"}
+                            || invoke service service
+                            let response:XDMDocument =
+                                {submit-xml request-loc, request.root}
+                            set display.model = response.root
+                        }}},
+                status-display,
+                || display quote
+                {text Quote},
+                {TextDisplay
+                    {bind value at c:TextDisplay to "n:LastTradeAmount"},
+                    {bind user-data at c:TextDisplay to "n:QuoteError" as b,
+                        {report 
+                            {status-display.show-results
+                                {switch c.user-data
+                                 case "true" do
+                                    || unknown symbol
+                                    {c.unset-value}
+                                    {ValidationResults
+                                        {ValidationResult invalid? = true,
+                                            message =
+                                                {message Unknown symbol}}}
+                                 else
+                                    {ValidationResults}}}
+                            || to initiate validation  
+                            {c.handle-event {ValueChanged}}
+                        }},
+                    message-display = status-display},
+                {skip}
+            }}
+    display}

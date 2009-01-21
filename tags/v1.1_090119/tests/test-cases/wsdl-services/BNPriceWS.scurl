@@ -1,0 +1,109 @@
+{curl 7.0 package}
+{package COM.CURL.WSDL.BNPriceWS,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/BNPriceWS.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/BNPriceWS.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public BNPrice {inherits WSDLHTTPRPCPostClient}
+
+  {method public {get-bnquote s-isbn:String}:(get-bnquote-result:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                s-isbn
+            },
+            {splice self.operations["get-bnquote"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-get-bnquote s-isbn:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                s-isbn
+            },
+            {splice self.operations["get-bnquote"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {method public {define-get-bnquote}:void
+    set self.operations["get-bnquote"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://www.abundanttech.com/webservices/BNPrice", "sISBN"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.abundanttech.com/webservices/BNPrice", "GetBNQuoteResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://www.abundanttech.com/webservices/BNPrice/GetBNQuote",
+            request-operation = {XMLName "http://www.abundanttech.com/webservices/BNPrice", "GetBNQuote"},
+            response-operation = {XMLName "http://www.abundanttech.com/webservices/BNPrice", "GetBNQuoteResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-get-bnquote}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    {return builtin-soap-type-mapper,
+        builtin-soap-element-name-to-xml-type-mapper,
+        builtin-soap-xml-type-to-curl-type-mapper,
+        builtin-soap-curl-type-to-xml-type-mapper,
+        builtin-soap-xml-type-to-element-name-mapper
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://www.abundanttech.com/WebServices/bnprice/bnprice.asmx"}
+    }
+    {construct-super service-location,
+        generated-using-version = "4"
+    }
+  }
+}
+

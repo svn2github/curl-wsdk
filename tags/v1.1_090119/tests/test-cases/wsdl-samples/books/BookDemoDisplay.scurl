@@ -1,0 +1,457 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{doc-next
+    {purpose
+        This class is defines the user-interface. It provides facilities
+        allowing a user to choose what information is desired, then issues
+        web service requests in response to {docref CommandButton} clicks.
+    }
+}
+{define-class public open BookDemoDisplay {inherits Frame}
+  field protected service-data:BookDemoServiceData
+  field protected service-generation-error-message:#String
+  field protected service-generation-error-frame:Frame
+  field protected keyword-services-generated?:bool = false
+  field protected isbn-services-generated?:bool = false
+  field protected async-button:RadioButton =
+      {uninitialized-value-for-type RadioButton}
+  field protected synchronous-button:RadioButton =
+      {uninitialized-value-for-type RadioButton}
+  field protected radio-frame:RadioFrame =
+      {uninitialized-value-for-type RadioFrame}
+  field protected rmd:RemoteMethodDelegate
+  field protected keyword-tf:TextField =
+      {uninitialized-value-for-type TextField}
+  field protected isbn-tf:TextField =
+      {uninitialized-value-for-type TextField}
+  field protected keyword-service-ddl:DropdownList =
+      {uninitialized-value-for-type DropdownList}
+  field protected isbn-service-ddl:DropdownList =
+      {uninitialized-value-for-type DropdownList}
+  field protected keyword-go-button:CommandButton =
+      {uninitialized-value-for-type CommandButton}
+  field protected isbn-go-button:CommandButton =
+      {uninitialized-value-for-type CommandButton}
+  field protected cancel-button:CommandButton =
+      {uninitialized-value-for-type CommandButton}
+  field protected record-grid:RecordGrid
+  field protected results-rs:#RecordSet
+  field protected rda:{Array-of RecordData} = {new {Array-of RecordData}}
+
+  {doc-next
+    {purpose
+        Creates a {docref BookDemoDisplay}.
+    }
+    {parameter
+        manifest-location,
+        The {docref Url} of a {docref manifest} specifying the web service
+        available as Curl source packages.
+    }
+  }
+  {constructor public {default
+                          manifest-location:Url,
+                          ...
+                      }
+
+    {with-compiler-directives
+        allow-slow-spliced-arguments? = true
+     do
+        set self.service-data = {new BookDemoServiceData, manifest-location}
+    }
+    {self.service-data.load-all-packages}
+
+    set self.rmd = {new RemoteMethodDelegate, self.service-data, ui = self}
+
+    set self.service-generation-error-frame = {new Frame, height = 0.5cm}
+    set self.results-rs =
+        {new RecordSet,
+            {new RecordFields,
+                {new RecordField, "isbn", caption = "ISBN",
+                    domain = String, nullable? = true},
+                {new RecordField, "title", caption = "Title",
+                    domain = String, nullable? = true},
+                {new RecordField, "author", caption = "Author(s)",
+                    domain = String, nullable? = true},
+                {new RecordField, "img-url", caption = "Image",
+                    domain = String, nullable? = true},
+                {new RecordField, "vendor-name", caption = "Vendor",
+                    domain = String, nullable? = true},
+                {new RecordField, "service", caption = "Service",
+                    domain = String, nullable? = false},
+                {new RecordField, "vendor-price", caption = "Vendor's Price",
+                    domain = String, nullable? = true},
+                {new RecordField, "vendor-site",
+                    domain = String, nullable? = true}
+            }
+        }
+    set self.record-grid =
+        {new RecordGrid,
+            width = {make-elastic},
+            height = 12cm,
+            record-source = self.results-rs,
+            automatic-columns? = false,
+            valign = "center",
+            {RecordGridColumn width = 1.75cm, "isbn"},
+            {RecordGridColumn width = 3.0cm, "title"},
+            {RecordGridColumn width = 2.25cm, "author"},
+            {RecordGridColumn width = 2.0cm, "img-url",
+                cell-spec = ImageCell},
+            {RecordGridColumn width = 2.25cm, "vendor-name",
+                cell-spec = VendorCell},
+            {RecordGridColumn width = 3.0cm, "service"},
+            {RecordGridColumn width = 2.5cm, "vendor-price"}
+        }
+
+    {with-compiler-directives
+        allow-slow-spliced-arguments? = true
+     do
+        {construct-super
+            background = "wheat",
+            hstretch? = true,
+            selection-context = null,
+            {new VBox,
+                background = "wheat",
+                halign = "center",
+                {text Web Services Demo},
+                {big {bold Book Information Finder}},
+                {Fill height = 0.25cm},
+                self.service-generation-error-frame,
+                {new HBox,
+                    valign = "top",
+                    spacing = 2pt,
+                    margin = 2pt,
+                    border-width = 2pt,
+                    border-color = "silver",
+                    border-style = "groove",
+                    {self.build-user-controls},
+                    self.record-grid
+                },
+                {Fill},
+                {text
+                    font-size = 8pt,
+                    {copyright} 1998-2009,
+                    Sumisho Computer Systems Corp.  All Rights Reserved.}
+            },
+            ...
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Builds the part of the user-interface that contains GUI controls.
+    }
+  }
+  {method protected open {build-user-controls}:Graphic
+    set self.async-button =
+        {new RadioButton,
+            label = "Asynchronous",
+            radio-value = "async",
+            value = true,
+            {on ValueChanged at rb:RadioButton do
+                set self.rmd.async? = rb.value
+            }
+        }
+    set self.synchronous-button =
+        {new RadioButton,
+            label = "Synchronous",
+            radio-value = "synchronous",
+            {on ValueChanged at rb:RadioButton do
+                set self.rmd.async? = not rb.value
+            }
+        }
+    set self.radio-frame =
+        {new RadioFrame,
+            {new HBox,
+                spacing = 2pt,
+                self.async-button,
+                self.synchronous-button
+            }
+        }
+    set self.keyword-tf =
+        {new TextField,
+            width = 5cm,
+            {on Action at tf:TextField do
+                {self.keyword-go-button.handle-event {Action}}
+            },
+            {on AttachEvent at tf:TextField do
+                {tf.request-key-focus}
+            }
+        }
+    set self.keyword-go-button =
+        {new CommandButton,
+            label = "Go",
+            {on Action do
+                {with-busy-cursor
+                    || Cancel all pending asynchronous jobs
+                    {self.cancel-button.handle-event {Action}}
+                    || Clear the results RecordSet
+                    {self.results-rs.delete-all}
+                    {dispatch-events false}
+                    set self.rda = {new {Array-of RecordData}}
+                    {if self.keyword-tf.value != "" then
+                        let pname:String =
+                            self.keyword-service-ddl.value asa String
+                        || Call service(s)
+                        {switch pname
+                         case "All" do
+                            {for item in self.keyword-service-ddl.data-model do
+                                {unless item == "All" do
+                                    {try
+                                        {self.rmd.make-service-call
+                                            "execute-keyword-search",
+                                            item asa String,
+                                            self.keyword-tf.value asa String,
+                                            self.rda
+                                        }
+                                     catch sfe:SOAP-1-1-FaultException do
+                                        {dump sfe}
+                                    }
+                                }
+                                {self.update-display self.rda}
+                            }
+                         else
+                            {try
+                                {self.rmd.make-service-call
+                                    "execute-keyword-search",
+                                    pname,
+                                    self.keyword-tf.value asa String,
+                                    self.rda
+                                }
+                             catch sfe:SOAP-1-1-FaultException do
+                                {dump sfe}
+                            }
+                            {self.update-display self.rda}
+                        }
+                    }
+                }
+            }
+        }
+    set self.isbn-tf =
+        {new TextField,
+            width = 5cm,
+            value = "1558608168",
+            value = "0764549421",
+            {on Action at tf:TextField do
+                {self.isbn-go-button.handle-event {Action}}
+            }
+        }
+    {with-compiler-directives
+        allow-slow-spliced-arguments? = true
+     do
+        let slist:StringArray = {self.get-list-of-services keywords? = true}
+        set self.keyword-service-ddl =
+            {new DropdownList,
+                width = 5.5cm,
+                {splice slist},
+                value = slist[0]
+            }
+        set slist = {self.get-list-of-services keywords? = false}
+        set self.isbn-service-ddl =
+            {new DropdownList,
+                width = 5.5cm,
+                {splice slist},
+                value = slist[0]
+            }
+    }
+    set self.isbn-go-button =
+        {new CommandButton,
+            label = "Go",
+            {on Action do
+                {with-busy-cursor
+                    || Cancel all pending asynchronous jobs
+                    {self.cancel-button.handle-event {Action}}
+                    || Clear the results RecordSet
+                    {self.results-rs.delete-all}
+                    {dispatch-events false}
+                    set self.rda = {new {Array-of RecordData}}
+                    {if self.isbn-tf.value != "" then
+                        let pname:String =
+                            self.isbn-service-ddl.value asa String
+                        || Call service(s)
+                        {switch pname
+                         case "All" do
+                            {for item in self.isbn-service-ddl.data-model do
+                                {unless item == "All" do
+                                    {try
+                                        {self.rmd.make-service-call
+                                            "execute-isbn-search",
+                                            item asa String,
+                                            self.isbn-tf.value asa String,
+                                            self.rda
+                                        }
+                                     catch sfe:SOAP-1-1-FaultException do
+                                        {dump sfe}
+                                    }
+                                }
+                                {self.update-display self.rda}
+                            }
+                         else
+                            {try
+                                {self.rmd.make-service-call
+                                    "execute-isbn-search",
+                                    pname,
+                                    self.isbn-tf.value asa String,
+                                    self.rda
+                                }
+                             catch sfe:SOAP-1-1-FaultException do
+                                {dump sfe}
+                            }
+                            {self.update-display self.rda}
+                        }
+                    }
+                }
+            }
+        }
+    set self.cancel-button =
+        {new CommandButton,
+            label = "Cancel",
+            {on Action do
+                {for worker in self.rmd.workers do
+                    {worker.cancel}
+                }
+                {self.rmd.workers.clear}
+                set self.rmd.current-worker = null
+            }
+        }
+    {if not self.keyword-services-generated? then
+        set self.keyword-tf.enabled? = false
+        set self.keyword-go-button.enabled? = false
+        set self.keyword-service-ddl.enabled? = false
+    }
+    {if not self.isbn-services-generated? then
+        set self.isbn-tf.enabled? = false
+        set self.isbn-go-button.enabled? = false
+        set self.isbn-service-ddl.enabled? = false
+    }
+    {return
+        {new StandardActiveTraversalContainer,
+            {new VBox,
+                spacing = 5pt,
+                self.radio-frame,
+                {new Table,
+                    border-width = 2px,
+                    border-color = "silver",
+                    border-style = "groove",
+                    cell-margin = 1pt,
+                    font-size = 8pt,
+                    {row-prototype {bold Keyword Vendor:}, {skip}},
+                    {row-prototype self.keyword-service-ddl, {skip}},
+                    {row-prototype {bold Keyword Search:}, {skip}},
+                    {row-prototype self.keyword-tf, self.keyword-go-button},
+                    {row-prototype
+                        {cell-prototype colspan = 2, {new Rule, height = 2pt}}
+                    },
+                    {row-prototype {bold ISBN Search:}, {skip}},
+                    {row-prototype self.isbn-tf, self.isbn-go-button},
+                    {row-prototype {bold ISBN Vendor:}, {skip}},
+                    {row-prototype self.isbn-service-ddl, {skip}}
+                },
+                {new HBox, {Fill}, self.cancel-button, {Fill}}
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Returns a {docref StringArray} of the available services.
+    }
+    {parameter
+        keywords?,
+        A {docref bool} indicating that the caller wants services that support
+        keyword searches.
+    }
+  }
+  {method protected open {get-list-of-services
+                             keywords?:bool = false
+                         }:StringArray
+    let sa:StringArray = {new StringArray, "All"}
+    {for service in self.service-data.packages do
+        {if-non-null str = service.name then
+            {if keywords? then
+                || We only want services that support keyword searches
+                {switch str
+                 case "COM.CURL.WSDL.LookyBookService" do
+                    || We know the LookyBookService supports 2, as follows
+                    {sa.append str}
+                 case "COM.CURL.WSDL.AmazonSearch" do
+                    || We know Amazon supports at least 1
+                    {sa.append str}
+                }
+             else
+                || We know all our services support an ISBN search
+                {sa.append str}
+            }
+        }
+    }
+    {if sa.size == 1 then
+        || Only "All" is there but there aren't any services
+        {sa.clear}
+        {sa.append "No service available"}
+        {if keywords? then
+            set self.keyword-services-generated? = false
+         else
+            set self.isbn-services-generated? = false
+        }
+     else
+        {if keywords? then
+            set self.keyword-services-generated? = true
+         else
+            set self.isbn-services-generated? = true
+        }
+    }
+    set self.service-generation-error-message =
+        {if self.keyword-services-generated? then
+            {if self.isbn-services-generated? then
+                ""
+             else
+                "No ISBN search services available"
+            }
+         else
+            {if self.isbn-services-generated? then
+                "No keyword search services available"
+             else
+                "No search services available"
+            }
+        }
+    {self.service-generation-error-frame.add
+        replace? = true,
+        {bold color = "red", {value self.service-generation-error-message}}
+    }
+    {return sa}
+  }
+
+  {doc-next
+    {purpose
+        Update the display.
+    }
+    {parameter
+        record-data,
+        An {docref Array-of} {docref RecordData} used to update the
+        {docref RecordGrid}.
+    }
+  }
+  {method public open {update-display
+                          record-data:{Array-of RecordData}
+                      }:void
+    {self.results-rs.delete-all}
+    {for rd in record-data do
+        {self.results-rs.append rd}
+    }
+    {dispatch-events false}
+  }
+}

@@ -1,0 +1,215 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| contains the classes:
+|| WSDLSchemaElementGroup
+|| WSDLSchemaPlaceholderElementGroup
+|| WSDLSchemaAttributeGroup
+|| WSDLSchemaPlaceholderAttributeGroup
+
+{define-class public open WSDLSchemaElementGroup
+  {inherits WSDLSchemaElement}
+  field public-get protected-set group-type:String
+  field protected _elements:#{Array-of WSDLSchemaElement}
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          group-type:String,
+                          elements:#{Array-of WSDLSchemaElement},
+                          node:WSDLDOMNode,
+                          ...
+                      }
+    {construct-super xml-name, type, node, {splice ...}}
+    set self.group-type = group-type
+    set self._elements = elements
+  }
+
+  {getter public open {elements}:{Array-of WSDLSchemaElement}
+    {return {non-null self._elements}}
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {if-non-null elements = self._elements then
+        {for e in elements do
+            {e.resolve-types names}
+        }
+    }
+  }
+  
+}
+
+{define-class public open WSDLSchemaPlaceholderElementGroup
+  {inherits WSDLSchemaElementGroup}
+  field public constant reference-qname:XMLName
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          group-type:String,
+                          reference-qname:XMLName,
+                          min-occurs:int,
+                          max-occurs:int,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, group-type, null, node,
+        min-occurs = min-occurs,
+        max-occurs = max-occurs}
+    set self.reference-qname = reference-qname
+  }
+  
+  {getter public open {elements}:{Array-of WSDLSchemaElement}
+    {return
+        {if-non-null e = self._elements then
+            e
+         else
+            {error "Early use of a PlaceholderElementGroup."}
+        }
+    }
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {if self._elements == null then
+        let constant (group-obj:Object, found?:bool) =
+            {names.get-if-exists self.reference-qname}
+        {if found? then
+            {type-switch group-obj
+             case g:WSDLSchemaPlaceholderElementGroup do
+                {names.unresolved-placeholders.insert self}
+             case group:WSDLSchemaElementGroup do
+                {group.resolve-types names}
+                set self.group-type = group.group-type
+                set self._elements = group.elements
+             else
+                || TODO: error?
+            }
+         else
+            || remove symbol-space prefix
+            let name:String = self.reference-qname.local-name
+            set name = {name.tail {name.find ':'} + 1}                    
+            {wsdl-exception node = self.node,
+                {hlmessage Unable to find group 
+                    '{WSDL.format-name name = name, self.node}'.
+                }
+            }
+        }
+    }
+  }
+}
+
+
+{define-class public open WSDLSchemaAttributeGroup
+  {inherits WSDLSchemaAttribute}
+  field protected _attributes:#{Array-of WSDLSchemaAttribute}
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          attributes:#{Array-of WSDLSchemaAttribute},
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, node}
+    set self._attributes = attributes
+  }
+
+  {getter public open {attributes}:{Array-of WSDLSchemaAttribute}
+    {return {non-null self._attributes}}
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {if-non-null attributes = self._attributes then
+        {for a key i in attributes do
+            {type-switch a
+             case pa:WSDLSchemaAttributePlaceholderType do
+                let constant (att:Object, found?:bool) =
+                    {names.get-if-exists pa.qname}
+                {type-switch att
+                 case pa:WSDLSchemaAttributePlaceholderType do
+                    || this will note unresolved "type"
+                    {pa.resolve-types names}
+                 case ra:WSDLSchemaAttribute do
+                    set self.attributes[i] = ra
+                    {ra.resolve-types names}
+                }
+             case pag:WSDLSchemaPlaceholderAttributeGroup do
+                let constant (attg:Object, found?:bool) =
+                    {names.get-if-exists pag.reference-qname}
+                {type-switch attg
+                 case pag:WSDLSchemaPlaceholderAttributeGroup do
+                    || this will note unresolved "type"
+                    {pag.resolve-types names}
+                 case rag:WSDLSchemaAttributeGroup do
+                   set attributes[i] = rag
+                    {rag.resolve-types names}
+                }
+             else
+                {a.resolve-types names}
+            }
+        }
+    }
+  }
+  
+}
+
+{define-class public open WSDLSchemaPlaceholderAttributeGroup
+  {inherits WSDLSchemaAttributeGroup}
+  field public constant reference-qname:XMLName
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          reference-qname:XMLName,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, null, node}
+    set self.reference-qname = reference-qname
+  }
+  
+  {getter public open {attributes}:{Array-of WSDLSchemaAttribute}
+    {return
+        {if-non-null a = self._attributes then
+            a
+         else
+            {error "Early use of a PlaceholderAttributeGroup."}
+        }
+    }
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {if self._attributes == null then
+        let constant (group-obj:Object, found?:bool) =
+            {names.get-if-exists self.reference-qname}
+        {if found? then
+            {type-switch group-obj
+             case g:WSDLSchemaPlaceholderAttributeGroup do
+                {names.unresolved-placeholders.insert self}
+             case group:WSDLSchemaAttributeGroup do
+                {group.resolve-types names}
+                set self._attributes = group.attributes
+            }
+         else
+            || remove symbol-space prefix
+            let name:String = self.reference-qname.local-name
+            set name = {name.tail {name.find ':'} + 1}                    
+            {wsdl-exception node = self.node,
+                {hlmessage Unable to find group 
+                    '{WSDL.format-name name = name, self.node}'.
+                }
+            }
+        }
+    }
+  }
+}

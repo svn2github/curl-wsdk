@@ -1,0 +1,364 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 package}
+            
+{package COM.CURL.WSDK.MSXML-TEST-SUPPORT,
+    version = "0.9",
+    resource-directory = "../../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        careful? = true
+    }
+}
+
+{import * from CURL.GRAPHICS.ACTIVEX}
+{import * from CURL.GUI.STANDARD}
+
+{import * from COM.CURL.CDU.CURL-UNIT}
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+
+{import * from COM.CURL.WSDK.MSXML}
+{import * from COM.CURL.WSDK.XML-TEST-SUPPORT}
+
+|| NOTE: used as a guard for MSXML availability
+{define-proc public {test-MSXML-available}:TestCase
+    {return
+        {test-case "test-MSXML-available",
+            let which:String = "MSXML2.DOMDocument.5.0"
+            {try
+                let msxml:ActiveXObject = {ActiveXObject ProgId = which}
+             catch e:Exception do
+                {TestCondition.terminate message =
+                    {lmessage MSXML unavailable: {value which}}}}
+        }}
+}
+
+|| TODO:
+|| - should destroy on suspend
+|| - check GC
+
+{define-class public MSXMLNodeIndex
+  {inherits {HashTable-of ActiveXObject, int, 
+                key-equality-proc = ActiveXObject-equal?,
+                key-hash-proc = ActiveXObject-hash}}
+  field public-get constant subject:ActiveXObject 
+  || NOTE: MSXML returns comments: this excludes them
+  let constant all-nodes-query:String = |"(descendant::*|descendant::text()|//@*)"|
+||--  let constant all-nodes-query:String = |"(descendant::node()|//@*)"|
+  {constructor public {default subject:ActiveXObject}
+    set self.subject = subject
+    || start from document
+    {if subject.nodeTypeString != "document" then
+        set subject = subject.ownerDocument asa ActiveXObject}
+    let nodes:ActiveXObject = 
+        {subject.selectNodes MSXMLNodeIndex.all-nodes-query} asa ActiveXObject
+    let n:int = nodes.Length asa int
+    || TODO: need to control attribute order
+    let index:int = 1
+    set self[subject] = n
+    {inc index}
+    {for i = 0 below n do
+        let x:ActiveXObject = {nodes.Item i} asa ActiveXObject
+        || skip default attributes (from DTD)
+        {switch x.nodeTypeString
+         case "attribute" do
+            {if not x.specified asa bool then
+                {continue}}}
+        set self[x] = index
+        {inc index}}
+  }
+  {method public {summarize-nodes nodes:ActiveXObject}:IntArray
+    let n:int = nodes.Length asa int
+    let ks:IntArray = {IntArray efficient-size = n}
+    {for i = 0 below n do
+        let x:ActiveXObject = {nodes.Item i} asa ActiveXObject    
+        let (k:int, k?:bool) =  {self.get-if-exists x}
+        {ks.append {if k? then k else -1}}}
+    {return ks}
+  }
+}
+|| these can not be class variables
+{define-proc {ActiveXObject-equal? self:ActiveXObject, other:ActiveXObject}:bool
+    {return self.com-identity == other.com-identity}
+}
+{define-proc {ActiveXObject-hash self:ActiveXObject}:int
+    {return {value-hash self.com-identity}}
+}
+{define-class public MSXMLDocument
+  field location:Url 
+  
+  {constructor public {default location:Url}
+    set self.location = location
+  }
+  field _document:#ActiveXObject
+  {getter public {document}:ActiveXObject
+    {if self._document == null then
+        set self._document = {build-msxml self.location}}
+    {return {non-null self._document}}
+  }
+  field _index:#MSXMLNodeIndex  
+  {getter public {index}:MSXMLNodeIndex
+    {if self._index == null then
+        set self._index = {MSXMLNodeIndex self.document}}
+    {return {non-null self._index}}
+  }
+  {getter public {root}:ActiveXObject
+    {return self.document.documentElement asa ActiveXObject}
+  }
+  {method public {destroy}:void
+    || TODO: should contents also be destroyed?
+    {if-non-null index = self._index then
+        {index.clear}
+        set self._index = null}
+    {if-non-null doc = self._document then
+        {try
+            {with-compiler-directives allow-any-calls? = true do
+                {doc.documentElement.destroy-object}}
+            {doc.destroy-object}
+         catch e:ActiveXException do}
+        set self._document = null}
+  }
+}
+{let constant public msxml-documents:{Memoizer-of Url, MSXMLDocument} =
+    {{StrongMemoizer-of Url, MSXMLDocument}
+        {proc {loc:Url}:MSXMLDocument
+||--            {output {message Creating MSXMLDocument for {value loc}}}
+            {return {MSXMLDocument loc}}
+        }}
+}
+{define-class public XPathTestCaseMSXML {inherits XPathTestCase}
+  field public-get actual:#IntArray
+  field public-get namespaces:XDMNamespaceDeclarations
+  field _query:#XDMPath
+  {constructor public {default 
+                          location:Url, 
+                          source:String, 
+                          namespaces:XDMNamespaceDeclarations = xml-namespace-context}
+    set self.namespaces = namespaces
+    {construct-super location, source}
+  }
+  {getter public {standard}:MSXMLDocument
+    {return msxml-documents[self.location]}
+  }
+  field n-elements:int
+  {method public {set-up}:void
+    {super.set-up}
+    || demand the documents and indexes
+    self.standard
+    || note number of elements
+    set self.n-elements = {self.subject.search "descendant-or-self::*"}.size
+  }
+  {getter public {query}:XDMPath
+    {if self._query == null then
+        let ns-args:Arguments = {self.namespaces.to-Arguments}
+        set self._query = {XDMPath {splice ns-args}, self.source}}        
+    {return {non-null self._query}}
+  }
+  {getter public {expected}:IntArray
+    {if self._expected == null then
+        let msxml:MSXMLDocument = self.standard
+        let msxml-index:MSXMLNodeIndex = msxml.index
+        let ns-args:Arguments = {self.namespaces.to-Arguments}
+        let ns:StringBuf = {StringBuf}
+        {for (x, k) in ns-args do
+            {if not ns.empty? then
+                {ns.append ' '}}
+            {format out = ns, "xmlns:%s='%s'", k, x}}
+        {msxml.document.setProperty "SelectionNamespaces", {ns.to-String}}
+        let msxml-nodes:ActiveXObject = {msxml.root.selectNodes self.source} asa ActiveXObject
+        let msxml-summary:IntArray = {msxml-index.summarize-nodes msxml-nodes}
+        set self._expected = msxml-summary}
+    {return {non-null self._expected}}
+  }
+  {method public {run}:void
+    let path:XDMPath = self.query
+    
+    let xdm:XDMDocument = {non-null self.subject.document}
+    let xdm-index:XDMNodeIndex = self.node-index    
+    let xdm-nodes:XDMNodeSet = {xdm.root.evaluate path}
+    let xdm-summary:IntArray = {xdm-index.summarize-nodeset xdm-nodes}
+    set self.actual = xdm-summary
+    
+    let msxml-summary:IntArray = self.expected
+    
+    let match?:bool = {xdm-summary.equal? msxml-summary}
+    
+    {if match? then 
+        {TestCondition.succeed message =
+            {format "%d / %d", xdm-nodes.size, self.n-elements}}
+     else 
+        || check order and duplicates
+        let xdm-sorted:IntArray = {xdm-summary.clone}
+        {xdm-sorted.sort}
+        let n:int = xdm-sorted.size
+        let info:String =
+            {if {xdm-sorted.equal? msxml-summary} then
+                "disordered"
+             else
+                let xx:int = -1
+                {for i = n - 1 downto 0 do
+                    let x:int = xdm-sorted[i]
+                    {if x == xx then
+                        {xdm-sorted.remove i}}
+                    set xx = x}
+                {if xdm-sorted.size < n then
+                    {if {xdm-sorted.equal? msxml-summary} then
+                        "duplicates"
+                     else "mismatch with duplicates"}
+                 else "mismatch"}}
+        {TestCondition.fail message = info}}
+  }
+}
+|| NOTE: must create document eagerly, because cases are generative
+{define-class public XDMPathMembershipTestCases {inherits TestSuite}
+  field public-get location:Url
+  field public-get namespaces:XDMNamespaceDeclarations
+  field public-get members:{HashTable-of XDMName, {Set-of XDMName}}
+  {constructor public {default location:Url}
+    set self.location = location
+    let name:String = {location.name-relative-to-url {get-base-url}.parent}
+    {construct-super name}
+    let subject:XDMDocument = xdm-documents[self.location]
+    set (self.members, self.namespaces) = {xdm-membership subject.root}
+    let qname:{proc-type {XDMName}:String} =
+        {proc {name:XDMName}:String
+            {return
+                {if name.namespace.empty? then
+                    name.local-name
+                 else
+                    {if-non-null prefix = {self.namespaces.get-prefix name.namespace} then
+                        prefix & ":" & name.local-name
+                     else
+                        {error {message No prefix for '{value name.namespace}'}}}}}}
+    let paths:StringArray = {StringArray}
+    {for ms key e in self.members do
+        {for m in ms do
+            {paths.append
+                {format "//%s/%s", {qname e}, {qname m}}}}}
+    {paths.sort}
+    {for path in paths do
+        {self.add
+            {XPathTestCaseMSXML
+                namespaces = self.namespaces,
+                location, path}}}
+  }
+}
+|| NOTE: attempting to flush ActiveXObjects
+{define-class public XDMPathMembershipTestSuite {inherits TestSuite}
+  field public-get constant locations:UrlArray
+  {constructor public {default name:#String = null, ...:Url}
+    set self.locations = {UrlArray {splice ...}}
+    {construct-super {if-non-null name then name else {type-of self}.name}}
+    {self.generate-tests}
+  }
+  {method public {generate-tests}:void   
+    {self.add
+        {test-MSXML-available}}
+    {try
+        {for loc in self.locations do
+            {self.add
+                {XDMPathMembershipTestCases loc}}}
+        
+     catch e:Exception do
+        {self.add
+            {test-case {lmessage Alert},
+                {TestCondition.fail message =
+                    {lmessage 
+                        Unable to generate tests for '{value self.name}' : '{value e.value}'}}}}
+    }
+  }
+  || NOTE: TestSuite has a different protocol then TestCase
+||--  {method public {run result:TestResult}:void
+||--    {self.set-up}
+||--    {super.run result}
+||--    {self.tear-down}
+||--  }
+  {method public {set-up}:void
+  }
+  {method public {tear-down}:void
+    {for loc in self.locations do
+        || TODO: this is too eager
+        {msxml-documents[loc].destroy}}
+    {msxml-documents.flush-memos}
+  }
+}
+
+|| NOTE: not used or tested
+{define-proc public {xml-membership-summary
+                        loc:Url
+                    }:Graphic
+    let loc:Url = {url "test-data/GoogleSearch.wsdl"}
+    let doc:XDMDocument = xdm-documents[loc]
+    let subject:XDMElement = doc.root
+    
+    let (members:{HashTable-of XDMName, {Set-of XDMName}},
+         namespaces:XDMNamespaceContext) =
+        {xdm-membership subject}
+    
+    let rs:RecordSet =
+        {RecordSet
+            {RecordFields 
+                {RecordField "element", domain = any},
+                {RecordField "member", domain = any},
+                {RecordField "number", domain = int}
+            }}
+    
+    let qname:{proc-type {XDMName}:String} =
+        {proc {name:XDMName}:String
+            {return
+                {if name.namespace.empty? then
+                    name.local-name
+                 else
+                    {if-non-null prefix = {namespaces.get-prefix name.namespace} then
+                        prefix & ":" & name.local-name
+                     else
+                        {error {message No prefix for '{value name.namespace}'}}}}}}
+    
+    let args:Arguments = {namespaces.to-Arguments}
+    {for ms key e in members do
+        {for m in ms do
+            let path:XDMPath = 
+                {XDMPath 
+                    {splice args},
+                    {format "//%s/%s", {qname e}, {qname m}}}
+            let xs:XDMNodeSet = {path.search subject}
+            {rs.append 
+                {RecordData
+                    element = e,
+                    member = m,
+                    number = xs.size}}}}
+    {rs.commit}
+    let qqname:{proc-type {any}:String} =
+        {proc {name:any}:String
+            {return {qname name asa XDMName}}}
+    
+    let rg:RecordGrid =
+        {RecordGrid
+            record-source = rs,
+            width = {add-stretch},
+            height = {add-stretch},
+            sort = "element,member",
+            {RecordGridColumn "element",
+                format-spec = qqname},
+            {RecordGridColumn "member",
+                format-spec = qqname}
+        }
+    {return rg}
+}
+

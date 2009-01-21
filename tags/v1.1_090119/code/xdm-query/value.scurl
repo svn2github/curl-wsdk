@@ -1,0 +1,720 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| result representation
+|| ====================
+
+{doc-next || === XPathValue
+    {purpose Used for value conversion in evaluation of XML path expressions}
+    {details 
+        An {ctext XPath} value may be one of
+        {itemize
+            {item {docref XDMNodeSet}}
+            {item {docref String}}
+            {item {docref double}}
+            {item {docref bool}}}
+        Values are converted between different types 
+        according to XPath 1.0 conversion rules.
+    }
+}
+{define-class public abstract XPathValue
+  || value
+  {doc-next ||=== XPathValue.value
+    {purpose The value.}
+  }
+  {getter public abstract {value}:any
+  }
+  {doc-next ||=== XPathValue.type
+    {purpose The Type of the value.}
+  }
+  {getter public abstract {type}:Type
+  }
+  || comparison
+  {doc-next ||=== XPathValue.equal?
+    {purpose Compare this {ctext XPathValue} with another for equality.
+        {parameter other, the other {ctext XPathValue}.}}
+  }
+  {method public abstract {equal? other:XPathValue}:bool
+  }
+  {doc-next ||=== XPathValue.compares?
+    {purpose Compare this {ctext XPathValue}.
+        {parameter c, the criterion for comparison}.
+        {parameter other, the other {ctext XPathValue}.}}
+  }
+  {method public abstract {compares? c:XPathValueComparison, other:XPathValue}:bool
+  }
+  || conversion
+  {doc-next ||=== XPathValue.as-XDMNodeSet
+    {purpose Convert this {ctext XPathValue} to a {docref XDMNodeSet}}
+  }
+  {getter public abstract {as-XDMNodeSet}:XDMNodeSet
+  }
+  {doc-next ||=== XPathValue.as-String
+    {purpose Convert this {ctext XPathValue} to a {docref String}}
+  }
+  {getter public abstract {as-String}:String
+  }
+  {doc-next ||=== XPathValue.as-bool
+    {purpose Convert this {ctext XPathValue} to a {docref bool}}
+  }
+  {getter public abstract {as-bool}:bool
+  }
+  {doc-next ||=== XPathValue.as-double
+    {purpose Convert this {ctext XPathValue} to a {docref double}}
+  }
+  {getter public abstract {as-double}:double
+  }
+  {doc-next ||=== XPathValue.as-XDMNode
+    {purpose Convert this {ctext XPathValue} to a {docref XDMNode}}
+  }
+  || non XPath, but useful
+  {getter public abstract {as-XDMNode}:XDMNode
+  }
+  {doc-next ||=== XPathValue.as-XDMNode?
+    {purpose Convert this {ctext XPathValue} to a {docref #XDMNode}}
+  }
+  {getter public abstract {as-XDMNode?}:#XDMNode
+  }
+  {doc-next ||=== XPathValue.as-XDMElement
+    {purpose Convert this {ctext XPathValue} to a {docref XDMElement}}
+  }
+  || non XPath, but useful
+  {getter public abstract {as-XDMElement}:XDMElement
+  }
+  {doc-next ||=== XPathValue.as-XDMElement?
+    {purpose Convert this {ctext XPathValue} to a {docref #XDMElement}}
+  }
+  {getter public abstract {as-XDMElement?}:#XDMElement
+  }
+  {doc-next ||=== XPathValue.as-int
+    {purpose Convert this {ctext XPathValue} to a {docref int}}
+  }
+  || non XPath, but used by 'define-xp-proc'
+  {getter public abstract {as-int}:int
+  } 
+  {doc-next ||=== XPathValue.as-XDMNodeSet
+    {purpose Convert this {ctext XPathValue} to a {docref XPathValue}}
+  }
+  {getter public abstract {as-XPathValue}:XPathValue
+  } 
+  || construction
+  {doc-next ||=== XPathValue.default
+    {purpose Create an {docref XPathValue}.}
+  }
+  {factory public {default val:any}:XPathValue_
+    {return 
+        {XPathValue_ 
+            {type-switch val
+             case x:XDMNodeSet do x
+             case x:String do x
+             case x:bool do x
+             case x:double do x
+             case x:XDMNode do {XDMNodeSet x}
+             case x:int do x asa double
+             case x:XPathValue do x.value
+             else {xdm-exception {message XPathValue got unexpected type '{value val}'}}
+            }}}
+    }
+  {doc-next ||=== XPathValue.from-XDMNodeSet
+    {purpose Create an {docref XPathValue} from an {docref XDMNodeSet}.}
+  }
+  {factory public implicit {from-XDMNodeSet x:XDMNodeSet}:XPathValue_
+    {return {XPathValue_ x}}
+  }
+  {doc-next ||=== XPathValue.from-String
+    {purpose Create an {docref XPathValue} from a {docref String}.}
+  }
+  {factory public implicit {from-String x:String}:XPathValue_
+    {return {XPathValue_ x}}
+  }
+  {doc-next ||=== XPathValue.from-double
+    {purpose Create an {docref XPathValue} from a {docref double}.}
+  }
+  {factory public implicit {from-double x:double}:XPathValue_
+    {return {XPathValue_ x}}
+  }
+  {doc-next ||=== XPathValue.from-bool
+    {purpose Create an {docref XPathValue} from a {docref bool}.}
+  }
+  {factory public implicit {from-bool x:bool}:XPathValue_
+    {return {XPathValue_ x}}
+  }
+  {doc-next ||=== XPathValue.from-XDMNode
+    {purpose Create an {docref XPathValue} from an {docref XDMNode}.}
+  }
+  {factory public implicit {from-XDMNode x:XDMNode}:XPathValue_
+    {return {XPathValue_ {XDMNodeSet x}}}
+  }
+  {doc-next ||=== XPathValue.from-int
+    {purpose Create an {docref XPathValue} from a {docref int}.}
+  }
+  {factory public implicit {from-int x:int}:XPathValue_
+    {return {XPathValue_ x asa double}}
+  }
+}
+{define-class public XPathValue_ {inherits XPathValue}
+  field constant _value:any 
+  {getter public final inline {value}:any
+    {return self._value}
+  }
+  {getter public final inline {type}:Type
+    {return {type-of self._value}}
+  }
+  {constructor public {default val:any}
+    set self._value = val
+  }
+  || comparison methods
+  {method public {equal? other:XPathValue}:bool
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do 
+            {xs.compares? XPathValueComparison.equal, other.value}
+         else
+            {type-switch other.value
+             case ys:XDMNodeSet do
+                {ys.compares? XPathValueComparison.equal, self.value}
+             case y:String do 
+                y == self.as-String
+             case y:bool do
+                y == self.as-bool
+             case y:double do 
+                y == self.as-double
+             else {xdm-exception {message Can not compare '{value self}' 
+                                     with '{value other.value}'}}
+            }}}
+  }
+  {method public {compares? c:XPathValueComparison, other:XPathValue}:bool
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do 
+            {xs.compares? c, other.value}
+         else
+            {type-switch other.value
+             case ys:XDMNodeSet do
+                || NOTE: sense of comparison reversed
+                {ys.compares? {reverse-comparison c}, self.value}
+             case y:String do 
+                {compares? c, {self.as-String.compare y}}
+             case y:bool do
+                {compares? c, {compare-bool self.as-bool, y}}
+             case y:double do 
+                let x:double = self.as-double
+                {if {nan? y} or {nan? x} then
+                    false
+                 else
+                    {compares? c, {compare-double x, y}}}
+             else {xdm-exception {message Can not compare '{value self}' 
+                                     with '{value other.value}'}}
+            }}}
+  }
+  || conversion accessors
+  {getter public {as-XDMNodeSet}:XDMNodeSet
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do xs
+         else {self.cast-exception XDMNodeSet}
+        }}
+  }
+  {getter public {as-String}:String
+    {return
+        {type-switch self.value
+         case x:String do x
+         case xs:XDMNodeSet do xs.as-String
+         case x:bool do {String x}
+         case x:double do {format "%.15g", x}
+         else {self.cast-exception String}
+        }}
+  }
+  {getter public {as-bool}:bool
+    {return
+        {type-switch self.value
+         case x:bool do x
+         case xs:XDMNodeSet do xs.as-bool
+         case x:String do x == "1" or x == "true"
+         case x:double do
+            || NOTE: this yields correct nan -> false, unlike x != 0
+            x > 0 or x < 0
+         else {self.cast-exception bool}
+        }}
+  }
+  {getter public {as-double}:double
+    {return
+        {type-switch self.value
+         case x:double do x 
+         case xs:XDMNodeSet do xs.as-double
+         case s:String do {XDMNodeSet.parse-double s}
+         case x:bool do {if x then 1.0 else 0.0}
+         else {self.cast-exception double}
+        }}
+  }
+  || not XPath, but useful
+  {getter public {as-int}:int
+    || NOTE: Xpath specifies "round-half-up"
+    || - curl 'round' does "round-half-even"
+    || - but dguide suggests the following
+    {return {floor self.as-double + 0.5f} asa int}
+  }
+  {getter public {as-XDMNode?}:#XDMNode
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do xs.as-XDMNode?
+         else {self.cast-exception #XDMNode}
+        }}
+  }
+  {getter public {as-XDMNode}:XDMNode
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do xs.as-XDMNode
+         else {self.cast-exception XDMNode}
+        }}
+  }
+  {getter public {as-XDMElement?}:#XDMElement
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do xs.as-XDMElement?
+         else {self.cast-exception #XDMElement}
+        }}
+  }
+  {getter public {as-XDMElement}:XDMElement
+    {return
+        {type-switch self.value
+         case xs:XDMNodeSet do xs.as-XDMElement
+         else {self.cast-exception XDMElement}
+        }}
+  }
+  || just in case
+  {getter public {as-XPathValue}:XPathValue
+    {return self}
+  }
+  {method {cast-exception type:Type}:never-returns
+    {xdm-exception 
+        {message Can not convert '{value self.value}' to '{value type}'}}
+  }
+}
+{doc-next || === XDMNodeSet
+    {purpose Represents the {docref XDMNode}s 
+        resulting from an {docref XDMPath} search.}
+    {details 
+        An {ctext XPath} value may be one of
+        {itemize
+            {item {docref XDMNodeSet}}
+            {item {docref String}}
+            {item {docref double}}
+            {item {docref bool}}}
+        Values are converted between different types 
+        according to XPath 1.0 conversion rules.
+    }
+}
+{define-class public abstract XDMNodeSet
+  || Sequence-of protocol
+  {doc-next ||=== XDMNodeSet.size
+    {purpose The number of {docref XDMNode}s in the {docref XDMNodeSet}.}
+  }
+  {getter public abstract {size}:int
+  }
+  {doc-next ||=== XDMNodeSet.empty?
+    {purpose Whether the {docref XDMNodeSet} contains no {docref XDMNode}s.}
+  }
+  {getter public abstract {empty?}:bool
+  }
+  {doc-next ||=== XDMNodeSet.to-Iterator
+    {purpose Returns an Iterator containing all the items in the {docref XDMNodeSet}.}
+  }
+  {method public abstract {to-Iterator}:{Iterator-of XDMNode}
+  }
+  {doc-next ||=== XDMNodeSet.keys-to-Iterator
+    {purpose Returns an Iterator containing each index in the {docref XDMNodeSet}.}
+  }
+  {method public abstract {keys-to-Iterator}:{Iterator-of int}
+  }
+  {doc-next ||=== XDMNodeSet.get
+    {purpose Returns the {docref XDMNode} corresponding to the specifed index.}
+  }
+  {method public abstract {get i:int}:XDMNode
+  }
+  {doc-next ||=== XDMNodeSet.in-bounds?
+    {purpose Indicates whether its argument is a valid index in the {docref XDMNodeSet}.}
+  }
+  {method public abstract {in-bounds? i:int}:bool
+  }
+  {doc-next ||=== XDMNodeSet.append
+    {purpose Appends the specifed {docref XDMNode} to the {docref XDMNodeSet}.}
+  }
+  {method public abstract {append x:XDMNode}:void
+  }
+  || AVOID
+  {doc-next ||=== XDMNodeSet.concat
+    {purpose Appends the specifed {docref XDMNodeSet} to the {docref XDMNodeSet}.}
+  }
+  {method public abstract {concat xs:XDMNodeSet}:void
+  } 
+  {doc-next ||=== XDMNodeSet.clear
+    {purpose Deletes all {docref XDMNode}s from the {docref XDMNodeSet}.}
+  }
+  {method public abstract {clear}:void
+  }
+  || value comparison
+  || --------------------
+  {doc-next ||=== XDMNodeSet.compares?
+    {purpose Compare this {docref XDMNodeSet} with another value.
+        {parameter c, the criterion for comparison}.
+        {parameter other, the other value.}}
+  }
+  {method public abstract {compares? c:XPathValueComparison, x:any}:bool
+  }
+  || value conversion accessors
+  || --------------------
+  {doc-next ||=== XDMNodeSet.as-bool
+    {purpose Convert this {ctext XDMNodeSet} to a {docref bool}}
+  }
+  {getter public abstract {as-bool}:bool
+  }
+  {doc-next ||=== XDMNodeSet.as-XDMNode
+    {purpose Convert this {ctext XDMNodeSet} to a {docref XDMNode}}
+  }
+  {getter public abstract {as-XDMNode}:XDMNode
+  }
+  {doc-next ||=== XDMNodeSet.as-XDMNode?
+    {purpose Convert this {ctext XDMNodeSet} to a {docref #XDMNode}}
+  }
+  {getter public abstract {as-XDMNode?}:#XDMNode
+  }
+  {doc-next ||=== XDMNodeSet.as-XDMElement
+    {purpose Convert this {ctext XDMNodeSet} to a {docref XDMElement}}
+  }
+  {getter public abstract {as-XDMElement}:XDMElement
+  }
+  {doc-next ||=== XDMNodeSet.as-XDMNode?
+    {purpose Convert this {ctext XDMNodeSet} to a {docref #XDMElement}}
+  }
+  {getter public abstract {as-XDMElement?}:#XDMElement
+  }
+  {doc-next ||=== XDMNodeSet.as-String
+    {purpose Convert this {ctext XDMNodeSet} to a {docref String}}
+  }
+  {getter public abstract {as-String}:String
+  }
+  {doc-next ||=== XDMNodeSet.as-double
+    {purpose Convert this {ctext XDMNodeSet} to a {docref double}}
+  }
+  {getter public abstract {as-double}:double
+  }
+  {doc-next ||=== XDMNodeSet.as-int
+    {purpose Convert this {ctext XDMNodeSet} to a {docref int}}
+  }
+  {getter public abstract {as-int}:int
+  }
+  || construction
+  {doc-next ||=== XDMNodeSet.default
+    {purpose Create this {ctext XDMNodeSet}.}
+  }
+  {factory public {default ...:XDMNode}:XDMNodeSet
+    {return {StandardXDMNodeSet {splice ...}}}
+  }
+  {factory public implicit {from-XPathValue val:XPathValue}:XDMNodeSet
+    {return val.as-XDMNodeSet}
+  }
+  || conversion functions
+  || --------------------
+  {define-proc public {parse-double s:String}:double
+    let (val:double, n:int) = {s.to-double} 
+    {return
+        {if n == s.size or
+            {s.find-char-class XDMNodeSet.non-whitespace,
+                starting-index = n} < 0
+         then val
+         else nan}}
+  }
+  let constant non-whitespace:CharClass = 
+      {CharClass.whitespace-chars.complement-clone}
+}
+{define-class abstract StandardXDMNodeSet_ {inherits XDMNodeSet}
+  || value comparison
+  || --------------------
+  ||  "cartesian product" comparison
+  {method public {compares? c:XPathValueComparison, x:any}:bool
+    {type-switch x
+     case xs:XDMNodeSet do
+        {for n in self do
+            let nval:String = {n.get-text}
+            {for x in xs do
+                {if {compares? c, {nval.compare {x.get-text}}} then
+                    {return true}}}}
+     case x:bool do
+        {for n in self do
+            let nval:bool = not {n.get-text}.empty?
+            {if {compares? c, {compare-bool nval, x}} then
+                {return true}}}
+     case x:double do
+        {if {nan? x} then
+            {return false}}
+        {for n in self do
+            let nval:double = {XDMNodeSet.parse-double {n.get-text}}  
+            {if {nan? nval} then
+                {continue}
+             elseif {compares? c, {compare-double nval, x}} then
+                {return true}}}
+     case x:StringInterface do
+        {for n in self do
+            let nval:String = {n.get-text}
+            {if {compares? c, {nval.compare x}} then
+                {return true}}}         
+     else
+        {xdm-exception {message Can not compare {value self} with {value x}}}}
+  {return false}
+  }
+  || value conversion accessors
+  || --------------------
+  {getter public final inline {as-bool}:bool
+    {return not self.empty?}
+  }
+  {getter public {as-XDMNode?}:#XDMNode
+    {return 
+        {if self.empty? then null
+         else self[0]}}
+  }
+  {getter public {as-XDMNode}:XDMNode
+    {return 
+        {if self.empty? then 
+            {xdm-exception 
+                {message Can not convert empty '{value self}' to 'XDMNode'}}
+         else self[0]}}
+  }
+  {getter public {as-XDMElement?}:#XDMElement
+    {return 
+        {if self.empty? then null
+         else 
+            {type-switch self[0]
+             case e:XDMElement do e
+             else null}}}
+  }
+  {getter public {as-XDMElement}:XDMElement
+    {return 
+        {if-non-null e = self.as-XDMElement? 
+         then e
+         else
+            {xdm-exception 
+                {message Can not convert '{value self}' to 'XDMElement'}}}}
+  }
+  {getter public {as-String}:String
+    || TODO: whitespace options
+    {return 
+        {if self.empty? then ""
+         else {self[0].get-text}}}
+  }
+  {getter public {as-double}:double
+    {return 
+        {XDMNodeSet.parse-double self.as-String}}
+  }
+  {getter public {as-int}:int
+    || NOTE: Xpath specifies "round-half-up"
+    || - curl 'round' does "round-half-even"
+    || - but dguide suggests the following
+    {return {floor self.as-double + 0.5f} asa int}
+  }
+}
+{define-class public StandardXDMNodeSet {inherits StandardXDMNodeSet_}
+  field _nodes:{Array-of XDMNode}
+  {constructor public {default ...:XDMNode}
+    set self._nodes = {{Array-of XDMNode} {splice ...}}
+  }
+  || Sequence-of protocol
+  || --------------------
+  {getter public {size}:int
+    {return self._nodes.size}
+  }
+  {getter public {empty?}:bool
+    {return self._nodes.empty?}
+  }
+  {method public {to-Iterator}:{Iterator-of XDMNode}
+    {return {self._nodes.to-Iterator}}
+  }
+  {method public {keys-to-Iterator}:{Iterator-of int}
+    {return {self._nodes.keys-to-Iterator}}
+  }
+  {method public {get i:int}:XDMNode
+    || TODO: minimize usage
+    {return self._nodes[i]}
+  }
+  {method public {in-bounds? i:int}:bool
+    {return {self._nodes.in-bounds? i}}
+  }
+  {method public {append x:XDMNode}:void
+    {self._nodes.append x}
+  }
+  {method public {concat xs:XDMNodeSet}:void
+    || avoid this
+    {for x in xs do
+        {self.append x}}
+  }
+  {method public {clear}:void
+    {self._nodes.clear}
+  }
+}
+|| comparison functions
+|| --------------------
+{doc-next ||=== XPathValueComparison
+    {purpose Specifies criterion for comparing {docref XPathValue}s.}
+}
+{define-enum public XPathValueComparison
+    || bit pattern of index 
+    || codes which of <,=,> apply
+    never = "Never",
+    less = "Less",
+    equal = "Equal",
+    less-equal = "Less Equal",
+    greater = "Greater",
+    not-equal = "Not Equal",
+    greater-equal = "Greater Equal",
+    always = "Always"
+}
+{let constant bit-reversals:IntVec =
+    {IntVec 0b000, 0b100, 0b010, 0b110, 0b001, 0b101, 0b011, 0b111}
+}
+{define-proc inline {reverse-comparison c:XPathValueComparison}:XPathValueComparison
+    {return {XPathValueComparison index = bit-reversals[c.index]}}
+}
+{define-proc inline {compares? c:XPathValueComparison, d:int}:bool
+    {return {bit-and c.index, {bit-sll 1, {signum d} + 1}} != 0}
+}
+{define-proc inline {compare-double x:double, y:double}:int
+    {return {signum x - y} asa int}
+}
+{define-proc inline {compare-bool x:bool, y:bool}:int
+    {return 
+        {if x == y then 0
+         elseif x then 1
+         else -1}}
+}
+|| Specialized NodeSets
+|| --------------------
+{define-class abstract ImmutableXDMNodeSet {inherits StandardXDMNodeSet_}
+  {method public {append x:XDMNode}:void
+    {self.operation-not-allowed}
+  }
+  {method public {concat xs:XDMNodeSet}:void
+    {self.operation-not-allowed}
+  } 
+  {method public {clear}:void
+    {self.operation-not-allowed}
+  }
+  {method package {operation-not-allowed}:never-returns
+    {xdm-exception {lmessage Modification not allowed: {value self}}}
+  }
+}
+{define-class EmptyXDMNodeSet {inherits ImmutableXDMNodeSet}
+  {constructor {default}
+  }
+  {getter public {size}:int
+    {return 0}
+  }
+  {getter public {empty?}:bool
+    {return true}
+  }
+  {method public {to-Iterator}:{Iterator-of XDMNode}
+    {return {{EmptyIterator-of XDMNode}}}
+  }
+  {method public {keys-to-Iterator}:{Iterator-of int}
+    {return {RangeIterator below = 0}}
+  }
+  {method public {get i:int}:XDMNode
+    {xdm-exception {lmessage Key not found: {value i}}}
+  }
+  {method public {in-bounds? i:int}:bool
+    {return false}
+  }
+}
+{define-class SingletonXDMNodeSet {inherits ImmutableXDMNodeSet}
+  field base:XDMNode 
+  {constructor {default base:XDMNode}
+    set self.base = base
+  }
+  {getter public {size}:int
+    {return 1}
+  }
+  {getter public {empty?}:bool
+    {return false}
+  }
+  {method public {to-Iterator}:{Iterator-of XDMNode}
+    {return {{SingletonIterator-of XDMNode} self.base}}
+  }
+  {method public {keys-to-Iterator}:{Iterator-of int}
+    {return {RangeIterator}}
+  }
+  {method public {get i:int}:XDMNode
+    {return
+        {if i == 0 then
+            self.base
+         else
+            {xdm-exception {lmessage Key not found: {value i}}}}}
+  }
+  {method public {in-bounds? i:int}:bool
+    {return i == 0}
+  }
+}
+|| Iterators
+|| --------------------
+{define-class public {SingletonIterator-of T:Type} 
+  {inherits {Iterator-of T}}
+  field constant base:T
+  field empty?:bool = false
+  {constructor public {default base:T}
+    set self.base = base
+    {self.reset}
+  }
+  {method public {reset}:void
+    set self.empty? = false
+  }
+  {method public {read-one}:(T, bool)
+    {if self.empty? then        
+        {return {uninitialized-value-for-type T}, true}
+     else
+        set self.empty? = true
+        {return self.base, false}}
+  }
+}
+{define-class public {EmptyIterator-of T:Type} 
+  {inherits {Iterator-of T}}
+  {constructor public {default}
+  }
+  {method public {reset}:void
+  }
+  {method public {read-one}:(T, bool)
+    {return {uninitialized-value-for-type T}, true}
+  }
+}
+{define-class public RangeIterator 
+  {inherits {Iterator-of int}}
+  field constant below:int
+  field constant from:int
+  field current:int
+  {constructor public {default below:int = 1, from:int = 0}
+    set self.from = from
+    set self.below = below
+    {self.reset}
+  }
+  {method public {reset}:void
+    set self.current = self.from
+  }
+  {method public {read-one}:(int, bool)
+    let current:int = self.current
+    {if current < self.below then
+        {inc self.current}
+        {return current, false}
+     else
+        {return -1, true}}
+  }
+}

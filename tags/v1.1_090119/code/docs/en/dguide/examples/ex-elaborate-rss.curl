@@ -1,0 +1,64 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-ELABORATION}
+
+{value
+    || load XML source
+    let loc:Url = {url "wsdk-dguide.rss"}
+    let xml:XDMElement =
+        {build-xml preserve-whitespace? = false, loc}.root
+
+    || define the transformation
+    let e:XmlElaboration =
+        {xml-elaboration
+            {"rss" {version:String = "", channel:any}:Graphic
+                || just return the channel
+                channel}
+            {"channel" {...}:VBox
+                {VBox 
+                    border-width = 1px,
+                    spacing = 2px,
+                    margin = 2px,
+                    hstretch? = true,
+                    ...}}
+            || present item information
+            {"item" {...}:Graphic
+                {VBox
+                    border-width = 1px,
+                    margin = 2px,
+                    font-size = 0.8em,
+                    ...}}
+            || treat these tags as content
+            {"title" {...:String}:Visual
+                {paragraph {bold {value ...}}}}
+            {"description" {...:String}:Visual
+                {paragraph {value ...}}}
+            {"link" {...:String}:Visual
+                {paragraph {italic {value ...}}}}
+            || other tags will be ignored
+        }
+    
+    || transform the source
+    let display:Visual =
+        {e.elaborate xml}
+    
+    || Display the result
+    display
+}

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<definitions
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:si="http://soapinterop.org/xsd"
+ xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+ xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+ xmlns:tns="http://www.curl.com/data"
+ xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+ xmlns="http://schemas.xmlsoap.org/wsdl/"
+ targetNamespace="http://www.curl.com/data">
+
+ <types>
+  <xsd:schema targetNamespace="http://www.curl.com/data">
+   <xsd:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+   <xsd:import namespace="http://schemas.xmlsoap.org/wsdl/" />
+   <xsd:complexType name="ArrayOfString">
+    <xsd:complexContent>
+     <xsd:restriction base="SOAP-ENC:Array">
+      <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd:string[]"/>
+     </xsd:restriction>
+    </xsd:complexContent>
+   </xsd:complexType>
+   <xsd:complexType name="RecordFieldSpec">
+    <xsd:all>
+     <xsd:element name="name" type="xsd:string"/>
+     <xsd:element name="domain" type="xsd:string"/>
+     <xsd:element name="caption" type="xsd:string"/>
+     <xsd:element name="index" type="xsd:string"/>
+     <xsd:element name="nullable" type="xsd:boolean"/>
+     <xsd:element name="primary_key" type="xsd:boolean"/>
+    </xsd:all>
+   </xsd:complexType>
+   <xsd:complexType name="RecordFieldSpecs">
+    <xsd:complexContent>
+     <xsd:restriction base="SOAP-ENC:Array">
+      <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:RecordFieldSpec[]"/>
+     </xsd:restriction>
+    </xsd:complexContent>
+   </xsd:complexType>
+  </xsd:schema>
+ </types>
+
+ <message name="getDatabaseNamesRequest">
+ </message>
+ <message name="getDatabaseNamesResponse">
+  <part name="return" type="tns:ArrayOfString" />
+ </message>
+ <message name="getDatabaseTablesRequest">
+  <part name="database" type="xsd:string" />
+ </message>
+ <message name="getDatabaseTablesResponse">
+  <part name="return" type="tns:ArrayOfString" />
+ </message>
+ <message name="getFieldsRequest">
+  <part name="database" type="xsd:string" />
+  <part name="table" type="xsd:string" />
+ </message>
+ <message name="getFieldsResponse">
+  <part name="return" type="tns:RecordFieldSpecs" />
+ </message>
+ <message name="getDataRequest">
+  <part name="database" type="xsd:string" />
+  <part name="query" type="xsd:string" />
+  <part name="size_limit" type="xsd:int" />
+ </message>
+ <message name="getDataResponse">
+  <part name="return" type="xsd:string" />
+ </message>
+ <message name="executeRequest">
+  <part name="database" type="xsd:string" />
+  <part name="sql" type="tns:ArrayOfString" />
+ </message>
+ <message name="executeResponse">
+  <part name="return" type="xsd:int" />
+ </message>
+
+ <portType name="WSConnectionServicePortType">
+  <operation name="getDatabaseNames">
+   <input message="tns:getDatabaseNamesRequest"/>
+   <output message="tns:getDatabaseNamesResponse"/>
+  </operation>
+  <operation name="getDatabaseTables">
+   <input message="tns:getDatabaseTablesRequest"/>
+   <output message="tns:getDatabaseTablesResponse"/>
+  </operation>
+  <operation name="getFields">
+   <input message="tns:getFieldsRequest"/>
+   <output message="tns:getFieldsResponse"/>
+  </operation>
+  <operation name="getData">
+   <input message="tns:getDataRequest"/>
+   <output message="tns:getDataResponse"/>
+  </operation>
+  <operation name="execute">
+   <input message="tns:executeRequest"/>
+   <output message="tns:executeResponse"/>
+  </operation>
+ </portType>
+
+ <binding name="WSConnectionServiceBinding" type="tns:WSConnectionServicePortType">
+  <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="getDatabaseNames">
+   <soap:operation soapAction="getDatabaseNames" style="rpc"/>
+   <input>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </input>
+   <output>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </output>
+  </operation>
+
+  <operation name="getDatabaseTables">
+   <soap:operation soapAction="getDatabaseTables" style="rpc"/>
+   <input>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </input>
+   <output>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </output>
+  </operation>
+
+  <operation name="getFields">
+   <soap:operation soapAction="getFields" style="rpc"/>
+   <input>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </input>
+   <output>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </output>
+  </operation>
+
+  <operation name="getData">
+   <soap:operation soapAction="getData" style="rpc"/>
+   <input>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </input>
+   <output>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </output>
+  </operation>
+
+  <operation name="execute">
+   <soap:operation soapAction="execute" style="rpc"/>
+   <input>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </input>
+   <output>
+    <soap:body use="encoded" namespace="http://www.curl.com/data"
+     encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+   </output>
+  </operation>
+ </binding>
+
+ <service name="WSConnectionService">
+  <port name="WSConnectionServicePort" binding="tns:WSConnectionServiceBinding">
+   <soap:address location="http://localhost/work/services/soap/s-wsconnection.php"/>
+  </port>
+ </service>
+
+</definitions>

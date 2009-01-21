@@ -1,0 +1,12 @@
+COM.CURL.WSDL.WSConnection,WSConnectionService,get-database-names,,,,
+COM.CURL.WSDL.WSConnection,WSConnectionService,get-database-tables,"{Arguments ""test""}",,,
+COM.CURL.WSDL.WSConnection,WSConnectionService,get-fields,"{Arguments ""test"", ""select * from facts""}",,,
+COM.CURL.WSDL.WSConnection,WSConnectionService,get-data,"{Arguments ""test"", ""select * from facts"", 20}",,,
+COM.CURL.WSDL.WSConnection,WSConnectionService,get-fields,"{Arguments ""test"", ""select * from states""}",,,
+COM.CURL.WSDL.WSConnection,WSConnectionService,get-data,"{Arguments ""test"", ""select * from states"", 20}",,,
+COM.CURL.WSDL.WSConnection,WSConnectionService,execute,"{Arguments ""test"",{StringArray ""select count(1) from states""}}",,,
+COM.CURL.WSDL.TranslationEngine,TranslateService,translate,"{Arguments     
+    Language.english-tojapanese,
+    ""Curl Surge""
+}
+",,String,Object

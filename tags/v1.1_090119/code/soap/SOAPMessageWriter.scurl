@@ -1,0 +1,904 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next
+    {purpose
+        This is the abstract class for the interface that handles
+        marshaling an array of values into a SOAP message.
+    }
+    {notes
+        See {docref SOAPRPCMessageWriter} for a basic implementation
+        of this interface.
+    }
+}
+{define-class public abstract open SOAPMessageWriter
+
+  {doc-next
+    {purpose
+        The namespace of SOAP 1.1 Envelope elements.
+    }
+  }
+  {let public constant soap-1-1-envelope-uri:String =
+    "http://schemas.xmlsoap.org/soap/envelope/"
+  }
+
+
+  {doc-next
+    {purpose
+        The name of the SOAP 1.1 Envelope element,
+        the root element of all SOAP 1.1 messages.
+    }
+  }
+  {let public constant soap-1-1-envelope-xml-name:XMLName =
+    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "Envelope"}
+  }
+ 
+  {doc-next
+    {purpose
+        The name of the SOAP 1.1 Header, one of the elements directly
+        under the Envelope for SOAP 1.1 messages.
+    }
+  }
+  {let public constant soap-1-1-header-xml-name:XMLName =
+    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "Header"}
+  }
+
+  {doc-next
+    {purpose
+        The name of the SOAP 1.1 Body, one of the elements directly
+        under the Envelope for SOAP 1.1 messages.  The body holds
+        the main values being sent or received.
+    }
+  }
+  {let public constant soap-1-1-body-xml-name:XMLName =
+    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "Body"}
+  }
+
+  {doc-next
+    {purpose
+        The name of the SOAP 1.1 encoding-style attribute.
+    }
+  }
+  {let public constant soap-1-1-encoding-style-attribute-xml-name:XMLName =
+||--    {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "encodingStyle"}
+    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "encodingStyle"}
+  }
+
+  {doc-next
+    {purpose
+        The ussual SOAP 1.1 value of the SOAP 1.1 encoding-style attribute
+        for SOAP 1.1 encoding.
+    }
+  }
+  {let public constant soap-1-1-encoding-style-attribute-default-value:String =
+    SOAPTypeMapper.soap-1-1-encoding-uri
+  }
+
+
+|| FIXME: needs a way to request 1.2 style packaging
+  {doc-next
+    {purpose
+        Write out a SOAP message based on an array of values into
+        a {docref XMLOutputStream}.
+    }
+    {override
+        Non-abstract classes must provide an implementation of this.
+    }
+    {parameter stream,
+        {docref XMLOutputStream} where the {docref XMLToken}s of
+        the SOAP XML data will be written.
+    }
+    {parameter arguments,
+        An {ctext {Array-of any}} with all of the arguments to be
+        written into the SOAP message.
+    }
+    {parameter argument-names,
+        An {ctext {Array-of #XMLName}} with names for the {param arguments},
+        or {ctext null} if no name is needed.  Each argument name in
+        {param argument-names} matches up with an argument in
+        {param arguments}, and an argument type in {param argument-types} of
+        the same index.  If there is no argument name for a given argument,
+        then it will be written with a name based on the
+        {docref SOAPObjectType.element-name} of the argument type.
+    }
+    {parameter argument-types,
+        An {ctext {Array-of #SOAPObjectType}} with types for the
+        {param arguments}, if a type is needed.  Each argument type in
+        {param argument-types} matches up with an argument in
+        {param arguments} and an argument name in {param argument-names}
+        of the same index.  If the type does not have enough information
+        to marshal the argument, it will be filled in based on the
+        type of the argument, and by using type mapping information.
+    }
+    {parameter encoding,
+        The encoding to use for the conversion of arguments into
+        XML.  {ctext null} means any encoding, or the default for
+        this {docref SOAPMessageWriter}.
+    }
+    {parameter operation,
+        The name of the operation for this SOAP message, or {ctext null}
+        if no operation.  If this is not {ctext null} then this will be
+        written out as a surrounding element of the arguments for rpc and
+        document style.
+    }
+    {parameter headers,
+    }
+    {parameter marshal-context,
+        The {docref SOAPMarshalContext} which is used to keep track
+        of ids and such for multiple reference support.  The default
+        of {ctext null} means that the {docref SOAPMessageWriter}
+        will make one of its own choice.
+    }
+    {parameter write-type-attribute?,
+        A {ctext bool} that indicates if type attributes should be
+        written out by the marshal routines.  For SOAP 1.1 that
+        mostly means an attribute named
+        {ctext {XMLName SOAPTypeMapper.xml-schema-instance-uri, "type"}}
+        with the name of the XML type as its value.
+    }
+    {parameter write-encoding-attribute?,
+        A {ctext bool} that indicates if the encoding attribute should be
+        written out in the attributes for the Body.  For SOAP 1.1 that
+        mostly means an attribute named
+        {docref SOAPMessageWriter.soap-1-1-encoding-style-attribute-xml-name}.
+    }
+    {throws
+        {exception SOAPMarshalException,
+            if a there is a problem with the types being marshaled 
+            and for most other failures.
+        }
+        {exception SOAPException,
+            for some other failures.
+        }
+    }
+  }
+  {method public abstract open {write-request
+                                   stream:XMLOutputStream,
+                                   arguments:{Array-of any},
+                                   argument-names:#{Array-of #XMLName},
+                                   || has some type info
+                                   argument-types:{Array-of SOAPObjectType},
+                                   || default this?
+                                   encoding:#String,
+                                   operation:#XMLName = null,
+                                   marshal-context:#SOAPMarshalContext =
+                                       null,
+                                   write-type-attribute?:bool = true,
+                                   write-encoding-attribute?:bool = true,
+                                   envelope-namespace:String =
+                                       SOAPMessageWriter.soap-1-1-envelope-uri,
+                                   headers:#{Array-of any} = null,
+                                   header-names:#{Array-of #XMLName} = null,
+                                   header-types:#{Array-of SOAPObjectType} = null,
+                                   header-roles:#{Array-of #String} = null,
+                                   header-must-understands:#{Array-of bool} = null,
+                                   header-attribute-namespace:String =
+                                       SOAPMessageWriter.soap-1-1-envelope-uri
+                               }:void
+  }
+}
+
+{doc-next
+    {purpose
+        A non-abstract sub-class of {docref SOAPMessageWriter} with
+        additional methods to allow more control over RPC and document
+        style SOAP messages.
+    }
+}
+{define-class public open SOAPRPCMessageWriter
+  {inherits SOAPMessageWriter}
+
+  {doc-next
+    {purpose
+        The {docref SOAPTypeMapper} being used to marshal stuff in
+        the current message.
+    }
+  }
+  field public constant type-mapper:SOAPTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPCurlTypeToXMLTypeMapper} being used to
+        fill in missing type information during marshaling.
+        Also passed to {docref SOAPTypeMapper.marshal}.
+    }
+  }
+  field public constant curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPXMLTypeToElementNameMapper} being used to
+        fill in missing type information during marshaling.
+    }
+  }
+  field public constant xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPElementNameToXMLTypeMapper} being used to
+        fill in missing type information during marshaling.
+    }
+  }
+  field public constant element-name-to-xml-type:SOAPElementNameToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPXMLTypeToCurlTypeMapper} being used to
+        fill in missing type information during marshaling.
+    }
+  }
+  field public constant xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+
+  {doc-next
+    {purpose
+        Construct a {docref SOAPRPCMessageWriter} which can then be used
+        to write various SOAP messages.
+    }
+    {notes
+        The parameters simply fill in the fields of the same names.
+    }
+  }
+  {constructor public {default
+                          type-mapper:SOAPTypeMapper =
+                              builtin-soap-type-mapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper,
+                          element-name-to-xml-type:SOAPElementNameToXMLTypeMapper =
+                              builtin-soap-element-name-to-xml-type-mapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper
+                      }
+    set self.type-mapper = type-mapper
+    set self.xml-type-to-element-name = xml-type-to-element-name
+    set self.curl-type-to-xml-type = curl-type-to-xml-type
+    set self.element-name-to-xml-type = element-name-to-xml-type
+    set self.xml-type-to-curl-type = xml-type-to-curl-type
+  }
+
+  {method public open {write-request
+                              stream:XMLOutputStream,
+                              arguments:{Array-of any},
+                              argument-names:#{Array-of #XMLName},
+                              || has xml-name and some type info
+                              argument-types:{Array-of SOAPObjectType},
+                              || default this?
+                              encoding:#String,
+                              operation:#XMLName = null,
+                              || (Or is that in marshaler?)
+                              marshal-context:#SOAPMarshalContext = null,
+                              write-type-attribute?:bool = false,
+                              write-encoding-attribute?:bool = true,
+                              envelope-namespace:String =
+                                  SOAPMessageWriter.soap-1-1-envelope-uri,
+                              headers:#{Array-of any} = null,
+                              header-names:#{Array-of #XMLName} = null,
+                              header-types:#{Array-of SOAPObjectType} = null,
+                              header-roles:#{Array-of #String} = null,
+                              header-must-understands:#{Array-of bool} = null,
+                              header-attribute-namespace:String = 
+                                  SOAPMessageWriter.soap-1-1-envelope-uri
+                    }:void
+    {self.write-rpc-request
+        stream,
+        arguments,
+        argument-names,
+        argument-types,
+        encoding,
+        operation = operation,
+        marshal-context = marshal-context,
+        write-type-attribute? = write-type-attribute?,
+        write-encoding-attribute? = write-encoding-attribute?,
+        envelope-namespace = envelope-namespace,
+        headers = headers,
+        header-names = header-names,
+        header-types = header-types,
+        header-roles = header-roles,
+        header-must-understands = header-must-understands,
+        header-attribute-namespace = header-attribute-namespace
+    }
+  }
+
+  {doc-next
+    {purpose
+        Write out a SOAP message based on an array of values into
+        a {docref XMLOutputStream}.
+    }
+    {details
+        This is the same as {docref SOAPMessageWriter.write-request}
+        except that it has some extra RPC related parameters to allow
+        more control over what is written.
+    }
+    {notes
+        All of the parameters not explicitly mentioned are the same as 
+        the parameters in {docref SOAPMessageWriter.write-request}.
+    }
+    {parameter rpc-style?,
+        Should the message be written as a document style or rpc style
+        SOAP message.  (rpc style messages have an element named after the
+        operation as the element in the Body that contains all of the
+        arguments.  document style messages have the arguments directly
+        under the Body element, although if {param operation} is
+        not {ctext null} document style is basically the same as
+        rpc style.)
+    }
+    {parameter root-element-attributes,
+        Any attributes that need to be written out for the root
+        element of the message (which will be a SOAP Envelope element.)
+    }
+  }
+  {method public open {write-rpc-request
+                          stream:XMLOutputStream,
+                          || has xml-name and some type info
+                          arguments:{Array-of any},
+                          argument-names:#{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          || default this?
+                          encoding:#String,
+                          repeating-elements:#{Set-of XMLName} = null,
+                          operation:#XMLName = null,
+                          marshal-context:#SOAPMarshalContext = null,
+                          || (Or is that in marshaler?)
+                          write-type-attribute?:bool = false,
+                          || does this make sense, should this be in
+                          || types and element names already?
+                          write-encoding-attribute?:bool = true,
+                          envelope-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          headers:#{Array-of any} = null,
+                          header-names:#{Array-of #XMLName} = null,
+                          header-types:#{Array-of SOAPObjectType} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-attribute-namespace:String = 
+                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          rpc-style?:bool = true,
+                          root-element-attributes:#{Array-of XMLToken} =
+                              null
+                 }:void
+    {if argument-names == null then
+        set argument-names =
+            {new {Array-of #XMLName}.from-size, arguments.size, null}
+    }
+
+    || This will do a <?xml version="1.0" ?>
+    || but there will not be any character encoding information in there...
+    {stream.write-one {new XMLStartDocument}}
+
+    || do Envelope start
+    let constant envelope-xml-name:XMLName =
+        {self.envelope-xml-name envelope-namespace}
+    {stream.write-one
+        {new XMLStartElement, envelope-xml-name}
+    }
+
+     || add usual name-spaces, so that they don't show up on each element
+     let constant canned-namespace-attributes:{Array-of XMLToken} =
+        {new {Array-of XMLToken},
+            {new XMLAttribute,
+                {XMLName.unchecked "", "xmlns:SOAP-ENC"},
+                || FIXME: this should vary based on envelope-namespace
+                SOAPMessageWriter.
+                    soap-1-1-encoding-style-attribute-default-value
+            },
+            {new XMLAttribute,
+                {XMLName.unchecked "", "xmlns:xsi"},
+                SOAPTypeMapper.xml-schema-instance-uri
+            },
+            {new XMLAttribute,
+                {XMLName.unchecked "", "xmlns:xsd"},
+                SOAPTypeMapper.xml-schema-uri
+            }
+        }
+    {stream.write canned-namespace-attributes}
+
+    let started-headers?:bool = false
+    || do headers
+    {if-non-null headers then
+        {if-non-null header-names then
+            {if header-names.size != headers.size then
+                {throw-marshal-exception
+                    {localize "'headers' and 'header-names' not same size."}
+                }
+            }
+            {if header-types == null then
+                set header-types = {new {Array-of SOAPObjectType}}
+            }
+            set started-headers? = true
+            {stream.write-one
+                {new XMLStartElement,
+                    {self.header-xml-name envelope-namespace}
+                }
+            }
+            {self.write-headers
+                stream,
+                headers,
+                header-names,
+                {non-null header-types},
+                encoding,
+                repeating-elements = repeating-elements,
+                marshal-context = marshal-context,
+                write-type-attribute? = write-type-attribute?,
+                header-roles = header-roles,
+                header-must-understands = header-must-understands,
+                header-attribute-namespace = header-attribute-namespace
+            }
+        }
+        let start-header-xml:int = 0
+        {if-non-null header-types then
+            set start-header-xml = header-types.size
+        }
+        || if there are headers with no type, then they are expected to
+        || be arrays of XML that represent some strange headers...
+        {if start-header-xml < headers.size then
+            {for i = start-header-xml below headers.size do
+                let constant header:{Array-of XMLToken} =
+                    {type-switch headers[i]
+                     case a:{Array-of XMLToken} do
+                        a
+                     case fa:{FastArray-of XMLToken} do
+                        {{Array-of XMLToken}.from-FastArray fa}
+                     else
+                        {throw-marshal-exception
+                            {lformat
+                                "Strange header index %d.",
+                                i
+                            }
+                        }
+                    }
+                {if header.size > 0 then
+                    let start-item:int = 0
+                    let constant start-element:XMLStartElement = 
+                        {type-switch header[0]
+                         case se:XMLStartElement do
+                            set start-item = 1
+                            se
+                         else
+                            {if-non-null name = header-names[i] then
+                                {new XMLStartElement, name}
+                             else
+                                {throw-marshal-exception
+                                    {localize 
+                                        "Missing name for header xml with no XMLStartElement."
+                                    }
+                                }
+                            }
+                        }
+                    {stream.write-one start-element}
+                    {if-non-null header-roles then
+                        {if header-roles.size > i then
+                            {if-non-null hr = header-roles[i] then
+                                {SOAPRPCMessageWriter.write-header-role
+                                    stream,
+                                    hr,
+                                    header-attribute-namespace
+                                }
+                            }
+                        }
+                    }
+                    {if-non-null header-must-understands then
+                        {if header-must-understands.size > i and
+                            header-must-understands[i]
+                         then
+                            {SOAPRPCMessageWriter.write-header-must-understand
+                                stream,
+                                header-must-understands[i],
+                                header-attribute-namespace
+                            }
+                        }
+                    }
+                    {stream.write header, start = start-item}
+                    {if start-item == 0 then
+                        {stream.write-one
+                            {new XMLEndElement, element = start-element.element}
+                        }
+                    }
+                }
+            }
+        }
+        {stream.write-one
+            {new XMLEndElement,
+                element = {self.header-xml-name envelope-namespace}
+            }
+        }
+    }
+
+    || do Body start
+    let constant body-xml-name:XMLName =
+        {self.body-xml-name envelope-namespace}
+    {stream.write-one
+        {new XMLStartElement, body-xml-name}
+    }
+
+    || should this be on operation instead of Body?
+    {if write-encoding-attribute? then
+        {stream.write-one
+            {new XMLAttribute,
+                {self.encoding-style-attribute-xml-name envelope-namespace},
+                {if-non-null encoding then
+                    encoding
+                 else
+                    SOAPMessageWriter.soap-1-1-encoding-style-attribute-default-value
+                }
+            }
+        }
+    }
+
+    {if-non-null operation then
+        {stream.write-one
+            {new XMLStartElement,
+                {new XMLName,
+                    operation.namespace,
+                    operation.local-name
+                }
+            }
+        }
+     else
+        {if rpc-style? then
+            {throw-soap-exception
+                {localize "rpc style requests must specify an operation."}
+            }
+        }
+    }
+
+    {self.write-arguments
+        stream,
+        arguments,
+        {non-null argument-names},
+        argument-types,
+        encoding,                
+        repeating-elements = repeating-elements,
+        marshal-context = marshal-context,
+        write-type-attribute? = write-type-attribute?
+    }
+
+    {if-non-null operation then
+        || closes up operation
+        {stream.write-one {new XMLEndElement, element = operation}}
+    }
+    || do Body end
+    {stream.write-one
+        {new XMLEndElement,
+            element = body-xml-name
+        }
+    }
+    || do Envelope end
+    {stream.write-one
+        {new XMLEndElement,
+            element = envelope-xml-name
+        }
+    }
+    {stream.write-one {new XMLEndDocument}}
+  }
+
+  {method protected open {envelope-xml-name envelope-namespace:String}:XMLName
+    {return
+        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
+            SOAPMessageWriter.soap-1-1-envelope-xml-name
+         else
+            {new XMLName, envelope-namespace, "Envelope"}
+        }
+    }
+  }
+  {method protected open {header-xml-name envelope-namespace:String}:XMLName
+    {return
+        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
+            SOAPMessageWriter.soap-1-1-header-xml-name
+         else
+            {new XMLName, envelope-namespace, "Header"}
+        }
+    }
+  }
+  {method protected open {body-xml-name envelope-namespace:String}:XMLName
+    {return
+        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
+            SOAPMessageWriter.soap-1-1-body-xml-name
+         else
+            {new XMLName, envelope-namespace, "Body"}
+        }
+    }
+  }
+  {method protected open {encoding-style-attribute-xml-name
+                        envelope-namespace:String
+                    }:XMLName
+    {return
+        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
+            SOAPMessageWriter.soap-1-1-encoding-style-attribute-xml-name
+         else
+            {new XMLName, envelope-namespace, "encodingStyle"}
+        }
+    }
+  }
+
+
+
+  {method public open {write-headers
+                          stream:XMLOutputStream,
+                          || has xml-name and some type info
+                          headers:{Array-of any},
+                          header-names:{Array-of #XMLName},
+                          header-types:{Array-of SOAPObjectType},
+                          || default this?
+                          encoding:#String,
+                          repeating-elements:#{Set-of XMLName} = null,
+                          marshal-context:#SOAPMarshalContext = null,
+                          || (Or is that in marshaler?)
+                          write-type-attribute?:bool = false,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-attribute-namespace:String = 
+                              SOAPMessageWriter.soap-1-1-envelope-uri
+                 }:void
+     {self.write-arguments-or-headers
+        stream,
+        headers,
+        header-names,
+        header-types,
+        encoding,
+        repeating-elements = repeating-elements,
+        marshal-context = marshal-context,
+        write-type-attribute? = write-type-attribute?,
+        header-roles = header-roles,
+        header-must-understands = header-must-understands,
+        header-attribute-namespace = header-attribute-namespace
+    }
+  }
+
+  {doc-next
+    {purpose
+        Marshals {param arguments} to {param stream}, assuming that
+        the code calling this will handle all of the elements before
+        and after the arguments.
+    }
+    {notes
+        Used by {docref SOAPRPCMessageWriter.write-rpc-request}, and
+        should generally only be used by things which are overriding that.
+    }
+    {details
+        The parameters match the similarly named ones from
+        {docref SOAPMessageWriter.write-request}.
+    }
+  }
+  {method public open {write-arguments
+                          stream:XMLOutputStream,
+                          || has xml-name and some type info
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          || default this?
+                          encoding:#String,
+                          repeating-elements:#{Set-of XMLName} = null,
+                          marshal-context:#SOAPMarshalContext = null,
+                          || (Or is that in marshaler?)
+                          write-type-attribute?:bool = false
+                      }:void
+    {self.write-arguments-or-headers
+        stream,
+        arguments,
+        argument-names,
+        argument-types,
+        encoding,
+        repeating-elements = repeating-elements,
+        marshal-context = marshal-context,
+        write-type-attribute? = write-type-attribute?
+    }
+  }
+
+  {method protected open {write-arguments-or-headers
+                          stream:XMLOutputStream,
+                          || has xml-name and some type info
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          || default this?
+                          encoding:#String,
+                          repeating-elements:#{Set-of XMLName} = null,
+                          marshal-context:#SOAPMarshalContext = null,
+                          || (Or is that in marshaler?)
+                          write-type-attribute?:bool = false,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-attribute-namespace:String = 
+                              SOAPMessageWriter.soap-1-1-envelope-uri
+                      }:void
+
+      || create a SOAPMarshallContext
+    let constant context:SOAPMarshalContext =
+        {if-non-null marshal-context then
+            marshal-context
+         else
+            {new DefaultSOAPMarshalContext}
+        }
+      || marshals all arguments using context (and uses various type mapper
+      || things to figure out how to marshal everything.)
+      || In a loop uses various type mapper things to figure out how to
+      || marshal the current argument, then writes XMLStartElement to
+      || stream, then calls marshal, then writes XMLEndElement.
+    {if argument-names.size < arguments.size then
+        {argument-names.set-size arguments.size, null}
+    }
+    {if argument-types.size < arguments.size then
+        {argument-types.set-size arguments.size, {new SOAPObjectType}}
+    }
+    {if arguments.size < argument-types.size then
+        {throw-soap-exception {localize "Too few arguments for the argument-types."}}
+    }
+    {for at key i in argument-types do
+        let constant a:any = arguments[i]
+        {if at.curl-type == null or
+            ((at.curl-type == any or at.curl-type == Object or
+              at.curl-type == #Object)
+             and a != null)
+         then
+            set at =
+                {SOAPObjectType.clone-with at, curl-type =
+                    {if a == null then
+                        (any asa Type)
+                     else
+                        {type-of a}
+                    }
+                }
+        }
+        set at =
+            {SOAPObjectType.fill-in-from-curl-type-mapper
+                at,
+                self.curl-type-to-xml-type,
+                self.xml-type-to-element-name
+            }
+            || this is sort of a backwards fill
+        set at =
+            {SOAPObjectType.fill-in-from-element-name-mapper
+                at,
+                self.element-name-to-xml-type,
+                self.xml-type-to-curl-type
+            }
+        {if at.element-name == null then
+            || this is kind of bogus, using the type as the element name
+            set at = {SOAPObjectType.clone-with at, element-name = at.xml-type}
+         elseif at.xml-type == null then
+            || this is kind of bogus, using the element name as the type
+            set at = {SOAPObjectType.clone-with at, xml-type = at.element-name}
+        }
+
+        {if at.xml-type == null then
+            {throw-marshal-exception
+                {lformat
+                    "Can't figure out XML type of argument #%d:%s.",
+                    i, at.curl-type
+                }
+            }
+        }
+
+        || top level arguments really should have a name in the SOAPObjectType
+        let constant argument-element-name:XMLName =
+            {if-non-null en = argument-names[i] then
+                en
+             else
+                || if no argument name, just use the element name
+                {if-non-null en = at.element-name then
+                    en
+                 else
+                    {throw-marshal-exception
+                        {lformat "Can't figure out name of argument #%d.", i}
+                    }
+                }
+            }
+        
+        || repeating-element
+        let repeating-element?:bool = 
+            {if-non-null repeating-elements then
+                {repeating-elements.member? argument-element-name}
+             else 
+                false}
+        
+        {if not repeating-element? then
+            {stream.write-one
+                {new XMLStartElement, argument-element-name}
+            }
+        }
+        {if-non-null header-roles then
+            {if header-roles.size > i then
+                {if-non-null hr = header-roles[i] then
+                    {SOAPRPCMessageWriter.write-header-role
+                        stream,
+                        hr,
+                        header-attribute-namespace
+                    }
+                }
+            }
+        }
+        {if-non-null header-must-understands then
+            {if header-must-understands.size > i and header-must-understands[i]
+             then
+                {SOAPRPCMessageWriter.write-header-must-understand
+                    stream,
+                    header-must-understands[i],
+                    header-attribute-namespace
+                }
+            }
+        }
+
+        {self.type-mapper.marshal
+            stream,
+            a,
+            at,
+            encoding,
+            context,
+            self.type-mapper,
+            self.curl-type-to-xml-type,
+            write-type-attribute? = write-type-attribute?,
+            || passed in twice to allow overriding the default.
+            multiple-reference = at.multiple-reference
+        }
+        {if not repeating-element? then
+            {stream.write-one
+                {new XMLEndElement, element = argument-element-name}
+            }
+        }
+    }
+    {context.marshal-remaining-objects
+        stream,
+        self.type-mapper,
+        context,
+        curl-type-to-xml-type = self.curl-type-to-xml-type,
+        xml-type-to-element-name = self.xml-type-to-element-name
+    }
+  }
+
+  {define-proc package {write-header-role
+                           stream:XMLOutputStream,
+                           header-role:String,
+                           header-attribute-namespace:String
+                       }:void
+    {stream.write-one
+|| FIXME optimize to not create XMLNames
+        {new XMLAttribute,
+            {new XMLName,
+                header-attribute-namespace,
+                {if header-attribute-namespace ==
+                    SOAPMessageWriter.soap-1-1-envelope-uri or
+                    header-attribute-namespace == ""
+                 then
+                    "actor"
+                 else
+|| FIXME this only is right for SOAP 1.2, not for 1.0
+                    "role"
+                }
+            },
+            header-role
+        }
+    }
+  }
+
+  {define-proc package {write-header-must-understand
+                           stream:XMLOutputStream,
+                           header-must-understand?:bool,
+                           header-attribute-namespace:String
+                       }:void
+    {stream.write-one
+|| FIXME optimize to not create XMLNames
+        {new XMLAttribute,
+            {new XMLName, header-attribute-namespace, "mustUnderstand"},
+            {if header-must-understand? then
+                "1"
+             else
+                "0"
+            }
+        }
+    }
+  }
+}

@@ -46,6 +46,7 @@
 {include "WSDLDOM.scurl"}
 {include "WSDLNodes.scurl"}
 {include "parse-wsdl.scurl"}
+{include "WSDLWriter.scurl"}
 
 || exceptions
 || --------------------
@@ -57,8 +58,15 @@
   {constructor public {default node:#WSDLDOMNode, message:String}
     set self.node = node
     {if-non-null node = self.node then
+        || NOTE: guard against string-url
+        def source-url =
+            {type-switch node.source-url.stem
+             case stem:StringDirectory do "<memory>"
+             else node.source-url}
         set message =  
-            {format "%s\n at [%s:%d]", message, node.source-url, node.line-number}}
+            {format "%s\n at [%s:%d]", message,
+                source-url,
+                node.line-number}}
     {construct-super message}           
   }
 }

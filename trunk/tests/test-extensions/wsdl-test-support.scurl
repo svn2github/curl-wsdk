@@ -598,12 +598,17 @@
 }
 || code generation
 || ====================
+{let public format-arguments-depth-limit:int = 50}
 {define-proc public {format-arguments
                         out:StringBuf,
                         pt:ProcType,
                         indent:int = 0
                     }:void
-    {format-spaces out, indent}
+    {if indent > format-arguments-depth-limit then
+        {format-spaces out, indent}
+        {out.concat "\|\| NOTE: exceeded depth limit\n"}
+        {return}
+    }
     let n:int = 0
     {for a key i in pt.positional-args do
         {if n > 0 then 
@@ -651,11 +656,14 @@
                  else || unknown kind of primitive
                     {format |"xxx |#%s#|"|, t}}}
          elseif t.non-null-variant == String then |""foo""|
+         elseif {t.subtype-of? Url} then |"{url "#foo"}"|
          elseif t.non-null-variant == DateTime then 
             let now:DateTimeInfo = {DateTime}.info
             {format
                 |"{DateTime year = %s, month = %s, day = %s}"|,
                 now.year, now.month, now.day}
+         elseif {t.name.prefix? |"{XMLSimpleValue-for"|} then
+             {format |"{%s "foo"}"|, t}
          else
             {type-switch t
              case t:EnumType do

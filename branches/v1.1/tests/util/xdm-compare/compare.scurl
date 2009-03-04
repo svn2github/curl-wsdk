@@ -154,17 +154,17 @@
                                  then aa.namespace != bb.namespace
                                  else true}
                             {if diff? then
-                                {log {XDMMismatch aa, bb, "NamespaceDeclaration"}}}}}}
-                {if-non-null bs = b.namespace-declarations then
-                    {for k in {bs.get-prefixes} do
-                        let bb:XDMNamespaceDeclaration = {bs.get-declaration k}
-                        let aa:#XDMNamespaceDeclaration = 
-                            {if-non-null as = a.namespace-declarations then
-                                {if {as.key-exists? k} then {as.get-declaration k}
+                                {log {XDMMismatch aa, bb, "NamespaceDeclaration"}}}}}
+                    {if-non-null bs = b.namespace-declarations then
+                        {for k in {bs.get-prefixes} do
+                            let bb:XDMNamespaceDeclaration = {bs.get-declaration k}
+                            let aa:#XDMNamespaceDeclaration = 
+                                {if-non-null as = a.namespace-declarations then
+                                    {if {as.key-exists? k} then {as.get-declaration k}
+                                     else null}
                                  else null}
-                             else null}
-                        {if aa == null then
-                            {log {XDMMismatch aa, bb, "NamespaceDeclaration"}}}}}
+                            {if aa == null then
+                                {log {XDMMismatch aa, bb, "NamespaceDeclaration"}}}}}}
                 || compare attributes
                 {if-non-null as = a.attributes then
                     {for key k in as do

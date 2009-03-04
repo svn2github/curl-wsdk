@@ -1049,6 +1049,8 @@
                 }
             }
 
+            || now finished unmarshaling this field
+            || - assure end elements properly consumed
             set (current-token, eof?) = {stream.read-one}
             {if eof? then
                 {throw-unmarshal-exception
@@ -1061,8 +1063,9 @@
             }
             {type-switch current-token
              case ee:XMLEndElement do
-                {if ee.element != null and ee.element != se.element then
-                    {if wrapped? then
+
+                {if wrapped? then
+                    {if ee.element != null and ee.element != se.element then
                         || normal case: need end element
                         {throw-unmarshal-exception
                             {lformat
@@ -1071,11 +1074,11 @@
                                 se.element
                             }
                         }
-                     else
-                        || repeating elements: no end tag needed
-                        || -- elements were read by array marshaler
-                        {stream.unread-one ee}
                     }
+                 else
+                    || repeating elements: no end tag needed
+                    || -- elements were read by array marshaler
+                    {stream.unread-one ee}
                 }
              case se:XMLStartElement do
                 {if wrapped? then

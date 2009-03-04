@@ -414,4 +414,63 @@
     </CASE>
   </GROUP>  
 
+  <GROUP name='ConfusingElementNames'>
+    <CASE name='ElementAndRepeatingElements'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="data" type="sampleData2" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData2">
+          <xs:sequence>
+            <xs:element name="address" type="xs:string" minOccurs="0"/>
+            <xs:element name="data" type="sampleData3" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData3">
+          <xs:sequence>
+            <xs:element name="value1" type="xs:string" minOccurs="0"/>
+            <xs:element name="value2" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords data =
+            {SampleData2.from-keywords data =
+                {{Array-of SampleData3}
+                    {SampleData3.from-keywords}
+                }}}
+      </CURL>
+    </CASE>
+    <CASE name='ElementAndRepeatingElementsNillable'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="data" type="sampleData2" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData2">
+          <xs:sequence>
+            <xs:element name="address" type="xs:string" minOccurs="0"/>
+            <xs:element name="data" type="sampleData3" minOccurs="0" maxOccurs="unbounded" nillable="true"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData3">
+          <xs:sequence>
+            <xs:element name="value1" type="xs:string" minOccurs="0"/>
+            <xs:element name="value2" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords data =
+            {SampleData2.from-keywords data =
+                {{Array-of #SampleData3}
+                    {SampleData3.from-keywords}
+                }}}
+      </CURL>
+    </CASE>
+  </GROUP>  
+
 </ROOT>

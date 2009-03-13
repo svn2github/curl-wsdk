@@ -2012,7 +2012,8 @@
 
   {method package {dump out:TextOutputStream}:void
     {if-non-null at = self.alias-type then
-        {at.dump out}
+        || NOTE: will be dumped by WSDLSchemaAliasType
+        || - doing so here would cause duplicate definition
     } 
   }
 

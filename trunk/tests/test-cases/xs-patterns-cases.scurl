@@ -14,26 +14,16 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0, 6.0 applet}
-{applet manifest = "../../manifest.mcurl"}
+{import * from CURL.IO.HTTP}
 {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.SOAP}
 
-starting
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+{import * from COM.CURL.WSDK.XML-COMPARE}
+{import * from COM.CURL.WSDK.DISPLAY-SUPPORT}
 
-{let v:VBox = {VBox}}
-{value v}
+{include "xs-patterns/test-support.scurl"}
 
-{do
-    let builder:XDMBuilder = {XDMBuilder}
-    let start:DateTime = {DateTime}
-    let document:XDMDocument =
-        {builder.build
-            {url "t-xml-space.xml"}
-        }
-    {v.add "total time:" & {start.elapsed}}
-    
-        || Programmatically add a few elements/attributes.
-        {v.add {pre {document.to-XML}}}
+{schema-patterns-test 
+    {url "xs-patterns/examples.xml"}
 }
-
-done

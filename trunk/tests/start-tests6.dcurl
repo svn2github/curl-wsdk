@@ -14,20 +14,31 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0, 6.0 applet}
+{curl 6.0 applet}
 {applet manifest = "manifest.mcurl",
     {compiler-directives careful? = true}
 }
+{import * from COM.CURL.CDU.CURL-UNIT}
+{import * from COM.CURL.CDU.CURL-UNIT-UI}
+{import * from COM.CURL.WSDK.APPVIEW}
 
-
-{import * from COM.CURL.WSDK.WSDL-IDE}
-
-{let public constant main:WSDLGeneration = {WSDLGeneration}}
-
-{CommandButton
-    label = {message Run},
-    {on Action do
-        {main.show}},
-    {on AttachEvent at c:CommandButton do
-        {c.handle-event {Action}}}
+{value
+    || override standard tests from query arg, if specified
+    let query:String = {get-base-url}.query
+    let loc:Url = 
+        {url
+            {if query.size > 1 
+             then {query.tail 1}
+             else "test-cases/test-cases.scurl"}}
+    
+    let target:RecordSetTestTarget = {RecordSetTestTarget}
+    set TestTarget.current = target
+    
+    || model
+    let suite:TestSuite = {TestSuite.import loc}
+    
+    || presentation
+    {AppView
+        title = {message WSDK Test Driver},
+        {test-ui suite}}
 }

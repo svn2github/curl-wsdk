@@ -444,7 +444,6 @@
         {XMLName SOAPTypeMapper.xml-schema-uri, "ID"},
         {XMLName SOAPTypeMapper.xml-schema-uri, "IDREF"},
         {XMLName SOAPTypeMapper.xml-schema-uri, "IDREFS"}
-        
       }
 
 ||--  || tell if type looks like one of the non-specific mappings
@@ -2877,6 +2876,15 @@
         self.xml-type.name.local-name, 
         self.value}
   }
+  
+  def public alias-type-names =
+      {{HashTable-of String, String}
+        "token", "XMLTokenString",
+        "language", "XMLLanguageString",
+        "time", "XMLTimeString",
+        "duration", "XMLDurationString",
+        "normalizedString", "XMLNormalizedString"
+      }
 }
 {define-class public open {XMLSimpleValue-for T:String}
   {inherits XMLSimpleValue}
@@ -2900,6 +2908,13 @@
     {return {{XMLSimpleValue-for T} xval.value}}
   }
 }
+|| humane aliases
+{def public XMLTokenString = {XMLSimpleValue-for "token"}}
+{def public XMLLanguageString = {XMLSimpleValue-for "language"}}
+{def public XMLTimeString = {XMLSimpleValue-for "time"}}
+{def public XMLDurationString = {XMLSimpleValue-for "duration"}}
+{def public XMLNormalizedString = {XMLSimpleValue-for "normalizedString"}}
+
 {doc-next ||=== XMLType
     {purpose 
         Describe XML Schema type associated with an {docref XMLValue}.}

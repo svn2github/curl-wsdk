@@ -99,6 +99,18 @@
         || dguide index
         || -------------------- 
         {DeployAction
+            caption = {lmessage Replace DGuide Version Heralds},
+            {proc {self:DeployAction,
+                   source-root:Url,
+                   target-root:Url}:void
+                def loc =
+                    {target-root.concat
+                        "docs-install/" & dirname} 
+                {replace-version-heralds loc}
+            }},
+        || dguide index
+        || -------------------- 
+        {DeployAction
             caption = {lmessage Generate DGuide Index},
             {proc {self:DeployAction,
                    source-root:Url,

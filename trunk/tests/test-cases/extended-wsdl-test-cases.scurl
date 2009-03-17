@@ -17,6 +17,9 @@
 {import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
 
 {TestSuite {lmessage WSDL Tests},
+
+    {TestSuite.import
+        {url "xs-patterns-cases.scurl"}},
     
     {TestSuite {lmessage WS-I interop sample},
         || precondition

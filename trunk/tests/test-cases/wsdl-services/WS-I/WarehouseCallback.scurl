@@ -1,4 +1,4 @@
-{curl 7.0 package}
+{curl 7.0, 6.0 package}
 {package COM.CURL.WSDL.WarehouseCallback,
     {compiler-directives careful? = true},
     wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl"}
@@ -17,7 +17,7 @@
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
   {method public {submit-sn shipment-notice:ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null}:(response:bool)
@@ -82,7 +82,7 @@
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
   {method public {async-submit-sn shipment-notice:ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
@@ -144,7 +144,7 @@
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
   {method public {define-submit-sn}:void
@@ -181,13 +181,13 @@
     {details 
       Notify warehouse  there was an error in processing a submitted PO.
       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
-		having been acknowledged by the Manufacturer.  Contains callback information with
-		which to find the original replenishment request.
+                having been acknowledged by the Manufacturer.  Contains callback information with
+                which to find the original replenishment request.
       A response of true indicates the purchase order has been accepted for processing.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
   {method public {error-po process-pofault:SubmitPOFaultType, callback-header:#CallbackHeaderType = null}:(response:bool)
@@ -235,13 +235,13 @@
     {details 
       Notify warehouse  there was an error in processing a submitted PO.
       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
-		having been acknowledged by the Manufacturer.  Contains callback information with
-		which to find the original replenishment request.
+                having been acknowledged by the Manufacturer.  Contains callback information with
+                which to find the original replenishment request.
       A response of true indicates the purchase order has been accepted for processing.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
   {method public {async-error-po process-pofault:SubmitPOFaultType, callback-header:#CallbackHeaderType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
@@ -286,13 +286,13 @@
     {details 
       Notify warehouse  there was an error in processing a submitted PO.
       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
-		having been acknowledged by the Manufacturer.  Contains callback information with
-		which to find the original replenishment request.
+                having been acknowledged by the Manufacturer.  Contains callback information with
+                which to find the original replenishment request.
       A response of true indicates the purchase order has been accepted for processing.
       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
-		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
+                The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
   }
   {method public {define-error-po}:void

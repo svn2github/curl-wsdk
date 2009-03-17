@@ -14,26 +14,18 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0, 6.0 applet}
-{applet manifest = "../../manifest.mcurl"}
-{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{curl 6.0 applet}
+{applet manifest = "../tests/manifest.mcurl"}
+{import * from COM.CURL.CDU.DEPLOY-SUPPORT}
 
-starting
-
-{let v:VBox = {VBox}}
-{value v}
-
-{do
-    let builder:XDMBuilder = {XDMBuilder}
-    let start:DateTime = {DateTime}
-    let document:XDMDocument =
-        {builder.build
-            {url "t-xml-space.xml"}
-        }
-    {v.add "total time:" & {start.elapsed}}
-    
-        || Programmatically add a few elements/attributes.
-        {v.add {pre {document.to-XML}}}
+{document-style PlainDocument}
+{set-document-properties
+    hstretch? = true,
+    vstretch? = true, 
+    font-size = 9pt
 }
-
-done
+{DeployUI
+    {evaluate {url "deploy-specs.scurl"}},
+    source-root = {url "../"},
+    target-root = {url "DEPLOYED/"}        
+}

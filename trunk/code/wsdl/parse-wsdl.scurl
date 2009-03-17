@@ -314,11 +314,18 @@
     {self.bootstrap-schema-type "date", "DateTime", true, SOAPTypeMultipleReference.unknown}
     || XMLSimpleValue types 
     || - (defined in COM.CURL.WSDK.SOAP.BuiltinSOAPTypeMapper)
+    def alias-type-names = XMLSimpleValue.alias-type-names
     {for t in simple-xml-types do
-        {self.bootstrap-schema-type  
-            t.local-name, 
-            {format |"{XMLSimpleValue-for "%s"}"|, t.local-name},
-            true, SOAPTypeMultipleReference.unknown}
+        def type-name = t.local-name
+        def (alias, alias?) = {alias-type-names.get-if-exists type-name}
+        def curl-type-name =
+            {if alias? then alias else
+                {format |"{XMLSimpleValue-for "%s"}"|, type-name}}
+        {self.bootstrap-schema-type 
+            type-name, 
+            curl-type-name,
+            true,
+            SOAPTypeMultipleReference.unknown}
     }
 
     || TODO: why should _anything_ be of xml-type xs:schema ??

@@ -1,10 +1,10 @@
-{curl 7.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.BNPriceWS,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/BNPriceWS.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/BNPriceWS.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/BNPriceWS.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/BNPriceWS.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public BNPrice {inherits WSDLHTTPRPCPostClient}
@@ -24,22 +24,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {method public {async-get-bnquote s-isbn:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                s-isbn
-            },
-            {splice self.operations["get-bnquote"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 

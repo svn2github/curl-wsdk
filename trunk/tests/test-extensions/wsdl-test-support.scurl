@@ -14,7 +14,7 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0 package}
+{curl 7.0, 6.0 package}
 
 {package COM.CURL.WSDK.WSDL-TEST-SUPPORT,
     version = "0.9",
@@ -909,10 +909,10 @@
 
 
 || helper functions
-{define-proc {make-service-package 
-                 loc:Url, 
-                 out:StringBuf = {StringBuf}
-             }:OpenPackage
+{define-proc public {make-service-package 
+                        loc:Url, 
+                        out:StringBuf = {StringBuf}
+                    }:OpenPackage
     def w = {WSDL loc}
     def package =
         {OpenPackage 
@@ -923,20 +923,23 @@
     {return package}
 }
 || TODO: cleaner types input
-{define-proc {make-wsdl-template 
-                 || keywords
-                 type-name:String = "test",
-                 method-name:String = "echo",
-                 service-name:String = "TestService",
-                 target-namespace:String = "http://www.example.com/",
-                 service-location:Url = {url "echo-soap.php"},
-                 || variants
-                 literal?:bool = true,
-                 document?:bool = true,
-                 || types
-                 test-type:XDMElement,
-                 ...:XDMElement
-             }:XDMDocument
+{define-proc public {make-wsdl-template 
+                        || keywords
+                        type-name:String = "test",
+                        arg-name:String = "params",
+                        include-arg-element?:bool = true,
+                        method-name:String = "echo",
+                        service-name:String = "TestService",
+                        target-namespace:String = "http://www.example.com/",
+                        target-prefix:String = "t",
+                        service-location:Url = {url "echo-soap.php"},
+                        || variants
+                        literal?:bool = true,
+                        document?:bool = true,
+                        || types
+                        test-type:XDMElement,
+                        ...:XDMElement
+                    }:XDMDocument
     || namespaces
     def XS = "http://www.w3.org/2001/XMLSchema"
     def WSDL = "http://schemas.xmlsoap.org/wsdl/"
@@ -949,7 +952,6 @@
     def test-types =
         {{Array-of XDMElement} test-type, {splice ...}}
     || WSDL parameters
-    def arg-name = "params"
     def name = "TestSoap"
     def name-in = "TestSoapIn"
     def name-out = "TestSoapOut"
@@ -961,11 +963,15 @@
                 xs = XS,  
                 wsdl = WSDL, 
                 soap = SOAP}    
-            || argument element
+            || argument element, if requested
             def element =
-                {XDMElement "xs:element",
-                    name = arg-name,
-                    type = type-name}
+                {if include-arg-element? then
+                    {XDMElement "xs:element",
+                        name = arg-name,
+                        type = type-name}
+                 else
+                    || otherwise, no-op
+                    {XDMText " "}}
             || variants
             def style =
                 {if document? 
@@ -985,7 +991,7 @@
                 {XDMNamespaceDeclaration "xs", XS},
                 {XDMNamespaceDeclaration "wsdl", WSDL},
                 {XDMNamespaceDeclaration "soap", SOAP},
-                {XDMNamespaceDeclaration "t", target-namespace},
+                {XDMNamespaceDeclaration target-prefix, target-namespace},
                 {XDMNamespaceDeclaration "", target-namespace},
                 targetNamespace = target-namespace,
                 {e "wsdl:types",

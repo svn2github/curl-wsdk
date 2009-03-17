@@ -1,10 +1,10 @@
-{curl 7.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/PowerQuote.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/PowerQuote.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
@@ -30,28 +30,6 @@
         }
     {return
         responses[0] asa QuoteData
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
-    }
-  }
-  {method public {async-get-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                stock-symbol,
-                license-key
-            },
-            {splice self.operations["get-quote"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -131,28 +109,6 @@
       This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
   }
-  {method public {async-get-quick-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                stock-symbol,
-                license-key
-            },
-            {splice self.operations["get-quick-quote"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
-    }
-  }
   {method public {define-get-quick-quote}:void
     set self.operations["get-quick-quote"] = 
          {Arguments
@@ -222,28 +178,6 @@
       This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
   }
-  {method public {async-get-quote-data-set stock-symbols:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                stock-symbols,
-                license-key
-            },
-            {splice self.operations["get-quote-data-set"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
-    }
-  }
   {method public {define-get-quote-data-set}:void
     set self.operations["get-quote-data-set"] = 
          {Arguments
@@ -268,7 +202,7 @@
             },
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
                     nillable? = true
                 }
@@ -298,21 +232,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {method public {async-important-message event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {splice self.operations["important-message"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -373,7 +292,7 @@
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
                     element-name = {XMLName "http://ws.cdyne.com/", "DataSet"},
-                    xml-type = {XMLName "http://ws.cdyne.com/", "DataSet"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_DataSet"},
                     curl-type = DataSet,
                     nillable? = true
                 },
@@ -391,7 +310,7 @@
         let constant doc-marshaler:SOAPXMLDocumentMarshaler =
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
                     nillable? = true
                 },

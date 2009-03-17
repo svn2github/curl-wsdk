@@ -1,10 +1,10 @@
-{curl 7.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.DailyDilbert,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/DailyDilbert.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/DailyDilbert.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/DailyDilbert.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/DailyDilbert.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DailyDilbert {inherits WSDLHTTPRPCPostClient}
@@ -23,21 +23,6 @@
         }
     {return
         responses[0] asa #{Array-of byte}
-    }
-  }
-
-
-  {method public {async-daily-dilbert-image event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {splice self.operations["daily-dilbert-image"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -84,21 +69,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {method public {async-daily-dilbert-image-path event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {splice self.operations["daily-dilbert-image-path"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 

@@ -1,10 +1,10 @@
-{curl 7.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.AmazonSearch,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/AmazonSearch.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/AmazonSearch.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/AmazonSearch.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/AmazonSearch.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public AmazonSearchService {inherits WSDLHTTPRPCPostClient}
@@ -24,22 +24,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-keyword-search-request keyword-search-request:#KeywordRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                keyword-search-request
-            },
-            {splice self.operations["keyword-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -97,22 +81,6 @@
   }
 
 
-  {method public {async-text-stream-search-request text-stream-search-request:#TextStreamRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                text-stream-search-request
-            },
-            {splice self.operations["text-stream-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-text-stream-search-request}:void
     set self.operations["text-stream-search-request"] = 
          {Arguments
@@ -162,22 +130,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-power-search-request power-search-request:#PowerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                power-search-request
-            },
-            {splice self.operations["power-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -235,22 +187,6 @@
   }
 
 
-  {method public {async-browse-node-search-request browse-node-search-request:#BrowseNodeRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                browse-node-search-request
-            },
-            {splice self.operations["browse-node-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-browse-node-search-request}:void
     set self.operations["browse-node-search-request"] = 
          {Arguments
@@ -300,22 +236,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-asin-search-request asin-search-request:#AsinRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                asin-search-request
-            },
-            {splice self.operations["asin-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -373,22 +293,6 @@
   }
 
 
-  {method public {async-blended-search-request blended-search-request:#BlendedRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                blended-search-request
-            },
-            {splice self.operations["blended-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-blended-search-request}:void
     set self.operations["blended-search-request"] = 
          {Arguments
@@ -438,22 +342,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-upc-search-request upc-search-request:#UpcRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                upc-search-request
-            },
-            {splice self.operations["upc-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -511,22 +399,6 @@
   }
 
 
-  {method public {async-sku-search-request sku-search-request:#SkuRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                sku-search-request
-            },
-            {splice self.operations["sku-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-sku-search-request}:void
     set self.operations["sku-search-request"] = 
          {Arguments
@@ -576,22 +448,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-author-search-request author-search-request:#AuthorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                author-search-request
-            },
-            {splice self.operations["author-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -649,22 +505,6 @@
   }
 
 
-  {method public {async-artist-search-request artist-search-request:#ArtistRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                artist-search-request
-            },
-            {splice self.operations["artist-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-artist-search-request}:void
     set self.operations["artist-search-request"] = 
          {Arguments
@@ -714,22 +554,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-actor-search-request actor-search-request:#ActorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                actor-search-request
-            },
-            {splice self.operations["actor-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -787,22 +611,6 @@
   }
 
 
-  {method public {async-manufacturer-search-request manufacturer-search-request:#ManufacturerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                manufacturer-search-request
-            },
-            {splice self.operations["manufacturer-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-manufacturer-search-request}:void
     set self.operations["manufacturer-search-request"] = 
          {Arguments
@@ -852,22 +660,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-director-search-request director-search-request:#DirectorRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                director-search-request
-            },
-            {splice self.operations["director-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -925,22 +717,6 @@
   }
 
 
-  {method public {async-exchange-search-request exchange-search-request:#ExchangeRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                exchange-search-request
-            },
-            {splice self.operations["exchange-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-exchange-search-request}:void
     set self.operations["exchange-search-request"] = 
          {Arguments
@@ -990,22 +766,6 @@
         }
     {return
         responses[0] asa #ProductInfo
-    }
-  }
-
-
-  {method public {async-list-mania-search-request list-mania-search-request:#ListManiaRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                list-mania-search-request
-            },
-            {splice self.operations["list-mania-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1063,22 +823,6 @@
   }
 
 
-  {method public {async-wishlist-search-request wishlist-search-request:#WishlistRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                wishlist-search-request
-            },
-            {splice self.operations["wishlist-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-wishlist-search-request}:void
     set self.operations["wishlist-search-request"] = 
          {Arguments
@@ -1128,22 +872,6 @@
         }
     {return
         responses[0] asa #SellerProfile
-    }
-  }
-
-
-  {method public {async-seller-profile-search-request seller-profile-search-request:#SellerProfileRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                seller-profile-search-request
-            },
-            {splice self.operations["seller-profile-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1201,22 +929,6 @@
   }
 
 
-  {method public {async-seller-search-request seller-search-request:#SellerRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                seller-search-request
-            },
-            {splice self.operations["seller-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-seller-search-request}:void
     set self.operations["seller-search-request"] = 
          {Arguments
@@ -1266,22 +978,6 @@
         }
     {return
         responses[0] asa #MarketplaceSearch
-    }
-  }
-
-
-  {method public {async-marketplace-search-request marketplace-search-request:#MarketplaceRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                marketplace-search-request
-            },
-            {splice self.operations["marketplace-search-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1339,22 +1035,6 @@
   }
 
 
-  {method public {async-similarity-search-request similarity-search-request:#SimilarityRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                similarity-search-request
-            },
-            {splice self.operations["similarity-search-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-similarity-search-request}:void
     set self.operations["similarity-search-request"] = 
          {Arguments
@@ -1404,22 +1084,6 @@
         }
     {return
         responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-get-shopping-cart-request get-shopping-cart-request:#GetShoppingCartRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                get-shopping-cart-request
-            },
-            {splice self.operations["get-shopping-cart-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1477,22 +1141,6 @@
   }
 
 
-  {method public {async-clear-shopping-cart-request clear-shopping-cart-request:#ClearShoppingCartRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                clear-shopping-cart-request
-            },
-            {splice self.operations["clear-shopping-cart-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-clear-shopping-cart-request}:void
     set self.operations["clear-shopping-cart-request"] = 
          {Arguments
@@ -1542,22 +1190,6 @@
         }
     {return
         responses[0] asa #ShoppingCart
-    }
-  }
-
-
-  {method public {async-add-shopping-cart-items-request add-shopping-cart-items-request:#AddShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                add-shopping-cart-items-request
-            },
-            {splice self.operations["add-shopping-cart-items-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1615,22 +1247,6 @@
   }
 
 
-  {method public {async-remove-shopping-cart-items-request remove-shopping-cart-items-request:#RemoveShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                remove-shopping-cart-items-request
-            },
-            {splice self.operations["remove-shopping-cart-items-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-remove-shopping-cart-items-request}:void
     set self.operations["remove-shopping-cart-items-request"] = 
          {Arguments
@@ -1684,22 +1300,6 @@
   }
 
 
-  {method public {async-modify-shopping-cart-items-request modify-shopping-cart-items-request:#ModifyShoppingCartItemsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                modify-shopping-cart-items-request
-            },
-            {splice self.operations["modify-shopping-cart-items-request"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
   {method public {define-modify-shopping-cart-items-request}:void
     set self.operations["modify-shopping-cart-items-request"] = 
          {Arguments
@@ -1749,22 +1349,6 @@
         }
     {return
         responses[0] asa #GetTransactionDetailsResponse
-    }
-  }
-
-
-  {method public {async-get-transaction-details-request get-transaction-details-request:#GetTransactionDetailsRequest, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                get-transaction-details-request
-            },
-            {splice self.operations["get-transaction-details-request"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 

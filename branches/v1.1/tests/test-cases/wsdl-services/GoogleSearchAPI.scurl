@@ -1,10 +1,10 @@
-{curl 7.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.GoogleSearchAPI,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/GoogleSearchAPI.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/GoogleSearchAPI.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/GoogleSearchAPI.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/GoogleSearchAPI.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public GoogleSearchService {inherits WSDLHTTPRPCPostClient}
@@ -25,23 +25,6 @@
         }
     {return
         responses[0] asa #{Array-of byte}
-    }
-  }
-
-
-  {method public {async-do-get-cached-page key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                key,
-                url
-            },
-            {splice self.operations["do-get-cached-page"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -102,23 +85,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {method public {async-do-spelling-suggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                key,
-                phrase
-            },
-            {splice self.operations["do-spelling-suggestion"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -187,31 +153,6 @@
         }
     {return
         responses[0] asa #GoogleSearchResult
-    }
-  }
-
-
-  {method public {async-do-google-search key:#String, q:#String, start:int, max-results:int, filter:bool, restrict:#String, safe-search:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                key,
-                q,
-                start,
-                max-results,
-                filter,
-                restrict,
-                safe-search,
-                lr,
-                ie,
-                oe
-            },
-            {splice self.operations["do-google-search"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 

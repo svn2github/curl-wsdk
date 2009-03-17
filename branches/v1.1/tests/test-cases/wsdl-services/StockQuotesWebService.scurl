@@ -1,10 +1,10 @@
-{curl 7.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.StockQuotesWebService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/StockQuotesWebService.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/StockQuotesWebService.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/StockQuotesWebService.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/StockQuotesWebService.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
   {doc-next 
@@ -33,26 +33,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns XML schema (XSD) in which all XML formatted stock information is in.
-    }
-  }
-  {method public {async-get-stocks-xmlschema event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {splice self.operations["get-stocks-xmlschema"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -113,30 +93,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified stock that are in the given value interval as XML string.
-    }
-  }
-  {method public {async-get-stock-daily-values-by-value-xml str-stock-exchange:String, str-stock:String, dcm-low:double, dcm-high:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                dcm-low,
-                dcm-high
-            },
-            {splice self.operations["get-stock-daily-values-by-value-xml"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -219,30 +175,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified stock in the given time interval as XML string.
-    }
-  }
-  {method public {async-get-stock-daily-values-by-date-xml str-stock-exchange:String, str-stock:String, str-date-low:String, str-date-high:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                str-date-low,
-                str-date-high
-            },
-            {splice self.operations["get-stock-daily-values-by-date-xml"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -335,29 +267,6 @@
       Method returns all stock values for given date as XML string.
     }
   }
-  {method public {async-get-stock-daily-values-xml str-stock-exchange:String, str-segment:String, str-date:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-segment,
-                str-date
-            },
-            {splice self.operations["get-stock-daily-values-xml"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all stock values for given date as XML string.
-    }
-  }
   {method public {define-get-stock-daily-values-xml}:void
     set self.operations["get-stock-daily-values-xml"] = 
          {Arguments
@@ -434,28 +343,6 @@
       Method returns latest published stock values as XML string.
     }
   }
-  {method public {async-get-latest-stock-daily-values-xml str-stock-exchange:String, str-segment:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-segment
-            },
-            {splice self.operations["get-latest-stock-daily-values-xml"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns latest published stock values as XML string.
-    }
-  }
   {method public {define-get-latest-stock-daily-values-xml}:void
     set self.operations["get-latest-stock-daily-values-xml"] = 
          {Arguments
@@ -518,29 +405,6 @@
         }
     {return
         responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the value for the specified stock on the given date.
-    }
-  }
-  {method public {async-get-stock-daily-value str-stock-exchange:String, str-stock:String, str-date:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                str-date
-            },
-            {splice self.operations["get-stock-daily-value"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -625,28 +489,6 @@
       Method returns the latest published value for the specified stock.
     }
   }
-  {method public {async-get-latest-stock-daily-value str-stock-exchange:String, str-stock:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock
-            },
-            {splice self.operations["get-latest-stock-daily-value"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the latest published value for the specified stock.
-    }
-  }
   {method public {define-get-latest-stock-daily-value}:void
     set self.operations["get-latest-stock-daily-value"] = 
          {Arguments
@@ -707,28 +549,6 @@
         }
     {return
         responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the current value for the specified stock.
-    }
-  }
-  {method public {async-get-latest-stock-value str-stock-exchange:String, str-stock:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock
-            },
-            {splice self.operations["get-latest-stock-value"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -808,29 +628,6 @@
       Method returns the value for the specified stock at the given time.
     }
   }
-  {method public {async-get-stock-value str-stock-exchange:String, str-stock:String, str-date-time:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                str-date-time
-            },
-            {splice self.operations["get-stock-value"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the value for the specified stock at the given time.
-    }
-  }
   {method public {define-get-stock-value}:void
     set self.operations["get-stock-value"] = 
          {Arguments
@@ -899,30 +696,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified stock in the given time interval as XML string.
-    }
-  }
-  {method public {async-get-stock-values-by-date-time-xml str-stock-exchange:String, str-stock:String, str-date-time-low:String, str-date-time-high:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-stock,
-                str-date-time-low,
-                str-date-time-high
-            },
-            {splice self.operations["get-stock-values-by-date-time-xml"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1012,26 +785,6 @@
       Method returns XML schema (XSD) in which all XML formatted index information is in.
     }
   }
-  {method public {async-get-indices-xmlschema event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-            },
-            {splice self.operations["get-indices-xmlschema"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns XML schema (XSD) in which all XML formatted index information is in.
-    }
-  }
   {method public {define-get-indices-xmlschema}:void
     set self.operations["get-indices-xmlschema"] = 
          {Arguments
@@ -1083,30 +836,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified index that are in the given value interval as XML string.
-    }
-  }
-  {method public {async-get-index-daily-values-by-value-xml str-stock-exchange:String, str-index:String, dcm-low:double, dcm-high:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                dcm-low,
-                dcm-high
-            },
-            {splice self.operations["get-index-daily-values-by-value-xml"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1198,30 +927,6 @@
       Method returns all values for the specified index in the given time interval as XML string.
     }
   }
-  {method public {async-get-index-daily-values-by-date-xml str-stock-exchange:String, str-index:String, str-date-low:String, str-date-high:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                str-date-low,
-                str-date-high
-            },
-            {splice self.operations["get-index-daily-values-by-date-xml"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified index in the given time interval as XML string.
-    }
-  }
   {method public {define-get-index-daily-values-by-date-xml}:void
     set self.operations["get-index-daily-values-by-date-xml"] = 
          {Arguments
@@ -1304,28 +1009,6 @@
       Method returns all index values for given date as XML string.
     }
   }
-  {method public {async-get-index-daily-values-xml str-stock-exchange:String, str-date:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-date
-            },
-            {splice self.operations["get-index-daily-values-xml"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all index values for given date as XML string.
-    }
-  }
   {method public {define-get-index-daily-values-xml}:void
     set self.operations["get-index-daily-values-xml"] = 
          {Arguments
@@ -1395,27 +1078,6 @@
       Method returns latest published index values as XML string.
     }
   }
-  {method public {async-get-latest-index-daily-values-xml str-stock-exchange:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange
-            },
-            {splice self.operations["get-latest-index-daily-values-xml"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns latest published index values as XML string.
-    }
-  }
   {method public {define-get-latest-index-daily-values-xml}:void
     set self.operations["get-latest-index-daily-values-xml"] = 
          {Arguments
@@ -1472,29 +1134,6 @@
         }
     {return
         responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the value for the specified index on the given date.
-    }
-  }
-  {method public {async-get-index-daily-value str-stock-exchange:String, str-index:String, str-date:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                str-date
-            },
-            {splice self.operations["get-index-daily-value"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1579,28 +1218,6 @@
       Method returns the latest published value for the specified index.
     }
   }
-  {method public {async-get-latest-index-daily-value str-stock-exchange:String, str-index:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index
-            },
-            {splice self.operations["get-latest-index-daily-value"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the latest published value for the specified index.
-    }
-  }
   {method public {define-get-latest-index-daily-value}:void
     set self.operations["get-latest-index-daily-value"] = 
          {Arguments
@@ -1661,28 +1278,6 @@
         }
     {return
         responses[0] asa double
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the current value for the specified index.
-    }
-  }
-  {method public {async-get-latest-index-value str-stock-exchange:String, str-index:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index
-            },
-            {splice self.operations["get-latest-index-value"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 
@@ -1762,29 +1357,6 @@
       Method returns the value for the specified index at the given time.
     }
   }
-  {method public {async-get-index-value str-stock-exchange:String, str-index:String, str-date-time:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                str-date-time
-            },
-            {splice self.operations["get-index-value"]},
-            event-handler,
-            ...
-
-        }
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns the value for the specified index at the given time.
-    }
-  }
   {method public {define-get-index-value}:void
     set self.operations["get-index-value"] = 
          {Arguments
@@ -1853,30 +1425,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Method returns all values for the specified index in the given time interval as XML string.
-    }
-  }
-  {method public {async-get-index-values-by-date-time-xml str-stock-exchange:String, str-index:String, str-date-time-low:String, str-date-time-high:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                str-stock-exchange,
-                str-index,
-                str-date-time-low,
-                str-date-time-high
-            },
-            {splice self.operations["get-index-values-by-date-time-xml"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 

@@ -16,6 +16,16 @@
 
 {doc-next
     {purpose
+        Version of SOAP to read or write for.
+    }
+}
+{define-enum public SOAPVersion
+    soap-1-1,
+    soap-1-2
+}
+
+{doc-next
+    {purpose
         This is the abstract class for the interface that handles
         marshaling an array of values into a SOAP message.
     }
@@ -35,40 +45,28 @@
     "http://schemas.xmlsoap.org/soap/envelope/"
   }
 
-
   {doc-next
     {purpose
-        The name of the SOAP 1.1 Envelope element,
-        the root element of all SOAP 1.1 messages.
+        The namespace of SOAP 1.2 Envelope elements.
     }
   }
-  {let public constant soap-1-1-envelope-xml-name:XMLName =
-    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "Envelope"}
-  }
- 
-  {doc-next
-    {purpose
-        The name of the SOAP 1.1 Header, one of the elements directly
-        under the Envelope for SOAP 1.1 messages.
-    }
-  }
-  {let public constant soap-1-1-header-xml-name:XMLName =
-    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "Header"}
+  {def public soap-1-2-envelope-uri =
+    "http://www.w3.org/2003/05/soap-envelope"
   }
 
-  {doc-next
-    {purpose
-        The name of the SOAP 1.1 Body, one of the elements directly
-        under the Envelope for SOAP 1.1 messages.  The body holds
-        the main values being sent or received.
+  {define-proc public {soap-version-to-envelope-uri version:SOAPVersion}:String
+    {return
+        {switch version
+         case SOAPVersion.soap-1-1 do
+            SOAPMessageWriter.soap-1-1-envelope-uri
+         case SOAPVersion.soap-1-2 do
+            SOAPMessageWriter.soap-1-2-envelope-uri
+        }
     }
   }
-  {let public constant soap-1-1-body-xml-name:XMLName =
-    {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "Body"}
-  }
 
-  {doc-next
-    {purpose
+   {doc-next
+     {purpose
         The name of the SOAP 1.1 encoding-style attribute.
     }
   }
@@ -76,6 +74,12 @@
 ||--    {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "encodingStyle"}
     {new XMLName, SOAPMessageWriter.soap-1-1-envelope-uri, "encodingStyle"}
   }
+
+  {let public constant soap-1-2-encoding-style-attribute-xml-name:XMLName =
+||--    {new XMLName, SOAPTypeMapper.soap-1-2-encoding-uri, "encodingStyle"}
+    {new XMLName, SOAPMessageWriter.soap-1-2-envelope-uri, "encodingStyle"}
+  }
+
 
   {doc-next
     {purpose
@@ -87,8 +91,11 @@
     SOAPTypeMapper.soap-1-1-encoding-uri
   }
 
+  {def public soap-1-2-encoding-style-attribute-default-value =
+    SOAPTypeMapper.soap-1-2-encoding-uri
+  }
 
-|| FIXME: needs a way to request 1.2 style packaging
+
   {doc-next
     {purpose
         Write out a SOAP message based on an array of values into
@@ -178,15 +185,12 @@
                                        null,
                                    write-type-attribute?:bool = true,
                                    write-encoding-attribute?:bool = true,
-                                   envelope-namespace:String =
-                                       SOAPMessageWriter.soap-1-1-envelope-uri,
                                    headers:#{Array-of any} = null,
                                    header-names:#{Array-of #XMLName} = null,
                                    header-types:#{Array-of SOAPObjectType} = null,
                                    header-roles:#{Array-of #String} = null,
                                    header-must-understands:#{Array-of bool} = null,
-                                   header-attribute-namespace:String =
-                                       SOAPMessageWriter.soap-1-1-envelope-uri
+                                   soap-version:SOAPVersion = SOAPVersion.soap-1-1
                                }:void
   }
 }
@@ -283,15 +287,12 @@
                               marshal-context:#SOAPMarshalContext = null,
                               write-type-attribute?:bool = false,
                               write-encoding-attribute?:bool = true,
-                              envelope-namespace:String =
-                                  SOAPMessageWriter.soap-1-1-envelope-uri,
                               headers:#{Array-of any} = null,
                               header-names:#{Array-of #XMLName} = null,
                               header-types:#{Array-of SOAPObjectType} = null,
                               header-roles:#{Array-of #String} = null,
                               header-must-understands:#{Array-of bool} = null,
-                              header-attribute-namespace:String = 
-                                  SOAPMessageWriter.soap-1-1-envelope-uri
+                              soap-version:SOAPVersion = SOAPVersion.soap-1-1
                     }:void
     {self.write-rpc-request
         stream,
@@ -303,13 +304,12 @@
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
         write-encoding-attribute? = write-encoding-attribute?,
-        envelope-namespace = envelope-namespace,
         headers = headers,
         header-names = header-names,
         header-types = header-types,
         header-roles = header-roles,
         header-must-understands = header-must-understands,
-        header-attribute-namespace = header-attribute-namespace
+        soap-version = soap-version
     }
   }
 
@@ -357,18 +357,15 @@
                           || does this make sense, should this be in
                           || types and element names already?
                           write-encoding-attribute?:bool = true,
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           headers:#{Array-of any} = null,
                           header-names:#{Array-of #XMLName} = null,
                           header-types:#{Array-of SOAPObjectType} = null,
                           header-roles:#{Array-of #String} = null,
                           header-must-understands:#{Array-of bool} = null,
-                          header-attribute-namespace:String = 
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           rpc-style?:bool = true,
                           root-element-attributes:#{Array-of XMLToken} =
-                              null
+                              null,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                  }:void
     {if argument-names == null then
         set argument-names =
@@ -379,6 +376,8 @@
     || but there will not be any character encoding information in there...
     {stream.write-one {new XMLStartDocument}}
 
+    def envelope-namespace =
+        {SOAPMessageWriter.soap-version-to-envelope-uri soap-version}
     || do Envelope start
     let constant envelope-xml-name:XMLName =
         {self.envelope-xml-name envelope-namespace}
@@ -389,11 +388,19 @@
      || add usual name-spaces, so that they don't show up on each element
      let constant canned-namespace-attributes:{Array-of XMLToken} =
         {new {Array-of XMLToken},
-            {new XMLAttribute,
-                {XMLName.unchecked "", "xmlns:SOAP-ENC"},
-                || FIXME: this should vary based on envelope-namespace
-                SOAPMessageWriter.
-                    soap-1-1-encoding-style-attribute-default-value
+            {switch soap-version
+             case SOAPVersion.soap-1-1 do
+                {XMLAttribute
+                    {XMLName.unchecked "", "xmlns:SOAP-ENC"},
+                    SOAPMessageWriter.
+                        soap-1-1-encoding-style-attribute-default-value
+                }
+             case SOAPVersion.soap-1-2 do
+                {XMLAttribute
+                    {XMLName.unchecked "", "xmlns:enc"},
+                    SOAPMessageWriter.
+                        soap-1-2-encoding-style-attribute-default-value
+                }
             },
             {new XMLAttribute,
                 {XMLName.unchecked "", "xmlns:xsi"},
@@ -415,9 +422,6 @@
                     {localize "'headers' and 'header-names' not same size."}
                 }
             }
-            {if header-types == null then
-                set header-types = {new {Array-of SOAPObjectType}}
-            }
             set started-headers? = true
             {stream.write-one
                 {new XMLStartElement,
@@ -428,14 +432,18 @@
                 stream,
                 headers,
                 header-names,
-                {non-null header-types},
+                {if-non-null header-types then
+                    header-types
+                 else
+                    {new {Array-of SOAPObjectType}}
+                },
                 encoding,
                 repeating-elements = repeating-elements,
                 marshal-context = marshal-context,
                 write-type-attribute? = write-type-attribute?,
                 header-roles = header-roles,
                 header-must-understands = header-must-understands,
-                header-attribute-namespace = header-attribute-namespace
+                soap-version = soap-version
             }
         }
         let start-header-xml:int = 0
@@ -485,7 +493,7 @@
                                 {SOAPRPCMessageWriter.write-header-role
                                     stream,
                                     hr,
-                                    header-attribute-namespace
+                                    soap-version
                                 }
                             }
                         }
@@ -497,7 +505,7 @@
                             {SOAPRPCMessageWriter.write-header-must-understand
                                 stream,
                                 header-must-understands[i],
-                                header-attribute-namespace
+                                soap-version
                             }
                         }
                     }
@@ -532,7 +540,12 @@
                 {if-non-null encoding then
                     encoding
                  else
-                    SOAPMessageWriter.soap-1-1-encoding-style-attribute-default-value
+                    {switch soap-version
+                     case SOAPVersion.soap-1-1 do
+                        SOAPMessageWriter.soap-1-1-encoding-style-attribute-default-value
+                     case SOAPVersion.soap-1-2 do
+                        SOAPMessageWriter.soap-1-2-encoding-style-attribute-default-value
+                    }
                 }
             }
         }
@@ -563,7 +576,8 @@
         encoding,                
         repeating-elements = repeating-elements,
         marshal-context = marshal-context,
-        write-type-attribute? = write-type-attribute?
+        write-type-attribute? = write-type-attribute?,
+        soap-version = soap-version
     }
 
     {if-non-null operation then
@@ -587,40 +601,24 @@
 
   {method protected open {envelope-xml-name envelope-namespace:String}:XMLName
     {return
-        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
-            SOAPMessageWriter.soap-1-1-envelope-xml-name
-         else
-            {new XMLName, envelope-namespace, "Envelope"}
-        }
+        {XMLName envelope-namespace, "Envelope"}
     }
   }
   {method protected open {header-xml-name envelope-namespace:String}:XMLName
     {return
-        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
-            SOAPMessageWriter.soap-1-1-header-xml-name
-         else
-            {new XMLName, envelope-namespace, "Header"}
-        }
+        {XMLName envelope-namespace, "Header"}
     }
   }
   {method protected open {body-xml-name envelope-namespace:String}:XMLName
     {return
-        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
-            SOAPMessageWriter.soap-1-1-body-xml-name
-         else
-            {new XMLName, envelope-namespace, "Body"}
-        }
+        {XMLName envelope-namespace, "Body"}
     }
   }
   {method protected open {encoding-style-attribute-xml-name
                         envelope-namespace:String
                     }:XMLName
     {return
-        {if envelope-namespace == SOAPMessageWriter.soap-1-1-envelope-uri then
-            SOAPMessageWriter.soap-1-1-encoding-style-attribute-xml-name
-         else
-            {new XMLName, envelope-namespace, "encodingStyle"}
-        }
+        {XMLName envelope-namespace, "encodingStyle"}
     }
   }
 
@@ -640,8 +638,7 @@
                           write-type-attribute?:bool = false,
                           header-roles:#{Array-of #String} = null,
                           header-must-understands:#{Array-of bool} = null,
-                          header-attribute-namespace:String = 
-                              SOAPMessageWriter.soap-1-1-envelope-uri
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                  }:void
      {self.write-arguments-or-headers
         stream,
@@ -654,7 +651,7 @@
         write-type-attribute? = write-type-attribute?,
         header-roles = header-roles,
         header-must-understands = header-must-understands,
-        header-attribute-namespace = header-attribute-namespace
+        soap-version = soap-version
     }
   }
 
@@ -684,7 +681,8 @@
                           repeating-elements:#{Set-of XMLName} = null,
                           marshal-context:#SOAPMarshalContext = null,
                           || (Or is that in marshaler?)
-                          write-type-attribute?:bool = false
+                          write-type-attribute?:bool = false,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:void
     {self.write-arguments-or-headers
         stream,
@@ -694,34 +692,34 @@
         encoding,
         repeating-elements = repeating-elements,
         marshal-context = marshal-context,
-        write-type-attribute? = write-type-attribute?
+        write-type-attribute? = write-type-attribute?,
+        soap-version = soap-version
     }
   }
 
   {method protected open {write-arguments-or-headers
-                          stream:XMLOutputStream,
-                          || has xml-name and some type info
-                          arguments:{Array-of any},
-                          argument-names:{Array-of #XMLName},
-                          argument-types:{Array-of SOAPObjectType},
-                          || default this?
-                          encoding:#String,
-                          repeating-elements:#{Set-of XMLName} = null,
-                          marshal-context:#SOAPMarshalContext = null,
-                          || (Or is that in marshaler?)
-                          write-type-attribute?:bool = false,
-                          header-roles:#{Array-of #String} = null,
-                          header-must-understands:#{Array-of bool} = null,
-                          header-attribute-namespace:String = 
-                              SOAPMessageWriter.soap-1-1-envelope-uri
-                      }:void
+                             stream:XMLOutputStream,
+                             || has xml-name and some type info
+                             arguments:{Array-of any},
+                             argument-names:{Array-of #XMLName},
+                             argument-types:{Array-of SOAPObjectType},
+                             || default this?
+                             encoding:#String,
+                             repeating-elements:#{Set-of XMLName} = null,
+                             marshal-context:#SOAPMarshalContext = null,
+                             || (Or is that in marshaler?)
+                             write-type-attribute?:bool = false,
+                             header-roles:#{Array-of #String} = null,
+                             header-must-understands:#{Array-of bool} = null,
+                             soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                         }:void
 
       || create a SOAPMarshallContext
     let constant context:SOAPMarshalContext =
         {if-non-null marshal-context then
             marshal-context
          else
-            {new DefaultSOAPMarshalContext}
+            {DefaultSOAPMarshalContext soap-version = soap-version}
         }
       || marshals all arguments using context (and uses various type mapper
       || things to figure out how to marshal everything.)
@@ -816,7 +814,7 @@
                     {SOAPRPCMessageWriter.write-header-role
                         stream,
                         hr,
-                        header-attribute-namespace
+                        soap-version
                     }
                 }
             }
@@ -827,7 +825,7 @@
                 {SOAPRPCMessageWriter.write-header-must-understand
                     stream,
                     header-must-understands[i],
-                    header-attribute-namespace
+                    soap-version
                 }
             }
         }
@@ -862,20 +860,16 @@
   {define-proc package {write-header-role
                            stream:XMLOutputStream,
                            header-role:String,
-                           header-attribute-namespace:String
+                           soap-version:SOAPVersion
                        }:void
     {stream.write-one
-|| FIXME optimize to not create XMLNames
-        {new XMLAttribute,
-            {new XMLName,
-                header-attribute-namespace,
-                {if header-attribute-namespace ==
-                    SOAPMessageWriter.soap-1-1-envelope-uri or
-                    header-attribute-namespace == ""
-                 then
+        {XMLAttribute
+            {XMLName
+                {SOAPMessageWriter.soap-version-to-envelope-uri soap-version},
+                {switch soap-version
+                 case SOAPVersion.soap-1-1 do
                     "actor"
-                 else
-|| FIXME this only is right for SOAP 1.2, not for 1.0
+                 case SOAPVersion.soap-1-2 do
                     "role"
                 }
             },
@@ -887,12 +881,14 @@
   {define-proc package {write-header-must-understand
                            stream:XMLOutputStream,
                            header-must-understand?:bool,
-                           header-attribute-namespace:String
+                           soap-version:SOAPVersion
                        }:void
+
+    def header-attribute-namespace =
+        {SOAPMessageWriter.soap-version-to-envelope-uri soap-version}
     {stream.write-one
-|| FIXME optimize to not create XMLNames
-        {new XMLAttribute,
-            {new XMLName, header-attribute-namespace, "mustUnderstand"},
+        {XMLAttribute
+            {XMLName header-attribute-namespace, "mustUnderstand"},
             {if header-must-understand? then
                 "1"
              else

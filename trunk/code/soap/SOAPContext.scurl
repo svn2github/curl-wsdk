@@ -40,6 +40,12 @@
 }
 {define-class public abstract open SOAPMarshalContext
 
+  field public constant soap-version:SOAPVersion
+
+  {constructor public {default soap-version:SOAPVersion = SOAPVersion.soap-1-1}
+    set self.soap-version = soap-version
+  }
+
   {doc-next
     {purpose
         Return the stored id for an object, if there is one,
@@ -230,27 +236,33 @@
         For SOAP 1.1 this will normally be
         {docref SOAPMarshalContext.soap-1-1-reference-attribute-name}.
     }
-    {override
-        Non-abstract subclasses must provide this.
-    }
   }
-  {getter public abstract open {reference-attribute-name}:XMLName
+  {getter public open {reference-attribute-name}:XMLName
+    {return
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-reference-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-reference-attribute-name
+        }
+    }
   }
 
   {doc-next
     {purpose
         The name of the attribute used for the id for multiple
         referencable objects when marshaled into XML.
-        For SOAP 1.1 this will normally be
-        {docref SOAPMarshalContext.soap-1-1-id-attribute-name}.
-    }
-    {notes
-        The default implementation of this returns
-        {docref SOAPMarshalContext.soap-1-1-id-attribute-name}.
     }
   }
   {getter public open {id-attribute-name}:XMLName
-    {return SOAPMarshalContext.soap-1-1-id-attribute-name}
+    {return
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-id-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-id-attribute-name
+        }
+    }
   }
 
   {doc-next
@@ -268,11 +280,11 @@
     {purpose
         SOAP 1.2 reference attribute name, one possible value for
         {docref SOAPMarshalContext.reference-attribute-name}
-        to return.  This is equal to "ref" with no namespace.
+        to return.
     }
   }
-  {let public constant soap-1-2-reference-attribute-name:XMLName =
-    {XMLName "", "ref"}
+  {def public soap-1-2-reference-attribute-name =
+    {XMLName SOAPTypeMapper.soap-1-2-encoding-uri, "ref"}
   }
 
   {doc-next
@@ -285,6 +297,11 @@
   {let public constant soap-1-1-id-attribute-name:XMLName =
     {XMLName "", "id"}
   }
+
+  {let public constant soap-1-2-id-attribute-name:XMLName =
+    {XMLName SOAPTypeMapper.soap-1-2-encoding-uri, "id"}
+  }
+
 }
 
 
@@ -323,11 +340,11 @@
   }
 
   {method package {set-marshaler
-                          marshaler:SOAPTypeMapper.MarshalProc,
-                          type:SOAPObjectType,
-                          encoding:#String, ||default? (multiple urls poss.)
-                          write-type-attribute?:bool = true
-                      }:void
+                      marshaler:SOAPTypeMapper.MarshalProc,
+                      type:SOAPObjectType,
+                      encoding:#String, ||default? (multiple urls poss.)
+                      write-type-attribute?:bool = true
+                  }:void
     set self.marshaler = marshaler
     set self.type = type
     set self.encoding = encoding
@@ -353,8 +370,6 @@
   field private prefix:String
   field private prefix-count:int = 0
 
-  field private constant _reference-attribute-name:XMLName
-
     || should # be implicit for generated ids, but not for set ids?
     || what is returned? # or non#?
   {doc-next
@@ -367,27 +382,25 @@
         this class generates inside of
         {docref DefaultSOAPMarshalContext.get-id} and
         {docref DefaultSOAPMarshalContext.set-marshaler}.  It should
-        start with a '#'.
-    }
-    {parameter reference-attribute-name,
-        The reference attribute name to be returned by 
-        {docref DefaultSOAPMarshalContext.reference-attribute-name}.
-        The default,
-        {docref SOAPMarshalContext.soap-1-1-reference-attribute-name} is
-        correct for SOAP 1.1 messages.
+        not start with a '#'.
     }
   }
   {constructor public {default
-                          prefix:String = "#id",
-                          reference-attribute-name:XMLName =
-                              SOAPMarshalContext.
-                              soap-1-1-reference-attribute-name
+                          prefix:String = "id",
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }
     set self.marshal-table =
         {new {HashTable-of any, SOAPMarshalObjectState}}
     set self.id-table = {new {HashTable-of any, String}}
-    set self.prefix = prefix
-    set self._reference-attribute-name = reference-attribute-name
+    set self.prefix =
+        {switch soap-version
+         case SOAPVersion.soap-1-1 do
+            "#" & prefix
+         case SOAPVersion.soap-1-2 do
+            prefix
+        }
+         
+    {construct-super soap-version = soap-version}
   }
 
   {method public open {get-id
@@ -601,10 +614,6 @@
         }
     }
   }
-
-  {getter public open {reference-attribute-name}:XMLName
-    {return self._reference-attribute-name}
-  }
 }
 
 
@@ -667,6 +676,12 @@
     }
 }
 {define-class public abstract open SOAPUnmarshalContext
+
+  field public constant soap-version:SOAPVersion
+
+  {constructor public {default soap-version:SOAPVersion = SOAPVersion.soap-1-1}
+    set self.soap-version = soap-version
+  }
 
   {doc-next
     {purpose
@@ -794,7 +809,15 @@
         Non-abstract subclasses must provide this.
     }
   }
-  {getter public open abstract {reference-attribute-name}:XMLName
+  {getter public open {reference-attribute-name}:XMLName
+    {return
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-reference-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-reference-attribute-name
+        }
+    }
   }
 
   {doc-next
@@ -810,7 +833,14 @@
     }
   }
   {getter public open {id-attribute-name}:XMLName
-    {return SOAPMarshalContext.soap-1-1-id-attribute-name}
+    {return 
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-id-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-id-attribute-name
+        }
+    }
   }
 }
 
@@ -971,32 +1001,21 @@
 
   field private table:{HashTable-of String, SOAPUnmarshalObjectState}
 
-  field private constant _reference-attribute-name:XMLName
-
   {doc-next
     {purpose
         Construct a {docref DefaultSOAPUnmarshalContext}.
     }
-    {parameter reference-attribute-name,
-        The reference attribute name to be returned by 
-        {docref DefaultSOAPUnmarshalContext.reference-attribute-name}.
-        The default,
-        {docref SOAPMarshalContext.soap-1-1-reference-attribute-name} is
-        correct for SOAP 1.1 messages.
-    }
   }
   {constructor public {default
-                          reference-attribute-name:XMLName =
-                              SOAPMarshalContext.
-                              soap-1-1-reference-attribute-name
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }
     set self.table = {new {HashTable-of String, SOAPUnmarshalObjectState}}
-    set self._reference-attribute-name = reference-attribute-name
+    {construct-super soap-version = soap-version}
   }
 
   {method public open {get-object
-                             id:String
-                          }:(any, status:SOAPUnmarshalObjectStatus)
+                          id:String
+                      }:(any, status:SOAPUnmarshalObjectStatus)
     let (state:SOAPUnmarshalObjectState, found?:bool) =
         {self.table.get-if-exists id}
     {if found? then
@@ -1021,6 +1040,9 @@
                           object:any,
                           status:SOAPUnmarshalObjectStatus
                       }:void
+    {if self.soap-version == SOAPVersion.soap-1-1 then
+        set id = "#" & id
+    }
     let (state:SOAPUnmarshalObjectState, found?:bool) =
         {self.table.get-if-exists id}
     {if found? then
@@ -1072,7 +1094,4 @@
     }
   }
 
-  {getter public open {reference-attribute-name}:XMLName
-    {return self._reference-attribute-name}
-  }
 }

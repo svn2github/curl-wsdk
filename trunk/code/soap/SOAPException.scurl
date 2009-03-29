@@ -64,11 +64,10 @@
         most of the data in the fault element.
     }
 }
-{define-class public open SOAP-1-1-FaultException
+{define-class public open SOAPFaultException
   {inherits SOAPException}
 
   field public constant fault-code:XMLName
-  field public constant fault-string:String
   field public constant detail:#XDMElement
   field public constant fault-other-elements:#{Array-of XMLToken}
   field public constant headers:#{Array-of any}
@@ -76,6 +75,34 @@
   field public constant header-must-understands:#{Array-of bool}
   field public constant header-xml:#{Array-of XMLToken}
   field public constant body-attributes:#{Array-of XMLAttribute}
+
+  {constructor public {default
+                          message:String,
+                          fault-code:XMLName,
+                          detail:#XDMElement = null,
+                          fault-other-elements:#{Array-of XMLToken} = null,
+                          headers:#{Array-of any} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-xml:#{Array-of XMLToken} = null,
+                          body-attributes:#{Array-of XMLAttribute} = null
+                      }
+    {construct-super message}
+    set self.fault-code = fault-code
+    set self.detail = detail
+    set self.fault-other-elements = fault-other-elements
+    set self.headers = headers
+    set self.header-roles = header-roles
+    set self.header-must-understands = header-must-understands
+    set self.header-xml = header-xml
+    set self.body-attributes = body-attributes
+  }
+}
+
+{define-class public open SOAP-1-1-FaultException
+  {inherits SOAPFaultException}
+
+  field public constant fault-string:String
 
   {constructor public {default
                           fault-code:XMLName,
@@ -90,19 +117,74 @@
                       }
     {construct-super
         {lformat
-            "SOAP 1.1 Fault (%s): %s",
+            "SOAP Fault (%s): %s",
             fault-code.local-name, fault-string
+        },
+        fault-code,
+        detail = detail,
+        fault-other-elements = fault-other-elements,
+        headers = headers,
+        header-roles = header-roles,
+        header-must-understands = header-must-understands,
+        header-xml = header-xml,
+        body-attributes = body-attributes
+    }
+    set self.fault-string = fault-string
+  }
+}
+
+{define-class public open SOAP-1-2-FaultException
+  {inherits SOAPFaultException}
+
+  field public constant reasons:#StringStringTable
+  field public constant subcodes:#{Array-of XMLName}
+  field public constant node:#String
+  field public constant role:#String
+
+  {constructor public {default
+                          fault-code:XMLName,
+                          reasons:#StringStringTable = null,
+                          detail:#XDMElement = null,
+                          subcodes:#{Array-of XMLName} = null,
+                          node:#String = null,
+                          role:#String = null,
+                          fault-other-elements:#{Array-of XMLToken} = null,
+                          headers:#{Array-of any} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-xml:#{Array-of XMLToken} = null,
+                          body-attributes:#{Array-of XMLAttribute} = null
+                      }
+    let reason:String = ""
+    {if-non-null reasons then
+        def (rl, found?) = {reasons.get-if-exists {get-working-locale}.language}
+        {if found? then
+            set reason = rl
+         else
+            def (r, found?) = {reasons.get-if-exists ""}
+            {if found? then
+                set reason = r
+            }
         }
     }
-    set self.fault-code = fault-code
-    set self.fault-string = fault-string
-    set self.detail = detail
-    set self.fault-other-elements = fault-other-elements
-    set self.headers = headers
-    set self.header-roles = header-roles
-    set self.header-must-understands = header-must-understands
-    set self.header-xml = header-xml
-    set self.body-attributes = body-attributes
+    {construct-super
+        {lformat
+            "SOAP Fault (%s): %s",
+            fault-code.local-name, reason
+        },
+        fault-code,
+        detail = detail,
+        fault-other-elements = fault-other-elements,
+        headers = headers,
+        header-roles = header-roles,
+        header-must-understands = header-must-understands,
+        header-xml = header-xml,
+        body-attributes = body-attributes
+    }
+    set self.reasons = reasons
+    set self.subcodes = subcodes
+    set self.node = node
+    set self.role = role
   }
 }
 

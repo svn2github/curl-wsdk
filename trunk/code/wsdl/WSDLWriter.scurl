@@ -102,7 +102,7 @@
                  else
                     {continue}
                 }
-            
+
             let constant service-class-name:String =
                 {self.curl-namer.get-curl-name
                     {XMLName.unchecked "", name},
@@ -845,6 +845,12 @@
                                 "true"
                              else
                                 "false"
+                            }
+                        }
+                        {if binding.soap-version != SOAPVersion.soap-1-1 then
+                            {format out = out,
+                                ",\n            soap-version = SOAPVersion.%s",
+                                binding.soap-version.name
                             }
                         }
                     }

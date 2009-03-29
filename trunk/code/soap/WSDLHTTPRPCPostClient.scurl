@@ -213,8 +213,6 @@
                       ||scheme-instance-namespace:#String = null,
                       default-namespace:#String = null,
                       write-encoding-attribute?:bool = true,
-                      envelope-namespace:String =
-                          SOAPMessageWriter.soap-1-1-envelope-uri,
                       request-headers:#{Array-of any} = null,
                       request-header-names:#{Array-of #XMLName} = null,
                       request-header-types:#{Array-of SOAPObjectType} = null,
@@ -222,12 +220,11 @@
                       request-header-must-understands:#{Array-of bool} = null,
                       response-header-names:#{Array-of #XMLName} = null,
                       response-header-types:#{Array-of SOAPObjectType} = null,
-                      header-attribute-namespace:String =
-                          SOAPMessageWriter.soap-1-1-envelope-uri,
                       rpc-style?:bool = true,
                       root-element-attributes:#{Array-of XMLToken} = null,
                       character-encoding:CharEncoding = CharEncoding.utf8,
-                      add-content-type-charset?:bool = true
+                      add-content-type-charset?:bool = true,
+                      soap-version:SOAPVersion = SOAPVersion.soap-1-1
                   }:(responses:{Array-of any},
                      headers:#{Array-of any},
                      header-roles:#{Array-of #String},
@@ -247,7 +244,8 @@
             header-names = response-header-names,
             header-types = response-header-types,
             rpc-style? = rpc-style?,
-            character-encoding = character-encoding
+            character-encoding = character-encoding,
+            soap-version = soap-version
         }
     }
   }
@@ -269,8 +267,6 @@
                       ||scheme-instance-namespace:#String = null,
                       default-namespace:#String = null,
                       write-encoding-attribute?:bool = true,
-                      envelope-namespace:String =
-                          SOAPMessageWriter.soap-1-1-envelope-uri,
                       request-headers:#{Array-of any} = null,
                       request-header-names:#{Array-of #XMLName} = null,
                       request-header-types:#{Array-of SOAPObjectType} = null,
@@ -278,12 +274,11 @@
                       request-header-must-understands:#{Array-of bool} = null,
                       response-header-names:#{Array-of #XMLName} = null,
                       response-header-types:#{Array-of SOAPObjectType} = null,
-                      header-attribute-namespace:String =
-                          SOAPMessageWriter.soap-1-1-envelope-uri,
                       rpc-style?:bool = true,
                       root-element-attributes:#{Array-of XMLToken} = null,
                       character-encoding:CharEncoding = CharEncoding.utf8,
-                      add-content-type-charset?:bool = true
+                      add-content-type-charset?:bool = true,
+                      soap-version:SOAPVersion = SOAPVersion.soap-1-1
                   }:(request-data:HttpRequestData,
                      request-http-headers:#HttpRequestHeaders)
     {return
@@ -297,20 +292,19 @@
             write-type-attribute? = write-type-attribute?,
             ||scheme-instance-namespace,
             write-encoding-attribute? = write-encoding-attribute?,
-            envelope-namespace = envelope-namespace,
             headers = request-headers,
             header-names = request-header-names,
             header-types = request-header-types,
             header-roles = request-header-roles,
             header-must-understands = request-header-must-understands,
-            header-attribute-namespace = header-attribute-namespace,
             rpc-style? = rpc-style?,
             root-element-attributes = root-element-attributes,
             ||request-http-headers = request-http-headers,
             character-encoding = character-encoding,
             add-content-type-charset? = add-content-type-charset?,
-            ||soap-action = soap-action,
-            trace-stream = self.trace-stream
+            soap-action = soap-action,
+            trace-stream = self.trace-stream,
+            soap-version = soap-version
         }
     }
   }

@@ -803,6 +803,7 @@
     let id:#String, href:#String
     {for a in attributes do
         let constant name:XMLName = a.name
+        || FIXME: we shouldn't accept anything except a full match.
         {if name == id-attribute-name or
             name.local-name == id-attribute-name.local-name
          then
@@ -810,6 +811,7 @@
             {if href != null then
                 {break}
             }
+        || FIXME: we shouldn't accept anything except a full match.
          elseif name == reference-attribute-name or
             name.local-name == reference-attribute-name.local-name
          then
@@ -2624,7 +2626,7 @@
     }
     {if-non-null id then
         {unmarshal-context.set-object
-            '#' & id, ref-object, SOAPUnmarshalObjectStatus.complete
+            id, ref-object, SOAPUnmarshalObjectStatus.complete
         }
     }
     {return return-object, true}
@@ -2655,28 +2657,37 @@
         }
     }
     let id:#String
-    {if multiple-reference == SOAPTypeMultipleReference.unknown and not null?
-     then
-        || see if it is already defined, if so, change to
-        || SOAPTypeMultipleReference.multiple-reference
-        || else change to SOAPTypeMultipleReference.single
-        || Or should this just set it to multiple-instance
-        set id = {marshal-context.get-id {non-null object}}
-        {if id != null then
-            set multiple-reference =
-                SOAPTypeMultipleReference.multiple-reference
+    {if-non-null object then
+        {if multiple-reference == SOAPTypeMultipleReference.unknown then
+            || see if it is already defined, if so, change to
+            || SOAPTypeMultipleReference.multiple-reference
+            || else change to SOAPTypeMultipleReference.single
+            || Or should this just set it to multiple-instance
+            set id = {marshal-context.get-id object}
+            {if id != null then
+                set multiple-reference =
+                    SOAPTypeMultipleReference.multiple-reference
+            }
         }
     }
     {if multiple-reference == SOAPTypeMultipleReference.unknown then
         set multiple-reference = default-multiple-reference
     }
     {if multiple-reference == SOAPTypeMultipleReference.multiple then
-        set multiple-reference = SOAPTypeMultipleReference.multiple-reference
+        || For SOAP 1.1 all multi-ref things must have their instances at
+        || the end, but for SOAP 1.2 they can be inline.
+        set multiple-reference =
+            {switch marshal-context.soap-version
+             case SOAPVersion.soap-1-1 do
+                SOAPTypeMultipleReference.multiple-reference
+             case SOAPVersion.soap-1-2 do
+                SOAPTypeMultipleReference.multiple-instance
+            }
     }
     || handle id/href stuff for non-null things
     {if-non-null object then
-        {if multiple-reference == SOAPTypeMultipleReference.multiple-reference
-         then
+        {switch multiple-reference 
+         case SOAPTypeMultipleReference.multiple-reference do
             || Add an href attribute
             {if id == null then
                 set id = {marshal-context.get-id object}
@@ -2717,9 +2728,7 @@
                     current-id
                 }
             }
-         elseif multiple-reference ==
-            SOAPTypeMultipleReference.multiple-instance
-         then
+         case SOAPTypeMultipleReference.multiple-instance do
             || Add an id attribute
             let current-id:String =
                 {if-non-null id then
@@ -2730,8 +2739,10 @@
                         {marshal-context.get-id object, create-if-missing? = true}
                     }
                 }
-            {if current-id[0] == '#' then
-                set current-id = {current-id.tail 1}
+            {if marshal-context.soap-version == SOAPVersion.soap-1-1 then
+                {if current-id[0] == '#' then
+                    set current-id = {current-id.tail 1}
+                }
             }
             {stream.write-one
                 {new XMLAttribute,

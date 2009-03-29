@@ -52,11 +52,11 @@
 
   {doc-next
     {purpose
-        The local-name of the SOAP 1.2 fault string element.  Which can appear
+        The local-name of the SOAP 1.2 Reason element.  Which can appear
         under the SOAP 1.2 Fault element.
     }
   }
-  {let public constant soap-1-2-fault-string-name:String = "Reason"}
+  {let public constant soap-1-2-reason-name:String = "Reason"}
 
   {doc-next
     {purpose
@@ -66,7 +66,17 @@
   }
   {let public constant soap-1-1-detail-name:String = "detail"}
 
-|| FIXME needs a way to do 1.2 style packaging
+  {let public constant soap-1-2-detail-name:String = "Details"}
+
+  {let public constant soap-1-2-subcode-name:String = "Subcode"}
+  {let public constant soap-1-2-node-name:String = "Node"}
+  {let public constant soap-1-2-role-name:String = "Role"}
+  {let public constant soap-1-2-text-name:String = "Text"}
+  {let public constant soap-1-2-value-name:String = "Value"}
+  {def public soap-1-2-lang-attribute-xml-name =
+    {XMLName "http://www.w3.org/XML/1998/namespace", "lang"}
+  }
+
   {doc-next
     {purpose
         Read in a SOAP message into an array of values from a
@@ -155,12 +165,9 @@
                                    check-type-attribute?:bool = false,
                                    default-namespace:#String = null,
                                    operation:#XMLName = null,
-                                   envelope-namespace:String =
-                                       SOAPMessageWriter.soap-1-1-envelope-uri,
                                    header-names:#{Array-of #XMLName} = null,
                                    header-types:#{Array-of SOAPObjectType} = null,
-                                   header-attribute-namespace:String =
-                                       SOAPMessageWriter.soap-1-1-envelope-uri
+                                   soap-version:SOAPVersion = SOAPVersion.soap-1-1
                                }:(responses:{Array-of any},
                                   headers:#{Array-of any},
                                   header-roles:#{Array-of #String},
@@ -177,6 +184,10 @@
 }
 {define-class public open SOAPRPCMessageReader
   {inherits SOAPMessageReader}
+
+  {def private soap-1-2-rpc-result =
+    {XMLName "http://www.w3.org/2003/05/soap-rpc", "result"}
+  }
 
   {doc-next
     {purpose
@@ -263,12 +274,9 @@
                           check-type-attribute?:bool = false,
                           default-namespace:#String = null,
                           operation:#XMLName = null,
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           header-names:#{Array-of #XMLName} = null,
                           header-types:#{Array-of SOAPObjectType} = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
                          header-roles:#{Array-of #String},
@@ -283,10 +291,9 @@
             check-type-attribute? = check-type-attribute?,
             default-namespace = default-namespace,
             operation = operation,
-            envelope-namespace = envelope-namespace,
             header-names = header-names,
             header-types = header-types,
-            header-attribute-namespace = header-attribute-namespace
+            soap-version = soap-version
         }
     }
   }
@@ -342,12 +349,9 @@
                           check-type-attribute?:bool = false,
                           default-namespace:#String = null,
                           operation:#XMLName = null,
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           header-names:#{Array-of #XMLName} = null,
                           header-types:#{Array-of SOAPObjectType} = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           rpc-style?:bool = true
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
@@ -375,10 +379,12 @@
             {localize "Got an EOF instead of expected evelope element."}
         }
     }
-      || read Envelope start
+
+    def envelope-namespace =
+        {SOAPMessageWriter.soap-version-to-envelope-uri soap-version}
+    || read Envelope start
     {type-switch current-token
      case se:XMLStartElement do
-|| FIXME: if it was a SOAP 1.2 envelope, handle that...
         {if se.element.local-name != "Envelope" or
             se.element.namespace != envelope-namespace
          then
@@ -439,7 +445,7 @@
                     unmarshal-context,
                     default-namespace = default-namespace,
                     check-type-attribute? = check-type-attribute?,
-                    header-attribute-namespace = header-attribute-namespace
+                    soap-version = soap-version
                 }
             set (current-token, eof?) = {stream.read-one}
             {if eof? or not current-token isa XMLEndElement then
@@ -500,10 +506,15 @@
             se.element.namespace == envelope-namespace
          then
             || what other params does fault need?
-            || does not return?
-            {self.handle-soap-1-1-fault
-                stream, null, null, null, body-attributes,
-                envelope-namespace = envelope-namespace
+            {switch soap-version
+             case SOAPVersion.soap-1-1 do
+                {self.handle-soap-1-1-fault
+                    stream, null, null, null, body-attributes
+                }
+             case SOAPVersion.soap-1-2 do
+                {self.handle-soap-1-2-fault
+                    stream, null, null, null, body-attributes
+                }
             }
             {return {new {Array-of any}}, null, null, null, null}
         }
@@ -569,7 +580,8 @@
                 default-namespace = default-namespace,
                 check-type-attribute? = check-type-attribute?,
                 operation = actual-operation,
-                rpc-style? = rpc-style?
+                rpc-style? = rpc-style?,
+                soap-version = soap-version
             }
 
          else
@@ -661,8 +673,7 @@
                           || types and element names already?
                           check-type-attribute?:bool = false,
                           default-namespace:#String = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:(headers:{Array-of any},
                          header-roles:#{Array-of #String},
                          header-must-understands:#{Array-of bool})
@@ -675,7 +686,7 @@
             unmarshal-context,
             check-type-attribute? = check-type-attribute?,
             default-namespace = default-namespace,
-            header-attribute-namespace = header-attribute-namespace,
+            soap-version = soap-version,
             headers? = true
         }
     }
@@ -710,7 +721,8 @@
                           check-type-attribute?:bool = false,
                           default-namespace:#String = null,
                           operation:#XMLName = null,
-                          rpc-style?:bool = false
+                          rpc-style?:bool = false,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:(responses:{Array-of any})
     {return
         {self.read-response-or-header-values
@@ -722,7 +734,8 @@
             check-type-attribute? = check-type-attribute?,
             default-namespace = default-namespace,
             operation = operation,
-            rpc-style? = rpc-style?
+            rpc-style? = rpc-style?,
+            soap-version = soap-version
         }
     }
   }
@@ -739,11 +752,10 @@
                           || types and element names already?
                           check-type-attribute?:bool = false,
                           default-namespace:#String = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           headers?:bool = false,
                           operation:#XMLName = null,
-                          rpc-style?:bool = false
+                          rpc-style?:bool = false,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:(responses:{Array-of any},
                          header-roles:#{Array-of #String},
                          header-must-understands:#{Array-of bool})
@@ -759,7 +771,7 @@
         {if-non-null unmarshal-context then
             unmarshal-context
          else
-            {new DefaultSOAPUnmarshalContext}
+            {DefaultSOAPUnmarshalContext soap-version = soap-version}
         }
 
     let constant responses:{Array-of any} =
@@ -789,6 +801,28 @@
             || data, handle it!
             let constant attributes:#{Array-of XMLAttribute} =
                 {reader-read-attributes stream}
+                || Skip the SOAP 1.2 rpc:result element.
+                || FIXME: is this the right way to do this?
+                || Will anyone ever want the contents of this?
+                {if rpc-style? and not headers? and
+                    soap-version == SOAPVersion.soap-1-2 and
+                    se.element == SOAPRPCMessageReader.soap-1-2-rpc-result
+                then
+                    def (token, eof?) = {stream.read-one}
+                    || Skip the expected XMLCharacters.
+                    {if not eof? and not token isa XMLCharacters then
+                        {stream.unread-one token}
+                     else
+                        def (token2, eof?) = {stream.read-one}
+                        || Skip the expected XMLEndElement.
+                        {if not eof? and not token2 isa XMLEndElement then
+                            {stream.unread-one token}
+                            {stream.unread-one token2}
+                         else
+                            {continue}
+                        }
+                    }
+                }
             || see if it might be the next response
             {if maybe-in-values? then
                 set current-response-index = previous-response-index + 1
@@ -928,19 +962,13 @@
                     {for a in attributes do
                         let constant namespace:String = a.name.namespace
                         let constant local-name:String = a.name.local-name
-                        {if ((header-attribute-namespace ==
-                              SOAPMessageWriter.soap-1-1-envelope-uri or
-                              header-attribute-namespace == "")
-                             and
-                             (namespace == header-attribute-namespace or
+                        {if (soap-version == SOAPVersion.soap-1-1 and
+                             (namespace == SOAPMessageWriter.soap-1-1-envelope-uri or
                               namespace == "") and
                              local-name == "actor"
                             ) or
-                            ((header-attribute-namespace !=
-                              SOAPMessageWriter.soap-1-1-envelope-uri and
-                              header-attribute-namespace != "")
-                             and
-                             (namespace == header-attribute-namespace and
+                            (soap-version == SOAPVersion.soap-1-2 and
+                             (namespace == SOAPMessageWriter.soap-1-2-envelope-uri and
                               local-name == "role")
                             )
                          then
@@ -948,10 +976,13 @@
                                 set header-roles[header-index] =
                                     a.value asa String
                             }
-                         elseif (header-attribute-namespace == namespace or
-                                 (header-attribute-namespace ==
-                                  SOAPMessageWriter.soap-1-1-envelope-uri and
-                                  header-attribute-namespace == "")) and
+                         elseif ((soap-version == SOAPVersion.soap-1-1 and
+                                  (namespace ==
+                                   SOAPMessageWriter.soap-1-1-envelope-uri or
+                                   namespace == "")) or
+                                 (soap-version == SOAPVersion.soap-1-2 and
+                                  namespace ==
+                                  SOAPMessageWriter.soap-1-2-envelope-uri)) and
                                 local-name == "mustUnderstand"
                          then
                             {if-non-null header-must-understands then
@@ -1146,12 +1177,8 @@
                           headers:#{Array-of any},
                           header-roles:#{Array-of #String},
                           header-must-understands:#{Array-of bool},
-                          body-attributes:#{Array-of XMLAttribute},
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri
-                      }:void
-|| FIXME: does partial handling of SOAP 1.2 Faults, but does not handle
-|| Node, or Role and some of the details
+                          body-attributes:#{Array-of XMLAttribute}
+                      }:never-returns
     let fault-code:#XMLName
     let fault-string:#String
     let detail:#{Array-of XMLToken}
@@ -1171,12 +1198,9 @@
             let constant namespace:String = se.element.namespace
             let constant fault-element-attributes:#{Array-of XMLAttribute} =
                 {reader-read-attributes stream}
-            {if (namespace == SOAPMessageWriter.soap-1-1-envelope-uri and
-                 local-name == SOAPMessageReader.soap-1-1-fault-code-name) or
-                (namespace == "" and
-                 local-name == SOAPMessageReader.soap-1-1-fault-code-name) or
-                (namespace != SOAPMessageWriter.soap-1-1-envelope-uri and
-                 local-name == SOAPMessageReader.soap-1-2-fault-code-name)
+            {if local-name == SOAPMessageReader.soap-1-1-fault-code-name and
+                (namespace == SOAPMessageWriter.soap-1-1-envelope-uri or
+                 namespace == "")
              then
                 {if-non-null fault-code then
                     {throw-soap-exception
@@ -1186,31 +1210,15 @@
                         }
                     }
                  else
-                    || get characters.xml-name-values
-                    let constant characters:#XMLCharacters =
-                        {unmarshal-read-characters stream}
                     set fault-code =
-                        {if-non-null characters then
-                            {if-non-null xnv = characters.xml-name-values then
-                                xnv[0]
-                             else
-                                || This should not happen, but we don't want to
-                                || throw away the info.
-                                {new XMLName, "", characters.characters}
-                            }
-                         else
-                            {new XMLName, "", ""}
-                        }
+                        {SOAPRPCMessageReader.read-characters-xml-name-value stream}
                     || skip XMLEndElement for faultcode
                     {stream.read-one}
                 }
-             elseif 
-                (namespace == SOAPMessageWriter.soap-1-1-envelope-uri and
-                 local-name == SOAPMessageReader.soap-1-1-fault-string-name) or
-                (namespace == "" and
-                 local-name == SOAPMessageReader.soap-1-1-fault-string-name) or
-                (namespace != SOAPMessageWriter.soap-1-1-envelope-uri and
-                 local-name == SOAPMessageReader.soap-1-2-fault-string-name)
+             elseif
+                local-name == SOAPMessageReader.soap-1-1-fault-string-name and
+                (namespace == SOAPMessageWriter.soap-1-1-envelope-uri or
+                 namespace == "")
               then
                 {if-non-null fault-string then
                     {throw-soap-exception
@@ -1235,7 +1243,7 @@
                 {if-non-null detail then
                     {throw-soap-exception
                         {lformat
-                            "Multiple %s elements in a SOAP 1.1 Fault.",
+                            "Multiple %s elements in a SOAP Fault.",
                             SOAPMessageReader.soap-1-1-detail-name
                         }
                     }
@@ -1285,7 +1293,7 @@
          case ee:XMLEndElement do
             {if-non-null e = ee.element then
                 {if e.local-name != "Fault" or
-                    e.namespace != envelope-namespace
+                    e.namespace != SOAPMessageWriter.soap-1-1-envelope-uri
                  then
                     {throw-soap-exception
                         {lformat
@@ -1314,7 +1322,8 @@
             {if-non-null fault-string then
                 fault-string
              else
-                "faultstring missing."
+                {lformat "%s missing.",
+                    SOAPMessageReader.soap-1-1-fault-string-name}
             },
             detail = 
                 {if-non-null detail then
@@ -1329,6 +1338,318 @@
             body-attributes = body-attributes
         }
     }
+  }
+
+  {method public open {handle-soap-1-2-fault
+                          stream:XMLInputStream,
+                          headers:#{Array-of any},
+                          header-roles:#{Array-of #String},
+                          header-must-understands:#{Array-of bool},
+                          body-attributes:#{Array-of XMLAttribute}
+                      }:never-returns
+|| FIXME: does partial handling of SOAP 1.2 Faults, but does not handle
+|| Node, or Role and some of the details
+    let fault-code:#XMLName
+    let detail:#{Array-of XMLToken}
+    let subcodes:#{Array-of XMLName}
+    let reasons:#StringStringTable
+    let fault-other-elements:#{Array-of XMLToken}
+    let role:#String
+    let node:#String
+
+    let constant fault-attributes:#{Array-of XMLAttribute} =
+        {reader-read-attributes stream}
+
+    {while true do
+        let (token:XMLToken, eof?:bool) = {stream.read-one}
+        {if eof? then
+            {break}
+        }
+        {type-switch token
+         case se:XMLStartElement do
+            let constant local-name:String = se.element.local-name
+            let constant namespace:String = se.element.namespace
+            let constant fault-element-attributes:#{Array-of XMLAttribute} =
+                {reader-read-attributes stream}
+            {if local-name == SOAPMessageReader.soap-1-2-fault-code-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                {if-non-null fault-code then
+                    {throw-soap-exception
+                        {lformat
+                            "Multiple %s elements in a SOAP Fault.",
+                            local-name
+                        }
+                    }
+                }
+                def (inner-element, eof?) = {stream.read-one}
+                {if eof? then {break}}
+                {type-switch inner-element
+                 case start:XMLStartElement do
+                    def local-name = start.element.local-name
+                    def namespace = start.element.namespace
+                    {if local-name == SOAPMessageReader.soap-1-2-value-name and
+                        namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+                     then
+                        def value-attributes = {reader-read-attributes stream}
+                        set fault-code =
+                            {SOAPRPCMessageReader.read-characters-xml-name-value
+                                stream
+                            }
+                        || Skip end of Value
+                        {stream.read-one}
+                     else
+                        || Should never happen.
+                        {stream.unread-one start}
+                    }
+                    || also reads end of fault code element.
+                    set subcodes = 
+                        {SOAPRPCMessageReader.read-soap-1-2-fault-subcodes stream}
+                 case end:XMLEndElement do
+                    || This is what we expect at the end of empty Code element
+                }
+             elseif 
+                local-name == SOAPMessageReader.soap-1-2-reason-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+              then
+                {if-non-null reasons then
+                    {throw-soap-exception
+                        {lformat
+                            "Multiple %s elements in a SOAP Fault.",
+                            local-name
+                        }
+                    }
+                }
+                || also skips end.
+                set reasons =
+                    {SOAPRPCMessageReader.read-soap-1-2-fault-reason stream}
+             elseif local-name == SOAPMessageReader.soap-1-2-detail-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                {if-non-null detail then
+                    {throw-soap-exception
+                        {lformat
+                            "Multiple %s elements in a SOAP Fault.",
+                            SOAPMessageReader.soap-1-2-detail-name
+                        }
+                    }
+                 else
+                    || get all tokens and store them in there
+                    set detail = {reader-read-through-end-element stream, se,
+                                     include-end-element? = true}
+                    {if detail == null then
+                        set detail = {new {Array-of XMLToken}}
+                     else
+                        {detail.insert se, 0}
+                    }
+                }
+             elseif local-name == SOAPMessageReader.soap-1-2-role-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                def role-attributes = {reader-read-attributes stream}
+                def role-characters = {unmarshal-read-characters stream}
+                {if-non-null role-characters then
+                    set role = {role-characters.characters.trim-clone}
+                }
+                {stream.read-one}
+             elseif local-name == SOAPMessageReader.soap-1-2-node-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                def node-attributes = {reader-read-attributes stream}
+                def node-characters = {unmarshal-read-characters stream}
+                {if-non-null node-characters then
+                    set node = {node-characters.characters.trim-clone}
+                }
+                {stream.read-one}
+             else
+                let constant foe:{Array-of XMLToken} =
+                    {if-non-null fault-other-elements then
+                        fault-other-elements
+                     else
+                        let constant foe:{Array-of XMLToken} =
+                            {new {Array-of XMLToken}}
+                        set fault-other-elements = foe
+                        foe
+                    }
+                {foe.append se}
+                || append until match into foe
+                let constant tmp:#{Array-of XMLToken} =
+                    {reader-read-through-end-element
+                        stream, se, include-end-element? = true}
+                {if-non-null tmp then
+                    {foe.concat tmp}
+                }
+            }
+         case characters:XMLCharacters do
+            || Put in others?
+            let constant foe:{Array-of XMLToken} =
+                {if-non-null fault-other-elements then
+                    fault-other-elements
+                 else
+                    let constant foe:{Array-of XMLToken} =
+                        {new {Array-of XMLToken}}
+                    set fault-other-elements = foe
+                    foe
+                }
+            {foe.append characters}
+         case attribute:XMLAttribute do
+            || toss them, no idea what to do with these...
+         case ee:XMLEndElement do
+            {if-non-null e = ee.element then
+                {if e.local-name != "Fault" or
+                    e.namespace != SOAPMessageWriter.soap-1-2-envelope-uri
+                 then
+                    {throw-soap-exception
+                        {lformat
+                            "SOAP Fault End element mismatch %y",
+                            e
+                        }
+                    }
+                }
+            }
+            {stream.unread-one ee}
+            {break}
+         else
+            {stream.unread-one token}
+            {break}
+        }
+    }
+    {throw
+        {new SOAP-1-2-FaultException,
+            {if-non-null fault-code then
+                fault-code
+             else
+                || maybe we should throw a different exception instead?
+                || this is illegal...
+                {new XMLName, "", ""}
+            },
+            reasons = reasons,
+            subcodes = subcodes,
+            node = node,
+            role = role,
+            detail = 
+                {if-non-null detail then
+                    {if detail.empty? then null
+                     else
+                        {XDMElement-from-tokens detail}}
+                 else null},
+            fault-other-elements = fault-other-elements,
+            headers = headers,
+            header-roles = header-roles,
+            header-must-understands = header-must-understands,
+            body-attributes = body-attributes
+        }
+    }
+  }
+
+  {define-proc private {read-characters-xml-name-value
+                           stream:XMLInputStream
+                       }:XMLName
+    def characters = {unmarshal-read-characters stream}
+    {return
+        {if-non-null characters then
+            {if-non-null xnv = characters.xml-name-values then
+                xnv[0]
+             else
+                || This should not happen, but we don't want to
+                || throw away the info.
+                {XMLName "", characters.characters}
+            }
+         else
+            {XMLName "", ""}
+        }
+    }
+  }
+
+  {define-proc private {read-soap-1-2-fault-subcodes
+                           stream:XMLInputStream
+                       }:#{Array-of XMLName}
+    let subcodes:#{Array-of XMLName}
+    let subcode-nesting:int = 0
+    {while true do
+        def (token, eof?) = {stream.read-one}
+        {if eof? then {break}}
+        {type-switch token
+         case start:XMLStartElement do
+            def local-name = start.element.local-name
+            def namespace = start.element.namespace
+            {if local-name == SOAPMessageReader.soap-1-2-subcode-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                {inc subcode-nesting}
+             elseif local-name == SOAPMessageReader.soap-1-2-value-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                def s = 
+                    {SOAPRPCMessageReader.read-characters-xml-name-value stream}
+                {if-non-null subcodes then
+                    {subcodes.append s}
+                 else
+                    set subcodes = {new {Array-of XMLName}, s}
+                }
+                {stream.read-one}
+             else
+                || Ignore anything else
+                {reader-read-through-end-element stream, start}
+            }
+         case attributes:XMLAttribute do
+            || Ignore them
+         case end:XMLEndElement do
+            def local-name = end.element.local-name 
+            def namespace = end.element.namespace
+            {if local-name == SOAPMessageReader.soap-1-2-subcode-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                {dec subcode-nesting}
+             else || end of Code
+                {return subcodes}
+            }
+        }
+    }
+    {return subcodes}
+  }
+
+  {define-proc private {read-soap-1-2-fault-reason
+                           stream:XMLInputStream
+                       }:#StringStringTable
+    let reasons:#StringStringTable
+    {while true do
+        def (token, eof?) = {stream.read-one}
+        {if eof? then {break}}
+        {type-switch token
+         case start:XMLStartElement do
+            def local-name = start.element.local-name
+            def namespace = start.element.namespace
+            {if local-name == SOAPMessageReader.soap-1-2-text-name and
+                namespace == SOAPMessageWriter.soap-1-2-envelope-uri
+             then
+                def attributes = {reader-read-attributes stream}
+                let lang:String = ""
+                {if-non-null attributes then
+                    {for a in attributes do
+                        {if a.name == SOAPMessageReader.soap-1-2-lang-attribute-xml-name
+                         then
+                            set lang = a.value asa String
+                        }
+                    }
+                }
+                def text-characters = {unmarshal-read-characters stream}
+                {if-non-null text-characters then
+                    def text = {text-characters.characters.trim-clone}
+                    {if reasons == null then
+                        set reasons = {StringStringTable}
+                    }
+                    set reasons[lang] = text
+                }
+            }
+            || Skip end
+            {stream.read-one}
+         case attributes:XMLAttribute do
+         case end:XMLEndElement do
+            {break}
+        }
+    }
+    {return reasons}
   }
 }
 
@@ -1432,10 +1753,18 @@
                      }:#String
     {if-non-null attributes then
         {for a in attributes do
-            {if a.name == SOAPMessageWriter.
-                soap-1-1-encoding-style-attribute-xml-name
+            || FIXME: should this enforce the soap-version?
+            {if a.name.local-name ==
+                SOAPMessageWriter.soap-1-1-encoding-style-attribute-xml-name.local-name
              then
-                {return a.value asa String}
+                def namespace = a.name.namespace
+                {if namespace ==
+                    SOAPMessageWriter.soap-1-1-encoding-style-attribute-xml-name.namespace or
+                    namespace ==
+                    SOAPMessageWriter.soap-1-2-encoding-style-attribute-xml-name.namespace
+                 then
+                    {return a.value asa String}
+                }
             }
         }
     }

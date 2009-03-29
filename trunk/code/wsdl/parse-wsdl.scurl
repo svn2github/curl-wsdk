@@ -81,13 +81,13 @@
   let package constant wsdl-namespace-uri:String =
       "http://schemas.xmlsoap.org/wsdl/"
 
-  let package constant wsdl-soap-namespace-uri:String =
+  let package constant wsdl-soap-1-1-namespace-uri:String =
       "http://schemas.xmlsoap.org/wsdl/soap/"
 
   let package constant wsdl-soap-1-2-namespace-uri:String =
       "http://schemas.xmlsoap.org/wsdl/soap12/"
 
-  let package constant soap-enc-namespace-uri:String =
+  let package constant soap-1-1-enc-namespace-uri:String =
       "http://schemas.xmlsoap.org/soap/encoding/"
 
   let package constant wsdl-http-namespace-uri:String =
@@ -358,9 +358,9 @@
     || -- defined by http://schemas.xmlsoap.org/soap/encoding.xsd
     || -- some service definitions reference it
     let constant soapenc-array-name:XMLName =
-        {XMLName WSDL.soap-enc-namespace-uri, "Array"}
+        {XMLName WSDL.soap-1-1-enc-namespace-uri, "Array"}
     let constant soapenc-array-key:XMLName =
-        {XMLName.unchecked WSDL.soap-enc-namespace-uri, WSDL.type-prefix & "Array"}
+        {XMLName.unchecked WSDL.soap-1-1-enc-namespace-uri, WSDL.type-prefix & "Array"}
     let constant soapenc-array-type:WSDLSchemaArrayType =
         {WSDLSchemaArrayType    
             soapenc-array-name, 
@@ -402,9 +402,9 @@
     let constant lookup-name:XMLName =
         {XMLName.unchecked WSDL.schema-namespace-uri, WSDL.type-prefix & type}
     let constant lookup-name2:XMLName =
-        {XMLName.unchecked WSDL.soap-enc-namespace-uri, WSDL.type-prefix & type}
+        {XMLName.unchecked WSDL.soap-1-1-enc-namespace-uri, WSDL.type-prefix & type}
     let constant element-name:XMLName =
-        {XMLName WSDL.soap-enc-namespace-uri, type}
+        {XMLName WSDL.soap-1-1-enc-namespace-uri, type}
     let constant xml-name:XMLName =
         {XMLName WSDL.schema-namespace-uri, type}
     let constant primitive-type:WSDLSchemaPrimitiveType =
@@ -412,7 +412,7 @@
     set self.names[lookup-name] = primitive-type
     set self.names[lookup-name2] = primitive-type
     let constant element-lookup-name:XMLName =
-        {XMLName.unchecked WSDL.soap-enc-namespace-uri, WSDL.element-prefix & type}
+        {XMLName.unchecked WSDL.soap-1-1-enc-namespace-uri, WSDL.element-prefix & type}
     set self.names[element-lookup-name] =
         {new WSDLSchemaElement, element-name, primitive-type, self.top-node}
     set self.type-to-element-name[xml-name] = element-name
@@ -431,18 +431,22 @@
     }
   }
 
-  {method private {wsdl-soap-tag-match qname:#XMLName, match-tag:String}:bool
+  {method private {wsdl-soap-1-1-tag-match
+                      qname:#XMLName, match-tag:String
+                  }:bool
     {return 
         {if-non-null qname then
             qname.local-name == match-tag and
-            qname.namespace == WSDL.wsdl-soap-namespace-uri
+            qname.namespace == WSDL.wsdl-soap-1-1-namespace-uri
          else
             false
         }
     }
   }
 
-  {method private {wsdl-soap-1-2-tag-match qname:#XMLName, match-tag:String}:bool
+  {method private {wsdl-soap-1-2-tag-match
+                      qname:#XMLName, match-tag:String
+                  }:bool
     {return 
         {if-non-null qname then
             qname.local-name == match-tag and
@@ -475,11 +479,11 @@
     }
   }
 
-  {method private {soap-enc-tag-match qname:#XMLName, match-tag:String}:bool
+  {method private {soap-1-1-enc-tag-match qname:#XMLName, match-tag:String}:bool
     {return 
         {if-non-null qname then
             qname.local-name == match-tag and
-            qname.namespace == WSDL.soap-enc-namespace-uri
+            qname.namespace == WSDL.soap-1-1-enc-namespace-uri
          else
             false
         }
@@ -497,7 +501,7 @@
                 ref,
                 ""
             }
-        {if {self.soap-enc-tag-match ref-xml-name, "commonAttributes"} then
+        {if {self.soap-1-1-enc-tag-match ref-xml-name, "commonAttributes"} then
             {return true}
         }
     }
@@ -686,8 +690,8 @@
                         {node.children.filter-clone 
                             {proc {node:WSDLDOMNode}:bool
                                 let ignorable?:bool =
-                                    ({self.schema-tag-match
-                                         node.name, "annotation"})
+                                    {self.schema-tag-match
+                                         node.name, "annotation"}
                                 {return not ignorable?}}}
                     {if nodes.size == 1 then
                         let tnode:WSDLDOMNode = nodes[0]
@@ -791,8 +795,7 @@
                 {node.children.filter-clone 
                     {proc {node:WSDLDOMNode}:bool
                         let ignorable?:bool =
-                            ({self.schema-tag-match
-                                 node.name, "annotation"})
+                            {self.schema-tag-match node.name, "annotation"}
                         {return not ignorable?}}}
             {if nodes.size == 1 then
                 let tnode:WSDLDOMNode = nodes[0]
@@ -1540,7 +1543,7 @@
             }
             let constant base:#String = {child.get-attribute "base"}
             {if base == null or
-                not {self.soap-enc-tag-match
+                not {self.soap-1-1-enc-tag-match
                         {WSDLNameTable.make-qname child, {non-null base}, ""},
                         "Array"
                     }
@@ -1566,14 +1569,14 @@
                                 ref,
                                 ""
                             }
-                        {if {self.soap-enc-tag-match
+                        {if {self.soap-1-1-enc-tag-match
                                  ref-xml-name,
                                  "arrayType"
                              }
                          then
                             || This statement intentionally left blank
                          elseif
-                             {self.soap-enc-tag-match
+                             {self.soap-1-1-enc-tag-match
                                  ref-xml-name,
                                  "offset"
                              } or {self.ignorable-attribute? e}
@@ -2540,10 +2543,16 @@
                 {self.parse-binding-operation child, soap-style}
             {binding.operations.append op}
             set op.binding = binding
-         elseif {self.wsdl-soap-tag-match child.name, "binding"} then
-            let sb:WSDLSOAPBinding = {self.parse-soap-binding child}
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "binding"} then
+            def sb = {self.parse-soap-binding child, SOAPVersion.soap-1-1}
             set soap-style = sb.style
             {binding.extensions.append sb}
+            set binding.soap-version = SOAPVersion.soap-1-1
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "binding"} then
+            def sb = {self.parse-soap-binding child, SOAPVersion.soap-1-2}
+            set soap-style = sb.style
+            {binding.extensions.append sb}
+            set binding.soap-version = SOAPVersion.soap-1-2
          elseif {self.wsdl-http-tag-match child.name, "binding"} then
             let b:WSDLHttpBinding = {self.parse-http-binding child}
             {binding.extensions.append b}
@@ -2552,9 +2561,6 @@
             {binding.append-documentation-node child}
          elseif {self.wsdl-tag-match child.name, "appInfo"} then
             {self.ignored-tag child}
-         elseif {self.wsdl-soap-1-2-tag-match child.name, "binding"} then
-            || FIXME
-            {output "ignoring SOAP 1.2 binding."}
          elseif child.name.namespace != WSDL.wsdl-namespace-uri then
             || tags in other namespaces are for extensions, can be ignored
             {self.ignored-tag node}
@@ -2599,12 +2605,14 @@
                 }
             set fault.operation = op
             {faults.append fault}
-         elseif {self.wsdl-soap-tag-match child.name, "operation"} then
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "operation"} then
             {op.extensions.append
                 {self.parse-soap-operation child, style}
             }
          elseif {self.wsdl-soap-1-2-tag-match child.name, "operation"} then
-            {output "ignoring SOAP 1.2 operation."}
+            {op.extensions.append
+                {self.parse-soap-operation child, style}
+            }
          elseif {self.wsdl-tag-match child.name, "documentation"} then
             {op.append-documentation-node child}
          elseif {self.wsdl-tag-match child.name, "appInfo"} then
@@ -2632,22 +2640,22 @@
     let constant message:WSDLBindingOperationMessage =
         {WSDLBindingOperationMessage name, kind, node}
     {for child in node.children do
-        {if {self.wsdl-soap-tag-match child.name, "body"} then
+        {if {self.wsdl-soap-1-1-tag-match child.name, "body"} then
             {message.extensions.append {self.parse-soap-body child}}
-         elseif {self.wsdl-soap-tag-match child.name, "header"} then
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "body"} then
+            {message.extensions.append {self.parse-soap-body child}}
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "header"} then
             {message.extensions.append {self.parse-soap-header child}}
-         elseif {self.wsdl-soap-tag-match child.name, "fault"} then
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "header"} then
+            {message.extensions.append {self.parse-soap-header child}}
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "fault"} then
+            {message.extensions.append {self.parse-soap-fault child, fault-name = name}}
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "fault"} then
             {message.extensions.append {self.parse-soap-fault child, fault-name = name}}
          elseif {self.wsdl-tag-match child.name, "documentation"} then
             {message.append-documentation-node child}
          elseif {self.wsdl-tag-match child.name, "appInfo"} then
             {self.ignored-tag child}
-         elseif {self.wsdl-soap-1-2-tag-match child.name, "body"} then
-            {output "ignoring SOAP 1.2 body"}
-         elseif {self.wsdl-soap-1-2-tag-match child.name, "header"} then
-            {output "ignoring SOAP 1.2 header"}
-         elseif {self.wsdl-soap-1-2-tag-match child.name, "fault"} then
-            {output "ignoring SOAP 1.2 fault"}
          elseif child.name.local-name == "message" then
             || TODO:
             {self.ignored-tag child}
@@ -2704,12 +2712,12 @@
     let constant port:WSDLServicePort =
         {WSDLServicePort name, binding, node}
     {for child in node.children do
-        {if {self.wsdl-soap-tag-match child.name, "address"} then
+        {if {self.wsdl-soap-1-1-tag-match child.name, "address"} then
+            {port.extensions.append {self.parse-soap-address child}}
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "address"} then
             {port.extensions.append {self.parse-soap-address child}}
          elseif {self.wsdl-http-tag-match child.name, "address"} then
             {port.extensions.append {self.parse-http-address child}}
-         elseif {self.wsdl-soap-1-2-tag-match child.name, "address"} then
-            {output "ignoring SOAP 1.2 address node."}
          elseif {self.wsdl-tag-match child.name, "documentation"} then
             {port.append-documentation-node child}
          elseif {self.wsdl-tag-match child.name, "appInfo"} then
@@ -2733,7 +2741,8 @@
   }
 
   {method private {parse-soap-binding
-                      node:WSDLDOMNode
+                      node:WSDLDOMNode,
+                      soap-version:SOAPVersion
                   }:WSDLSOAPBinding
     let style:#String = {node.get-attribute "style"}
     let transport:#String = {node.get-attribute "transport"}
@@ -2749,7 +2758,8 @@
              else
                 WSDL.soap-transport-default
             },
-            node
+            node,
+            soap-version
         }
     }
   }
@@ -2760,6 +2770,8 @@
                   }:WSDLSOAPOperation
     let style:#String = {node.get-attribute "style"}
     let soap-action:#String = {node.get-attribute "soapAction"}
+    || NOTE: Should we check for soapActionRequired when doing SOAP 1.2?
+    || I say, ignore it, if a soapAction is supplied, we will use it.
     {return
         {WSDLSOAPOperation
             {if-non-null style then
@@ -2867,7 +2879,7 @@
             node
         }
     {for child in node.children do
-        {if {self.wsdl-soap-tag-match child.name, "headerfault"} then
+        {if {self.wsdl-soap-1-1-tag-match child.name, "headerfault"} then
             {header.faults.append {self.parse-soap-header-fault child}}
             || not sure if any of the documentation
             || elements are possible here...

@@ -411,6 +411,7 @@
       {new {Array-of WSDLExtensionElement}}
   field public operations:{Array-of WSDLBindingOperation} =
       {new {Array-of WSDLBindingOperation}}
+  field public soap-version:SOAPVersion = SOAPVersion.soap-1-1
 
   {constructor public {default name:String, type:WSDLPortType, node:WSDLDOMNode}
     {construct-super node}
@@ -525,11 +526,18 @@
 {define-class public open WSDLSOAPBinding {inherits WSDLExtensionElement}
   field public constant style:WSDLSOAPStyle
   field public constant transport:String
+  field public constant soap-version:SOAPVersion
 
-  {constructor public {default style:WSDLSOAPStyle, transport:String, node:WSDLDOMNode}
+  {constructor public {default
+                          style:WSDLSOAPStyle,
+                          transport:String,
+                          node:WSDLDOMNode,
+                          soap-version:SOAPVersion
+                       }
     {construct-super node}
     set self.style = style
     set self.transport = transport
+    set self.soap-version = soap-version
   }
 }
 

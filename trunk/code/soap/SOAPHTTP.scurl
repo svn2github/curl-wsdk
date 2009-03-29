@@ -34,19 +34,6 @@
 
   {doc-next
     {purpose
-        The value to be used as base the "Content-Type" HTTP header
-        for all requests by this {docref SOAPHTTPRPCPostCaller}.
-    }
-    {notes
-        Additional parameters may be added to the content type
-        by {docref SOAPHTTPRPCPostCaller.setup-request-data} or
-        {docref SOAPHTTPRPCPostCaller.close-request-data-stream}.
-    }
-  }
-  field public constant content-type:String
-
-  {doc-next
-    {purpose
         The {docref SOAPRPCMessageWriter} that will be used to
         write the messages for all requests by this
         {docref SOAPHTTPRPCPostCaller}.
@@ -95,14 +82,6 @@
         {docref SOAPHTTPRPCPostCaller.call} to start a SOAP
         request/response.
     }
-    {parameter content-type,
-        The value to be used as base the "Content-Type" HTTP header
-        for all requests by this {docref SOAPHTTPRPCPostCaller}.
-        Additional parameters may be added to the content type
-        by {docref SOAPHTTPRPCPostCaller.setup-request-data} or
-        {docref SOAPHTTPRPCPostCaller.close-request-data-stream}.
-        For SOAP 1.1 this should be the default {ctext "text/xml"}.
-    }
     {parameter message-writer,
         The {docref SOAPRPCMessageWriter} that will be used to
         write the messages for all requests by this
@@ -123,8 +102,6 @@
     }
   }
   {constructor public {default
-                          || different for SOAP1.2, and for multipart
-                          content-type:String = "text/xml",
                           request-http-headers:#HttpRequestHeaders = null,
                           || user can supply non-default mappers via the
                           || reader/writer
@@ -132,7 +109,6 @@
                           message-reader:#SOAPRPCMessageReader = null,
                           trace-stream:#TextOutputStream = null
                       }
-    set self.content-type = content-type
     set self.request-http-headers = request-http-headers
     set self.message-writer =
         {if-non-null message-writer then   
@@ -148,6 +124,18 @@
         }
     set self.trace-stream = trace-stream
   }
+  {define-proc public {soap-version-to-content-type
+                          soap-version:SOAPVersion
+                      }:String
+    {return
+        {switch soap-version
+         case SOAPVersion.soap-1-1 do
+            "text/xml" ||""
+         case SOAPVersion.soap-1-2 do
+            "application/soap+xml" ||""
+        }
+    }
+  }
 
   {doc-next
     {purpose
@@ -158,6 +146,11 @@
         {ctext self.message-writer}.  To finish up the {param request-data}
         it calls {docref SOAPHTTPRPCPostCaller.close-request-data-stream}.
         And finally it handles the {param soap-action}.
+    }
+    {parameter content-type,
+        The value to be used as base the "Content-Type" HTTP header
+        for all requests by this {docref SOAPHTTPRPCPostCaller}.
+        For SOAP 1.1 this should be the default {ctext "text/xml"}.
     }
     {notes
         The parameters are a subset of the {docref SOAPHTTPRPCPostCaller.call}
@@ -183,22 +176,21 @@
                           write-type-attribute?:bool = true,
                           ||scheme-instance-namespace:#String = null,
                           write-encoding-attribute?:bool = true,
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           headers:#{Array-of any} = null,
                           header-names:#{Array-of #XMLName} = null,
                           header-types:#{Array-of SOAPObjectType} = null,
                           header-roles:#{Array-of #String} = null,
                           header-must-understands:#{Array-of bool} = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           rpc-style?:bool = true,
                           root-element-attributes:#{Array-of XMLToken} = null,
                           request-http-headers:#HttpRequestHeaders = null,
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
                           soap-action:#String = null,
-                          trace-stream:#TextOutputStream = self.trace-stream
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          content-type:String =
+                            {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version}
                       }:(request-data:HttpRequestData,
                          request-http-headers:#HttpRequestHeaders)
     || could just save the arguments and do this when demanded by
@@ -220,7 +212,8 @@
                 argument-names,
                 argument-types,
                 request-http-headers = request-http-headers,
-                character-encoding = character-encoding
+                character-encoding = character-encoding,
+                content-type = content-type
             }
         || make a Writer, and write in the stream.
         {self.message-writer.write-rpc-request
@@ -234,15 +227,14 @@
             write-type-attribute? = write-type-attribute?,
             write-encoding-attribute? = write-encoding-attribute?,
             marshal-context = marshal-context,
-            envelope-namespace = envelope-namespace,
             headers = headers,
             header-names = header-names,
             header-types = header-types,
             header-roles = header-roles,
             header-must-understands = header-must-understands,
-            header-attribute-namespace = header-attribute-namespace,
             rpc-style? = rpc-style?,
-            root-element-attributes = root-element-attributes
+            root-element-attributes = root-element-attributes,
+            soap-version = soap-version
         }
      finally
         || close stream, and finish up request-data
@@ -257,24 +249,40 @@
         }
     }
 
+    def new-headers =
+        {if-non-null request-http-headers then
+            {HttpRequestHeaders.clone-from request-http-headers}
+         else
+            {HttpRequestHeaders}
+        }
     {if-non-null soap-action then
-        let constant new-headers:HttpRequestHeaders =
-            {if-non-null request-http-headers then
-                {HttpRequestHeaders.clone-from request-http-headers}
-             else
-                {new HttpRequestHeaders}
+        {switch soap-version
+         case SOAPVersion.soap-1-1 do
+            {new-headers.set "SOAPAction",
+                {if soap-action.size < 1 or soap-action[0] != '\"' then
+                    '\"' & soap-action & '\"'
+                else
+                    soap-action
+                }
             }
-        {new-headers.set "SOAPAction",
-            {if soap-action.size < 1 or soap-action[0] != '\"' then
-                '\"' & soap-action & '\"'
-             else
-                soap-action
+         case SOAPVersion.soap-1-2 do
+            {type-switch request-data
+             case srd:SOAPHTTPRPCPostCallerRequestData do
+                {srd.add-soap-action-to-content-type soap-action}
             }
         }
-        set request-http-headers = new-headers
+    }
+    {if soap-version == SOAPVersion.soap-1-2 then
+        || NOTE: should this include other types at lower priorities?
+        || FIXME: when we have MTOM support, probably need to list that
+        || here too.
+        {new-headers.set "Accept", content-type}
     }
 
-    {return {non-null request-data}, request-http-headers}
+    {return
+        {non-null request-data},
+        {if new-headers.size > 0 then new-headers else null}
+    }
   }
 
   {doc-next
@@ -314,7 +322,8 @@
                           argument-names:{Array-of #XMLName},
                           argument-types:{Array-of SOAPObjectType},
                           request-http-headers:#HttpRequestHeaders = null,
-                          character-encoding:CharEncoding = CharEncoding.utf8
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          content-type:String = "text/xml"
                       }:(request-data:HttpRequestData,
                          xml-stream:XMLOutputStream,
                          marshal-context:#SOAPMarshalContext,
@@ -324,7 +333,7 @@
                          request-http-headers:#HttpRequestHeaders
                         )
     let request-data:SOAPHTTPRPCPostCallerRequestData =
-        {new SOAPHTTPRPCPostCallerRequestData, self.content-type}
+        {SOAPHTTPRPCPostCallerRequestData content-type}
     let constant xml-stream:XMLOutputStream =
         {new XMLOutputStream,
             {TranscodingTextOutputStream
@@ -633,7 +642,8 @@
                           root-element-attributes:#{Array-of XMLToken} = null,
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
-                          trace-stream:#TextOutputStream = self.trace-stream
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
                          header-roles:#{Array-of #String},
@@ -660,12 +670,12 @@
             header-types = request-header-types,
             header-roles = request-header-roles,
             header-must-understands = request-header-must-understands,
-            header-attribute-namespace = header-attribute-namespace,
             request-http-headers = self.request-http-headers,
             character-encoding = character-encoding,
             add-content-type-charset? = add-content-type-charset?,
             soap-action = soap-action,
-            trace-stream = trace-stream
+            trace-stream = trace-stream,
+            soap-version = soap-version
         }
     let constant file:HttpFile =
         {binding-url.instantiate-File} asa HttpFile
@@ -711,7 +721,8 @@
             header-types = response-header-types,
             rpc-style? = rpc-style?,
             character-encoding = character-encoding,
-            trace-stream = trace-stream
+            trace-stream = trace-stream,
+            soap-version = soap-version
         }
     }
   }
@@ -734,8 +745,6 @@
                           ||scheme-instance-namespace:#String = null,
                           default-namespace:#String = null,
                           write-encoding-attribute?:bool = true,
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           request-headers:#{Array-of any} = null,
                           request-header-names:#{Array-of #XMLName} = null,
                           request-header-types:#{Array-of SOAPObjectType} = null,
@@ -743,13 +752,12 @@
                           request-header-must-understands:#{Array-of bool} = null,
                           response-header-names:#{Array-of #XMLName} = null,
                           response-header-types:#{Array-of SOAPObjectType} = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           rpc-style?:bool = true,
                           root-element-attributes:#{Array-of XMLToken} = null,
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
                           trace-stream:#TextOutputStream = self.trace-stream,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           ...:EventHandler
                       }:SOAPHTTPRPCPostAsyncWorker
     || .. code in here to do this in terms of get-request-data-stream,
@@ -773,12 +781,12 @@
             header-types = request-header-types,
             header-roles = request-header-roles,
             header-must-understands = request-header-must-understands,
-            header-attribute-namespace = header-attribute-namespace,
             request-http-headers = self.request-http-headers,
             character-encoding = character-encoding,
             add-content-type-charset? = add-content-type-charset?,
             soap-action = soap-action,
-            trace-stream = trace-stream
+            trace-stream = trace-stream,
+            soap-version = soap-version
         }
     let constant file:HttpFile =
         {binding-url.instantiate-File} asa HttpFile
@@ -821,13 +829,12 @@
                         check-type-attribute? = check-type-attribute?,
                         default-namespace = default-namespace,
                         write-encoding-attribute? = write-encoding-attribute?,
-                        envelope-namespace = envelope-namespace,
                         header-names = response-header-names,
                         header-types = response-header-types,
-                        header-attribute-namespace = header-attribute-namespace,
                         rpc-style? = rpc-style?,
                         character-encoding = character-encoding,
-                        trace-stream = trace-stream
+                        trace-stream = trace-stream,
+                        soap-version = soap-version
                     }
                 }
             }
@@ -847,15 +854,12 @@
                              check-type-attribute?:bool = false,
                              default-namespace:#String = null,
                              write-encoding-attribute?:bool = true,
-                             envelope-namespace:String =
-                                 SOAPMessageWriter.soap-1-1-envelope-uri,
                              header-names:#{Array-of #XMLName} = null,
                              header-types:#{Array-of SOAPObjectType} = null,
-                             header-attribute-namespace:String =
-                                 SOAPMessageWriter.soap-1-1-envelope-uri,
                              rpc-style?:bool = true,
                              character-encoding:CharEncoding = CharEncoding.utf8,
-                             trace-stream:#TextOutputStream = self.trace-stream
+                             trace-stream:#TextOutputStream = self.trace-stream,
+                             soap-version:SOAPVersion = SOAPVersion.soap-1-1
                          }:void
     {if {aw.async-open-finished bis} then
         || now start reading...
@@ -891,13 +895,12 @@
                                         check-type-attribute? = check-type-attribute?,
                                         default-namespace = default-namespace,
                                         write-encoding-attribute? = write-encoding-attribute?,
-                                        envelope-namespace = envelope-namespace,
                                         header-names = header-names,
                                         header-types = header-types,
-                                        header-attribute-namespace = header-attribute-namespace,
                                         rpc-style? = rpc-style?,
                                         character-encoding = character-encoding,
-                                        trace-stream = trace-stream
+                                        trace-stream = trace-stream,
+                                        soap-version = soap-version
                                     }
                                 || close data stream
                                 {aw.close}
@@ -932,22 +935,19 @@
                                check-type-attribute?:bool = false,
                                default-namespace:#String = null,
                                write-encoding-attribute?:bool = true,
-                               envelope-namespace:String =
-                                   SOAPMessageWriter.soap-1-1-envelope-uri,
                                header-names:#{Array-of #XMLName} = null,
                                header-types:#{Array-of SOAPObjectType} = null,
-                               header-attribute-namespace:String =
-                                   SOAPMessageWriter.soap-1-1-envelope-uri,
                                rpc-style?:bool = true,
                                root-element-attributes:#{Array-of XMLToken} = null,
                                character-encoding:CharEncoding = CharEncoding.utf8,
-                               trace-stream:#TextOutputStream = null
+                               trace-stream:#TextOutputStream = null,
+                               soap-version:SOAPVersion = SOAPVersion.soap-1-1
                            }:(responses:{Array-of any},
                               headers:#{Array-of any},
                               header-roles:#{Array-of #String},
                               header-must-understands:#{Array-of bool},
                               root-attributes:#{Array-of XMLAttribute})
-    
+
     || NOTE: allows non HTTP stream for debugging
     let constant response-headers:HttpResponseHeaders = 
         {type-switch bis
@@ -1031,10 +1031,9 @@
             unmarshal-context = unmarshal-context,
             rpc-style? = rpc-style?,
             operation = response-operation,
-            envelope-namespace = envelope-namespace,
             header-names = header-names,
             header-types = header-types,
-            header-attribute-namespace = header-attribute-namespace
+            soap-version = soap-version
         }
     set responses =
         {self.close-response-stream
@@ -1075,8 +1074,9 @@
 
   {method package {verify-mime-type bis:HttpByteInputStream}:void
     let mime-type:#String = bis.response-headers.mime-type
+    || FIXME: MTOM will require some multipart/related variants here.
     {switch mime-type 
-     case "text/xml", "application/xml" do
+     case "text/xml", "application/xml", "application/soap+xml" do
         || expected
      else
         {bis.close}
@@ -1142,6 +1142,10 @@
         let constant charset-param:String = "charset=\"" & charset-name & '"' ||"
         {self.add-parameter-to-content-type charset-param}
     }
+  }
+
+  {method public open {add-soap-action-to-content-type soap-action:String}:void
+    {self.add-parameter-to-content-type "action=\"" & soap-action & '"'} ||""
   }
 
   {doc-next

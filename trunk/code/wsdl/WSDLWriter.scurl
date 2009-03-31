@@ -160,19 +160,27 @@
                      else
                         {continue}
                     }
-                let m-in:WSDLMessage = port-op.input.message
-                {if soap-op.style == WSDLSOAPStyle.document then
-                    {note-ignore-type m-in}}
 
                 let input-soap-body:#WSDLSOAPBody = null
                 let constant input-soap-headers:{Array-of WSDLSOAPHeader} =
                     {new {Array-of WSDLSOAPHeader}}
-                {for e in binding-op.input.extensions do
-                    {type-switch e
-                     case sb:WSDLSOAPBody do
-                        set input-soap-body = sb
-                     case sh:WSDLSOAPHeader do
-                        {input-soap-headers.append sh}
+                def m-in = 
+                    {if-non-null input = port-op.input then
+                        input.message
+                     else
+                        null
+                    }
+                {if-non-null m-in then
+                    {if soap-op.style == WSDLSOAPStyle.document then
+                        {note-ignore-type m-in}}
+
+                    {for e in binding-op.input.extensions do
+                        {type-switch e
+                        case sb:WSDLSOAPBody do
+                            set input-soap-body = sb
+                        case sh:WSDLSOAPHeader do
+                            {input-soap-headers.append sh}
+                        }
                     }
                 }
                 let output-soap-body:#WSDLSOAPBody = null
@@ -231,10 +239,14 @@
                 let constant operation-output-xml-name:XMLName =
                     {new XMLName, soap-body-output-namespace, binding-op.name}
                 let (in-params:WSDLParamArray, request-operation:#XMLName) =
-                    {m-in.parts-as-params
-                        soap-op.style,
-                        operation-input-xml-name,
-                        parts = input-soap-body.parts
+                    {if-non-null m-in then
+                        {m-in.parts-as-params
+                            soap-op.style,
+                            operation-input-xml-name,
+                            parts = input-soap-body.parts
+                        }
+                     else
+                        ({WSDLParamArray}, null)
                     }
                 let param-type-signature:StringBuf = {new StringBuf}
                 {for param in in-params do 
@@ -295,7 +307,7 @@
                     {new {Array-of #WSDLDocumentedNode},
                         port-op,
                         port-op.input,
-                        port-op.input.message,
+                        m-in,
                         binding-op
                     }
                 {if-non-null po-output = port-op.output then
@@ -833,7 +845,9 @@
                         }
                         {format out = out, 
                             "            write-type-attribute? = %s,\n",
-                            {if input-soap-body.use == WSDLSOAPUse.encoded then
+                            {if input-soap-body != null and
+                                input-soap-body.use == WSDLSOAPUse.encoded
+                             then
                                 "true"
                              else
                                 "false"
@@ -841,7 +855,9 @@
                         }
                         {format out = out,
                             "            write-encoding-attribute? = %s",
-                            {if input-soap-body.use == WSDLSOAPUse.encoded then
+                            {if input-soap-body != null and
+                                input-soap-body.use == WSDLSOAPUse.encoded
+                             then
                                 "true"
                              else
                                 "false"

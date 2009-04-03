@@ -1763,6 +1763,18 @@
                        SOAPTypeMultipleReference.unknown
                }:(worked?:bool)
     {marshal-type-check type}
+    {if marshal-context.supports-mtom? then
+        def worked? = {SOAPMTOMMessageWriter.write-xop-element
+                          stream,
+                          value,
+                          marshal-context
+                      }
+        {if worked? then
+            {return true}
+         else
+            {error {lmessage Content-ID not found}}
+        }
+    }
     let constant null?:bool = {type-of value} == Null
     {if write-type-attribute? then
         {marshal-write-type-attribute stream, type}
@@ -1811,6 +1823,17 @@
                          || should mapper do this?
                          check-type-attribute?:bool = false
                      }:(value:any, worked?:bool)
+    {if unmarshal-context.supports-mtom? then
+        def (val, found?) = {SOAPMTOMMessageReader.parse-xop-element
+                                stream,
+                                unmarshal-context
+                            }
+        {if found? then
+            {return val, found?}
+         else
+            {error {lmessage Content-ID not found}}
+        }
+    }
     {return
         {refable-unmarshal-proc
             {Array-of byte},

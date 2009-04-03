@@ -1,0 +1,112 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open SOAPMTOMMessageReader
+
+  field private message:MultipartMessage
+
+  {constructor public {default
+                          stream:ByteInputStream,
+                          response-headers:HttpResponseHeaders
+                      }
+
+    def mr = {MultipartMessageReader stream, response-headers}
+    set self.message = {mr.read-message}
+  }
+
+  {method public open {get-root-stream}:ByteInputStream
+    {if not self.message.empty? then
+        def root-part = self.message[0]
+        {if-non-null rh = root-part.headers then
+            {if rh.mime-type == SOAPMTOMRequestData.xop-type then
+                {return
+                    {{ByteInputStream-from ByteArray}
+                        (root-part.body asa ByteArray)
+                    }
+                }
+            }
+        }
+    }
+    {error "No root MIME part"}
+  }
+
+  {method public open {get-unmarshal-context
+                          context:#SOAPUnmarshalContext = null,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }:SOAPUnmarshalContext
+    {if context == null then
+        set context = {DefaultSOAPUnmarshalContext
+                          soap-version = soap-version,
+                          supports-mtom? = true
+                      }
+    }
+    || except the root part
+    {for i:int=1 below self.message.size do
+        def part = self.message[i]
+        {if-non-null h = part.headers then
+            def (id, found?) = {h.get-if-exists "Content-ID"}
+            {if found? then
+                {context.set-object
+                    {{id.trim-left-clone trim-chars='<'}.trim-right-clone
+                        trim-chars='>'
+                    },
+                    part.body,
+                    SOAPUnmarshalObjectStatus.complete
+                }
+             else
+                {error "No Content-ID"}
+            }
+         else
+            {error "No headers"}
+        }
+    }
+    {return {non-null context}}
+  }
+
+  {define-proc package {parse-xop-element
+                           xis:XMLInputStream,
+                           unmarshal-context:SOAPUnmarshalContext
+                       }:(value:any, found?:bool)
+    def xt = {xis.read-one}
+    {if not (xt isa XMLStartElement) or
+        (xt asa XMLStartElement).element != SOAPMTOMRequestData.xop-include-name
+     then
+        {xis.unread-one xt}
+        {return null, false}
+    }
+
+    let ret:any = null
+    let found?:bool = false
+    {while true do
+        {type-switch {xis.read-one}
+         case at:XMLAttribute do
+            {if at.name == unmarshal-context.reference-attribute-name and
+                at.value isa String and
+                {(at.value asa String).prefix? "cid:"}
+             then
+                def (a, s) = {unmarshal-context.get-object
+                                 at.value asa String
+                             }
+                set ret = a
+                set found? = true
+            }
+         case ee:XMLEndElement do
+            {break}
+        }
+    }
+    {return ret, found?}
+  }
+}

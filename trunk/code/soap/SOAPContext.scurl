@@ -41,9 +41,14 @@
 {define-class public abstract open SOAPMarshalContext
 
   field public constant soap-version:SOAPVersion
+  field public constant supports-mtom?:bool
 
-  {constructor public {default soap-version:SOAPVersion = SOAPVersion.soap-1-1}
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          supports-mtom?:bool = false
+                      }
     set self.soap-version = soap-version
+    set self.supports-mtom? = supports-mtom?
   }
 
   {doc-next
@@ -387,7 +392,8 @@
   }
   {constructor public {default
                           prefix:String = "id",
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          supports-mtom?:bool = false
                       }
     set self.marshal-table =
         {new {HashTable-of any, SOAPMarshalObjectState}}
@@ -400,7 +406,10 @@
             prefix
         }
          
-    {construct-super soap-version = soap-version}
+    {construct-super
+        soap-version = soap-version,
+        supports-mtom? = supports-mtom?
+    }
   }
 
   {method public open {get-id
@@ -678,9 +687,14 @@
 {define-class public abstract open SOAPUnmarshalContext
 
   field public constant soap-version:SOAPVersion
+  field public constant supports-mtom?:bool
 
-  {constructor public {default soap-version:SOAPVersion = SOAPVersion.soap-1-1}
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          supports-mtom?:bool = false
+                      }
     set self.soap-version = soap-version
+    set self.supports-mtom? = supports-mtom?
   }
 
   {doc-next
@@ -1007,10 +1021,14 @@
     }
   }
   {constructor public {default
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          supports-mtom?:bool = false
                       }
     set self.table = {new {HashTable-of String, SOAPUnmarshalObjectState}}
-    {construct-super soap-version = soap-version}
+    {construct-super
+        soap-version = soap-version,
+        supports-mtom? = supports-mtom?
+    }
   }
 
   {method public open {get-object
@@ -1040,7 +1058,9 @@
                           object:any,
                           status:SOAPUnmarshalObjectStatus
                       }:void
-    {if self.soap-version == SOAPVersion.soap-1-1 then
+    {if self.supports-mtom? then
+        set id = "cid:" & id
+     elseif self.soap-version == SOAPVersion.soap-1-1 then
         set id = "#" & id
     }
     let (state:SOAPUnmarshalObjectState, found?:bool) =

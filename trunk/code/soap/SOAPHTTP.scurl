@@ -190,7 +190,8 @@
                           trace-stream:#TextOutputStream = self.trace-stream,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           content-type:String =
-                            {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version}
+                              {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version},
+                          supports-mtom?:bool = false
                       }:(request-data:HttpRequestData,
                          request-http-headers:#HttpRequestHeaders)
     || could just save the arguments and do this when demanded by
@@ -213,7 +214,8 @@
                 argument-types,
                 request-http-headers = request-http-headers,
                 character-encoding = character-encoding,
-                content-type = content-type
+                content-type = content-type,
+                supports-mtom? = supports-mtom?
             }
         || make a Writer, and write in the stream.
         {self.message-writer.write-rpc-request
@@ -323,7 +325,8 @@
                           argument-types:{Array-of SOAPObjectType},
                           request-http-headers:#HttpRequestHeaders = null,
                           character-encoding:CharEncoding = CharEncoding.utf8,
-                          content-type:String = "text/xml"
+                          content-type:String = "text/xml",
+                          supports-mtom?:bool = false
                       }:(request-data:HttpRequestData,
                          xml-stream:XMLOutputStream,
                          marshal-context:#SOAPMarshalContext,
@@ -332,8 +335,18 @@
                          argument-types:{Array-of SOAPObjectType},
                          request-http-headers:#HttpRequestHeaders
                         )
-    let request-data:SOAPHTTPRPCPostCallerRequestData =
-        {SOAPHTTPRPCPostCallerRequestData content-type}
+    def (request-data, context) =
+        {if supports-mtom? then
+            def mw = {SOAPMTOMMessageWriter
+                         arguments,
+                         argument-types,
+                         character-encoding = character-encoding
+                     }
+            ({mw.get-request-data}, {mw.get-marshal-context})
+         else
+            ({SOAPHTTPRPCPostCallerRequestData content-type}, null)
+        }
+    
     let constant xml-stream:XMLOutputStream =
         {new XMLOutputStream,
             {TranscodingTextOutputStream
@@ -347,7 +360,7 @@
     {return
         request-data,
         xml-stream,
-        null, || marshal-context,
+        context,
         arguments,
         argument-names,
         argument-types,
@@ -426,17 +439,27 @@
                           bis:ByteInputStream,
                           binding-url:Url,
                           response-names:{Array-of #XMLName},
-                          response-types:{Array-of SOAPObjectType}
+                          response-types:{Array-of SOAPObjectType},
+                          response-headers:HttpResponseHeaders,
+                          supports-mtom?:bool = false
                       }:(xml-input-stream:XMLInputStream,
                          response-names:{Array-of #XMLName},
                          response-types:{Array-of SOAPObjectType},
                          unmarshal-context:#SOAPUnmarshalContext)
+    let context:#SOAPUnmarshalContext = null
+    {if supports-mtom? and
+        response-headers.mime-type == "multipart/related"
+     then
+        def mr = {SOAPMTOMMessageReader bis, response-headers}
+        set bis = {mr.get-root-stream}
+        set context = {mr.get-unmarshal-context}
+    }
     let constant xml-input-stream:XMLInputStream =
         {new XMLInputStream.from-InputSource,
             {new InputSource, byte-stream = bis},
             origin-url = binding-url
         }
-    {return xml-input-stream, response-names, response-types, null}
+    {return xml-input-stream, response-names, response-types, context}
   }
 
   {doc-next
@@ -643,7 +666,9 @@
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
                           trace-stream:#TextOutputStream = self.trace-stream,
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          request-supports-mtom?:bool = false,
+                          response-supports-mtom?:bool = false
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
                          header-roles:#{Array-of #String},
@@ -675,7 +700,8 @@
             add-content-type-charset? = add-content-type-charset?,
             soap-action = soap-action,
             trace-stream = trace-stream,
-            soap-version = soap-version
+            soap-version = soap-version,
+            supports-mtom? = request-supports-mtom?
         }
     let constant file:HttpFile =
         {binding-url.instantiate-File} asa HttpFile
@@ -722,7 +748,8 @@
             rpc-style? = rpc-style?,
             character-encoding = character-encoding,
             trace-stream = trace-stream,
-            soap-version = soap-version
+            soap-version = soap-version,
+            supports-mtom? = response-supports-mtom?
         }
     }
   }
@@ -926,27 +953,28 @@
   }
 
   {method public sealed {read-message-from-stream
-                               bis:ByteInputStream,
-                               binding-url:Url,
-                               response-names:{Array-of #XMLName},
-                               response-types:{Array-of SOAPObjectType},
-                               encoding:#String,
-                               response-operation:#XMLName = null,
-                               check-type-attribute?:bool = false,
-                               default-namespace:#String = null,
-                               write-encoding-attribute?:bool = true,
-                               header-names:#{Array-of #XMLName} = null,
-                               header-types:#{Array-of SOAPObjectType} = null,
-                               rpc-style?:bool = true,
-                               root-element-attributes:#{Array-of XMLToken} = null,
-                               character-encoding:CharEncoding = CharEncoding.utf8,
-                               trace-stream:#TextOutputStream = null,
-                               soap-version:SOAPVersion = SOAPVersion.soap-1-1
-                           }:(responses:{Array-of any},
-                              headers:#{Array-of any},
-                              header-roles:#{Array-of #String},
-                              header-must-understands:#{Array-of bool},
-                              root-attributes:#{Array-of XMLAttribute})
+                            bis:ByteInputStream,
+                            binding-url:Url,
+                            response-names:{Array-of #XMLName},
+                            response-types:{Array-of SOAPObjectType},
+                            encoding:#String,
+                            response-operation:#XMLName = null,
+                            check-type-attribute?:bool = false,
+                            default-namespace:#String = null,
+                            write-encoding-attribute?:bool = true,
+                            header-names:#{Array-of #XMLName} = null,
+                            header-types:#{Array-of SOAPObjectType} = null,
+                            rpc-style?:bool = true,
+                            root-element-attributes:#{Array-of XMLToken} = null,
+                            character-encoding:CharEncoding = CharEncoding.utf8,
+                            trace-stream:#TextOutputStream = null,
+                            soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                            supports-mtom?:bool = false
+                        }:(responses:{Array-of any},
+                           headers:#{Array-of any},
+                           header-roles:#{Array-of #String},
+                           header-must-understands:#{Array-of bool},
+                           root-attributes:#{Array-of XMLAttribute})
 
     || NOTE: allows non HTTP stream for debugging
     let constant response-headers:HttpResponseHeaders = 
@@ -1010,7 +1038,9 @@
             bis,
             binding-url,
             response-names,
-            response-types
+            response-types,
+            response-headers,
+            supports-mtom? = supports-mtom?
         }
     set response-names = new-response-names
     set response-types = new-response-types
@@ -1076,7 +1106,8 @@
     let mime-type:#String = bis.response-headers.mime-type
     || FIXME: MTOM will require some multipart/related variants here.
     {switch mime-type 
-     case "text/xml", "application/xml", "application/soap+xml" do
+     case "text/xml", "application/xml",
+        "application/soap+xml", "multipart/related" do
         || expected
      else
         {bis.close}

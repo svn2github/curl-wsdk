@@ -1,0 +1,272 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open MultipartMessageReader
+
+  field private stream:ByteInputStream
+  field private headers:HttpHeaders
+  field private _content-type:#String
+  field private _boundary:#String
+  field private _boundary-bytes:#ByteArray
+  field private _final-boundary-bytes:#ByteArray
+  field private _character-encoding:CharEncoding
+
+  {constructor public {default
+                          stream:ByteInputStream,
+                          headers:HttpResponseHeaders,
+                          character-encoding:CharEncoding = CharEncoding.utf8
+                      }
+    set self.stream = stream
+    set self.headers = headers
+    set self._character-encoding = character-encoding
+||--    {self.verify-multipart}
+  }
+
+  {getter public open {content-type}:String
+    {if self._content-type == null then
+        {if-non-null ct = self.headers.content-type then
+            set self._content-type = ct
+         else
+            {error "No Content-Type"}
+        }
+    }
+    {return {non-null self._content-type}}
+  }
+
+  {getter public open {character-encoding}:CharEncoding
+    {return self._character-encoding}
+  }
+
+  {setter public open {chacter-encoding ce:CharEncoding}:void
+    set self._character-encoding = ce
+    set self._boundary-bytes = null
+  }
+  
+  {getter private {boundary}:String
+    || TODO: delete
+||--    set self._boundary = "----=_Part_0_25211438.1236728210453"
+||--    {return {non-null self._boundary}}
+||--    ==================================================================
+    {if self._boundary == null then
+        def boundary = {HttpHeaders.get-parameter
+                           self.content-type,
+                           "boundary"
+                       }
+        {if-non-null b = boundary then
+            set self._boundary = b
+         else
+            {error "No boundary"}
+        }
+    }
+    {return {non-null self._boundary}}
+  }
+
+  {getter private {boundary-bytes}:ByteArray
+    {if self._boundary-bytes == null then
+        set self._boundary-bytes =
+            {encode-string
+                {format "\r\n--%s\r\n", self.boundary}, ||""
+                ce = self.character-encoding
+            }
+    }
+    {return {non-null self._boundary-bytes}}
+  }
+
+  {getter private {final-boundary-bytes}:ByteArray
+    {if self._final-boundary-bytes == null then
+        set self._final-boundary-bytes =
+            {encode-string
+                {format "\r\n--%s--", self.boundary}, ||""
+                ce = self.character-encoding
+            }
+    }
+    {return {non-null self._final-boundary-bytes}}
+  }
+
+  {method public open {read-message}:MultipartMessage
+
+    def msg = {MultipartMessage
+                  self.headers,
+||--                  self.content-type,
+                  "zantei", ||TODO:
+                  self.character-encoding
+              }
+    def multi-parts = {self.derive-mime-parts self.stream}
+    {for part in multi-parts do
+        def (h, b) = {self.split-into-header-and-body part}
+        {msg.append {MIMEPart h, b}}
+    }
+    {return msg}
+  }
+
+  {method private {derive-mime-parts
+                      bis:ByteInputStream
+                  }:{Array-of ByteArray}
+
+    def parts = {{Array-of ByteArray}}
+    let eof?:bool = false
+    let cmp-idx:int = 0
+    let stored:ByteArray = {ByteArray}
+    let saved:ByteArray = {ByteArray}
+
+    {while not eof? do
+        def (b, b?) = {bis.read-one}
+        set eof? = b?
+
+        {switch b
+         case self.boundary-bytes[cmp-idx] do
+            {if cmp-idx >= self.boundary-bytes.size - 1 then
+                {parts.append stored}
+                set cmp-idx = 0
+                set stored = {ByteArray}
+                {saved.clear}
+             else
+                {inc cmp-idx}
+                {saved.append b}
+            }
+         case self.final-boundary-bytes[cmp-idx] do
+            {if cmp-idx >= self.final-boundary-bytes.size - 1 then
+                {parts.append stored}
+                {break}
+             else
+                {inc cmp-idx}
+                {saved.append b}
+            }
+         else
+            {if cmp-idx != 0 then
+                set cmp-idx = 0
+                {stored.concat saved}
+                set saved = {ByteArray}
+            }
+            {stored.append b}
+        }
+    }
+
+    {self.stream.close} || TODO:
+
+    {return parts}
+  }
+  || TODO: char-encoding
+  {method private {read-header ba:ByteArray}:HttpHeaders
+    let (num:int, str:String) = {decode-characters
+                                    ba.underlying-FastArray,
+                                    self.character-encoding
+                                }
+
+    let idx:int = 0
+    def headers = {StringArray}
+    {while idx != -1 do
+        set idx = {str.find-string "\r\n"}
+
+        let header-field:String = ""
+        {if idx != -1 then
+            set header-field = {str.substr 0, idx}
+            set str = {str.tail idx + 2}
+         else
+            set header-field = str
+        }
+
+        {if {header-field.prefix? " "} or
+            {header-field.prefix? "\t"}
+         then
+            {if not headers.empty? then
+                set headers[headers.size - 1] =
+                    headers[headers.size - 1] & header-field
+            }
+         else
+            def (key,val) = {HttpHeaders.parse-header-field header-field}
+            {headers.append key}
+            {headers.append val}
+        }
+    }
+
+    {return {HttpHeaders {splice headers}}}
+  }
+  
+  {method private {split-into-header-and-body
+                      part:ByteArray
+                  }:(headers:#HttpHeaders, body:ByteArray)
+
+    def separator = "\r\n\r\n"
+    def sep-bytes = {encode-string
+                        separator,
+                        ce = self.character-encoding
+                    }
+
+    || TODO: Using find method is faster?
+    let sep-idx:int = 0
+    def stored = {ByteArray}
+    let saved:ByteArray = {ByteArray}
+    
+    let headers-bytes:#ByteArray
+    let header-end-idx:int = -1
+    {for b key i in part do
+        {if b == sep-bytes[sep-idx] then
+            {if sep-idx >= sep-bytes.size - 1 then
+                set headers-bytes = stored
+                set header-end-idx = i
+                {break}
+             else
+                {inc sep-idx}
+                {saved.append b}
+            }
+         else
+            {if sep-idx != 0 then
+                set sep-idx = 0
+                {stored.concat saved}
+                set saved = {ByteArray}
+            }
+            {stored.append b}
+        }
+    }
+
+    let body:#ByteArray
+    {if header-end-idx != -1 then
+        set body = {ByteArray}
+        {for i:int = header-end-idx below part.size do
+            {body.append part[i]}
+        }
+     else
+        set body = part
+    }
+
+    let headers:#HttpHeaders
+    {if-non-null hb = headers-bytes then
+        set headers = {self.read-header hb}
+    }
+    
+    {return headers, {non-null body}}
+  }
+
+  {method private {verify-multipart}:void
+    {if not {self.content-type.prefix? "multipart"} then
+        {error "non-multipart message"}
+    }
+  }
+}
+
+{define-proc package {encode-string
+                         s:String,
+                         ce:CharEncoding = CharEncoding.ascii
+                     }:ByteArray
+    def bv = {ByteVec
+                 max-size = ce.transcode-max-expansion-factor * s.size
+             }
+    {encode-characters
+        s, bv, ce
+    }
+    {return {ByteArray.from-FastArray bv}}
+}

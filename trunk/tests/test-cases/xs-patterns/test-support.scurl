@@ -15,15 +15,23 @@
 ||| limitations under the License.
 
 {define-proc public {schema-patterns-test
-                        loc:Url
+                        loc:Url,
+                        alternates-loc:#Url = null
                     }:TestSuite
     def root = {build-xml preserve-whitespace? = false, loc}.root
     {dwim-prefix-declarations root}
-
+    def alternates =
+        {if-non-null alternates-loc then
+            {build-xml
+                preserve-whitespace? = false,
+                alternates-loc}.root
+         else null}
+    
     def examples = {root.search "ex:example[ex:typedef]"}
 
     def kinds =
         {{Array-of XDMPath}
+            ".//xs:choice",
             "(not(*[2]) and xs:element and not(*/*))",
             ".//xs:attribute",
             ".//xs:complexType",
@@ -31,6 +39,7 @@
             "."}
     def names =
         {StringArray
+            "choice",
             "element",
             "attribute",
             "complexType",
@@ -55,6 +64,15 @@
     {for g key i in groups do
         {output {message {value names[i]} : {value g.size}}}}
 
+    def alternate-for =
+        {proc {id:String}:#XDMElement
+            {return
+                {if-non-null alternates then
+                    def q = {format "alternate[@xml:id='%s']/*", id}
+                    def x = {alternates.search q}.as-XDMElement?
+                    x
+                 else null}}}
+
     def suite-for =
         {proc {examples:XDMNodeSet,
                name:String = "XmlSchemaPatterns"
@@ -72,11 +90,16 @@
                 {for val in vals do
                     def vname= {val.search "@xml:id"}.as-String
                     def req = {val.search "*"}.as-XDMElement
+                    def alternate-body =
+                        {if-non-null alternate = {alternate-for vname} then
+                            {alternate.to-XML}
+                         else null}
                     def test = 
                         {WSDLEchoTestCase vname,
                             xsd-src,
                             {wrap-message {req.to-XML}},
                             target-namespace = "http://www.w3.org/2002/ws/databinding/examples/6/09/",
+                            accept-body-xml-source = alternate-body,
                             arg-name = element,
                             type-name = name}
                     {suite.add test}
@@ -96,6 +119,7 @@
   || spec
   field public-get constant xsd-type-source:StringInterface
   field public-get constant message-xml-source:StringInterface
+  field public-get constant accept-body-xml-source:#StringInterface
   || spec
   field public-get constant type-name:String
   field public-get constant arg-name:String
@@ -108,6 +132,8 @@
                           type-name:String = "test",   
                           arg-name:String = "params",
                           target-namespace:String = "http://www.example.com/",
+                          || acceptable alternative
+                          accept-body-xml-source:#StringInterface = null,
                           || variants
                           literal?:bool = true,
                           document?:bool = true}
@@ -116,6 +142,7 @@
     set self.type-name = type-name
     set self.arg-name = arg-name
     set self.target-namespace = target-namespace
+    set self.accept-body-xml-source = accept-body-xml-source
     {construct-super name}
   } 
   || state
@@ -131,6 +158,8 @@
  xmlns:xs='http://www.w3.org/2001/XMLSchema'>
 %s
 </xs:schema>"|
+
+  || TODO: better build-xml earlier, so suite construction will fail
 
   {method public {run}:void
     || parameters
@@ -215,14 +244,27 @@
     set self.round-trip-xml = {build-xml {ByteArrayInputStream req-bytes}}
 
     def query = WSDLEchoTestCase.query-body
-    def expected = {self.message-xml.search query}.as-XDMElement
     def actual = {self.round-trip-xml.search query}.as-XDMElement
+    def expected = {self.message-xml.search query}.as-XDMElement
+    def acceptable-source = self.accept-body-xml-source
     
-    def (xml-match?, mismatches) =
+    def (exact-xml-match?, exact-mismatches) =
         {compare-xdm-node expected, actual,
             compare-whitespace? = false,
             compare-namespace-declarations? = false}
-    
+
+    def (xml-match?, mismatches) =
+        {if exact-xml-match? or acceptable-source == null then
+            (exact-xml-match?, exact-mismatches)
+         else
+            def acceptable =
+                {build-xml preserve-whitespace? = false,
+                    {non-null acceptable-source}}.root
+            {compare-xdm-node acceptable, actual,
+                compare-whitespace? = false,
+                compare-namespace-declarations? = false}
+        }
+
     || NOTE: there may be false negatives, because xml=>value is not 1-to-1
     || - we may generate different but valid representation
 
@@ -252,9 +294,11 @@
               value-match?:bool,
               out:TextOutputStream = {get-stdout}}:void
     {output "\n=== " & self.name & " === " & value-match?}
-    {expected.to-XML out = out}
+    {write-as-fragment expected, out = out}
+||--    {expected.to-XML out = out}
     {output "\n---"}
-    {actual.to-XML out = out}
+||--    {actual.to-XML out = out}
+    {write-as-fragment actual, out = out}
     {output "\n"}
     {out.flush}
   }
@@ -281,6 +325,22 @@
                                 {context.declare-prefix? p, ns}}}}}}
             || continue walking
             {return true}}}
+}
+{define-proc {write-as-fragment
+                 node:XDMElement,
+                 out:#TextOutputStream = null
+             }:String
+    def nsd = node.namespace-declarations
+    {if-non-null nsd then
+        def fragment = {node.clone}
+        {fragment.clear-namespace-declarations}
+        set node = fragment}
+    {return
+        {XDMWriter.write-XML
+            out = out,
+            fragment? = true,
+            context = nsd,
+            node}}
 }
 {define-proc {wrap-message
                  msg:StringInterface,

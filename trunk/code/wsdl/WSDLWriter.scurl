@@ -1136,6 +1136,24 @@
     {sorted-types.sort comparison-proc =
         {proc {x:WSDLSchemaType, y:WSDLSchemaType}:bool
             {return {x.ref-name.compare y.ref-name} <= 0}}}
+
+    || needed imports
+    def all-packages = {{Set-of String}}
+    {for type in all-types do
+        {if-non-null package = type.package-name then
+            {all-packages.insert package}}}
+    def sorted-packages = {StringArray}
+    {for package in all-packages do
+        {sorted-packages.append package}}
+    {sorted-packages.sort}
+    {if not sorted-packages.empty? then
+        {out.write-one '\n'}
+        {for package in sorted-packages do
+            {format out = out,
+                |"{import * from %s}"|, package}
+            {out.write-one '\n'}}
+        {out.write-one '\n'}
+    }
     
     || type definitions
     {for type in sorted-types do

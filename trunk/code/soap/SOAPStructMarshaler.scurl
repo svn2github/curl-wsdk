@@ -87,7 +87,7 @@
                               builtin-soap-curl-type-to-xml-type-mapper,
                           xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
                               builtin-soap-xml-type-to-element-name-mapper
-                     }
+                      }
     {construct-super.SOAPMarshaler type}
     set self.n-attributes = n-attributes
     set self.simple-content? = simple-content? 
@@ -881,6 +881,19 @@
     {for i = 0 below n-attributes do
         set used-fields?[i] = true
     }
+
+    def check-choice-element? =
+        {proc {element-name:XMLName, field-type:#SOAPObjectType}:bool
+            {return
+                {if-non-null field-type then
+                    {if-non-null choices = field-type.choice-elements then
+                        {choices.member? element-name}
+                     else
+                        false}
+                 else
+                    false}
+            }}
+    
     || process elements
     {while true do
         let (current-token:XMLToken, eof?:bool) = {stream.read-one}
@@ -894,6 +907,9 @@
             || data, handle it!
             || see if it might be the next response
             set current-field-index = previous-field-index + 1
+            || == AS IS ==
+            || ===========
+            |#
             {if current-field-index >= field-names.size or
                 used-fields?[current-field-index] or
                 (field-names[current-field-index] != null
@@ -922,8 +938,49 @@
                     }
                 }
             }
+            #|
+            || == TO BE ==
+            || ===========
+            let choice-element?:bool = false
+            {if current-field-index >= field-names.size or
+                used-fields?[current-field-index]
+             then
+                set current-field-index = -1
+             else
+                {if-non-null field-name = field-names[current-field-index] then
+                    {if {SOAPStructMarshaler.element-matches-field-name?
+                            se.element, field-name, default-namespace}
+                     then
+                        || NOTE: expected field exactly matches element
+                     elseif {check-choice-element? se.element, field-types[current-field-index]}
+                     then
+                        || NOTE: expected field matches choices for element
+                        set choice-element? = true
+                     else
+                        || NOTE: expected field does not match element
+                        set current-field-index = -1
+                    }
+                 else
+                    set current-field-index = -1
+                }
+            }
+            || fallback: use any matching field
+            || NOTE: this is correct for 'all' particle, but NOT for 'sequence'
+            {if current-field-index == -1 then
+                {for fn key i in field-names do
+                    {if not used-fields?[i] and
+                        fn != null and
+                        {SOAPStructMarshaler.element-matches-field-name?
+                            se.element,
+                            {non-null fn},
+                            default-namespace}
+                     then
+                        set current-field-index = i
+                        {break}
+                    }
+                }}
             || Note that we are not getting any type info from the attributes,
-            || the thing should be declared as and anyType, and the
+            || the thing should be declared as an anyType, and the
             || unmarshaler could look for the type then.
             let type:SOAPObjectType =
                 {if current-field-index < 0 then
@@ -970,10 +1027,16 @@
             
             let repeating-element?:bool =
                 {if-non-null repeating-elements then
-                    {repeating-elements.member? se.element}
+                    || NOTE: with choice, current-element may be different
+                    def element-name =
+                        {if choice-element? then
+                            {non-null field-names[current-field-index]}
+                         else
+                            se.element}
+                    {repeating-elements.member? element-name}
                  else
                     false}
-            let wrapped?:bool = not repeating-element?
+            let wrapped?:bool = not (repeating-element? or choice-element?)
             
             let attributes:#{Array-of XMLAttribute} = null
             let encoding:#String = null
@@ -988,18 +1051,10 @@
                         default-encoding
                     }
              else
+                || choice elements will be read by choice marshaler
                 || repeating elements will be read by array marshaler
                 || - preserve xsi:nil attribute, which governs entire array
                 let xsi-nil:#XMLAttribute = null
-                || unread attributes
-||--                {for i = attributes.size - 1 downto 0 do
-||--                    let a:XMLAttribute = attributes[i]
-||--                    {switch a.name
-||--                     case SOAPTypeMapper.xml-schema-instance-nil,
-||--                        BuiltinSOAPTypeMapper.old-xml-schema-instance-nil
-||--                     do
-||--                        set xsi-nil = a}
-||--                    {stream.unread-one a}}
                 || unread start-element
                 {stream.unread-one se}
                 || preserve xsi:nil attribute if specified
@@ -1041,11 +1096,19 @@
                         || really care.
                         min-status = SOAPUnmarshalObjectStatus.complete
                     }
+                 else
+                    {output
+                        {lmessage WARNING: Ignoring unexpected element
+                            {value se.element}}}
                 }
              else
                 {if current-field-index >= 0 then
                     {field-setter fields, current-field-index, field-value}
                     set previous-field-index = current-field-index
+                 else
+                    {output
+                        {lmessage WARNING: Ignoring unexpected element
+                            {value se.element}}}
                 }
             }
 
@@ -1118,8 +1181,8 @@
             }
         }
     }
-  }
-  
+  }      
+      
   {method package {repeating-element? xml-name:XMLName}:bool
     {return
         {if-non-null repeating-elements = self.repeating-elements then

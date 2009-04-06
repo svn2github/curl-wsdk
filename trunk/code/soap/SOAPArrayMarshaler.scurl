@@ -99,7 +99,7 @@
     set self.xml-type-to-element-name = xml-type-to-element-name
     
     set self.check-element-name = check-element-name
-   
+    
     || if the xml-type is SOAP-ENC:Array which means that it doesn't contain
     || any useful type information, then just toss it,
     || and derive a "real" type from the curl-type
@@ -710,6 +710,10 @@
                 }
             }
         }
+        def choice-element?:bool =
+            {if-non-null element-type = self.element-type then
+                element-type.choice-elements != null
+             else false}
         let constant object-as-any:any = object
         || unmarshal array elements
         let i:int = 0, j:int = 0
@@ -724,10 +728,12 @@
             {type-switch current-token
              case se:XMLStartElement do
                 || make sure its expected tag, if that matters
-                {if-non-null check-element-name = self.check-element-name then
-                    {if se.element != check-element-name then
-                        {stream.unread-one se}
-                        {break}
+                {if not choice-element? then
+                    {if-non-null check-element-name = self.check-element-name then
+                        {if se.element != check-element-name then
+                            {stream.unread-one se}
+                            {break}
+                        }
                     }
                 }
                 || data, handle it!
@@ -739,6 +745,13 @@
                         attributes,
                         default-encoding
                     }
+
+                || choice elements must be wrapped
+                {if choice-element? then
+                    {reader-unread-attributes stream, attributes}
+                    {stream.unread-one se}
+                }
+                
                 || should we get some type info too?
                 let constant element-value:any =
                     {current-mapper.unmarshal

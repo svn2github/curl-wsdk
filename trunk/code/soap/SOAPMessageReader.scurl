@@ -1651,6 +1651,12 @@
     }
     {return reasons}
   }
+  
+  {method public open {dump-reader-info
+                          out:TextOutputStream = {get-stdout}
+                      }:void
+    {dump-reader-info self, out = out}
+  }
 }
 
 {define-proc package {reader-read-attributes
@@ -1680,6 +1686,17 @@
         }
     }
     {return attributes}
+}
+
+{define-proc package {reader-unread-attributes
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute}
+                     }:void
+    || NOTE: XMLInputStream.unread-one ignores its argument
+    || - so no need to reverse order
+    {if-non-null attributes then
+        {for a in attributes do
+            {stream.unread-one a}}}
 }
 
 {define-proc package {reader-read-through-end-element
@@ -1769,4 +1786,59 @@
         }
     }
     {return current-encoding}
+}
+{define-proc package {dump-reader-info
+                        r:SOAPRPCMessageReader,
+                        out:TextOutputStream = {get-stdout}
+                     }:void
+    {format out = out,
+        "\n==========\n=== %s ===\n", r}
+    {do
+        def xs = r.type-mapper asa TableSOAPTypeMapper
+        {format out = out, "\n%s\n", {type-of xs}.name}
+        {for x key k in xs.unmarshal-table do
+            {format out = out,
+                "%20s : %-20s : %s\n",
+                k.xml-type.local-name,
+                k.curl-type.name,
+                x}
+        }}
+    {do
+        def xs = r.element-name-to-xml-type asa TableSOAPElementNameToXMLTypeMapper
+        {format out = out, "\n%s\n", {type-of xs}.name}
+        {for x key k in xs.table do
+            {format out = out,
+                "%20s : %-20s\n",
+                k.local-name,
+                x.xml-type.local-name}
+        }}
+    {do
+        def xs = r.xml-type-to-element-name asa TableSOAPXMLTypeToElementNameMapper
+        {format out = out, "\n%s\n", {type-of xs}.name}
+        {for x key k in xs.table do
+            {format out = out,
+                "%20s : %-20s\n",
+                k.local-name,
+                x.element-name.local-name}
+        }}
+    {do
+        def xs = r.xml-type-to-curl-type asa TableSOAPXMLTypeToCurlTypeMapper
+        {format out = out, "\n%s\n", {type-of xs}.name}
+        {for x key k in xs.table do
+            {format out = out,
+                "%20s : %-20s\n",
+                k.local-name,
+                x.curl-type}
+        }}
+    {do
+        def xs = r.curl-type-to-xml-type asa TableSOAPCurlTypeToXMLTypeMapper
+        {format out = out, "\n%s\n", {type-of xs}.name}
+        {for x key k in xs.table do
+            {format out = out,
+                "%20s : %-20s\n",
+                k,
+                x.xml-type.local-name}
+        }}
+    {format out = out,
+        "\n==========\n"}
 }

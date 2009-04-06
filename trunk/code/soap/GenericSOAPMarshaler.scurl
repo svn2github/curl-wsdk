@@ -1,0 +1,216 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-proc public {domain-marshal-proc
+                        domain:Domain,
+                        type-name:String = domain.type.name
+                    }:SOAPTypeMapper.MarshalProc
+    {return
+        {proc {
+               || stream must be just after the XMLStartElement, so that
+               || it can write XMLAttribute and then XMLCharacters.
+               stream:XMLOutputStream,
+               val:any,
+               
+               || xml-type and curl-type required, multi-reference
+               || and nillable possibly important.
+               type:SOAPObjectType,
+               
+               encoding:#String,
+               marshal-context:SOAPMarshalContext,
+               current-mapper:SOAPTypeMapper,
+               curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+               || should mapper do this?
+               write-type-attribute?:bool = true,
+               multiple-reference:SOAPTypeMultipleReference =
+                   SOAPTypeMultipleReference.unknown
+              }:(worked?:bool)
+            {marshal-type-check type}
+            def type-of-value = {type-of val}
+            def null? = type-of-value == Null
+            {if write-type-attribute? then
+                {marshal-write-type-attribute stream, type}
+            }
+            {if null? then
+                {marshal-write-nil-type stream, type}
+                {return true}
+            }
+            def value-as-string = 
+                {try
+                    {domain.format {domain.convert val}}            
+                 catch e:Exception do
+                    {throw-marshal-exception
+                        {lmessage
+                            marshal proc for {value type-name} could not handle 
+                            strangely typed value '{value val}'}}
+                }
+            {stream.write-one
+                {XMLCharacters value-as-string}}
+            {return true}}
+    }
+}
+
+{define-proc public {domain-unmarshal-proc
+                        domain:Domain,
+                        type-name:String = domain.type.name
+                    }:SOAPTypeMapper.UnmarshalProc
+    {return
+        {proc {
+               || stream must be after the XMLStartElement, so that
+               || it can write out attributes of the element for type
+               || information.  It will write out the attributes and
+               || the character data, but not the XMLEndElement
+               stream:XMLInputStream,
+               attributes:#{Array-of XMLAttribute},
+
+               || xml-type and curl-type required
+               type:SOAPObjectType,
+
+               encoding:#String,
+               unmarshal-context:SOAPUnmarshalContext,
+               current-mapper:SOAPTypeMapper,
+               xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+               || should mapper do this?
+               check-type-attribute?:bool = false
+              }:(value:any, worked?:bool)
+            {return
+                {refable-unmarshal-proc
+                    domain.type,
+                    {proc {obj:any, type:Type}:any
+                        {return obj}
+                    },
+                    {proc {
+                           characters:#XMLCharacters,
+                           type:Type
+                          }:(any, any)
+                        {if-non-null characters then
+                            def string = {characters.characters.trim-clone}
+                            {if string.size <= 0 then
+                                {throw-unmarshal-exception
+                                    {lmessage Empty {value type-name} value.}
+                                }
+                            }
+                            def val = {domain.parse string}
+                            
+                            {return val, val}
+                         else
+                            {throw-unmarshal-exception
+                                {lmessage Empty {value type-name} value.}
+                            }
+                        }
+                    },
+                    stream,
+                    attributes,
+                    type,
+                    encoding,
+                    unmarshal-context,
+                    current-mapper,
+                    xml-type-to-curl-type,
+                    check-type-attribute? = check-type-attribute?
+                }
+            }
+        }
+    }
+}
+
+{define-class public open GenericSOAPMarshaler {inherits SOAPMarshaler}
+
+  field public-get constant standard-marshal-proc:SOAPTypeMapper.MarshalProc
+  field public-get constant standard-unmarshal-proc:SOAPTypeMapper.UnmarshalProc
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          marshal-proc:SOAPTypeMapper.MarshalProc,
+                          unmarshal-proc:SOAPTypeMapper.UnmarshalProc
+                      }
+    {construct-super type}
+    set self.standard-marshal-proc = marshal-proc
+    set self.standard-unmarshal-proc = unmarshal-proc
+  }
+
+  {factory public {from-domain
+                      || curl-type and xml-type must be filled in.
+                      type:SOAPObjectType,
+                      domain:Domain
+                  }:GenericSOAPMarshaler
+    def type-name = {non-null type.xml-type}.local-name
+    {return
+        {GenericSOAPMarshaler type,
+            {domain-marshal-proc domain, type-name = type-name},
+            {domain-unmarshal-proc domain, type-name = type-name}
+        }}
+  }
+
+  {method public open {marshal-proc
+                          encoding:#String
+                      }:SOAPTypeMapper.MarshalProc
+    {return self.standard-marshal-proc}
+  }
+
+  {method public open {unmarshal-proc
+                          encoding:#String
+                      }:SOAPTypeMapper.UnmarshalProc
+    {return self.standard-unmarshal-proc}
+  }
+
+  {method public open {default-marshal
+                          stream:XMLOutputStream,
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String,
+                          context:SOAPMarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          marshal-proc:SOAPTypeMapper.MarshalProc,
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:(worked?:bool)
+    {return
+        {self.standard-marshal-proc stream, value, type,
+            encoding, context, current-mapper, curl-type-to-xml-type,
+            write-type-attribute? = write-type-attribute?,
+            multiple-reference = multiple-reference}}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String,
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {return
+        {self.standard-unmarshal-proc stream, attributes, type,
+            encoding, context, current-mapper, xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?}}
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {{Array-of #String} null, efficient-size = 1}}
+  }
+}
+

@@ -37,6 +37,7 @@
 {import * from CURL.XML.SAX.PARSER}
 {import * from COM.CURL.WSDK.SOAP}
 {import StemHttpDirectory from CURL.IO.HTTP} || for WSDLCurlNamer
+{import Domain from CURL.DATA-ACCESS.BASE} || for WSDLSchema.register-simple-type
 
 {include "WSDLNameTable.scurl"}
 {include "WSDLCurlNamer.scurl"}
@@ -45,8 +46,11 @@
 {include "WSDLSchemaGroup.scurl"}
 {include "WSDLDOM.scurl"}
 {include "WSDLNodes.scurl"}
+
 {include "parse-wsdl.scurl"}
+{include "parse-schema.scurl"}
 {include "WSDLWriter.scurl"}
+||--{include "xdm-support.scurl"}
 
 || exceptions
 || --------------------
@@ -92,6 +96,9 @@
             Defaults to source filename with extension
             {monospace .scurl}, in source directory
             if its local, otherwise applet directory.}
+        {parameter curlify-names?,
+            indicates whether to use curl naming conventions
+            for identifiers in generated code.}
         {parameter package-prefix,
             If specified, generated code will include
             package herald, with package-name 
@@ -121,6 +128,7 @@
                         package-prefix:#String = "COM.CURL.WSDL.",
                         package-suffix:#String = null,
                         curl-versions:#String = null,
+                        curlify-names?:bool = true,
                         exclude-unreferenced-types?:bool = false
                     }:Url
     || determine applicable curl-versions
@@ -162,7 +170,9 @@
                     source}
             {loc.merge source.basename & ".scurl"}}
     || WSDL parser
-    let w:WSDL = {WSDL source}
+    let w:WSDL =
+        {WSDL source,
+            curlify-names? = curlify-names?}
     
     || package name
     let package-name:#String =

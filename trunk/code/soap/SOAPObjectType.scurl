@@ -24,7 +24,7 @@
         SOAP object.  May be only partially filled in.
     }
 }
-{define-class public open SOAPObjectType
+{define-class public sealed SOAPObjectType
 
   {doc-next
     {purpose
@@ -77,6 +77,13 @@
 
   {doc-next
     {purpose
+        Indicates that this type represents a choice between the specified elements.
+    }
+  }
+  field public constant choice-elements:#{Set-of XMLName}
+
+  {doc-next
+    {purpose
         Construct a {docref SOAPObjectType} with certain values.
     }
     {parameter element-name,
@@ -108,6 +115,9 @@
     {parameter nillable?,
         Indicates if this object type can be "nil" in the SOAP message.
     }
+    {parameter choice-elements,
+        Indicates that this type represents a choice between the specified elements.
+    }
   }
   {factory public {default 
                       element-name:#XMLName = null,
@@ -115,7 +125,8 @@
                       curl-type:#Type = null,
                       multiple-reference:SOAPTypeMultipleReference =
                           SOAPTypeMultipleReference.unknown,
-                      nillable?:bool = false
+                      nillable?:bool = false,
+                      choice-elements:#{Set-of XMLName} = null
                   }:SOAPObjectType
     || instances are interned so pointer-equal? --> value-equal? 
     let key:SOAPObjectType = 
@@ -124,29 +135,33 @@
             xml-type = xml-type, 
             curl-type = curl-type,
             multiple-reference = multiple-reference, 
-            nillable? = nillable?}   
+            nillable? = nillable?,
+            choice-elements = choice-elements}   
     let (interned:SOAPObjectType, interned?:bool) =
         {SOAPObjectType.interned.get-member-if-exists key} 
     {return
-        {if interned? then interned
+        {if interned? then
+            interned
          else
             {SOAPObjectType.interned.insert key}
             key}}
   }
 
   {constructor package {internal
-                          element-name:#XMLName = null,
-                          xml-type:#XMLName = null,
-                          curl-type:#Type = null,
-                          multiple-reference:SOAPTypeMultipleReference =
-                              SOAPTypeMultipleReference.unknown,
-                          nillable?:bool = false
-                      }
+                           element-name:#XMLName = null,
+                           xml-type:#XMLName = null,
+                           curl-type:#Type = null,
+                           multiple-reference:SOAPTypeMultipleReference =
+                               SOAPTypeMultipleReference.unknown,
+                           nillable?:bool = false,
+                           choice-elements:#{Set-of XMLName} = null
+                       }
     set self.element-name = element-name
     set self.xml-type = xml-type
     set self.curl-type = curl-type
     set self.multiple-reference = multiple-reference
     set self.nillable? = nillable?
+    set self.choice-elements = choice-elements
   }
 
   let package constant interned:SOAPObjectTypeSet = {SOAPObjectTypeSet}
@@ -166,45 +181,56 @@
         in {param object-type}.
     }
   }
-  {constructor public {clone-with
-                          object-type:SOAPObjectType,
-                          element-name:#XMLName = null,
-                          xml-type:#XMLName = null,
-                          curl-type:#Type = null,
-                          multiple-reference:SOAPTypeMultipleReference =
-                              SOAPTypeMultipleReference.unknown,
-                          nillable?:bool = false
-                      }
-    set self.element-name =
-        {if {keyword-supplied? element-name} then
-            element-name
-         else
-            object-type.element-name
+  {factory public {clone-with
+                      object-type:SOAPObjectType,
+                      element-name:#XMLName = null,
+                      xml-type:#XMLName = null,
+                      curl-type:#Type = null,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          SOAPTypeMultipleReference.unknown,
+                      nillable?:bool = false,
+                      choice-elements:#{Set-of XMLName} = null
+                  }:SOAPObjectType
+    def type =
+        {SOAPObjectType
+            element-name =
+                {if {keyword-supplied? element-name} then
+                    element-name
+                 else
+                    object-type.element-name
+                },
+            xml-type =
+                {if {keyword-supplied? xml-type} then
+                    xml-type
+                 else
+                    object-type.xml-type
+                },
+            curl-type =
+                {if {keyword-supplied? curl-type} then
+                    curl-type
+                 else
+                    object-type.curl-type
+                },
+            multiple-reference =
+                {if {keyword-supplied? multiple-reference} then
+                    multiple-reference
+                 else
+                    object-type.multiple-reference
+                },
+            nillable? =
+                {if {keyword-supplied? nillable?} then
+                    nillable?
+                 else
+                    object-type.nillable?
+                },
+            choice-elements = 
+                {if {keyword-supplied? choice-elements} then
+                    choice-elements
+                 else
+                    object-type.choice-elements
+                }
         }
-    set self.xml-type =
-        {if {keyword-supplied? xml-type} then
-            xml-type
-         else
-            object-type.xml-type
-        }
-    set self.curl-type =
-        {if {keyword-supplied? curl-type} then
-            curl-type
-         else
-            object-type.curl-type
-        }
-    set self.multiple-reference =
-        {if {keyword-supplied? multiple-reference} then
-            multiple-reference
-         else
-            object-type.multiple-reference
-        }
-    set self.nillable? =
-        {if {keyword-supplied? nillable?} then
-            nillable?
-         else
-            object-type.nillable?
-        }
+    {return type}
   }
 
   {doc-next
@@ -244,7 +270,7 @@
             set type = {xml-type-to-curl-type.xml-type-to-curl-type type}
         }
     }
-    {return type}
+   {return type}
   }
 
   {doc-next
@@ -333,53 +359,14 @@
         }
     }
   }
-  
-  {method public open {clone}:SOAPObjectType
-    {return {new SOAPObjectType.clone-with, self}}
-  }
-
-||--  {getter hidden open {hidden-object-hash-secure}:int
-||--    {return
-||--        {bit-xor
-||--            {if-non-null element-name = self.element-name then
-||--                element-name.hidden-object-hash-secure
-||--             else
-||--                0x1000
-||--            },
-||--            {if-non-null xml-type = self.xml-type then
-||--                xml-type.hidden-object-hash-secure
-||--             else
-||--                0x2000
-||--            },
-||--            {if-non-null curl-type = self.curl-type then
-||--                curl-type.hidden-object-hash-secure
-||--             else
-||--                0x4000
-||--            },
-||--            {value-hash self.multiple-reference},
-||--            {value-hash self.nillable?}
-||--        }
-||--    }
-||--  }
-||--
-||--  {method hidden open {hidden-object-equal?-secure other:#Object}:bool
-||--    {return
-||--        {type-switch other
-||--         case type:SOAPObjectType do
-||--            self.hidden-object-hash-secure == type.hidden-object-hash-secure and
-||--            self.element-name == type.element-name and
-||--            self.xml-type == type.xml-type and
-||--            self.curl-type == type.curl-type and
-||--            self.multiple-reference == type.multiple-reference and
-||--            self.nillable? == type.nillable?
-||--         else
-||--            false
-||--        }
-||--    }
-||--  }
 }
 
 {define-proc package {SOAPObjectType-hash self:SOAPObjectType}:int
+    let choice-hash:int = 0
+    {if-non-null xs = self.choice-elements then
+        {for x in xs do
+            set choice-hash =
+                {bit-xor choice-hash, {value-hash x}}}}
     {return
         {bit-xor
             {if-non-null element-name = self.element-name then
@@ -398,7 +385,8 @@
                 0x4000
             },
             {value-hash self.multiple-reference},
-            {value-hash self.nillable?}
+            {value-hash self.nillable?},
+            choice-hash
         }
     }
 }
@@ -412,7 +400,12 @@
         self.xml-type == other.xml-type and
         self.curl-type == other.curl-type and
         self.multiple-reference == other.multiple-reference and
-        self.nillable? == other.nillable?
+        self.nillable? == other.nillable? and
+        {if-non-null choice-elements = self.choice-elements then
+            {if-non-null other-choice-elements = other.choice-elements then
+                {choice-elements.equal? other-choice-elements}
+             else false}
+         else other.choice-elements == null}
     }
 }
 

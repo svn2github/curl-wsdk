@@ -1,0 +1,164 @@
+||| Copyright (C) 1998-2007, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open SOAPChoiceMarshaler {inherits SOAPMarshaler}
+
+  field public-get constant types:{Array-of SOAPObjectType}
+
+  field public constant element-name-to-xml-type:SOAPElementNameToXMLTypeMapper
+  field public constant xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+  field public constant curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+  field public constant xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          types:{Array-of SOAPObjectType},
+                          element-name-to-xml-type:SOAPElementNameToXMLTypeMapper =
+                              builtin-soap-element-name-to-xml-type-mapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper
+                      }
+    {construct-super type}
+    set self.types = types
+    
+    set self.element-name-to-xml-type = element-name-to-xml-type
+    set self.xml-type-to-curl-type = xml-type-to-curl-type
+    set self.curl-type-to-xml-type = curl-type-to-xml-type
+    set self.xml-type-to-element-name = xml-type-to-element-name
+  }
+
+  {method public open {default-marshal
+                            stream:XMLOutputStream,
+                            val:any,
+
+                            || xml-type and curl-type required
+                            type:SOAPObjectType,
+
+                            encoding:#String, ||default? (multiple urls poss.)
+                            context:SOAPMarshalContext,
+                            current-mapper:SOAPTypeMapper,
+                            curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                            marshal-proc:SOAPTypeMapper.MarshalProc,
+                            write-type-attribute?:bool = true,
+                            multiple-reference:SOAPTypeMultipleReference =
+                                SOAPTypeMultipleReference.unknown
+                      }:(worked?:bool)
+    {self.check-type type, true}
+
+||--    {error "NYI: SOAPChoiceMarshaler.default-marshal"}
+
+    || use curl-type to select from choices
+    def curl-type = {type-of val}
+    def types =
+        {self.types.filter-clone
+            {fn type =>
+                type.curl-type == curl-type}}
+
+    def choice-type =
+        {switch types.size
+         case 1 do types[0]
+         case 0 do
+            {output {message WARNING: no choice type: {value val}}}
+            {SOAPObjectType
+                element-name = self.type.element-name,
+                curl-type = curl-type}
+         else
+            {output {message WARNING: ambiguous choice type: {value val}}}
+            types[0]}
+
+    || TODO: will not work for simple types
+    || - no way to determine which alternative
+
+    || invoke marshaller
+    {current-mapper.marshal  
+        stream,
+        val,
+        choice-type,
+        encoding,
+        context,
+        current-mapper,
+        curl-type-to-xml-type,
+        write-type-attribute? = write-type-attribute?,
+        multiple-reference = choice-type.multiple-reference
+    }
+    {return true}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+
+    || TODO: consider xsi:type
+    || TODO: consider id/href
+    || TODO: consider xsi:nil
+
+    || dispatch by element
+    def current-token = {stream.read-one}
+    {type-switch current-token
+     case se:XMLStartElement do
+        || match element name
+        let element-type:#SOAPObjectType = null
+        {for t in self.types do
+            {if t.element-name == se.element then
+                set element-type = t
+                {break}
+            }}
+        {if-non-null element-type then
+            || read attributes, if any
+            def attributes = {reader-read-attributes stream}
+            || invoke unmarshaller
+            def val:any  =
+                {current-mapper.unmarshal 
+                    stream,
+                    attributes,
+                    element-type,
+                    encoding,
+                    context,
+                    current-mapper,
+                    xml-type-to-curl-type,
+                    check-type-attribute? = check-type-attribute?}
+            {return val, true}
+         else
+            {return null, false}
+        }
+     else
+        || Expected start element
+        {stream.unread-one current-token}
+        {return null, false}
+    }
+  }
+
+  || encodings that this mapper can handle and should be registered for
+  {getter public open {encodings}:{Array-of #String}
+    {return {{Array-of #String} null, efficient-size = 1}}
+  }
+}

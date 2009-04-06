@@ -289,7 +289,7 @@
                 {if ns.empty? then
                     {XDMPath {format "//@%s", name}}
                  else
-                    {XDMPath NS = ns, {format "//@NS:%s]", name}}}
+                    {XDMPath NS = ns, {format "//@NS:%s", name}}}
             let xs:XDMNodeSet = {self.search query}
             {for x in xs do
                 let id:String = {x.get-text}

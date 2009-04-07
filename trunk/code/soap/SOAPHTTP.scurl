@@ -189,6 +189,7 @@
                           soap-action:#String = null,
                           trace-stream:#TextOutputStream = self.trace-stream,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           content-type:String =
                               {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version},
                           supports-mtom?:bool = false
@@ -405,7 +406,7 @@
                     soap-request-data.request-data-bytes},
                 character-encoding = character-encoding}
          do
-            {tis.read}
+            {trace-stream.write {tis.read}}
         }
         {trace-stream.write-one '\n'}
     }
@@ -666,6 +667,7 @@
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
                           trace-stream:#TextOutputStream = self.trace-stream,
+                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           request-supports-mtom?:bool = false,
                           response-supports-mtom?:bool = false
@@ -700,6 +702,7 @@
             add-content-type-charset? = add-content-type-charset?,
             soap-action = soap-action,
             trace-stream = trace-stream,
+            http-request-method = http-request-method,
             soap-version = soap-version,
             supports-mtom? = request-supports-mtom?
         }
@@ -721,8 +724,15 @@
     || self had better already be ready to supply request-data
     let constant bis:HttpByteInputStream =
         {file.http-read-open-byte
-            request-method = HttpRequestMethod.post,
-            request-data = request-data,
+            request-method = http-request-method,
+            request-data =
+                {if http-request-method != HttpRequestMethod.get and
+                    http-request-method != HttpRequestMethod.head
+                 then
+                    request-data
+                 else
+                    null
+                },
             request-headers = request-http-headers,
             always-return-response-headers? = true,
             unread-size =
@@ -784,6 +794,7 @@
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
                           trace-stream:#TextOutputStream = self.trace-stream,
+                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           ...:EventHandler
                       }:SOAPHTTPRPCPostAsyncWorker
@@ -813,6 +824,7 @@
             add-content-type-charset? = add-content-type-charset?,
             soap-action = soap-action,
             trace-stream = trace-stream,
+            http-request-method = http-request-method,
             soap-version = soap-version
         }
     let constant file:HttpFile =
@@ -835,8 +847,15 @@
         {new SOAPHTTPRPCPostAsyncWorker, self, event-handler, ...}
     let constant afo:AsyncFileOpener =
         {file.http-async-read-open-byte
-            request-method = HttpRequestMethod.post,
-            request-data = request-data,
+            request-method = http-request-method,
+            request-data =
+                {if http-request-method != HttpRequestMethod.get and
+                    http-request-method != HttpRequestMethod.head
+                 then
+                    request-data
+                 else
+                    null
+                },
             request-headers = request-http-headers,
             always-return-response-headers? = true,
             {on e:AsyncFileOpenEvent do
@@ -1016,7 +1035,7 @@
     {type-switch bis
      case bis:HttpByteInputStream do
         || check HTTP status
-        {self.verify-http-status bis}
+        {self.verify-http-status bis, soap-version}
         
         || check HTTP content-type
         {self.verify-mime-type bis}
@@ -1087,18 +1106,26 @@
     }
   }
   
-  {method package {verify-http-status bis:HttpByteInputStream}:void
+  {method package {verify-http-status
+                      bis:HttpByteInputStream,
+                      soap-version:SOAPVersion
+                  }:void
     let status:int = bis.response-headers.status
     {switch status
      case 
         HttpResponseHeaders.status-ok, || 200
         HttpResponseHeaders.status-server-error || 500
      do
-        || expected
+        || expected, with 500 being used with Body's with a Fault.
      else
-        {bis.close}
-        {throw-soap-exception
-            {lmessage Unexpected SOAP HTTP status code {value status}}}
+        || expected, with 400 being used with SOAP 1.2 for Body's with a Sender Fault.
+        {if soap-version != SOAPVersion.soap-1-2 or
+            status != HttpResponseHeaders.status-bad-request || 400
+         then 
+            {bis.close}
+            {throw-soap-exception
+                {lmessage Unexpected SOAP HTTP status code {value status}}}
+        }
     }
   }
 

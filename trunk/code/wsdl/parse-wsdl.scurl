@@ -1012,6 +1012,8 @@
             {header.faults.append {self.parse-soap-header-fault child}}
             || not sure if any of the documentation
             || elements are possible here...
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "headerfault"} then
+            {header.faults.append {self.parse-soap-header-fault child}}
          elseif {self.wsdl-tag-match child.name, "annotation"} then
             {self.ignored-tag child}
          elseif {self.wsdl-tag-match child.name, "appInfo"} then

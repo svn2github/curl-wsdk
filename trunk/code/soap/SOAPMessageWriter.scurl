@@ -441,6 +441,7 @@
                 repeating-elements = repeating-elements,
                 marshal-context = marshal-context,
                 write-type-attribute? = write-type-attribute?,
+                write-encoding-attribute? = write-encoding-attribute?,
                 header-roles = header-roles,
                 header-must-understands = header-must-understands,
                 soap-version = soap-version
@@ -532,31 +533,27 @@
         {new XMLStartElement, body-xml-name}
     }
 
-    || should this be on operation instead of Body?
-    {if write-encoding-attribute? then
-        {stream.write-one
-            {new XMLAttribute,
-                {self.encoding-style-attribute-xml-name envelope-namespace},
-                {if-non-null encoding then
-                    encoding
-                 else
-                    {switch soap-version
-                     case SOAPVersion.soap-1-1 do
-                        SOAPMessageWriter.soap-1-1-encoding-style-attribute-default-value
-                     case SOAPVersion.soap-1-2 do
-                        SOAPMessageWriter.soap-1-2-encoding-style-attribute-default-value
-                    }
-                }
+
+    {if soap-version == SOAPVersion.soap-1-1 then
+        {if write-encoding-attribute? then
+            {self.write-encoding-style
+                stream, encoding = encoding, soap-version = soap-version
             }
         }
     }
-
     {if-non-null operation then
         {stream.write-one
             {new XMLStartElement,
                 {new XMLName,
                     operation.namespace,
                     operation.local-name
+                }
+            }
+        }
+        {if soap-version == SOAPVersion.soap-1-2 then
+            {if write-encoding-attribute? then
+                {self.write-encoding-style
+                    stream, encoding = encoding, soap-version = soap-version
                 }
             }
         }
@@ -577,6 +574,8 @@
         repeating-elements = repeating-elements,
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
+        write-encoding-attribute? = write-encoding-attribute?,
+        rpc-style? = rpc-style?,
         soap-version = soap-version
     }
 
@@ -597,6 +596,29 @@
         }
     }
     {stream.write-one {new XMLEndDocument}}
+  }
+  {method private {write-encoding-style
+                      stream:XMLOutputStream,
+                      encoding:#String = null,
+                      soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                  }:void
+    def envelope-namespace =
+        {SOAPMessageWriter.soap-version-to-envelope-uri soap-version}
+    {stream.write-one
+        {new XMLAttribute,
+            {self.encoding-style-attribute-xml-name envelope-namespace},
+            {if-non-null encoding then
+                encoding
+             else
+                {switch soap-version
+                 case SOAPVersion.soap-1-1 do
+                    SOAPMessageWriter.soap-1-1-encoding-style-attribute-default-value
+                 case SOAPVersion.soap-1-2 do
+                    SOAPMessageWriter.soap-1-2-encoding-style-attribute-default-value
+                }
+            }
+        }
+    }
   }
 
   {method protected open {envelope-xml-name envelope-namespace:String}:XMLName
@@ -636,6 +658,7 @@
                           marshal-context:#SOAPMarshalContext = null,
                           || (Or is that in marshaler?)
                           write-type-attribute?:bool = false,
+                          write-encoding-attribute?:bool = false,
                           header-roles:#{Array-of #String} = null,
                           header-must-understands:#{Array-of bool} = null,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1
@@ -649,8 +672,10 @@
         repeating-elements = repeating-elements,
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
+        write-encoding-attribute? = write-encoding-attribute?,
         header-roles = header-roles,
         header-must-understands = header-must-understands,
+        rpc-style? = false,
         soap-version = soap-version
     }
   }
@@ -682,6 +707,8 @@
                           marshal-context:#SOAPMarshalContext = null,
                           || (Or is that in marshaler?)
                           write-type-attribute?:bool = false,
+                          write-encoding-attribute?:bool = false,
+                          rpc-style?:bool = true,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:void
     {self.write-arguments-or-headers
@@ -693,6 +720,8 @@
         repeating-elements = repeating-elements,
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
+        write-encoding-attribute? = write-encoding-attribute?,
+        rpc-style? = rpc-style?,
         soap-version = soap-version
     }
   }
@@ -709,8 +738,10 @@
                              marshal-context:#SOAPMarshalContext = null,
                              || (Or is that in marshaler?)
                              write-type-attribute?:bool = false,
+                             write-encoding-attribute?:bool = false,
                              header-roles:#{Array-of #String} = null,
                              header-must-understands:#{Array-of bool} = null,
+                             rpc-style?:bool = true,
                              soap-version:SOAPVersion = SOAPVersion.soap-1-1
                          }:void
 
@@ -806,6 +837,14 @@
         {if not repeating-element? then
             {stream.write-one
                 {new XMLStartElement, argument-element-name}
+            }
+            || FIXME: SOAP 1.2 what about doing this for repeating elements?
+            {if soap-version == SOAPVersion.soap-1-2 then
+                {if write-encoding-attribute? and not rpc-style? then
+                    {self.write-encoding-style
+                        stream, encoding = encoding, soap-version = soap-version
+                    }
+                }
             }
         }
         {if-non-null header-roles then

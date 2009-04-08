@@ -721,17 +721,20 @@
   || variants
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
+  field public-get constant soap12?:bool = false
   
   {constructor public {default
                           loc:Url,
                           name:String = loc.filename,                 
                           || variants
                           literal?:bool = true,
-                          document?:bool = true
+                          document?:bool = true,
+                          soap12?:bool = false
                       }
     set self.loc = loc
     set self.literal? = literal?
     set self.document? = document?
+    set self.soap12? = soap12?
     {construct-super name}
   }
   {method public {generate-tests}:void
@@ -766,6 +769,7 @@
                     {WSDLEchoTestCase name,
                         document? = self.document?,
                         literal? = self.literal?,
+                        soap12? = self.soap12?,
                         xsd-src, {val.get-text}}}
             }
         }
@@ -791,6 +795,7 @@
   || variants
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
+  field public-get constant soap12?:bool = false
   
   {constructor public {default
                           name:String,
@@ -798,11 +803,13 @@
                           request-value-source:StringInterface,                 
                           || variants
                           literal?:bool = true,
-                          document?:bool = true}
+                          document?:bool = true,
+                          soap12?:bool = false}
     set self.xsd-type-source = xsd-type-source
     set self.request-value-source = request-value-source
     set self.literal? = literal?
     set self.document? = document?
+    set self.soap12? = soap12?
     {construct-super name}
   } 
   || state
@@ -837,6 +844,7 @@
             target-namespace = "http://www.example.com/",
             literal? = self.literal?,
             document? = self.document?,
+            soap12? = self.soap12?,
             {splice xsd-types}}
     def wbuf = {StringBuf}
     {with-open-streams out = wbuf do
@@ -936,6 +944,7 @@
                         || variants
                         literal?:bool = true,
                         document?:bool = true,
+                        soap12?:bool = false,
                         || types
                         test-type:XDMElement,
                         ...:XDMElement
@@ -944,6 +953,7 @@
     def XS = "http://www.w3.org/2001/XMLSchema"
     def WSDL = "http://schemas.xmlsoap.org/wsdl/"
     def SOAP = "http://schemas.xmlsoap.org/wsdl/soap/"
+    def SOAP12 = "http://schemas.xmlsoap.org/wsdl/soap12/"
     || shorthand
     def e =
         {proc {...}:XDMElement
@@ -962,7 +972,8 @@
             {extend-namespace-context 
                 xs = XS,  
                 wsdl = WSDL, 
-                soap = SOAP}    
+                soap = SOAP, 
+                soap12 = SOAP12}    
             || argument element, if requested
             def element =
                 {if include-arg-element? then
@@ -978,10 +989,21 @@
                  then "document"
                  else "rpc"}
             def body-template =
-                {if literal? 
-                 then {e "soap:body", use = "literal"}
-                 else {e "soap:body", use = "encoded", 
-                          encodingStyle = "http://schemas.xmlsoap.org/soap/encoding/"}}
+                {if soap12? then
+                    {if literal? 
+                     then {e "soap12:body",
+                              || parts = "TODO", || OPTIONAL tokenlist
+                              use = "literal"}
+                     else {e "soap12:body",
+                              || parts = "TODO", || OPTIONAL tokenlist
+                              namespace = "", || OPTIONAL ???
+                              use = "encoded", 
+                              encodingStyle = "http://schemas.xmlsoap.org/soap/encoding/"}}
+                 else
+                    {if literal? 
+                     then {e "soap:body", use = "literal"}
+                     else {e "soap:body", use = "encoded", 
+                              encodingStyle = "http://schemas.xmlsoap.org/soap/encoding/"}}}
             def part-template =
                 {if document? 
                  then {e "wsdl:part", name = "parameters", element = arg-name}
@@ -991,6 +1013,7 @@
                 {XDMNamespaceDeclaration "xs", XS},
                 {XDMNamespaceDeclaration "wsdl", WSDL},
                 {XDMNamespaceDeclaration "soap", SOAP},
+                {XDMNamespaceDeclaration "soap12", SOAP12},
                 {XDMNamespaceDeclaration target-prefix, target-namespace},
                 {XDMNamespaceDeclaration "", target-namespace},
                 targetNamespace = target-namespace,
@@ -1010,12 +1033,16 @@
                         {e "wsdl:input", name = name-in, message = name-in},
                         {e "wsdl:output", name = name-out, message = name-out}}},
                 {e "wsdl:binding", name = name, type = name,                
-                    {e "soap:binding",
+                    {e {if soap12?
+                        then "soap12:binding"
+                        else "soap:binding"},
                         transport = "http://schemas.xmlsoap.org/soap/http",
                         style = style},
                     {e "wsdl:operation",
                         name = method-name,
-                        {e "soap:operation", soapAction = "", style = style},
+                        {if soap12?
+                         then {e "soap12:operation", style = style}
+                         else {e "soap:operation", soapAction = "", style = style}},
                         {e "wsdl:input", name = name-in,  
                             {body-template.clone}},
                         {e "wsdl:output", name = name-out,
@@ -1023,7 +1050,10 @@
                 {e "wsdl:service",
                     name = "TestService",
                     {e "wsdl:port", name = name, binding = name,
-                        {e "soap:address", location = service-location.name}}}
+                        {if soap12? then
+                            {e "soap12:address", location = service-location.name}
+                         else
+                            {e "soap:address", location = service-location.name}}}}
             }} asa XDMElement
     {return {XDMDocument wsdl}}
 }

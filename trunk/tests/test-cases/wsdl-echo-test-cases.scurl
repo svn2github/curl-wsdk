@@ -17,6 +17,8 @@
 {import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
 
 {TestSuite {lmessage WSDL Echo Tests},
+    
+    || Basic
     {WSDLEchoTestCases name = "Basic DOC/LIT",
         {url "wsdl-echo-cases-basic.xml"}
     },
@@ -28,6 +30,8 @@
         document? = false, literal? = false,
         {url "wsdl-echo-cases-basic.xml"}
     },
+
+    || Arrays
     {WSDLEchoTestCases name = "Arrays DOC/LIT",
         {url "wsdl-echo-cases-arrays.xml"}
     },
@@ -38,5 +42,17 @@
     {WSDLEchoTestCases name = "Arrays RPC/ENC",
         document? = false, literal? = false,
         {url "wsdl-echo-cases-arrays.xml"}
+    },
+
+    || SOAP12 
+    {WSDLEchoTestCases name = "SOAP12: Basic DOC/LIT",
+        soap12? = true,
+        {url "wsdl-echo-cases-basic.xml"}
+    },
+    {WSDLEchoTestCases name = "SOAP12: Basic RPC/ENC",
+        document? = false, literal? = false,
+        soap12? = true,
+        {url "wsdl-echo-cases-basic.xml"}
     }
+
 }

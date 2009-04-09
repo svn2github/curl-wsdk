@@ -1,0 +1,607 @@
+{curl 6.0, 7.0 package}
+{package COM.CURL.WSDL.Soap12-add-test-rpc,
+    {compiler-directives careful? = true},
+    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-rpc.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-rpc.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public WhiteMesaSoap12AddTestSvc {inherits WSDLHTTPRPCPostClient}
+
+  {method public {get-time}:(_return:#XMLTimeString)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["get-time"]}
+        }
+    {return
+        responses[0] asa #XMLTimeString
+    }
+  }
+
+
+  {method public {define-get-time}:void
+    set self.operations["get-time"] = 
+         {Arguments
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "time"},
+                    curl-type = XMLTimeString,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            response-operation = {XMLName "http://soapinterop.org/", "getTime"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-simple-types-as-struct input-string:#String, input-integer:int, input-float:float}:(_return:#SOAPStruct)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                input-string,
+                input-integer,
+                input-float
+            },
+            {splice self.operations["echo-simple-types-as-struct"]}
+        }
+    {return
+        responses[0] asa #SOAPStruct
+    }
+  }
+
+
+  {method public {define-echo-simple-types-as-struct}:void
+    set self.operations["echo-simple-types-as-struct"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputString"},
+                {XMLName "", "inputInteger"},
+                {XMLName "", "inputFloat"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "float"},
+                    curl-type = float
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://example.org/ts-tests/xsd", "SOAPStruct"},
+                    curl-type = SOAPStruct,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            request-operation = {XMLName "http://soapinterop.org/", "echoSimpleTypesAsStruct"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-void unknown:#Unknown = null}:void
+    let constant request-header-names:{Array-of #XMLName} =
+        {{Array-of #XMLName}}
+    let constant request-header-types:{Array-of SOAPObjectType} =
+        {{Array-of SOAPObjectType}}
+    let constant request-headers:{Array-of any} =
+        {{Array-of any}}
+    {if {keyword-supplied? unknown} then
+        {request-header-types.append
+            {SOAPObjectType
+                xml-type = {XMLName "http://example.org/ts-tests/xsd", "Unknown"},
+                curl-type = Unknown,
+                nillable? = true
+            }
+        }
+        {request-header-names.append
+           {XMLName "http://example.org/ts-tests/xsd", "Unknown"}
+        }
+        {request-headers.append unknown}
+    }
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+            },
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-headers = request-headers,
+            {splice self.operations["echo-void"]}
+        }
+    {return
+
+    }
+  }
+
+
+  {method public {define-echo-void}:void
+    set self.operations["echo-void"] = 
+         {Arguments
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            request-operation = {XMLName "http://soapinterop.org/", "echoVoid"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-string input-string:#String}:(_return:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                input-string
+            },
+            {splice self.operations["echo-string"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {define-echo-string}:void
+    set self.operations["echo-string"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputString"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            request-operation = {XMLName "http://soapinterop.org/", "echoString"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-simple-types-as-struct-of-schema-types input1:any, input2:any, input3:any, input4:any}:(_return:#SOAPStructTypes)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                input1,
+                input2,
+                input3,
+                input4
+            },
+            {splice self.operations["echo-simple-types-as-struct-of-schema-types"]}
+        }
+    {return
+        responses[0] asa #SOAPStructTypes
+    }
+  }
+
+
+  {method public {define-echo-simple-types-as-struct-of-schema-types}:void
+    set self.operations["echo-simple-types-as-struct-of-schema-types"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "input1"},
+                {XMLName "", "input2"},
+                {XMLName "", "input3"},
+                {XMLName "", "input4"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    || xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = any
+                },
+                {SOAPObjectType
+                    || xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = any
+                },
+                {SOAPObjectType
+                    || xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "float"},
+                    curl-type = any
+                },
+                {SOAPObjectType
+                    || xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = any
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://example.org/ts-tests/xsd", "SOAPStructTypes"},
+                    curl-type = SOAPStructTypes,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            request-operation = {XMLName "http://example.org/ts-tests", "echoSimpleTypesAsStructOfSchemaTypes"},
+            default-namespace = "http://example.org/ts-tests",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-integer input-integer:int}:(_return:int)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                input-integer
+            },
+            {splice self.operations["echo-integer"]}
+        }
+    {return
+        responses[0] asa int
+    }
+  }
+
+
+  {method public {define-echo-integer}:void
+    set self.operations["echo-integer"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputInteger"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            request-operation = {XMLName "http://soapinterop.org/", "echoInteger"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-get-time}
+     {self.define-echo-simple-types-as-struct}
+     {self.define-echo-void}
+     {self.define-echo-string}
+     {self.define-echo-simple-types-as-struct-of-schema-types}
+     {self.define-echo-integer}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://example.org/ts-tests/xsd", "SOAPStruct"},
+                curl-type = SOAPStruct,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "varString"},
+                {XMLName "", "varInt"},
+                {XMLName "", "varFloat"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "float"},
+                    curl-type = float
+                }
+            },
+            {{Array-of String}
+                "var-string",
+                "var-int",
+                "var-float"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://example.org/ts-tests/xsd", "SOAPStructTypes"},
+                curl-type = SOAPStructTypes,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "type1"},
+                {XMLName "", "type2"},
+                {XMLName "", "type3"},
+                {XMLName "", "type4"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "QName"},
+                    curl-type = XMLName
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "QName"},
+                    curl-type = XMLName
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "QName"},
+                    curl-type = XMLName
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "QName"},
+                    curl-type = XMLName
+                }
+            },
+            {{Array-of String}
+                "type1",
+                "type2",
+                "type3",
+                "type4"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://example.org/ts-tests/xsd", "Unknown"},
+                xml-type = {XMLName "http://example.org/ts-tests/xsd", "Unknown"},
+                curl-type = Unknown,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "stringValue"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "string-value"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "", "stringValue"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://www.whitemesa.net/soap12/add-test-rpc"}
+    }
+    {construct-super service-location,
+        generated-using-version = "4"
+    }
+  }
+}
+
+{define-class public open SOAPStruct
+
+  field public var-string:String = ""
+  field public var-int:int
+  field public var-float:float
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      var-string:String = {required-keyword "SOAPStruct.var-string"} asa String,
+      var-int:int = {uninitialized-value-for-type int},
+      var-float:float = {uninitialized-value-for-type float}
+    }
+    {if {keyword-supplied? var-string} then
+        set self.var-string = var-string}
+    {if {keyword-supplied? var-int} then
+        set self.var-int = var-int}
+    {if {keyword-supplied? var-float} then
+        set self.var-float = var-float}
+  }
+
+}
+
+{define-class public open SOAPStructTypes
+
+  field public type1:XMLName = {uninitialized-value-for-type XMLName}
+  field public type2:XMLName = {uninitialized-value-for-type XMLName}
+  field public type3:XMLName = {uninitialized-value-for-type XMLName}
+  field public type4:XMLName = {uninitialized-value-for-type XMLName}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      type1:XMLName = {required-keyword "SOAPStructTypes.type1"} asa XMLName,
+      type2:XMLName = {required-keyword "SOAPStructTypes.type2"} asa XMLName,
+      type3:XMLName = {required-keyword "SOAPStructTypes.type3"} asa XMLName,
+      type4:XMLName = {required-keyword "SOAPStructTypes.type4"} asa XMLName
+    }
+    {if {keyword-supplied? type1} then
+        set self.type1 = type1}
+    {if {keyword-supplied? type2} then
+        set self.type2 = type2}
+    {if {keyword-supplied? type3} then
+        set self.type3 = type3}
+    {if {keyword-supplied? type4} then
+        set self.type4 = type4}
+  }
+
+}
+
+{define-class public open Unknown
+
+  field public string-value:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      string-value:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? string-value} then
+        set self.string-value = string-value}
+  }
+
+}
+

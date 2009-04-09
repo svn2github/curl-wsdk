@@ -20,8 +20,6 @@
 || -- use WSDLSchemaImport also for top node
 || - whither append-documentation-node
 
-|| NOTE: consistent with parse-wsdl AS OF 090323
-
 {define-class public open WSDLSchema {inherits WSDLDocumentedNode}
 
   field public constant top-node:WSDLDOMNode
@@ -798,66 +796,15 @@
                 }
             {elements.append g}
          elseif {self.schema-tag-match e.name, "choice"} then
-            || ========== \\
-            || === TEST === 
-            || TODO: method parse-choice-elements
-            def specified-xml-name = xml-name
-            {if xml-name == null then
-                || TODO: should get (or derive) name from scope
-                set xml-name = {XMLName "", "_Anonymous_Choice"}}
-            {if-non-null xml-name then
-                || TODO: need inner element name ?
-                || - this should work, but causes name conflict
-                || -- maybe "steals" outer type name
-||--                def choice-name = xml-name 
-                def choice-name = {XMLName target-namespace, xml-name.local-name & "Value"}
-                let sub-elements:#{Array-of WSDLSchemaElement}
-                set (sub-elements, maybe-doc) =
-                    {self.parse-sequence-element-list 
-                        e,
-                        null,
-                        target-namespace,
-                        element-form-qualified?
-                    }
-                || fallback if elements contained unexpected particles
-                {if maybe-doc != null then
-                    {break}
-                }
-                def (min-occurs, max-occurs, nillable?) =
-                    {self.parse-element-occurrance-attributes e}
-
-                || NOTE: local element names may not be unique
-                def element-name = 
-                    {self.get-unique-name choice-name,
-                        prefix = WSDLSchema.type-prefix,
-                        target-namespace = target-namespace}
-                def type =
-                    {WSDLSchemaChoiceType element-name, 
-                        {non-null sub-elements},
-                        self.curl-namer}
-                {self.names.set-name
-                    element-name.namespace, WSDLSchema.type-prefix, element-name.local-name, type
-                }
-                def element =
-                    {WSDLInternalSchemaElement
-                        element-name, type,
-                        min-occurs = min-occurs,
-                        max-occurs = max-occurs,
-                        nillable? = nillable?,
-                        e
-                    }
-||--                || needed ?
-||--                set self.type-to-element-name[type-name] = element-name
-                {elements.append element}
-             else
-                || fallback if no choice-name
-                set maybe-doc = {self.get-xml-document-type xml-name}
+            let choice-element:#WSDLSchemaElement = null
+            set (choice-element, maybe-doc) =
+                {self.parse-choice-elements e, xml-name,
+                    target-namespace,
+                    element-form-qualified?}
+            {if-non-null maybe-doc then
                 {break}
-            }
-            || === TEST === 
-            || ========== //
-||--            set maybe-doc = {self.get-xml-document-type xml-name}
-||--            {break}
+             else
+                {elements.append {non-null choice-element}}}
          elseif {self.schema-tag-match e.name, "any"} then
             set maybe-doc = {self.get-xml-document-type xml-name}
             {break}
@@ -907,6 +854,67 @@
             n == "true"
          else false}
     {return min-occurs, max-occurs, nillable?}
+  }
+
+  {method private {parse-choice-elements
+                      e:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:(type:#WSDLSchemaElement, maybe-doc:#WSDLSchemaType)
+    def specified-xml-name = xml-name
+    {if xml-name == null then
+        || TODO: should get (or derive) name from scope
+        set xml-name = {XMLName "", "_Anonymous_Choice"}}
+    {if-non-null xml-name then
+        || TODO: need inner element name ?
+        || - this should work, but causes name conflict
+        || -- maybe "steals" outer type name
+||--        def choice-name = xml-name 
+        def choice-name = {XMLName target-namespace, xml-name.local-name & "Value"}
+        def (sub-elements, maybe-doc) =
+            {self.parse-sequence-element-list 
+                e,
+                null,
+                target-namespace,
+                element-form-qualified?
+            }
+        || fallback if elements contained unexpected particles
+        {if maybe-doc != null then
+            {return null, maybe-doc}
+        }
+
+        || NOTE: local element names may not be unique
+        def element-name = 
+            {self.get-unique-name choice-name,
+                prefix = WSDLSchema.type-prefix,
+                target-namespace = target-namespace}
+        || construct choice type and element
+        def type =
+            {WSDLSchemaChoiceType
+                element-name, 
+                sub-elements,
+                self.curl-namer}
+        {self.names.set-name
+            element-name.namespace, WSDLSchema.type-prefix,
+            element-name.local-name, type}
+        def (min-occurs, max-occurs, nillable?) =
+            {self.parse-element-occurrance-attributes e}
+        def element =
+            {WSDLInternalSchemaElement
+                element-name, type,
+                min-occurs = min-occurs,
+                max-occurs = max-occurs,
+                nillable? = nillable?,
+                e}
+||--        || needed ?
+||--        set self.type-to-element-name[type-name] = element-name
+        {return element, null}
+     else
+        || fallback if no choice-name
+        def maybe-doc = {self.get-xml-document-type xml-name}
+        {return null, maybe-doc}
+    }
   }
 
   {method private {parse-group
@@ -1130,7 +1138,7 @@
     {if-non-null maybe-doc then
         {return maybe-doc}
     }
-    let constant choice?:bool = {self.schema-tag-match node.name, "group"}
+    let constant choice?:bool = {self.schema-tag-match node.name, "choice"}
 || FIXME: There are limited bound arrays that should be array types
 || and other things (multiple elements which are repeated) which could be
 || arrays of a synthetic classes or be document types, but which will
@@ -1210,6 +1218,7 @@
                       element-form-qualified?:bool
                   }:WSDLSchemaType
     {if {node.get-attribute "mixed"} == "true" then
+        {self.approximated-tag node}
         {return self.generic-document-type}
     }
     {if node.children.size != 1 then
@@ -1218,13 +1227,9 @@
         }
     }
 
+    || detect special cases for Array, otherwise restriction
     let type:#WSDLSchemaType
     {for child in node.children do
-|| FIXME: lots of other things can appear, and many of them can be
-|| ignored (for stuff like a more specific subclass type thing.)
-
-        || for any defect in the restriction contents, we just treat it as
-        || a document
         {if {self.schema-tag-match child.name, "restriction"} then
             {if type isa WSDLSchemaXMLDocumentType then
                 {continue}
@@ -1242,18 +1247,13 @@
                         "Array"
                     }
              then
-                || ========== \\
-                || === TEST ===
+                || not an array: generic restriction
                 set type =
                     {self.parse-complex-type-complex-content-restriction
                         child,
                         xml-name,
                         target-namespace,
                         element-form-qualified?}
-                {break}
-                || ========== //
-                {self.approximated-tag child}
-                set type = {self.get-xml-document-type xml-name}
                 {break}
             }
             || There seem to be two ways to specify an array, one with a one
@@ -1409,28 +1409,27 @@
     }
   }
 
-  || ========== \\
-  || === TEST ===
   {method private {parse-complex-type-complex-content-restriction
                       node:WSDLDOMNode,
                       xml-name:#XMLName,
                       target-namespace:String,
                       element-form-qualified?:bool
                   }:WSDLSchemaType
-    || NOTE: this is wrong, but a placeholder
+    || NOTE: this a placeholder
+    || - no representation nor enforcement of "narrowing" contituents
     def type =
         {self.parse-complex-type-complex-content-extension
             node, xml-name, target-namespace, element-form-qualified?}
-    || TODO: prune redundant elements
+    || prune redundant elements
     {type-switch type
      case type:WSDLSchemaClassType do
         || HACK: assumes all are redundant
+        || TODO: flag type as restriction, consolidate when resolving refs
         {type.elements.clear}
         {type.attributes.clear}
     }
     {return type}
   }
-  || ========== //
 
   {method private {parse-complex-type-complex-content-extension
                       node:WSDLDOMNode,

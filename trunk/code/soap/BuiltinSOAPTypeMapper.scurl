@@ -33,6 +33,14 @@
     {new XMLName, BuiltinSOAPTypeMapper.old-xml-schema-instance-uri, "nil"},
   }
 
+  {let constant package any-xml-types:{FastArray-of XMLName} =
+        {new {FastArray-of XMLName},
+||--            SOAPTypeMapper.xml-schema-any-type,
+            SOAPTypeMapper.xml-schema-any-simple-type,
+            SOAPTypeMapper.xml-schema-simple-type,
+            SOAPTypeMapper.xml-schema-complex-type
+        }
+  }
 
   || FIXME add other string types
   || FIXME do subclasses of string... (all go through normalized,
@@ -190,19 +198,11 @@
             any-string-unmarshal-proc
         }
     }
-    || short cut to let us loop over all similar any types
-    let constant any-xml-types:{FastArray-of XMLName} =
-        {new {FastArray-of XMLName},
-||--            SOAPTypeMapper.xml-schema-any-type,
-            SOAPTypeMapper.xml-schema-any-simple-type,
-            SOAPTypeMapper.xml-schema-simple-type,
-            SOAPTypeMapper.xml-schema-complex-type
-        }
     || FIXME should we also do Object or #Object as an any type?
     || (Right now there is no searching of the class hierarchy so
     || someone would have to ask for that in their type, the
     || xml-type-to-curl-type mappers will not ever come up with that.)
-    {for xml-type in any-xml-types do
+    {for xml-type in BuiltinSOAPTypeMapper.any-xml-types do
         {self.set-marshal-proc
             {new SOAPObjectType,
                 xml-type = xml-type,
@@ -518,10 +518,12 @@
         }
         set marshal-proc = {self.get-marshal-proc type, encoding}
     }
+    || FIXME: save this list in an array somewhere so we can just search it.
     || if it is SOAP-ENC xml-type, then just treat it like they said
     || SOAPTypeMapper.xml-schema-uri
     {if marshal-proc == null and
-        type.xml-type.namespace == SOAPTypeMapper.soap-1-1-encoding-uri
+         (type.xml-type.namespace == SOAPTypeMapper.soap-1-1-encoding-uri or
+          type.xml-type.namespace == SOAPTypeMapper.soap-1-2-encoding-uri)
      then
         set marshal-proc =
             {self.get-marshal-proc
@@ -532,6 +534,23 @@
                             SOAPTypeMapper.xml-schema-uri,
                             type.xml-type.local-name
                         }
+                },
+                encoding
+            }
+    }
+    || For any types make sure that we find the any marshaler, it has a
+    || plan for how to find the right marshal-proc.
+    || Note: maybe we should do this for any xml-type?
+    {if marshal-proc == null and type.xml-type != null and
+        {BuiltinSOAPTypeMapper.any-xml-types.find
+            {non-null type.xml-type}} >= 0 and
+        type.curl-type != (any asa Type)
+     then
+        set marshal-proc =
+            {self.get-marshal-proc
+                {SOAPObjectType.clone-with
+                    type,
+                    curl-type = (any asa Type)
                 },
                 encoding
             }
@@ -611,7 +630,8 @@
         set unmarshal-proc = builtin-arraytype-unmarshal-proc
     }
     {if unmarshal-proc == null and
-        type.xml-type.namespace == SOAPTypeMapper.soap-1-1-encoding-uri
+        (type.xml-type.namespace == SOAPTypeMapper.soap-1-1-encoding-uri or
+         type.xml-type.namespace == SOAPTypeMapper.soap-1-2-encoding-uri)
      then
         set unmarshal-proc =
             {self.get-unmarshal-proc
@@ -622,6 +642,23 @@
                             SOAPTypeMapper.xml-schema-uri,
                             type.xml-type.local-name
                         }
+                },
+                encoding
+            }
+    }
+    || For any types make sure that we find the any marshaler, it has a
+    || plan for how to find the right marshal-proc.
+    || Note: maybe we should do this for any xml-type?
+    {if unmarshal-proc == null and type.xml-type != null and
+        {BuiltinSOAPTypeMapper.any-xml-types.find
+            {non-null type.xml-type}} >= 0 and
+        type.curl-type != (any asa Type)
+     then
+        set unmarshal-proc =
+            {self.get-unmarshal-proc 
+                {SOAPObjectType.clone-with
+                    type,
+                    curl-type = (any asa Type)
                 },
                 encoding
             }
@@ -1487,9 +1524,9 @@
                 {if type.curl-type != null and
                     type.curl-type != (any asa Type)
                  then
-                    curl-type
-                 else
                     type.curl-type
+                 else
+                    curl-type
                 },
             nillable? = type.nillable?
         }
@@ -1544,19 +1581,21 @@
                 attributes,
                 xml-type-to-curl-type
             }
-        {return
-            {current-mapper.unmarshal
-                stream,
-                attributes,
-                new-type,
-                encoding,
-                unmarshal-context,
-                current-mapper,
-                xml-type-to-curl-type,
-                || we already checked it...
-                check-type-attribute? = false
-            },
-            true
+        {if new-type.xml-type != null and new-type.curl-type != null then
+            {return
+                {current-mapper.unmarshal
+                    stream,
+                    attributes,
+                    new-type,
+                    encoding,
+                    unmarshal-context,
+                    current-mapper,
+                    xml-type-to-curl-type,
+                    || we already checked it...
+                    check-type-attribute? = false
+                },
+                true
+            }
         }
     }
     || not a return null, false because there is no recovery, and we
@@ -1664,7 +1703,8 @@
         }
     }
     {if-non-null xml-array-type then
-        set xml-type = xml-array-type}
+        set xml-type = xml-array-type
+    }
     let new-type:SOAPObjectType =
         {SOAPObjectType.fill-in-from-element-name-mapper
             {new SOAPObjectType,

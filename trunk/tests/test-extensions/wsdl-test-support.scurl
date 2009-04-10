@@ -206,7 +206,10 @@
         def test =
             {WSDLServiceMethodTestCase package, class, method,
                 input = input,
-                {self.location.merge "manifest.mcurl"}}
+                {self.location.merge "manifest.mcurl"},
+                return-type = r["result-type"] asa #String,
+                return-value = r["result"] asa #String
+            }
         || guard test first, if appropriate
         {if suite.size == 0 then
             {if-non-null guard = {test.guard-test} then
@@ -292,6 +295,8 @@
   field public-get constant class-name:String
   field public-get constant method-name:String
   field public-get constant manifest-loc:Url
+  field public-get constant return-type:#String
+  field public-get constant return-value:#String
   field public input:String = ""
   field public service-location:#Url
   
@@ -301,13 +306,18 @@
                           method-name:String,
                           manifest-loc:Url,
                           input:String = "",
-                          service-location:#Url = null}
+                          service-location:#Url = null,
+                          return-type:#String = null,
+                          return-value:#String = null
+                      }
     set self.package-name = package-name
     set self.class-name = class-name
     set self.method-name = method-name
     set self.manifest-loc = manifest-loc
     set self.input = input
     set self.service-location = service-location
+    set self.return-type = return-type
+    set self.return-value = return-value
     let name:String = {format "%s.%s", self.class-name, self.method-name}
     {construct-super name}
   } 
@@ -352,6 +362,7 @@
     {return
         {type-switch self.result
          case e:SOAP-1-1-FaultException do "Fault"
+         case e:SOAP-1-2-FaultException do "Fault"
          case e:SOAPException do "SOAPException"
          case e:HttpException do "HttpException"
          case e:SyntaxError do "SyntaxError"
@@ -378,7 +389,10 @@
               method:Method,
               input:StringInterface,
               package:OpenPackage =
-                  {OpenPackage method.declaring-class.package}
+                  {OpenPackage
+                        {import-package manifest = self.manifest, {make-package-selector "COM.CURL.WSDK.SOAP"}},
+                        method.declaring-class.package
+                  }
           }:any 
     {with-compiler-directives allow-any-calls? = true do
         let service-class:ClassType = method.declaring-class
@@ -389,7 +403,7 @@
                 {service-class}}
         let method-type:ProcType = method.type asa ProcType
         let result:any = 
-            {try
+            {try catch-action="debug"
                 let x:any =  {evaluate package = package, input}
                 let args:Arguments =       
                     {type-switch x
@@ -403,8 +417,38 @@
                     || TODO: distinguish these for display-any
                     {method.invoke-n service, {splice args}}}
              catch e:Exception do e}
+        {if self.return-type != null and self.return-type != "" then
+            let rett:Type = {evaluate package = package, self.return-type} asa Type
+            {if not result isa rett and
+                (not result isa FastArray or not result[0] isa rett)
+             then
+                {TestCondition.fail message = result & " is not a " & self.return-type}
+            }
+        }
+        {if self.return-value != null and self.return-value != "" then
+            let ret:any = {evaluate package = package, self.return-value}
+            {type-switch result
+             case r-array:FastArray do
+                {type-switch ret
+                 case ret-array:FastArray do
+                    {for r key i in r-array do
+                        {if r != ret-array[i] then
+                            {TestCondition.fail message = result & " != " & self.return-value}
+                        }
+                    }
+                 else
+                    {if r-array[0] != ret then
+                        {TestCondition.fail message = result & " != " & self.return-value}
+                    }
+                }
+             else
+                {if result != ret then
+                    {TestCondition.fail message = result & " != " & self.return-value}
+                }
+            }
+        }
         {return result}}
-  }  
+  }
   {method {args-template m:Method}:String
     let pt:ProcType = m.type asa ProcType
     let buf:StringBuf = {StringBuf}

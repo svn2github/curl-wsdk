@@ -503,10 +503,12 @@
                         vv}
                 
                 let has-wrapper?:bool = v isa XDMElement
-                let needs-wrapper?:bool = not has-wrapper?
+                let choice-element?:bool = self.element-type.choice-elements != null
+                let needs-wrapper?:bool = not (has-wrapper? or choice-element?)
                 {if needs-wrapper? then
+                    || TODO: maybe better get element-name from choice-marshaler
                     {stream.write-one
-                        {new XMLStartElement, element-name}
+                        {XMLStartElement element-name}
                     }
                 }
                 {if-non-null eam = self.element-array-marshaler then
@@ -541,7 +543,7 @@
                 }
                 {if needs-wrapper? then
                     {stream.write-one
-                        {new XMLEndElement, element = element-name}
+                        {XMLEndElement}
                     }
                 }
             }
@@ -805,31 +807,38 @@
                         j,
                         dimensions
                     }
-                set (current-token, eof?) = {stream.read-one}
-                {if eof? then
-                    {throw-unmarshal-exception
-                        {lformat
-                            "Got EOF instead of end of response %s.",
-                            se.element
-                        }
-                    }
-                }
-                {type-switch current-token
-                 case ee:XMLEndElement do
-                    {if ee.element != null and ee.element != se.element then
+                
+                || now finished unmarshaling this element
+                || - assure end elements properly consumed
+                {if choice-element? then
+                    || NOTE: choice element must be wrapped
+                 else
+                    set (current-token, eof?) = {stream.read-one}
+                    {if eof? then
                         {throw-unmarshal-exception
                             {lformat
-                                "Mismatched end element for response %s.",
+                                "Got EOF instead of end of response %s.",
                                 se.element
                             }
                         }
                     }
-                 else
-                    {throw-unmarshal-exception
-                        {lformat
-                            "Expected XMLEndElement for %s got %s.",
-                            se.element,
-                            current-token
+                    {type-switch current-token
+                     case ee:XMLEndElement do
+                        {if ee.element != null and ee.element != se.element then
+                            {throw-unmarshal-exception
+                                {lformat
+                                    "Mismatched end element for response %s.",
+                                    se.element
+                                }
+                            }
+                        }
+                     else
+                        {throw-unmarshal-exception
+                            {lformat
+                                "Expected XMLEndElement for %s got %s.",
+                                se.element,
+                                current-token
+                            }
                         }
                     }
                 }

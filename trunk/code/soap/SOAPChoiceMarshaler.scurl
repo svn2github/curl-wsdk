@@ -72,6 +72,9 @@
             {fn type =>
                 type.curl-type == curl-type}}
 
+    || TODO: will not work for simple types
+    || - no way to discriminate alternatives
+    
     def choice-type =
         {switch types.size
          case 1 do types[0]
@@ -83,10 +86,16 @@
          else
             {output {message WARNING: ambiguous choice type: {value val}}}
             types[0]}
+    def choice-element-name =
+        {non-null choice-type.element-name}
 
-    || TODO: will not work for simple types
-    || - no way to determine which alternative
+    def write-element? = true
 
+    {if write-element? then
+        {stream.write-one
+            {XMLStartElement choice-element-name}}
+    }
+    
     || invoke marshaller
     {current-mapper.marshal  
         stream,
@@ -99,6 +108,12 @@
         write-type-attribute? = write-type-attribute?,
         multiple-reference = choice-type.multiple-reference
     }
+    
+    {if write-element? then
+        {stream.write-one
+            {XMLEndElement element = choice-element-name}}
+    }
+
     {return true}
   }
 
@@ -122,8 +137,8 @@
     || TODO: consider xsi:nil
 
     || dispatch by element
-    def current-token = {stream.read-one}
-    {type-switch current-token
+    def opening-token = {stream.read-one}
+    {type-switch opening-token
      case se:XMLStartElement do
         || match element name
         let element-type:#SOAPObjectType = null
@@ -146,13 +161,29 @@
                     current-mapper,
                     xml-type-to-curl-type,
                     check-type-attribute? = check-type-attribute?}
+            || consume matching end element
+            def closing-token = {stream.read-one}
+            {type-switch closing-token
+             case ee:XMLEndElement do
+                {if ee.element != null and ee.element != se.element then
+                    {throw-unmarshal-exception
+                        {lmessage
+                            Expected XMLEndElement for {value se.element}
+                            but got {value ee.element}}}}
+             else
+                {throw-unmarshal-exception
+                    {lmessage
+                        Expected XMLEndElement for {value se.element}
+                        but got {value closing-token}}}
+            }
             {return val, true}
          else
+            || Unrecognized element
             {return null, false}
         }
      else
-        || Expected start element
-        {stream.unread-one current-token}
+        || Not start of element
+        {stream.unread-one opening-token}
         {return null, false}
     }
   }

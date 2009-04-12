@@ -99,6 +99,9 @@
         {parameter curlify-names?,
             indicates whether to use curl naming conventions
             for identifiers in generated code.}
+        {parameter include-async-methods?,
+            indicates whether asynchronous service methods will ge generated,
+            in addition to the usual synchronous methods.}
         {parameter package-prefix,
             If specified, generated code will include
             package herald, with package-name 
@@ -129,6 +132,7 @@
                         package-suffix:#String = null,
                         curl-versions:#String = null,
                         curlify-names?:bool = true,
+                        include-async-methods?:bool = true,
                         exclude-unreferenced-types?:bool = false
                     }:Url
     || determine applicable curl-versions
@@ -197,7 +201,8 @@
                 package-prefix & package-name,
                 source}}
         || service classes and support types
-        {w.dump-client-stubs out, 
+        {w.dump-client-stubs out,
+            do-async? = include-async-methods?,
             exclude-unreferenced-types? = exclude-unreferenced-types?}} 
     || return result
     {return sloc}

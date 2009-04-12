@@ -16,23 +16,15 @@
 
 {import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
 
-{TestSuite {lmessage WSDL Tests},
-    
-    {TestSuite {lmessage XMethods subset},
-        
-        {WSDLGenerationTestSuite
-            {url "wsdl-services/services.csv"}},    
+{TestSuite {lmessage SOAP12},
 
-        {WSDLServicesTestSuite
-            {url "wsdl-services/methods.csv"}}
-    },
+    || TODO: naming confusion - case mismatch?
+||--    {WSDLGenerationTestSuite
+||--        {url "services.csv"}
+||--    },    
 
-    {TestSuite.import
-        {url "wsdl-samples/whitemesa-soap12/soap12-test-cases.scurl"}
-    },
-
-    {TestSuite.import
-        {url "wsdl-echo-test-cases.scurl"}
+    {WSDLServicesTestSuite
+||--        {url "methods.csv"}
+        {url "services.csv"}
     }
-
 }

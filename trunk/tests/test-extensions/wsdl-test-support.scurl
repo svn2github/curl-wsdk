@@ -234,7 +234,7 @@
         {RecordField "member", domain = String},
         || result
         {RecordField "input", domain = String},
-        {RecordField "result", domain = any, nullable? = true},
+        {RecordField "result", domain = String, nullable? = true},
         {RecordField "result-type", domain = String, nullable? = true},
         {RecordField "result-kind", domain = String, nullable? = true}
     }
@@ -287,8 +287,6 @@
   }
 }
 
-|| TODO: expected results, arguments, recordset
-
 {define-class public WSDLServiceMethodTestCase {inherits TestCase}
   || spec
   field public-get constant package-name:String
@@ -333,11 +331,13 @@
         set self.input =
             {self.args-template m}}   
     || invoke method
+    || NOTE: this also verifies return type and value, if specified
     set self.result = {self.invoke-service-method m, self.input}
     || note result
     let kind:String = self.result-kind
     {switch kind
      case "SOAPException","HttpException", "SyntaxError", "Exception" do
+        || TODO: should throw, so its treated as error rather than test failure
         {TestCondition.fail message = kind}
      else
         {TestCondition.succeed message = kind}}
@@ -361,8 +361,7 @@
   {getter public {result-kind}:String
     {return
         {type-switch self.result
-         case e:SOAP-1-1-FaultException do "Fault"
-         case e:SOAP-1-2-FaultException do "Fault"
+         case e:SOAPFaultException do "Fault"
          case e:SOAPException do "SOAPException"
          case e:HttpException do "HttpException"
          case e:SyntaxError do "SyntaxError"
@@ -414,7 +413,6 @@
                     {method.invoke service, {splice args}}
                  else
                     || multiple values (will be FastArray)
-                    || TODO: distinguish these for display-any
                     {method.invoke-n service, {splice args}}}
              catch e:Exception do e}
         {if self.return-type != null and self.return-type != "" then

@@ -572,6 +572,7 @@
   field private _parent-class:#WSDLSchemaType
   field private _choice?:bool
   field public-get protected-set abstract?:bool
+  field public-get protected-set derived-by-restriction?:bool
 
   {constructor public {default
                           xml-name:#XMLName,
@@ -581,9 +582,10 @@
                           parent-class:#WSDLSchemaType = null,
                           choice?:bool = false,
                           abstract?:bool = false,
+                          derived-by-restriction?:bool = false,
                           content-element:#WSDLSchemaElement = null
                       }
-    || TEST
+    || ### DEBUG
     {if xml-name == null then
         {output {message WARNING: anonymous WSDLSchemaClassType}}
     }
@@ -599,6 +601,7 @@
     set self._multiple-reference-set? = false
     set self._choice? = choice?
     set self.abstract? = abstract?
+    set self.derived-by-restriction? = derived-by-restriction?
     set self.curl-namer = curl-namer
     set self._ref-name =
         {if-non-null xml-name = self.xml-name then
@@ -722,7 +725,7 @@
 
   {method package {dump out:TextOutputStream}:void
     {if-non-null xml-name = self.xml-name then
-        {if self._choice? or {WSDL.elements-has-choice? self.elements} then
+        {if self._choice? or {WSDLSchema.elements-has-choice? self.elements} then
             {self.dump-choice out}
          else
             {self.dump-non-choice out}
@@ -747,9 +750,17 @@
 
         || resolve possible group and use that as the element list to work with
         let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
-            {WSDL.flatten-elements self.elements}
+            {WSDLSchema.flatten-elements self.elements}
         let fa:{Array-of WSDLSchemaAttribute} =
-            {WSDL.flatten-attributes self.attributes}
+            {WSDLSchema.flatten-attributes self.attributes}
+
+        || exclude members defined by superclasses
+        def exclude-duplicate-members? = self.derived-by-restriction?
+      
+        {if exclude-duplicate-members? then
+            set fe = {self.remove-inherited-elements fe}
+            set fa = {self.remove-inherited-attributes fa}
+        }
         
         || both elements and attributes use fields
         let fm:{Array-of WSDLSchemaMember} =
@@ -935,7 +946,7 @@
     }
     || resolve possible group and use that as the element list to work with
     let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
-        {WSDL.flatten-elements self.elements}
+        {WSDLSchema.flatten-elements self.elements}
     {for e in fe do
         || add our element types, but only if there is not already
         || an entry for them which has an element name.
@@ -949,7 +960,7 @@
         }
     }
     let fa:{Array-of WSDLSchemaAttribute} =
-        {WSDL.flatten-attributes self.attributes} 
+        {WSDLSchema.flatten-attributes self.attributes} 
     {for a in fa do
         let constant (name:#XMLName, found?:bool) =
             {h.get-if-exists a.type}
@@ -965,7 +976,7 @@
   {method package {register-type-code element-name:#XMLName = null}:#String
     {return
         {if-non-null xml-name = self.xml-name then
-            {if self._choice? or {WSDL.elements-has-choice? self.elements} then
+            {if self._choice? or {WSDLSchema.elements-has-choice? self.elements} then
                 {self.register-type-code-choice element-name = element-name}
              else
                 {self.register-type-code-non-choice element-name = element-name}
@@ -1241,7 +1252,7 @@
         {if self.attributes.size > 0 then
             || making sure to expand attribute groups !
             let attributes:{Array-of WSDLSchemaAttribute} =
-                {WSDL.flatten-attributes self.attributes}
+                {WSDLSchema.flatten-attributes self.attributes}
             {format out = out,
                 "            n-attributes = %d,\n",
                 attributes.size}
@@ -1313,7 +1324,7 @@
             }
         }
         let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
-            {WSDL.flatten-elements self.elements}
+            {WSDLSchema.flatten-elements self.elements}
         {for e in fe do
             let constant mr:SOAPTypeMultipleReference =
                 e.type.multiple-reference
@@ -1338,28 +1349,38 @@
             {type-switch pc
              case sct:WSDLSchemaClassType do
                 sct
-             else
-                {output || ### DEBUG
-||--                {wsdl-exception
-                    || TODO: need node here for qname
-                    {hlmessage
-                        parent-class '{value pc.xml-name}' 
-                        of '{value self.xml-name}' is not a class.                        
-                    }
+             case spt:WSDLSchemaPrimitiveType do
+                {if spt.xml-name == WSDLSchema.any-type-name then
+                    || NOTE: anyType is universal supertype
+                    null
+                 else
+                    {self.improper-base-class pc}
                 }
-                null
+             else
+                {self.improper-base-class pc}
             }
          else
             null
         }
     }
   }
+
+  {method private {improper-base-class t:WSDLSchemaType}:never-returns
+    {wsdl-exception
+        || TODO: need node here for qname
+        {hlmessage
+            parent-class '{value t.xml-name}' 
+            of '{value self.xml-name}' is not a class.                        
+        }
+    }
+  }
+    
   || TODO: verify content-type is kind of anySimpleType
 
   {getter public open {all-elements-clone}:{Array-of WSDLSchemaElement}
     || resolve possible group and use that as the element list to work with
     let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
-        {WSDL.flatten-elements self.elements}
+        {WSDLSchema.flatten-elements self.elements}
     {return
         {if-non-null pc = self.parent-class then
             let constant ret:{Array-of WSDLSchemaElement} =
@@ -1376,7 +1397,7 @@
   {getter public open {all-attributes-clone}:{Array-of WSDLSchemaAttribute}
     || resolve possible group and use that as the element list to work with
     let fa:{Array-of WSDLSchemaAttribute} =
-        {WSDL.flatten-attributes self.attributes}
+        {WSDLSchema.flatten-attributes self.attributes}
     {return
         {if-non-null pc = self.parent-class then
             let constant ret:{Array-of WSDLSchemaAttribute} =
@@ -1387,6 +1408,44 @@
          else
             {fa.clone}
         }
+    }
+  }
+
+  {method package {remove-inherited-elements
+                      elements:{Array-of WSDLSchemaElement}
+                  }:{Array-of WSDLSchemaElement}
+    {if-non-null pc = self.parent-class then
+        def parent-elements = pc.all-elements-clone
+        def local-elements =
+            {elements.filter-clone
+                {fn element =>
+                    {parent-elements.find element,
+                        equality-proc =
+                            {fn x, y =>
+                                x.xml-name == y.xml-name}
+                    } < 0}}
+        {return local-elements}
+     else
+        {return elements}
+    }
+  }
+
+  {method package {remove-inherited-attributes
+                      attributes:{Array-of WSDLSchemaAttribute}
+                  }:{Array-of WSDLSchemaAttribute}
+    {if-non-null pc = self.parent-class then
+        def parent-attributes = pc.all-attributes-clone
+        def local-attributes =
+            {attributes.filter-clone
+                {fn attribute =>
+                    {parent-attributes.find attribute,
+                        equality-proc =
+                            {fn x, y =>
+                                x.xml-name == y.xml-name}
+                    } < 0}}
+        {return local-attributes}
+     else
+        {return attributes}
     }
   }
   

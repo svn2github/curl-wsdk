@@ -585,7 +585,7 @@
                     target-namespace = target-namespace}
              else
                 {wsdl-exception node = node,
-                    {message No name for complex-type}}
+                    {hlmessage No name for complex-type}}
             }
         }
      
@@ -1227,7 +1227,7 @@
         }
     }
 
-    || detect special cases for Array, otherwise restriction
+    || detect special cases for Array, otherwise generic restriction
     let type:#WSDLSchemaType
     {for child in node.children do
         {if {self.schema-tag-match child.name, "restriction"} then
@@ -1423,10 +1423,9 @@
     || prune redundant elements
     {type-switch type
      case type:WSDLSchemaClassType do
-        || HACK: assumes all are redundant
-        || TODO: flag type as restriction, consolidate when resolving refs
-        {type.elements.clear}
-        {type.attributes.clear}
+        || flag type as restriction,
+        || -  will be consolidated when generating code
+        set type.derived-by-restriction? = true
     }
     {return type}
   }
@@ -2223,8 +2222,6 @@
     }
   }
 
-  || TODO: supersede similar defs in WSDL (parse-wsdl.scurl
-  || -  for use in WSDLSchemaType.scurl
   {define-proc package {flatten-elements
                            elements:{Array-of WSDLSchemaElement}
                        }:({Array-of WSDLSchemaElement},

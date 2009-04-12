@@ -127,6 +127,7 @@
   field public-get constant location:Url
   field public-get constant directory:Url
   field public-get constant manifest-loc:Url
+  field public-get constant include-async-methods?:bool
   field public-get constant exclude-unreferenced-types?:bool
   field package:#Package 
   {constructor public {default 
@@ -134,11 +135,13 @@
                           location:Url, 
                           directory:Url,
                           manifest-loc:Url = {directory.concat "manifest.mcurl"},
+                          include-async-methods?:bool = false,
                           exclude-unreferenced-types?:bool = false
                       }
     set self.directory = directory
     set self.location = location
     set self.manifest-loc = manifest-loc
+    set self.include-async-methods? = include-async-methods?
     set self.exclude-unreferenced-types? = exclude-unreferenced-types?
     {construct-super name}
   }
@@ -149,6 +152,7 @@
     {generate-wsdl-code wloc,
         package-suffix = basename,
         target = sloc,
+        include-async-methods? = self.include-async-methods?,
         exclude-unreferenced-types? = self.exclude-unreferenced-types?}     
     || trial evaluation
     let package:Package =
@@ -764,6 +768,8 @@
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
   field public-get constant soap12?:bool = false
+  || parameters
+  field public-get constant include-async-methods?:bool = false
   
   {constructor public {default
                           loc:Url,
@@ -771,12 +777,15 @@
                           || variants
                           literal?:bool = true,
                           document?:bool = true,
-                          soap12?:bool = false
+                          soap12?:bool = false,
+                          || parameters
+                          include-async-methods?:bool = false
                       }
     set self.loc = loc
     set self.literal? = literal?
     set self.document? = document?
     set self.soap12? = soap12?
+    set self.include-async-methods? = include-async-methods?
     {construct-super name}
   }
   {method public {generate-tests}:void
@@ -809,10 +818,11 @@
                         
                 {suite.add 
                     {WSDLEchoTestCase name,
+                        xsd-src, {val.get-text},
                         document? = self.document?,
                         literal? = self.literal?,
                         soap12? = self.soap12?,
-                        xsd-src, {val.get-text}}}
+                        include-async-methods? = self.include-async-methods?}}
             }
         }
     }
@@ -838,6 +848,8 @@
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
   field public-get constant soap12?:bool = false
+  || parameters
+  field public-get constant include-async-methods?:bool = false
   
   {constructor public {default
                           name:String,
@@ -846,12 +858,15 @@
                           || variants
                           literal?:bool = true,
                           document?:bool = true,
-                          soap12?:bool = false}
+                          soap12?:bool = false,
+                          || parameters
+                          include-async-methods?:bool = false}
     set self.xsd-type-source = xsd-type-source
     set self.request-value-source = request-value-source
     set self.literal? = literal?
     set self.document? = document?
     set self.soap12? = soap12?
+    set self.include-async-methods? = include-async-methods?
     {construct-super name}
   } 
   || state
@@ -896,7 +911,8 @@
     || generate service package
     set self.service-package-source = {StringBuf}
     set self.service-package =
-        {make-service-package wloc, 
+        {make-service-package wloc,
+            include-async-methods? = self.include-async-methods?,
             out = self.service-package-source}
 
     || evaluate argument
@@ -961,14 +977,16 @@
 || helper functions
 {define-proc public {make-service-package 
                         loc:Url, 
-                        out:StringBuf = {StringBuf}
+                        out:StringBuf = {StringBuf},
+                        include-async-methods?:bool = false
                     }:OpenPackage
     def w = {WSDL loc}
     def package =
         {OpenPackage 
             COM.CURL.WSDK.SOAP, 
             COM.CURL.WSDK.XML-DOCUMENT-MODEL}
-    {w.dump-client-stubs out}
+    {w.dump-client-stubs out,
+        do-async? = include-async-methods?}
     {evaluate package = package, out}
     {return package}
 }

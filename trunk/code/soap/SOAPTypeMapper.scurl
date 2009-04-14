@@ -497,9 +497,9 @@
 
 
 {define-class package final TableSOAPTypeMapperKey
-  field public |#package#| constant xml-type:XMLName
-  field public |#package#| constant curl-type:Type
-  field public |#package#| constant encoding:#String
+  field package constant xml-type:XMLName
+  field package constant curl-type:Type
+  field package constant encoding:#String
   {constructor package {default
                           xml-type:XMLName,
                           curl-type:Type,
@@ -532,16 +532,16 @@
 
 || a class that users can use to install their own marshal/unmarshal routines,
 || which they will have to do to use structs
-{define-class public |#package#| sealed TableSOAPTypeMapper
+{define-class package TableSOAPTypeMapper
   {inherits SOAPTypeMapper}
 
-  field public |#package#| marshal-table:
+  field package marshal-table:
     {HashTable-of TableSOAPTypeMapperKey, SOAPTypeMapper.MarshalProc,
         key-hash-proc = table-key-hash-proc,
         key-equality-proc = table-key-equal-proc
     }
 
-  field public |#package#| unmarshal-table:
+  field package unmarshal-table:
     {HashTable-of TableSOAPTypeMapperKey, SOAPTypeMapper.UnmarshalProc,
         key-hash-proc = table-key-hash-proc,
         key-equality-proc = table-key-equal-proc
@@ -875,7 +875,7 @@
     }
     {throw-marshal-exception
         {lformat
-            "Could not find a way to marshal %s to %y.",
+            "Could not find a way to marshal %s to %s.",
             type.curl-type.name, type.xml-type
         }
     }
@@ -1256,7 +1256,7 @@
      else
         {throw-marshal-exception
             {lformat
-                "Could not find a way to marshal %s to %y.",
+                "Could not find a way to marshal %s to %s.",
                 type.curl-type.name, type.xml-type
             }
         }

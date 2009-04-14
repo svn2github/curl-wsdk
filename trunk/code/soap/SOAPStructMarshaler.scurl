@@ -907,40 +907,7 @@
             || data, handle it!
             || see if it might be the next response
             set current-field-index = previous-field-index + 1
-            || == AS IS ==
-            || ===========
-            |#
-            {if current-field-index >= field-names.size or
-                used-fields?[current-field-index] or
-                (field-names[current-field-index] != null
-                 and
-                 not {SOAPStructMarshaler.element-matches-field-name?
-                         se.element,
-                         {non-null field-names[current-field-index]},
-                         default-namespace
-                     }
-                )
-             then
-                set current-field-index = -1
-                || Nope, is it in the response list at all?
-                {for fn key i in field-names do
-                    {if (not used-fields?[i] and
-                         fn != null and
-                         {SOAPStructMarshaler.element-matches-field-name?
-                             se.element,
-                             {non-null fn},
-                             default-namespace
-                         }
-                        )
-                     then
-                        set current-field-index = i
-                        {break}
-                    }
-                }
-            }
-            #|
-            || == TO BE ==
-            || ===========
+
             let choice-element?:bool = false
             {if current-field-index >= field-names.size or
                 used-fields?[current-field-index]

@@ -144,7 +144,7 @@
   {method public open {verify-service-version}:void
     {if self.generated-using-version != wsdl-service-class-version then
         {throw-soap-exception
-            {message
+            {lmessage
                 This service package was generated using 
                 WSDL service class version {value self.generated-using-version}
                 but the current version is {value wsdl-service-class-version}

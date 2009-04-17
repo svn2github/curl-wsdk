@@ -35,9 +35,9 @@
       {XMLName WSDLSchema.schema-namespace-uri, "anyType"}
   field package generic-document-type:WSDLSchemaType
 
-  field package constant local-namespaces:{Set-of String}
-  
+  field package constant local-namespaces:{Set-of String}  
   field public constant imports:{Array-of WSDLSchemaImport}
+  field public constant namespace-imports:{Array-of WSDLSchemaNamespacePair}
   
   || imports possibly defined by "forward references"
   field public constant pending-imports:{Array-of WSDLSchemaImport}
@@ -57,6 +57,7 @@
   || - allow processing to continue after unhandled tag
   || TODO: consider finer grained categorization
   field package unexpected-tags-fatal?:bool = true
+  field package approximated-tags-reported?:bool = true
   field package ignored-tags-reported?:bool = true
   || - output diagnostic messages
   field package debug?:bool = false
@@ -116,7 +117,7 @@
     set self.imports = {{Array-of WSDLSchemaImport}}
     set self.pending-imports = {{Array-of WSDLSchemaImport}}
     set self.local-namespaces = {{Set-of String}}
-    
+    set self.namespace-imports = {{Array-of WSDLSchemaNamespacePair} }   
     set self.names = {create-name-table}
     
     || extension types
@@ -228,10 +229,7 @@
     let attribute-form-qualified?:bool = false || TODO: argument
     def target-namespace = 
         {if-non-null namespace = {node.get-attribute "targetNamespace"} then namespace
-         else
-            {output {message NOTE: anonymous namespace}}
-            ""
-        }
+         else ""}
     def element-form-qualified? =
         {if-non-null efd = {node.get-attribute "elementFormDefault"} then
             efd == "qualified"
@@ -1168,16 +1166,9 @@
                         {if e.max-occurs != 1 then
                             let element-name:XMLName = {non-null element.xml-name}
                             {WSDLSchemaArrayType 
-                                curl-namer = self.curl-namer, 
-                                
-                                || yields anonymous array-of
-                                || -- which would be preferable
-                                || -- but that loses element-name
-||--                                null,
-                                
                                 || synthesized alias
                                 {XMLName
-                                    element-name.namespace,                                    
+                                    target-namespace,
                                     "_" & element-name.local-name 
                                     & "_" & xml-name.local-name
                                     & "_" & element.type.xml-name.local-name 
@@ -1189,6 +1180,13 @@
                             }
                          else null}
                      else null}
+                || remember the array type
+                {if-non-null array-type then
+                    {self.names.set-name
+                        target-namespace,
+                        WSDLSchema.type-prefix,
+                        array-type.xml-name.local-name, array-type}
+                }
                 {checked-elements.append
                     {if-non-null array-type then
                         || repeating element
@@ -1931,6 +1929,12 @@
         }
     let constant location-attribute:String ="schemaLocation"
     let constant location:#String = {node.get-attribute location-attribute}
+
+    || note imports relationship
+    {self.namespace-imports.append
+        {WSDLSchemaNamespacePair
+            target-namespace,
+            namespace}}
     
     || prepare to load
     let constant import:WSDLSchemaImport =
@@ -1938,12 +1942,13 @@
     set import.schema = self  
     
     {if-non-null location then
+        || check multiple references
         {for i in self.imports do
             {if i.namespace == namespace and i.full-location == import.full-location then
                 || same namespace from same location
                 {if not i.loaded? then
                     {self.load-import
-                        i, target-namespace, element-form-qualified?}
+                        i, element-form-qualified?}
                 }
                 {return}
              elseif i.namespace == namespace then
@@ -1968,7 +1973,7 @@
         {if {self.known-schema? namespace} then
             set import.loaded? = true
          else
-            {self.load-import import, target-namespace, element-form-qualified?}
+            {self.load-import import, element-form-qualified?}
         }
      else
         || note unresolved namespace, in case its defined later
@@ -1990,12 +1995,11 @@
     let constant i:WSDLSchemaImport =
         {WSDLSchemaImport target-namespace, location, node}
     set i.schema = self
-    {self.load-import i, target-namespace, element-form-qualified?}
+    {self.load-import i, element-form-qualified?}
   }
 
   {method private {load-import
                       import:WSDLSchemaImport,
-                      target-namespace:String,
                       element-form-qualified?:bool
                   }:void
     let constant handler:WSDLDOMHandler =
@@ -2154,7 +2158,7 @@
         {WSDLSyntaxException node,
             {hlmessage Approximated as 'anyType': '{WSDLSchema.format-name node}'}}
 
-    {if self.ignored-tags-reported? then
+    {if self.approximated-tags-reported? then
         {output e.message}
     }
   }
@@ -2166,7 +2170,11 @@
         {WSDLSyntaxException node,
             {hlmessage Ignored '{WSDLSchema.format-name node}'}}
 
-    {if self.ignored-tags-reported? then
+    def ignored-annotation-reported? = false
+    {if self.ignored-tags-reported? and
+        (ignored-annotation-reported? or
+         not {self.schema-tag-match node.name, "annotation"})
+     then
         {output e.message}
     }
   }
@@ -2298,72 +2306,6 @@
     }
     {return false}
   }
-
-  || code generation
-  || --------------------
-  {method public open {ordered-types
-                      }:{Array-of WSDLSchemaType}
-    def types = {{Array-of WSDLSchemaType}}
-    {for x key k in self.names do
-        {type-switch x
-         case t:WSDLSchemaType do
-            def ns = k.namespace
-            {if || user defined type
-                not {WSDLSchema.known-namespaces.member? ns}
-             then
-                {types.append t}}}}
-    {types.sort comparison-proc =
-        {fn x, y =>
-            {x.ref-name.compare y.ref-name} <= 0}
-    }
-    {return types}
-  }
-  {method public open {generate-types
-                          out:TextOutputStream
-                      }:void
-    || NOTE: using top-node for namespace-declarations
-    || - better maintain ns<->prefix mapping explicitly
-    def format-name =
-        {proc {name:XMLName}:String
-            def node = self.top-node
-            {return
-                {WSDLSchema.format-name node, name = name}}}
-    let ns-index:int = 1
-    def prefix-for =
-        {{Memoizer-of String, String}
-            {proc {ns:String}:String
-                def node = self.top-node
-                let p:String = {node.get-namespace-prefix ns}
-                {if p.empty? then
-                    {while true do
-                        set p = {format "NS%02d", ns-index}
-                        def ns? = {node.get-namespace-uri p}.empty?
-                        {if ns? then
-                            {break}}
-                    }}
-                {return p}}}
-
-    def types = {self.ordered-types}
-    def ns = {StringArray}
-    {for t in types do
-        def n = t.xml-name.namespace
-        {if {ns.find n} < 0 then
-            {ns.append n}}}
-    
-    {for n in ns do
-        def p = prefix-for[n]
-        {format out = out,
-            "\n\|\| %s [%s]\n\|\| ==========\n",
-            p, n}
-        {for t in types do
-            {if t.xml-name.namespace != n then
-                {continue}}
-            {format out = out,
-                "\n\|\| %s.scurl\n\|\| ----------\n",
-                t.ref-name}
-            {t.dump out}
-        }}
-  }
     
   || debugging support
   || --------------------
@@ -2457,6 +2399,10 @@
         }
   }
 }
+
+{def public WSDLSchemaNamespacePair =
+    {Tuple2-of String, String}
+}
 || predefined names
 || --------------------
 {define-proc package {extend-name-table
@@ -2490,7 +2436,7 @@
         }
 
     || FIXME: should this be derived from the builtin-xml-type-to-curl-type-mapper instead?
-    || FIXME: should this be a document type instead? ||### YES
+    || FIXME: should this be a document type instead? || ### YES
 ||--    {bootstrap-schema-type "anyType", "any", false, SOAPTypeMultipleReference.unknown}
     
     {bootstrap-schema-type "anySimpleType", "any", false, SOAPTypeMultipleReference.unknown}

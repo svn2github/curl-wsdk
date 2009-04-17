@@ -112,7 +112,7 @@
             {if i > 0 and c == '_' then
                 set buf[i] = '-'}}
         || if method/proc, turn capitalized words into - seperated words
-        || if class, use KrazyKaps
+        || if class, use CamelCase (aka KrazyKaps)
         {if curl-type == "method" or
             curl-type == "proc" or
             curl-type == "getter" or
@@ -142,6 +142,15 @@
          else
             {output {hlmessage WSDLCurlNamer unrecognized curl-type: {value curl-type}}}
         }
+     else
+        || keep value and type namespaces distinct
+        || - types start uppercase
+        || - values start lowercase
+        def ensure-case =
+            {switch curl-type
+             case "class" do char-upcase
+             else char-downcase}
+        set buf[0] = {ensure-case buf[0]}
     }
 
     || NOTE: anonymous types (for elements) got special prefix 
@@ -164,7 +173,7 @@
             {buf.to-String}
          else
             local-name
-        }
+        }    
     || FIXME: these uniqifiers use - as a seperator, which is not ideal
     || for class names, those should use Capitalized words instead.
     let (used?:bool, conflict:String) = 

@@ -23,8 +23,8 @@
                           response-headers:HttpResponseHeaders
                       }
 
-    def mr = {MultipartMessageReader stream, response-headers}
-    set self.message = {mr.read-message}
+    def mr = {MultipartMessageReader response-headers}
+    set self.message = {mr.read-message stream}
   }
 
   {method public open {get-root-stream}:ByteInputStream

@@ -20,160 +20,130 @@
   field public constant character-encoding:CharEncoding
   field private content-id-generator:ContentIDGenerator = {ContentIDGenerator}
 
-  field private refs:{HashTable-of String, any} = {{HashTable-of String, any}}
-  field private ref-index:{Array-of String} = {{Array-of String}}
-
   {constructor public {default
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          character-encoding:CharEncoding = CharEncoding.utf8,
-                          arguments:{Array-of any},
-                          argument-types:{Array-of SOAPObjectType}
+                          character-encoding:CharEncoding = CharEncoding.utf8
                       }
     set self.soap-version = soap-version
     set self.character-encoding = character-encoding
-    {self.generate-refs arguments, argument-types}
   }
 
-  || TODO: in the case that self.refs is empty?
+  {method public open {publish-id}:String
+    {return {self.content-id-generator.get-content-id}}
+  }
+
   {method public open {get-marshal-context}:SOAPMarshalContext
     def context = {DefaultSOAPMarshalContext
-                      soap-version = self.soap-version,
-                      supports-mtom? = true
+                      soap-version = self.soap-version
                   }
-    {for obj key id in self.refs do
-        {context.set-id obj, id}
-    }
+    {context.register-mtom-writer self}
     {return context}
   }
 
   {method public open {get-request-data}:SOAPMTOMRequestData
     def req-data = {SOAPMTOMRequestData
-                       soap-version = SOAPVersion.soap-1-1, || TODO:
+                       soap-version = self.soap-version,
                        start = {self.content-id-generator.get-root-content-id}
                    }
-    {self.fill-in-root-mime-headers req-data}
-    {self.fill-in-attachments req-data}
+    {req-data.append
+        {MIMEPart
+            {self.get-mime-header
+                {format |"%s; charset=%s; type="%s""|,
+                    SOAPMTOMRequestData.xop-type,
+                    {char-encoding-to-http-charset self.character-encoding},
+                    req-data.start-info
+                },
+                {self.get-content-transfer-encoding},
+                {if-non-null start = req-data.start then
+                    start
+                 else
+                    {self.content-id-generator.get-root-content-id}
+                }
+            },
+            {{Array-of byte}}
+        }
+    }
     {return req-data}
   }
 
-  {method protected open {fill-in-root-mime-headers
-                             req-data:SOAPMTOMRequestData
-                         }:void
-    def bos = {{ByteOutputStream-into ByteArray}
-                  req-data.root-mime-headers
-              }
-    {try
-        def mw = {MultipartMessageWriter
-                     bos,
-                     multipart-boundary = req-data.multipart-boundary
-                 }
-        {self.write-content
-            mw,
-            {format |"%s; charset=%s; type="%s""|,
-                SOAPMTOMRequestData.xop-type,
-                {char-encoding-to-http-charset self.character-encoding},
-                req-data.start-info
-            },
-            {switch self.character-encoding
-             case CharEncoding.utf8 do
-                "8bit"
-             else
-                "7bit"
-            },
-            {if-non-null start = req-data.start then
-                start
-             else
-                {self.content-id-generator.get-root-content-id}
-            }
-        }
-     finally
-        {if bos.open? then
-            {bos.close}
+  {method private {get-content-transfer-encoding}:String
+    || TODO: impl
+    {return
+        {switch self.character-encoding
+         case CharEncoding.utf8 do
+            "8bit"
+         else
+            "7bit"
         }
     }
   }
 
-  {method protected open {fill-in-attachments
-                             req-data:SOAPMTOMRequestData       
-                         }:void
-    def bos = {{ByteOutputStream-into ByteArray}
-                  req-data.attachments
-              }
-    {try
-        def mw = {MultipartMessageWriter
-                     bos,
-                     multipart-boundary = req-data.multipart-boundary
-                 }
-        {for cid in self.ref-index do
-            {self.write-content
-                mw,
-                "application/octet-stream",
-                "binary",
-                cid
-            }
-            {mw.write-body
-                self.refs[cid] asa ByteArray}
-        }
-        {mw.end-multipart-message}
-     finally
-        {if bos.open? then
-            {bos.close}
-        }
-    }
-  }
-
-  {method private {write-content
-                      mw:MultipartMessageWriter,
+  {method private {get-mime-header
                       type:String,
                       transfer-encoding:String,
                       id:String
-                  }:void
-    {mw.insert-multipart-boundary}
-    {mw.write-header "Content-Type", type}
-    {mw.write-header "Content-Transfer-Encoding", transfer-encoding}
-    {mw.write-header "Content-ID", {format "<%s>", id}}
-    {mw.end-line}
-  }
-
-  {method private {generate-refs
-                      arguments:{Array-of any},
-                      argument-types:{Array-of SOAPObjectType}
-                  }:void
-    {for at key i in argument-types do
-        {if (at.xml-type == SOAPTypeMapper.xml-schema-base64-binary-type or
-            at.xml-type == SOAPTypeMapper.xml-schema-hex-binary-type) and
-            at.curl-type == ByteArray
-         then
-            def content-id = {self.content-id-generator.get-content-id}
-            set self.refs[content-id] = arguments[i]
-            {self.ref-index.append content-id}
+                  }:HttpHeaders
+    {return
+        {HttpHeaders
+            "Content-Type", type,
+            "Content-Transfer-Encoding", transfer-encoding,
+            "Content-ID", {format "<%s>", id}
         }
     }
   }
 
+  {method public open {append-attachment
+                          req-data:SOAPMTOMRequestData,
+                          content-id:String,
+                          expected-content-types:#String,
+                          val:{Array-of byte}
+                      }:void
+    {req-data.append
+        {MIMEPart
+            {self.get-mime-header
+                {if-non-null ct = expected-content-types then
+                    || TODO: Handle expected-content-types.
+                    ||       This should not be used as is.
+                    ct
+                 else
+                    "application/octet-stream"
+                },
+                "binary",
+                content-id
+            },
+            val
+        }
+    }
+  }
+  
   {define-proc package {write-xop-element
                            stream:XMLOutputStream,
-                           value:any,
+                           val:ByteArray,
+                           type:SOAPObjectType,
                            marshal-context:SOAPMarshalContext
-                       }:bool
-    {if-non-null id = {marshal-context.get-id value} then
-        {stream.write-one
-            {XMLStartElement SOAPMTOMRequestData.xop-include-name}}
+                       }:void
+    {if-non-null ct = type.expected-content-types then
+        || TODO: Handle expected-content-types
         {stream.write-one
             {XMLAttribute
-                marshal-context.reference-attribute-name,
-                {format "cid:%s", id}
-            }
-        }
-        {stream.write-one {XMLEndElement}}
-        {return true}
+                SOAPMTOMRequestData.xmime-content-type-name, ct}}
     }
-    {return false}
+    
+    def id = {marshal-context.register-bytes val, type}
+    {stream.write-one
+        {XMLStartElement SOAPMTOMRequestData.xop-include-name}}
+    {stream.write-one
+        {XMLAttribute
+            marshal-context.reference-attribute-name,
+            {format "cid:%s", id}
+        }
+    }
+    {stream.write-one {XMLEndElement}}
   }
 }
 
 {define-class public open SOAPMTOMRequestData
-  {inherits SOAPHTTPRPCPostCallerRequestData}
+  {inherits SOAPHTTPRPCPostCallerRequestData, MultipartMessage}
 
   let public constant mtom-type:String = "multipart/related"
   let public constant xop-type:String = "application/xop+xml"
@@ -181,9 +151,9 @@
       "http://www.w3.org/2004/08/xop/include"
   let public constant xop-include-name:XMLName =
       {XMLName SOAPMTOMRequestData.xop-namespace-uri, "Include"}
+  let public constant xmime-content-type-name:XMLName =
+      {XMLName "http://www.w3.org/2005/05/xmlmime", "contentType"}
 
-  field public constant root-mime-headers:ByteArray
-  field public constant attachments:ByteArray
   field public constant soap-version:SOAPVersion
 
   field public constant start:#String
@@ -196,8 +166,6 @@
                               {MultipartMessageWriter.random-multipart-boundary},
                           start:#String = null
                       }
-    set self.root-mime-headers = {ByteArray}
-    set self.attachments = {ByteArray}
     set self.soap-version = soap-version
     set self.start-info = {switch self.soap-version
                            case SOAPVersion.soap-1-1 do
@@ -213,15 +181,19 @@
         self.multipart-boundary,
         start = self.start
     }
-    {construct-super SOAPMTOMRequestData.mtom-type}
+    {construct-super.SOAPHTTPRPCPostCallerRequestData
+        SOAPMTOMRequestData.mtom-type}
+    {construct-super.MultipartMessage}
   }
 
   {method public open {request-data}:{Array-of byte}
-    def mtom-msg = {ByteArray}
-    {mtom-msg.concat self.root-mime-headers}
-    {mtom-msg.concat {super.request-data}}
-    {mtom-msg.concat self.attachments}
-    {return mtom-msg}
+    def bos = {ByteArrayOutputStream self.request-data-bytes}
+    def mw = {MultipartMessageWriter
+                 || char-encoding
+                 multipart-boundary = self.multipart-boundary
+             }
+    {mw.write-message bos, self}
+    {return self.request-data-bytes}
   }
 
   {method protected open {add-mtom-parameters
@@ -271,4 +243,11 @@
                  self.base-content-id, idx}
     {return id}
   }
+}
+
+{define-enum public SOAPMTOMSupportRange
+    non,
+    request,
+    response,
+    both
 }

@@ -1,0 +1,403 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open MultipartMessageReader {inherits EventTarget}
+
+  field private headers:HttpHeaders
+  field private _content-type:#String
+  field private _boundary:#String
+  field private _boundary-bytes:#ByteArray
+  field private _final-boundary-bytes:#ByteArray
+  field private _character-encoding:CharEncoding
+
+  {constructor public {default
+                          headers:HttpResponseHeaders,
+                          character-encoding:CharEncoding = CharEncoding.utf8
+                      }
+    set self.headers = headers
+    set self._character-encoding = character-encoding
+||--    {self.verify-multipart}
+  }
+
+  {getter public open {content-type}:String
+    {if self._content-type == null then
+        {if-non-null ct = self.headers.content-type then
+            set self._content-type = ct
+         else
+            {error "No Content-Type"}
+        }
+    }
+    {return {non-null self._content-type}}
+  }
+
+  {getter public open {character-encoding}:CharEncoding
+    {return self._character-encoding}
+  }
+
+  {setter public open {chacter-encoding ce:CharEncoding}:void
+    set self._character-encoding = ce
+    set self._boundary-bytes = null
+  }
+  
+  {getter private {boundary}:String
+||--    ||----------------- FOR TEST -----------------------
+||--    {return "----=_Part_0_25211438.1236728210453"}
+||--    ||--------------------------------------------------
+    {if self._boundary == null then
+        def boundary = {HttpHeaders.get-parameter
+                           self.content-type,
+                           "boundary"
+                       }
+        {if-non-null b = boundary then
+            set self._boundary = b
+         else
+            {error "No boundary"}
+        }
+    }
+    {return {non-null self._boundary}}
+  }
+
+  {setter private {boundary val:#String}:void
+    set self._boundary = val
+    set self._boundary-bytes = null
+    set self._final-boundary-bytes = null
+  }
+
+  {getter private {boundary-bytes}:ByteArray
+    {if self._boundary-bytes == null then
+        set self._boundary-bytes =
+            {encode-string
+||--                {format "\r\n--%s\r\n", self.boundary}, ||""
+                {format "--%s\r\n", self.boundary}, ||""
+                character-encoding = self.character-encoding
+            }
+    }
+    {return {non-null self._boundary-bytes}}
+  }
+
+  {getter private {final-boundary-bytes}:ByteArray
+    {if self._final-boundary-bytes == null then
+        set self._final-boundary-bytes =
+            {encode-string
+||--                {format "\r\n--%s--", self.boundary}, ||""
+                {format "--%s--", self.boundary}, ||""
+                character-encoding = self.character-encoding
+            }
+    }
+    {return {non-null self._final-boundary-bytes}}
+  }
+
+  {method public open {read-message
+                          stream:ByteInputStream,
+                          close-stream?:bool = true
+                      }:(message:MultipartMessage,
+                         response-headers:HttpHeaders)
+    let eof?:bool = false
+    let see-end?:bool = false
+    {while not eof? do
+        def (bytes, num-read) =
+            {stream.read allow-short-read? = true}
+        {if num-read == -1 then
+            set eof? = true
+            {break}
+        }
+        set see-end? = {self.derive-mime-parts bytes}
+    }
+    {if not see-end? then
+        {error {lmessage Unexpected end}}
+    }
+    {if close-stream? and stream.open? then
+        {stream.close}
+    }
+
+    def message = {MultipartMessage}
+    {for b key i in self.bodies do
+        {message.append {MIMEPart self.mheaders[i], b}}
+    }
+    {return message, self.headers}
+  }
+
+  {method public open {async-read-message
+                          stream:ByteInputStream,
+                          close-stream?:bool = true
+                      }:void
+    let see-end?:bool = false
+    {stream.async-read
+        partial? = true,
+        {on e:AsyncStreamReadEvent do
+            {if-non-null exception = e.exception then
+                {self.enqueue-event
+                    {MultipartReadEvent exception, false, null}}
+                {if stream.open? then
+                    {stream.close}
+                }
+             else
+                {if e.canceled? then
+                    {self.enqueue-event
+                        {MultipartReadEvent null, true, null}}
+                 elseif e.done? then
+                    {if not see-end? then
+                        {error {lmessage Unexpected end}}
+                    }
+                    {if close-stream? and stream.open? then
+                        {stream.close}
+                    }
+                    def message = {MultipartMessage}
+                    {for b key i in self.bodies do
+                        {message.append {MIMEPart self.mheaders[i], b}}
+                    }
+                    {self.enqueue-event
+                        {MultipartReadEvent
+                            null,
+                            false,
+                            message
+                        }
+                    }
+                 else
+                    set see-end? =
+                        {self.derive-mime-parts (e.data asa ByteArray)}
+                }
+            }
+        }
+    }
+  }
+
+  field private stored-decoding:ByteArray = {ByteArray}
+  field private saved-bytes:ByteArray = {ByteArray}
+  field private compare-index:int = 0
+  field private first?:bool = true
+  {method private {derive-mime-parts bytes:ByteArray}:bool
+    let see-end?:bool = false
+    {for b key i in bytes do
+        {if {self.boundary-bytes.in-bounds? self.compare-index} and
+            self.boundary-bytes[self.compare-index] == b
+         then
+            {if self.compare-index >= self.boundary-bytes.size - 1 then
+                {if self.first? then
+                    set self.first? = false
+                 else
+                    {self.bodies.append self.stored-decoding}
+                }
+                set self.stored-decoding = {ByteArray}
+                set self.compare-index = 0
+                {self.saved-bytes.clear}
+                set self.processing-header? = true
+             else
+                {inc self.compare-index}
+                {self.saved-bytes.append b}
+            }
+
+         elseif self.final-boundary-bytes[self.compare-index] == b then
+            {if self.compare-index >=
+                self.final-boundary-bytes.size - 1
+             then
+                {self.bodies.append self.stored-decoding}
+                set self.compare-index = 0
+                {self.saved-bytes.clear}
+                set see-end? = true
+                {break}
+             else
+                {inc self.compare-index}
+                {self.saved-bytes.append b}
+            }
+         else
+            {if self.compare-index != 0 then
+                set self.compare-index = 0
+                {for sb in self.saved-bytes do
+                    {self.decode-byte sb}
+                }
+                {self.saved-bytes.clear}
+                {if self.boundary-bytes[self.compare-index] == b then
+                    {inc self.compare-index}
+                    {self.saved-bytes.append b}
+                    {continue}
+                }
+            }
+            {self.decode-byte b}
+        }
+    }
+    {return see-end?}
+  }
+
+  field private constant seperator:ByteArray =
+      {encode-string "\r\n", character-encoding = CharEncoding.utf8}
+  field private seperate-index:int = 0
+  field private break-count:int = 0
+  field private saved-decoding:ByteArray = {ByteArray}
+  field private processing-header?:bool = true
+  field private mheaders:{Array-of HttpHeaders} = {{Array-of HttpHeaders}}
+  field private bodies:{Array-of ByteArray} = {{Array-of ByteArray}}
+  {method private inline {decode-byte b:byte}:void
+    {if not self.processing-header? then
+        {self.stored-decoding.append b}
+        {return}
+    }
+    {if b == self.seperator[self.seperate-index] then
+        {if self.seperate-index == self.seperator.size - 1 then
+            set self.seperate-index = 0
+            {inc self.break-count}
+         else
+            {inc self.seperate-index}
+        }
+        {self.saved-decoding.append b}
+     else
+        {if self.seperate-index != 0 then
+            set self.seperate-index = 0
+            {self.stored-decoding.concat self.saved-decoding}
+            {self.saved-decoding.clear}
+        }
+        {if self.break-count > 1 then
+            {self.mheaders.append {self.read-header self.stored-decoding}}
+            {self.stored-decoding.clear}
+            {self.saved-decoding.clear}
+            set self.break-count = 0
+            set self.seperate-index = 0
+            set self.processing-header? = false
+            {if b == self.seperator[self.seperate-index] then
+                {inc self.seperate-index}
+                {self.saved-decoding.append b}
+             else
+                {self.stored-decoding.append b}
+            }
+         else
+            {if not self.saved-decoding.empty? then
+                {self.stored-decoding.concat self.saved-decoding}
+                {self.saved-decoding.clear}
+            }
+            set self.break-count = 0
+            {self.stored-decoding.append b}
+        }
+    }
+  }
+
+  {method private {read-header ba:ByteArray}:HttpHeaders
+    let (num:int, str:String) = {decode-characters
+                                    ba.underlying-FastArray,
+                                    self.character-encoding
+                                }
+    let idx:int = 0
+    let last-key:String = ""
+    def headers = {HttpHeaders}
+    {while idx != -1 do
+        set idx = {str.find-string "\r\n"}
+
+        let header-field:String = ""
+        {if idx != -1 then
+            set header-field = {str.substr 0, idx}
+            set str = {str.tail idx + 2}
+         else
+            set header-field = str
+        }
+        {if not header-field.empty? then
+            {if {header-field.prefix? " "} then
+                {self.add-to-exist-header headers,
+                    last-key, header-field, CharClass.whitespace-chars}
+             elseif {header-field.prefix? "\t"} then
+                {self.add-to-exist-header headers,
+                    last-key, header-field, '\t'}
+             else
+                def (key,val) = {HttpHeaders.parse-header-field
+                                    header-field
+                                }
+                set headers[key] = val
+                set last-key = key
+            }
+        }
+    }
+    {return headers}
+  }
+
+  {method private {add-to-exist-header
+                      headers:HttpHeaders,
+                      key:String,
+                      val:String,
+                      trim-chars:CharClass
+                  }:void
+    {if not key.empty? then
+        def trimmed-val = {val.trim-left-clone
+                              trim-chars = trim-chars}
+        set headers[key] = headers[key] & trimmed-val
+     else
+        {error {lmessage Invalid header format}}
+    }
+  }
+
+||--  {method private {get-boundary bytes:ByteArray}:String
+||--    def (n, c) = {decode-characters
+||--                     bytes.underlying-FastArray,
+||--                     self.character-encoding
+||--                 }
+||--    def start-idx = {c.find-string "--"}
+||--    {if start-idx != -1 then
+||--        def bs-idx = start-idx + 2
+||--        def end-idx = {c.find-string "\r\n", starting-index = start-idx}
+||--        {return {c.substr bs-idx , end-idx - bs-idx}}
+||--    }
+||--    {error "No boundary"}
+||--  }
+
+  {method private {verify-multipart}:void
+    {if not {self.content-type.prefix? "multipart"} then
+        {error "non-multipart message"}
+    }
+  }
+}
+
+{define-proc package inline {encode-string
+                                in:String,
+                                character-encoding:CharEncoding =
+                                    CharEncoding.utf8
+                            }:{Array-of byte}
+    def out =
+        {ByteVec
+            max-size =
+                character-encoding.transcode-max-expansion-factor * in.size}
+    {encode-characters in, out, character-encoding}
+    {return {{Array-of byte}.from-FastArray out}}
+}
+
+
+{define-class public open MultipartReadEvent
+  {inherits AsyncWorkEvent}
+
+  field private constant _exception:#Exception
+  field private constant _canceled?:bool
+  field private constant _message:#MultipartMessage
+
+  {constructor public {default 
+                          exception:#Exception,
+                          canceled?:bool,
+                          message:#MultipartMessage
+                      }
+    set self._exception = exception
+    set self._canceled? = canceled?
+    set self._message = message
+  }
+
+  {getter public open {exception}:#Exception
+    {return self._exception}
+  }
+
+  {getter public open {canceled?}:bool
+    {self.check-exception}
+    {return self._canceled?}
+  }
+
+  {getter public open {message}:#MultipartMessage
+    {self.check-exception}
+    {return self._message}
+  }
+}

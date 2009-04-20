@@ -75,6 +75,8 @@
   }
   field public constant nillable?:bool
 
+  field public constant expected-content-types:#String
+
   {doc-next
     {purpose
         Indicates that this type represents a choice between the specified elements.
@@ -126,7 +128,8 @@
                       multiple-reference:SOAPTypeMultipleReference =
                           SOAPTypeMultipleReference.unknown,
                       nillable?:bool = false,
-                      choice-elements:#{Set-of XMLName} = null
+                      choice-elements:#{Set-of XMLName} = null,
+                      expected-content-types:#String = null
                   }:SOAPObjectType
     || instances are interned so pointer-equal? --> value-equal? 
     let key:SOAPObjectType = 
@@ -136,7 +139,9 @@
             curl-type = curl-type,
             multiple-reference = multiple-reference, 
             nillable? = nillable?,
-            choice-elements = choice-elements}   
+            choice-elements = choice-elements,
+            expected-content-types = expected-content-types}   
+
     let (interned:SOAPObjectType, interned?:bool) =
         {SOAPObjectType.interned.get-member-if-exists key} 
     {return
@@ -154,7 +159,8 @@
                            multiple-reference:SOAPTypeMultipleReference =
                                SOAPTypeMultipleReference.unknown,
                            nillable?:bool = false,
-                           choice-elements:#{Set-of XMLName} = null
+                           choice-elements:#{Set-of XMLName} = null,
+                           expected-content-types:#String = null
                        }
     set self.element-name = element-name
     set self.xml-type = xml-type
@@ -162,6 +168,7 @@
     set self.multiple-reference = multiple-reference
     set self.nillable? = nillable?
     set self.choice-elements = choice-elements
+    set self.expected-content-types = expected-content-types
   }
 
   let package constant interned:SOAPObjectTypeSet = {SOAPObjectTypeSet}
@@ -181,6 +188,7 @@
         in {param object-type}.
     }
   }
+
   {factory public {clone-with
                       object-type:SOAPObjectType,
                       element-name:#XMLName = null,
@@ -189,7 +197,8 @@
                       multiple-reference:SOAPTypeMultipleReference =
                           SOAPTypeMultipleReference.unknown,
                       nillable?:bool = false,
-                      choice-elements:#{Set-of XMLName} = null
+                      choice-elements:#{Set-of XMLName} = null,
+                      expected-content-types:#String = null
                   }:SOAPObjectType
     def type =
         {SOAPObjectType
@@ -228,6 +237,12 @@
                     choice-elements
                  else
                     object-type.choice-elements
+                },
+            expected-content-types =
+                {if {keyword-supplied? expected-content-types} then
+                    expected-content-types
+                 else
+                    object-type.expected-content-types
                 }
         }
     {return type}
@@ -386,7 +401,12 @@
             },
             {value-hash self.multiple-reference},
             {value-hash self.nillable?},
-            choice-hash
+            choice-hash,
+            {if-non-null ect = self.expected-content-types then
+                {value-hash ect}
+             else
+                0x8000
+            }
         }
     }
 }
@@ -401,6 +421,7 @@
         self.curl-type == other.curl-type and
         self.multiple-reference == other.multiple-reference and
         self.nillable? == other.nillable? and
+        self.expected-content-types == self.expected-content-types and
         {if-non-null choice-elements = self.choice-elements then
             {if-non-null other-choice-elements = other.choice-elements then
                 {choice-elements.equal? other-choice-elements}

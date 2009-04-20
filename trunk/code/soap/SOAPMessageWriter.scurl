@@ -409,6 +409,10 @@
             {new XMLAttribute,
                 {XMLName.unchecked "", "xmlns:xsd"},
                 SOAPTypeMapper.xml-schema-uri
+            },
+            {new XMLAttribute,
+                {XMLName.unchecked "", "xmlns:xmime"},
+                SOAPMTOMRequestData.xmime-content-type-name.namespace
             }
         }
     {stream.write canned-namespace-attributes}

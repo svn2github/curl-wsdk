@@ -1804,16 +1804,13 @@
                }:(worked?:bool)
     {marshal-type-check type}
     {if marshal-context.supports-mtom? then
-        def worked? = {SOAPMTOMMessageWriter.write-xop-element
-                          stream,
-                          value,
-                          marshal-context
-                      }
-        {if worked? then
-            {return true}
-         else
-            {error {lmessage Content-ID not found}}
+        {SOAPMTOMMessageWriter.write-xop-element
+            stream,
+            value asa ByteArray,
+            type,
+            marshal-context
         }
+        {return true}
     }
     let constant null?:bool = {type-of value} == Null
     {if write-type-attribute? then

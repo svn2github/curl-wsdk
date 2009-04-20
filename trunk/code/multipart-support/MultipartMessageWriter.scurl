@@ -1,0 +1,284 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open MultipartMessageWriter {inherits EventTarget}
+
+  field private _character-encoding:CharEncoding
+  field private _boundary:#String
+  field private _boundary-bytes:#{Array-of byte}
+  field private _final-boundary-bytes:#{Array-of byte}
+  field private _cr-lf-bytes:#{Array-of byte}
+
+  {constructor public {default
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          multipart-boundary:#String = null
+                      }
+    set self._character-encoding = character-encoding
+    {if-non-null mb = multipart-boundary then
+        set self._boundary = mb
+    }
+  }
+
+  {getter public open {character-encoding}:CharEncoding
+    {return self._character-encoding}
+  }
+
+  {setter private {character-encoding val:CharEncoding}:void
+    {if self._character-encoding != val then
+        set self._character-encoding = val
+        set self._boundary-bytes = null
+        set self._final-boundary-bytes = null
+        set self._cr-lf-bytes = null
+    }
+  }
+
+  {getter public open {boundary}:String
+    {if self._boundary == null then
+        set self._boundary =
+            {MultipartMessageWriter.random-multipart-boundary}
+    }
+    {return {non-null self._boundary}}
+  }
+
+  {getter private {boundary-bytes}:{Array-of byte}
+    {if self._boundary-bytes == null then
+        set self._boundary-bytes =
+            {encode-string
+||--                {format "\r\n--%s\r\n", self.boundary}, ||""
+                {format "--%s\r\n", self.boundary}, ||""
+                character-encoding = self.character-encoding}} 
+    {return {non-null self._boundary-bytes}}
+  }
+
+  {getter private {final-boundary-bytes}:{Array-of byte}
+    {if self._final-boundary-bytes == null then
+        set self._final-boundary-bytes =
+            {encode-string
+                {format "\r\n--%s--", self.boundary}, ||""
+                character-encoding = self.character-encoding}}
+    {return {non-null self._final-boundary-bytes}}
+  }
+
+  {getter private {cr-lf-bytes}:{Array-of byte}
+    {if self._cr-lf-bytes == null then
+        set self._cr-lf-bytes =
+            {encode-string "\r\n",
+                character-encoding = self.character-encoding}}
+    {return {non-null self._cr-lf-bytes}}
+  }
+
+  {method public open {write-message
+                          stream:ByteOutputStream,
+                          message:MultipartMessage,
+                          character-encoding:CharEncoding =
+                              self.character-encoding,
+                          close-stream?:bool = true
+                      }:void
+    set self.character-encoding = character-encoding
+    {for part key i in message do
+        {self.write-mime-part
+            stream, part, with-new-line? = (i != 0)}
+    }
+    {self.write-to-stream
+        stream, self.final-boundary-bytes}
+    {if close-stream? and stream.open? then
+        {stream.close}
+    }
+  }
+
+  || need this method?
+  {method public open {async-write-message
+                          stream:ByteOutputStream,
+                          message:MultipartMessage,
+                          character-encoding:CharEncoding =
+                              self.character-encoding,
+                          close-stream?:bool = true
+                      }:void
+    set self.character-encoding = character-encoding
+    def encoder = {MultipartMessageEncoder
+                      self.character-encoding,
+                      self.boundary-bytes,
+                      self.final-boundary-bytes
+                  }
+    {stream.async-write
+        {encoder.encode-message message},
+        partial? = true,
+        {on e:AsyncStreamWriteEvent do
+            {self.enqueue-event
+                {MultipartWriteEvent
+                    e.exception,
+                    e.canceled?,
+                    e.done?,
+                    e.data-written,
+                    e.total-data-written
+                }
+            }
+            {if close-stream? and
+                stream.open? and
+                (e.exception != null or e.done?)
+             then
+                {stream.close}
+            }
+        }
+    }
+  }
+
+  {method protected open {write-mime-part
+                             stream:ByteOutputStream,
+                             part:MIMEPart,
+                             with-new-line?:bool = true
+                         }:void
+    {if with-new-line? then
+        {self.write-to-stream stream, self.cr-lf-bytes}
+    }
+    {self.write-to-stream stream, self.boundary-bytes}
+    {if-non-null headers = part.headers then
+        {self.write-headers stream, headers}
+    }
+    {self.write-to-stream stream, self.cr-lf-bytes}
+    {self.write-to-stream stream, part.body}
+  }
+  
+  {method protected open {write-headers
+                             stream:ByteOutputStream,
+                             headers:HttpHeaders
+                         }:void
+    def buf = {StringBuf}
+    {for val key keyword in headers do
+        {buf.concat {format "%s: %s\r\n", keyword, val}}
+    }
+    {self.write-to-stream
+        stream,
+        {encode-string
+            {buf.to-String},
+            character-encoding = self.character-encoding}}
+  }
+
+  {method protected open {write-to-stream
+                             stream:ByteOutputStream,
+                             content:{Array-of byte}
+                         }:void
+    {try
+        {stream.write content}
+     catch ex:Exception do
+        {if stream.open? then
+            {stream.close}
+        }
+        {throw ex}
+    }
+  }
+
+  {define-proc public {random-multipart-boundary}:String
+    let r:Random = {Random}
+    {return
+        {format "SEPARATOR%x-%x", ||""
+            {r.next-non-negative-int32},
+            {r.next-non-negative-int32}
+        }
+    }
+  }
+}
+{define-class public open MultipartMessageEncoder
+  field public character-encoding:CharEncoding
+  field public boundary-bytes:{Array-of byte}
+  field public final-boundary-bytes:{Array-of byte}
+
+  {constructor public {default
+                          character-encoding:CharEncoding,
+                          boundary-bytes:{Array-of byte},
+                          final-boundary-bytes:{Array-of byte}
+                      }
+    set self.character-encoding = character-encoding
+    set self.boundary-bytes = boundary-bytes
+    set self.final-boundary-bytes = final-boundary-bytes
+  }
+  
+  {method public open {encode-message
+                             message:MultipartMessage
+                         }:{Array-of byte}
+    def bytes = {{Array-of byte}}
+    {for part in message do
+        {bytes.concat {self.encode-mime-part part}}
+    }
+    {bytes.concat self.final-boundary-bytes}
+    {return bytes}
+  }
+
+  {method public open {encode-mime-part part:MIMEPart}:{Array-of byte}
+    def bytes = {{Array-of byte}}
+    {bytes.concat self.boundary-bytes}
+    {if-non-null headers = part.headers then
+        {bytes.concat
+            {self.encode-headers headers}}
+    }
+    {bytes.concat
+        {encode-string "\r\n",
+            character-encoding = self.character-encoding}
+    }
+    {bytes.concat part.body}
+    {return bytes}
+  }
+
+  {method public open {encode-headers
+                             headers:HttpHeaders
+                         }:{Array-of byte}
+    def buf = {StringBuf}
+    {for val key keyword in headers do
+        {buf.concat {format "%s: %s\r\n", keyword, val}}
+    }
+    {return
+        {encode-string
+            {buf.to-String},
+            character-encoding = self.character-encoding}}
+  }
+}
+{define-class public open MultipartWriteEvent
+  {inherits AsyncWorkEvent}
+
+  field private constant _exception:#Exception
+  field private constant _canceled?:bool
+  field private constant _done?:bool
+  field public constant data-written:int
+  field public constant total-data-written:int
+
+  {constructor public {default 
+                          exception:#Exception,
+                          canceled?:bool,
+                          done?:bool,
+                          data-written:int,
+                          total-data-written:int
+                      }
+    set self._exception = exception
+    set self._canceled? = canceled?
+    set self._done? = done?
+    set self.data-written = data-written
+    set self.total-data-written = total-data-written
+  }
+
+  {getter public open {exception}:#Exception
+    {return self._exception}
+  }
+
+  {getter public open {canceled?}:bool
+    {self.check-exception}
+    {return self._canceled?}
+  }
+
+  {getter public open {done?}:bool
+    {self.check-exception}
+    {return self._done?}
+  }
+}

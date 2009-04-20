@@ -41,14 +41,11 @@
 {define-class public abstract open SOAPMarshalContext
 
   field public constant soap-version:SOAPVersion
-  field public constant supports-mtom?:bool
 
   {constructor public {default
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          supports-mtom?:bool = false
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }
     set self.soap-version = soap-version
-    set self.supports-mtom? = supports-mtom?
   }
 
   {doc-next
@@ -167,6 +164,25 @@
                                    write-type-attribute?:bool = true
                                }:void
   }
+
+  {method package abstract {register-mtom-writer
+                               writer:#SOAPMTOMMessageWriter
+                           }:void
+  }
+
+  {method package abstract {register-bytes
+                               val:{Array-of byte},
+                               type:SOAPObjectType,
+                               id:String = ""
+                           }:String
+  }
+
+  {method package abstract {append-remaining-attachments
+                               request-data:SOAPMTOMRequestData
+                           }:void
+  }
+
+  {getter public open abstract {supports-mtom?}:bool}
 
   {doc-next
     {purpose
@@ -357,7 +373,21 @@
   }
 
 }
+{define-class package sealed SOAPMTOMAttachment
+  field package content-id:String
+  field package expected-content-types:#String
+  field package content:{Array-of byte}
 
+  {constructor package {default
+                           content-id:String,
+                           expected-content-types:#String,
+                           content:{Array-of byte}
+                       }
+    set self.content-id = content-id
+    set self.expected-content-types = expected-content-types
+    set self.content = content
+  }
+}
 
 || user extendable class, and probably default internal implemenation
 || as well.
@@ -374,6 +404,9 @@
   field private marshal-table:{HashTable-of any, SOAPMarshalObjectState}
   field private prefix:String
   field private prefix-count:int = 0
+||--  field private xop-table:{HashTable-of String, ByteArray}
+  field private xop-atts:{Array-of SOAPMTOMAttachment}
+  field private mtom-writer:#SOAPMTOMMessageWriter
 
     || should # be implicit for generated ids, but not for set ids?
     || what is returned? # or non#?
@@ -392,12 +425,13 @@
   }
   {constructor public {default
                           prefix:String = "id",
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          supports-mtom?:bool = false
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }
     set self.marshal-table =
         {new {HashTable-of any, SOAPMarshalObjectState}}
     set self.id-table = {new {HashTable-of any, String}}
+||--    set self.xop-table = {{HashTable-of String, ByteArray}}
+    set self.xop-atts = {{Array-of SOAPMTOMAttachment}}
     set self.prefix =
         {switch soap-version
          case SOAPVersion.soap-1-1 do
@@ -407,11 +441,56 @@
         }
          
     {construct-super
-        soap-version = soap-version,
-        supports-mtom? = supports-mtom?
+        soap-version = soap-version
     }
   }
 
+  {method package {register-mtom-writer writer:#SOAPMTOMMessageWriter}:void
+    set self.mtom-writer = writer
+  }
+  {method package {register-bytes
+                      val:ByteArray,
+                      type:SOAPObjectType,
+                      id:String = ""
+                  }:String
+    {if self.mtom-writer == null then
+        {error {lmessage not support MTOM}}
+    }
+    {if id.empty? then
+        set id = {self.mtom-writer.publish-id}
+    }
+||--    set self.xop-table[id] = val
+    {self.xop-atts.append
+        {SOAPMTOMAttachment
+            id,
+            type.expected-content-types,
+            val
+        }
+    }
+    {return id}
+  }
+  {method package {append-remaining-attachments
+                      req-data:SOAPMTOMRequestData
+                  }:void
+    {if-non-null writer = self.mtom-writer then
+||--        {for val key id in self.xop-table do
+        {for att in self.xop-atts do
+            {writer.append-attachment
+                req-data,
+                att.content-id,
+                att.expected-content-types,
+                att.content
+            }
+        }
+||--        {self.xop-table.clear}
+        {self.xop-atts.clear}
+     else
+        {error {lmessage need MTOM Writer}}
+    }
+  }
+  {getter public open {supports-mtom?}:bool
+    {return self.mtom-writer != null}
+  }
   {method public open {get-id
                           object:any,
                           create-if-missing?:bool = false
@@ -1058,9 +1137,7 @@
                           object:any,
                           status:SOAPUnmarshalObjectStatus
                       }:void
-    {if self.supports-mtom? then
-        set id = "cid:" & id
-     elseif self.soap-version == SOAPVersion.soap-1-1 then
+    {if self.soap-version == SOAPVersion.soap-1-1 then
         set id = "#" & id
     }
     let (state:SOAPUnmarshalObjectState, found?:bool) =

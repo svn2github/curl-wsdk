@@ -18,18 +18,30 @@
 
   field private headers:HttpHeaders
   field private _content-type:#String
-  field private _boundary:#String
-  field private _boundary-bytes:#ByteArray
-  field private _final-boundary-bytes:#ByteArray
-  field private _character-encoding:CharEncoding
+  field private delimiter:MultipartDelimiter
 
   {constructor public {default
                           headers:HttpResponseHeaders,
                           character-encoding:CharEncoding = CharEncoding.utf8
                       }
     set self.headers = headers
-    set self._character-encoding = character-encoding
+    set self.delimiter = {MultipartDelimiter
+                             character-encoding = character-encoding
+                         }
+    set self.delimiter.boundary = {self.derive-boundary}
 ||--    {self.verify-multipart}
+  }
+  {method private {derive-boundary}:String
+    ||----------------- FOR TEST -----------------------
+    {return "----=_Part_0_25211438.1236728210453"}
+    ||--------------------------------------------------
+    def boundary = {HttpHeaders.get-parameter
+                       self.content-type, "boundary"}
+    {if-non-null b = boundary then
+        {return b}
+     else
+        {error {lmessage No boundary}}
+    }
   }
 
   {getter public open {content-type}:String
@@ -37,67 +49,24 @@
         {if-non-null ct = self.headers.content-type then
             set self._content-type = ct
          else
-            {error "No Content-Type"}
+            {error {lmessage No Content-Type}}
         }
     }
     {return {non-null self._content-type}}
   }
 
   {getter public open {character-encoding}:CharEncoding
-    {return self._character-encoding}
+    {return self.delimiter.character-encoding}
   }
 
-  {setter public open {chacter-encoding ce:CharEncoding}:void
-    set self._character-encoding = ce
-    set self._boundary-bytes = null
-  }
-  
   {getter private {boundary}:String
-||--    ||----------------- FOR TEST -----------------------
-||--    {return "----=_Part_0_25211438.1236728210453"}
-||--    ||--------------------------------------------------
-    {if self._boundary == null then
-        def boundary = {HttpHeaders.get-parameter
-                           self.content-type,
-                           "boundary"
-                       }
-        {if-non-null b = boundary then
-            set self._boundary = b
-         else
-            {error "No boundary"}
-        }
-    }
-    {return {non-null self._boundary}}
+    {return self.delimiter.boundary}
   }
-
-  {setter private {boundary val:#String}:void
-    set self._boundary = val
-    set self._boundary-bytes = null
-    set self._final-boundary-bytes = null
+  {getter private {boundary-bytes}:{Array-of byte}
+    {return self.delimiter.boundary-bytes}
   }
-
-  {getter private {boundary-bytes}:ByteArray
-    {if self._boundary-bytes == null then
-        set self._boundary-bytes =
-            {encode-string
-||--                {format "\r\n--%s\r\n", self.boundary}, ||""
-                {format "--%s\r\n", self.boundary}, ||""
-                character-encoding = self.character-encoding
-            }
-    }
-    {return {non-null self._boundary-bytes}}
-  }
-
-  {getter private {final-boundary-bytes}:ByteArray
-    {if self._final-boundary-bytes == null then
-        set self._final-boundary-bytes =
-            {encode-string
-||--                {format "\r\n--%s--", self.boundary}, ||""
-                {format "--%s--", self.boundary}, ||""
-                character-encoding = self.character-encoding
-            }
-    }
-    {return {non-null self._final-boundary-bytes}}
+  {getter private {final-boundary-bytes}:{Array-of byte}
+    {return self.delimiter.final-boundary-bytes}
   }
 
   {method public open {read-message

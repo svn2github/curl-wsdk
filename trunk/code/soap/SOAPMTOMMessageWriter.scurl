@@ -20,12 +20,15 @@
   field public constant character-encoding:CharEncoding
   field private content-id-generator:ContentIDGenerator = {ContentIDGenerator}
 
+  field private attachments:{Array-of SOAPMTOMAttachment}
+
   {constructor public {default
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           character-encoding:CharEncoding = CharEncoding.utf8
                       }
     set self.soap-version = soap-version
     set self.character-encoding = character-encoding
+    set self.attachments = {{Array-of SOAPMTOMAttachment}}
   }
 
   {method public open {publish-id}:String
@@ -92,12 +95,45 @@
     }
   }
 
-  {method public open {append-attachment
-                          req-data:SOAPMTOMRequestData,
-                          content-id:String,
-                          expected-content-types:#String,
-                          val:{Array-of byte}
-                      }:void
+  {method package {register-binary-data
+                      val:ByteArray,
+                      type:SOAPObjectType,
+                      content-id:String = ""
+                  }:String
+    {if content-id.empty? then
+        set content-id =
+            {self.content-id-generator.get-content-id}
+    }
+    {self.attachments.append
+        {SOAPMTOMAttachment
+            content-id,
+            type.expected-content-types,
+            val
+        }
+    }
+    {return content-id}
+  }
+  
+  {method package {append-remaining-attachments
+                      req-data:SOAPMTOMRequestData
+                  }:void
+    {for at in self.attachments do
+        {self.append-attachment
+            req-data,
+            at.content-id,
+            at.expected-content-types,
+            at.content
+        }
+    }
+    {self.attachments.clear}
+  }
+  
+  {method private {append-attachment
+                      req-data:SOAPMTOMRequestData,
+                      content-id:String,
+                      expected-content-types:#String,
+                      val:{Array-of byte}
+                  }:void
     {req-data.append
         {MIMEPart
             {self.get-mime-header
@@ -129,7 +165,7 @@
                 SOAPMTOMRequestData.xmime-content-type-name, ct}}
     }
     
-    def id = {marshal-context.register-bytes val, type}
+    def id = {marshal-context.register-binary-data val, type}
     {stream.write-one
         {XMLStartElement SOAPMTOMRequestData.xop-include-name}}
     {stream.write-one
@@ -158,12 +194,12 @@
 
   field public constant start:#String
   field public constant start-info:String
-  field public constant multipart-boundary:String
+||--  field public constant multipart-boundary:String
+
+  field private multipart-writer:MultipartMessageWriter
 
   {constructor public {default
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          multipart-boundary:String =
-                              {MultipartMessageWriter.random-multipart-boundary},
                           start:#String = null
                       }
     set self.soap-version = soap-version
@@ -176,9 +212,10 @@
                               {error "Invalid SOAP version"}
                           }
     set self.start = start
-    set self.multipart-boundary = multipart-boundary
+
+    set self.multipart-writer = {MultipartMessageWriter}
     {self.add-mtom-parameters
-        self.multipart-boundary,
+        self.multipart-writer.boundary,
         start = self.start
     }
     {construct-super.SOAPHTTPRPCPostCallerRequestData
@@ -188,11 +225,7 @@
 
   {method public open {request-data}:{Array-of byte}
     def bos = {ByteArrayOutputStream self.request-data-bytes}
-    def mw = {MultipartMessageWriter
-                 || char-encoding
-                 multipart-boundary = self.multipart-boundary
-             }
-    {mw.write-message bos, self}
+    {self.multipart-writer.write-message bos, self}
     {return self.request-data-bytes}
   }
 

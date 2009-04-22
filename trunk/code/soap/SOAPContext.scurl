@@ -170,10 +170,9 @@
                            }:void
   }
 
-  {method package abstract {register-bytes
+  {method package abstract {register-binary-data
                                val:{Array-of byte},
-                               type:SOAPObjectType,
-                               id:String = ""
+                               type:SOAPObjectType
                            }:String
   }
 
@@ -404,8 +403,6 @@
   field private marshal-table:{HashTable-of any, SOAPMarshalObjectState}
   field private prefix:String
   field private prefix-count:int = 0
-||--  field private xop-table:{HashTable-of String, ByteArray}
-  field private xop-atts:{Array-of SOAPMTOMAttachment}
   field private mtom-writer:#SOAPMTOMMessageWriter
 
     || should # be implicit for generated ids, but not for set ids?
@@ -430,8 +427,6 @@
     set self.marshal-table =
         {new {HashTable-of any, SOAPMarshalObjectState}}
     set self.id-table = {new {HashTable-of any, String}}
-||--    set self.xop-table = {{HashTable-of String, ByteArray}}
-    set self.xop-atts = {{Array-of SOAPMTOMAttachment}}
     set self.prefix =
         {switch soap-version
          case SOAPVersion.soap-1-1 do
@@ -448,49 +443,32 @@
   {method package {register-mtom-writer writer:#SOAPMTOMMessageWriter}:void
     set self.mtom-writer = writer
   }
-  {method package {register-bytes
+
+  {method package {register-binary-data
                       val:ByteArray,
-                      type:SOAPObjectType,
-                      id:String = ""
+                      type:SOAPObjectType
                   }:String
-    {if self.mtom-writer == null then
+    {if-non-null writer = self.mtom-writer then
+        {return {writer.register-binary-data val, type}}
+     else
         {error {lmessage not support MTOM}}
     }
-    {if id.empty? then
-        set id = {self.mtom-writer.publish-id}
-    }
-||--    set self.xop-table[id] = val
-    {self.xop-atts.append
-        {SOAPMTOMAttachment
-            id,
-            type.expected-content-types,
-            val
-        }
-    }
-    {return id}
   }
+
   {method package {append-remaining-attachments
                       req-data:SOAPMTOMRequestData
                   }:void
     {if-non-null writer = self.mtom-writer then
-||--        {for val key id in self.xop-table do
-        {for att in self.xop-atts do
-            {writer.append-attachment
-                req-data,
-                att.content-id,
-                att.expected-content-types,
-                att.content
-            }
-        }
-||--        {self.xop-table.clear}
-        {self.xop-atts.clear}
+        {writer.append-remaining-attachments req-data}
      else
         {error {lmessage need MTOM Writer}}
     }
   }
+
   {getter public open {supports-mtom?}:bool
     {return self.mtom-writer != null}
   }
+
   {method public open {get-id
                           object:any,
                           create-if-missing?:bool = false
@@ -892,6 +870,23 @@
   {method public abstract open {check-leftover-unmarshaled-objects}:void
   }
 
+  {method package abstract {register-mtom-reader
+                               reader:SOAPMTOMMessageReader
+                           }:void
+  }
+
+  {method package abstract {set-binary-data
+                               content-id:String,
+                               content-type:#String,
+                               bytes:{Array-of byte}
+                           }:void
+  }
+
+  {method package abstract {get-binary-data
+                               content-id:String
+                           }:SOAPMTOMAttachment
+  }
+  
   {doc-next
     {purpose
         The name of the attribute used for multiple referencing.
@@ -1093,6 +1088,7 @@
   {inherits SOAPUnmarshalContext}
 
   field private table:{HashTable-of String, SOAPUnmarshalObjectState}
+  field private mtom-reader:#SOAPMTOMMessageReader
 
   {doc-next
     {purpose
@@ -1153,6 +1149,36 @@
             id,
             {new SOAPUnmarshalObjectState, id, object, status}
         }
+    }
+  }
+
+  {method package {register-mtom-reader
+                      reader:SOAPMTOMMessageReader
+                  }:void
+    set self.mtom-reader = reader
+  }
+
+  {method package {set-binary-data
+                      content-id:String,
+                      content-type:#String,
+                      bytes:{Array-of byte}
+                  }:void
+    {if-non-null reader = self.mtom-reader then
+        {reader.set-binary-data
+            content-id, content-type, bytes
+        }
+     else
+        {error {lmessage Not Supported}} || TODO: message
+    }
+  }
+
+  {method package {get-binary-data
+                      content-id:String
+                  }:SOAPMTOMAttachment
+    {if-non-null reader = self.mtom-reader then
+        {return {reader.get-binary-data content-id}}
+     else
+        {error {lmessage }}
     }
   }
 

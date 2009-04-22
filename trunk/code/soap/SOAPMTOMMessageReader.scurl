@@ -17,12 +17,13 @@
 {define-class public open SOAPMTOMMessageReader
 
   field private message:MultipartMessage
+  field private attachments:{HashTable-of String, SOAPMTOMAttachment}
 
   {constructor public {default
                           stream:ByteInputStream,
                           response-headers:HttpResponseHeaders
                       }
-
+    set self.attachments = {{HashTable-of String, SOAPMTOMAttachment}}
     def mr = {MultipartMessageReader response-headers}
     set self.message = {mr.read-message stream}
   }
@@ -53,33 +54,59 @@
                           supports-mtom? = true
                       }
     }
+
+    {context.register-mtom-reader self}
+
     || except the root part
-    {for i:int=1 below self.message.size do
+    {for i:int = 1 below self.message.size do
         def part = self.message[i]
-        {if-non-null h = part.headers then
-            def (id, found?) = {h.get-if-exists "Content-ID"}
+        {if-non-null headers = part.headers then
+            def (id, found?) = {headers.get-if-exists "Content-ID"}
             {if found? then
-                {context.set-object
-                    {{id.trim-left-clone trim-chars='<'}.trim-right-clone
-                        trim-chars='>'
-                    },
-                    part.body,
-                    SOAPUnmarshalObjectStatus.complete
+                {context.set-binary-data
+                    id, headers.content-type, part.body
                 }
              else
-                {error "No Content-ID"}
+                {error {lmessage No Content-ID}}
             }
          else
-            {error "No headers"}
+            {error {lmessage No Headers}}
         }
     }
     {return {non-null context}}
   }
 
+  {method package {set-binary-data
+                      content-id:String,
+                      content-type:#String,
+                      bytes:{Array-of byte}
+                  }:void
+    def trimmed-id = {StringBuf content-id}
+    {trimmed-id.trim-left trim-chars = '<'}
+    {trimmed-id.trim-right trim-chars = '>'}
+
+    set self.attachments[{trimmed-id.to-String}] =
+        {SOAPMTOMAttachment content-id, content-type, bytes}
+  }
+
+  {method package {get-binary-data
+                      content-id:String
+                  }:SOAPMTOMAttachment
+    {if {content-id.prefix? "cid:"} then
+        set content-id = {content-id.tail 4}
+    }
+    def (val, found?) = {self.attachments.get-if-exists content-id}
+    {if found? then
+        {return val}
+     else
+        {error {lmessage }} || TOOD: message
+    }
+  }
+
   {define-proc package {parse-xop-element
                            xis:XMLInputStream,
                            unmarshal-context:SOAPUnmarshalContext
-                       }:(value:any, found?:bool)
+                       }:(val:any, found?:bool)
     def xt = {xis.read-one}
     {if not (xt isa XMLStartElement) or
         (xt asa XMLStartElement).element != SOAPMTOMRequestData.xop-include-name
@@ -87,7 +114,7 @@
         {xis.unread-one xt}
         {return null, false}
     }
-
+    
     let ret:any = null
     let found?:bool = false
     {while true do
@@ -97,10 +124,10 @@
                 at.value isa String and
                 {(at.value asa String).prefix? "cid:"}
              then
-                def (a, s) = {unmarshal-context.get-object
-                                 at.value asa String
-                             }
-                set ret = a
+                def val = {unmarshal-context.get-binary-data
+                              at.value asa String
+                          }
+                set ret = val.content
                 set found? = true
             }
          case ee:XMLEndElement do

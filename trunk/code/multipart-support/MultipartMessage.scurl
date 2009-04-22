@@ -14,25 +14,6 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-||--{define-class public open MultipartMessage {inherits {Array-of MIMEPart}}
-||--
-||--  field private _headers:HttpHeaders
-||--  field private _content-type:String
-||--  field public constant character-encoding:CharEncoding
-||--
-||--  {constructor public {default
-||--                          headers:HttpHeaders,
-||--                          content-type:String,
-||--                          character-encoding:CharEncoding,
-||--                          ...
-||--                      }
-||--    set self._headers = headers
-||--    set self._content-type = content-type
-||--    set self.character-encoding = character-encoding
-||--    {construct-super {splice ...}}
-||--  }
-||--}
-
 {define-class public open MultipartMessage
   {inherits {Array-of MIMEPart}}
 

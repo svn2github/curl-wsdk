@@ -22,19 +22,22 @@
   field package type:WSDLSchemaType
   field package element-name:#XMLName
   field package nullable?:bool
+  field package content-types:#String
 
   {constructor package {default
                            xml-name:XMLName,
                            curl-name:String,
                            type:WSDLSchemaType,
                            element-name:#XMLName,
-                           nullable?:bool
+                           nullable?:bool,
+                           content-types:#String = null
                        }
     set self.xml-name = xml-name
     set self.curl-name = curl-name
     set self.type = type
     set self.element-name = element-name
     set self.nullable? = nullable?
+    set self.content-types = content-types
   }
 }
 
@@ -102,6 +105,9 @@
 
   let package constant soap-transport-default:String =
       "http://schemas.xmlsoap.org/soap/http"
+
+  let package constant xmime-namespace-uri:String =
+      "http://www.w3.org/2005/05/xmlmime"
   
   || WSDL items
   let package constant message-prefix:String = "m:"

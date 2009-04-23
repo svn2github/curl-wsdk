@@ -76,6 +76,7 @@
   field public-get min-occurs:int
   field public-get max-occurs:int
   field public-get nillable?:bool
+  field public-get expected-content-types:#String
 
   {constructor public {default
                           xml-name:#XMLName,
@@ -83,12 +84,14 @@
                           min-occurs:int = 1,
                           max-occurs:int = 1,
                           nillable?:bool = false,
+                          expected-content-types:#String = null,
                           node:WSDLDOMNode
                       }
     {construct-super xml-name, type, node}
     set self.min-occurs = min-occurs
     set self.max-occurs = max-occurs
     set self.nillable? = nillable?
+    set self.expected-content-types = expected-content-types
   }
 
   {method package {resolve-types names:WSDLNameTable}:void
@@ -109,6 +112,8 @@
                 set self.min-occurs = re.min-occurs}
             {if not self.max-occurs-specified? then
                 set self.max-occurs = re.max-occurs}
+            {if not self.expected-content-types-specified? then
+                set self.expected-content-types = re.expected-content-types}
             set self._type = re.type}
         
      case pt:WSDLSchemaPlaceholderType do
@@ -136,9 +141,21 @@
     {return {self.specified? "maxOccurs"}}
   }
 
-  {method package {specified? attribute:String}:bool
+  {getter package {expected-content-types-specified?}:bool
     {return
-        {self.node.get-attribute attribute} != null}
+        {self.specified?
+            "expectedContentTypes",
+            namespace = WSDL.xmime-namespace-uri
+        }
+    }
+  }
+
+  {method package {specified?
+                      attribute:String,
+                      namespace:String = ""
+                  }:bool
+    {return
+        {self.node.get-attribute attribute, namespace = namespace} != null}
   }
 
 }

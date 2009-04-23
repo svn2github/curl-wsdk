@@ -472,7 +472,8 @@
                   }:WSDLSchemaElement
    
     let constant (xml-name:#XMLName, type:WSDLSchemaType,
-                  min-occurs:int, max-occurs:int, nillable?:bool) =
+                  min-occurs:int, max-occurs:int, nillable?:bool,
+                  expected-content-types:#String) =
         {self.parse-internal-element-attributes 
             node, target-namespace, element-form-qualified?,
             local-element? = false
@@ -481,7 +482,8 @@
         {WSDLSchemaElement xml-name, type, node,
             min-occurs = min-occurs,
             max-occurs = max-occurs,
-            nillable? = nillable?
+            nillable? = nillable?,
+            expected-content-types = expected-content-types
         }
     {if-non-null xml-name then
         {self.names.set-name
@@ -518,11 +520,11 @@
                       target-namespace:String,
                       element-form-qualified?:bool,
                       local-element?:bool = true
-                  }:(#XMLName, WSDLSchemaType, int, int, bool)
+                  }:(#XMLName, WSDLSchemaType, int, int, bool, #String)
     def (xml-name, type) =
         {self.parse-element-name-and-type  
             e, target-namespace, element-form-qualified?, local-element?}
-    def (min-occurs, max-occurs, nillable?) =
+    def (min-occurs, max-occurs, nillable?, expected-content-types) =
         {self.parse-element-occurrance-attributes e}
 
     {return
@@ -530,7 +532,8 @@
         type,
         min-occurs,
         max-occurs,
-        nillable?
+        nillable?,
+        expected-content-types
     }
   }
 
@@ -595,6 +598,10 @@
         {node.get-attribute "abstract"} == "true"
     
     let choice?:bool
+
+    def attribute = {node.get-attribute
+                        "expectedContentTypes",
+                        namespace = WSDL.xmime-namespace-uri}
 
     || NOTE: check for presence of attributes, which disallow
     || treatment repeating element as array type when parsing sequence
@@ -749,7 +756,8 @@
     {for e in node.children do
         {if {self.schema-tag-match e.name, "element"} then
             let constant (e-xml-name:#XMLName, e-type:WSDLSchemaType,
-                          min-occurs:int, max-occurs:int, nillable?:bool) =
+                          min-occurs:int, max-occurs:int, nillable?:bool,
+                          expected-content-types:#String) =
                 {self.parse-internal-element-attributes
                     e, target-namespace, element-form-qualified?
                 }
@@ -760,6 +768,7 @@
                     min-occurs = min-occurs,
                     max-occurs = max-occurs,
                     nillable? = nillable?,
+                    expected-content-types = expected-content-types,
                     e
                 }
             }
@@ -836,7 +845,8 @@
                       e:WSDLDOMNode
                   }:(min-occurs:int,
                      max-occurs:int,
-                     nillable?:bool)
+                     nillable?:bool,
+                     expected-content-types:#String)
     def min-occurs = 
         {if-non-null min = {e.get-attribute "minOccurs"} then
             {min.to-int}
@@ -851,7 +861,15 @@
         {if-non-null n = {e.get-attribute "nillable"} then
             n == "true"
          else false}
-    {return min-occurs, max-occurs, nillable?}
+    def expected-content-types =
+        {if-non-null ct =
+            {e.get-attribute
+                "expectedContentTypes",
+                namespace = WSDL.xmime-namespace-uri}
+         then
+            ct
+         else null}
+    {return min-occurs, max-occurs, nillable?, expected-content-types}
   }
 
   {method private {parse-choice-elements
@@ -1199,6 +1217,7 @@
                             min-occurs = e.min-occurs,
                             max-occurs = e.max-occurs,
                             nillable? = false,
+                            expected-content-types = e.expected-content-types,
                             element.node}
                      else 
                         || single element
@@ -1717,6 +1736,9 @@
          else
             null
         }
+    def attribute = {node.get-attribute
+                        "expectedContentTypes",
+                        namespace = WSDL.xmime-namespace-uri}
     {if node.children.size == 0 then
         {return
             {new WSDLSchemaClassType,
@@ -1750,6 +1772,12 @@
         }
     }
     {if-non-null type then
+        {if-non-null at = attribute then
+            {type-switch type
+             case e:WSDLSchemaAliasType do
+                set e.expected-content-types = at
+            }
+        }
         {if-non-null name then
             {self.names.set-name
                 target-namespace, WSDLSchema.type-prefix, name, type

@@ -729,7 +729,10 @@
                             }
                             {out.write-one-string "\n"}
                             {out.write-one-string
-                                {param.type.soap-object-type-string tab-level = 16}
+                                {param.type.soap-object-type-string
+                                    tab-level = 16,
+                                    expected-content-types = param.content-types
+                                }
                             }
                             || note repeating elements 
                             {type-switch param.type
@@ -765,7 +768,10 @@
                             }
                             {out.write-one-string "\n"}
                             {out.write-one-string
-                                {param.type.soap-object-type-string tab-level = 16}
+                                {param.type.soap-object-type-string
+                                    tab-level = 16,
+                                    expected-content-types = param.content-types
+                                }
                             }
                         }
                         {out.write-one-string
@@ -869,6 +875,46 @@
                                 binding.soap-version.name
                             }
                         }
+                        def support-req? =
+                            {if-non-null input-m = binding-op.input then
+                                (input-m.mtom-availability.value > 0)
+                             else
+                                false
+                            }
+                        def support-res? =
+                            {if-non-null output-m = binding-op.input then
+                                (output-m.mtom-availability.value > 0)
+                             else
+                                false
+                            }
+                        def range =
+                            {if support-req? and support-res? then
+                                SOAPMTOMSupportRange.both
+                             elseif support-req? then
+                                SOAPMTOMSupportRange.request
+                             elseif support-res? then
+                                SOAPMTOMSupportRange.response
+                             else
+                                SOAPMTOMSupportRange.non
+                            }
+                        {if range != SOAPMTOMSupportRange.non then
+                            {format out = out,
+                                ",\n            mtom-support-range = %s",
+                                range
+                            }
+                        }
+||--                        {if-non-null input-m = binding-op.input then
+||--                            {format out = out,
+||--                                ",\n            request-supports-mtom? = %s",
+||--                                (input-m.mtom-availability.value > 0)
+||--                            }
+||--                        }
+||--                        {if-non-null output-m = binding-op.input then
+||--                            {format out = out,
+||--                                ",\n            response-supports-mtom? = %s",
+||--                                (output-m.mtom-availability.value > 0)
+||--                            }
+||--                        }
                     }
                     || %%% METHOD BODY CALL FINAL ARGS
                     || ~~~~~~~~~~~~~~~~~~~~

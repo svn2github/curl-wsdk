@@ -66,7 +66,8 @@
                       element-name:#XMLName = null,
                       nillable?:bool = self.nullable?,
                       multiple-reference:SOAPTypeMultipleReference =
-                          self.multiple-reference
+                          self.multiple-reference,
+                      expected-content-types:#String = null
                   }:String
     {return
         {WSDLSchemaType.soap-object-type-code-string
@@ -75,7 +76,8 @@
             xml-type = self.xml-name,
             curl-type = self.ref-name,
             nillable? = nillable?,
-            multiple-reference = multiple-reference
+            multiple-reference = multiple-reference,
+            expected-content-types = expected-content-types
         }
     }
   }
@@ -129,8 +131,9 @@
                           multiple-reference:SOAPTypeMultipleReference = 
                               SOAPTypeMultipleReference.unknown,
                           nillable?:bool = false,
-                          choice-elements:#{Array-of XMLName} = null
-                     }:String
+                          choice-elements:#{Array-of XMLName} = null,
+                          expected-content-types:#String = null
+                      }:String
     let constant tabs:String = {String.repeat-char ' ', tab-level}
     let constant buf:StringBuf = {new StringBuf}
     let n-arg:int = 0
@@ -218,6 +221,17 @@
             tabs
         }
     }
+    {if-non-null ct = expected-content-types then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    expected-content-types = \"%s\"",
+            tabs,
+            ct
+        }
+    }
     {format out = buf, "\n%s\}", tabs}
     {return {buf.to-String}}
   }
@@ -260,7 +274,8 @@
                       element-name:#XMLName = null,
                       nillable?:bool = false,
                       multiple-reference:SOAPTypeMultipleReference =
-                          SOAPTypeMultipleReference.unknown
+                          SOAPTypeMultipleReference.unknown,
+                      expected-content-types:#String = null
                   }:String
     {self.unexpected-placeholder-type}
   }
@@ -387,7 +402,8 @@
                       element-name:#XMLName = null,
                       nillable?:bool = self.nullable?,
                       multiple-reference:SOAPTypeMultipleReference =
-                          self.multiple-reference
+                          self.multiple-reference,
+                      expected-content-types:#String = null
                   }:String
     || call it normally, but without multiple-reference or
     || element-name, those will be properly defaulted
@@ -397,7 +413,8 @@
                 tab-level = tab-level,
                 xml-type = self.xml-name,
                 curl-type = self.ref-name,
-                nillable? = nillable?
+                nillable? = nillable?,
+                expected-content-types = expected-content-types
             }
          else
             {WSDLSchemaType.soap-object-type-code-string
@@ -405,7 +422,8 @@
                 xml-type = self.xml-name,
                 curl-type = self.ref-name,
                 nillable? = nillable?,
-                multiple-reference = multiple-reference
+                multiple-reference = multiple-reference,
+                expected-content-types = expected-content-types
             }
         }
     }
@@ -442,6 +460,7 @@
   field public constant use-type-attribute?:bool
   field public constant override-multiple-reference?:bool
   field public constant override-multiple-reference:SOAPTypeMultipleReference
+  field public-get protected-set expected-content-types:#String
 
   {constructor public {default
                           xml-name:#XMLName,
@@ -449,7 +468,8 @@
                           curl-namer:WSDLCurlNamer,
                           use-type-attribute?:bool = true,
                           override-multiple-reference:SOAPTypeMultipleReference =
-                              SOAPTypeMultipleReference.unknown
+                              SOAPTypeMultipleReference.unknown,
+                          expected-content-types:#String = null
                       }
     {construct-super xml-name}
     set self.type = type
@@ -463,6 +483,7 @@
     set self.override-multiple-reference? =
         {keyword-supplied? override-multiple-reference}
     set self.override-multiple-reference = override-multiple-reference
+    set self.expected-content-types = expected-content-types
   }
 
   {method package {resolve-types names:WSDLNameTable}:void
@@ -495,7 +516,8 @@
             "    \}\n",
             {self.soap-object-type-string
                 tab-level = 16,
-                element-name = element-name
+                element-name = element-name,
+                expected-content-types = self.expected-content-types
             },
             {self.type.soap-object-type-string
                 tab-level = 16,
@@ -509,7 +531,8 @@
                         SOAPTypeMultipleReference.multiple
                      else
                         self.type.multiple-reference 
-                    }
+                    },
+                expected-content-types = self.expected-content-types
             },
             {if self.use-type-attribute? then
                 "true"
@@ -563,6 +586,29 @@
     }
   }
 
+  {method package {soap-object-type-string
+                      tab-level:int = 0,
+                      element-name:#XMLName = null,
+                      nillable?:bool = self.nullable?,
+                      multiple-reference:SOAPTypeMultipleReference =
+                          self.multiple-reference,
+                      expected-content-types:#String = null
+                  }:String
+    {return
+        {super.soap-object-type-string
+            tab-level = tab-level,
+            element-name = element-name,
+            nillable? = nillable?,
+            multiple-reference = multiple-reference,
+            expected-content-types =
+                {if-non-null ct = self.expected-content-types then
+                    ct
+                 else
+                    expected-content-types
+                }
+        }
+    }
+  }
 }
 
 
@@ -1720,7 +1766,8 @@
                       element-name:#XMLName = null,
                       nillable?:bool = self.nullable?,
                       multiple-reference:SOAPTypeMultipleReference =
-                          self.multiple-reference
+                          self.multiple-reference,
+                      expected-content-types:#String = null
                   }:String
 
     {return
@@ -2378,7 +2425,8 @@
                       element-name:#XMLName = null,
                       nillable?:bool = self.nullable?,
                       multiple-reference:SOAPTypeMultipleReference =
-                          self.multiple-reference
+                          self.multiple-reference,
+                      expected-content-types:#String = null
                   }:String
     || include choice-elements
     def choice-elements = {{Array-of XMLName}}

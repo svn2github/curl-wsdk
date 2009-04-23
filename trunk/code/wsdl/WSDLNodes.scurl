@@ -166,7 +166,8 @@
                                 (for-response? and ise.min-occurs == 0)
                              else
                                 e.type.nullable?
-                            }
+                            },
+                            content-types = e.expected-content-types
                         }
                     }
                 }
@@ -196,7 +197,8 @@
                             (for-response? and ise.min-occurs == 0)
                          else
                             part.element.type.nullable?
-                        }
+                        },
+                        content-types = part.element.expected-content-types
                     }
                 }
              case ct:WSDLSchemaArrayType do
@@ -290,7 +292,8 @@
                             (for-response? and ise.min-occurs == 0)
                          else
                             element-type.nullable?
-                        }
+                        },
+                        content-types = part.element.expected-content-types
                     }
                 }
             }
@@ -403,6 +406,11 @@
     set self.kind = kind
   }
 }
+{define-enum public MTOMAvailability
+    disable = 0,
+    enable = 1,
+    required = 2
+}
 
 {define-class public open WSDLBinding {inherits WSDLDocumentedNode}
   field public constant name:String
@@ -412,6 +420,7 @@
   field public operations:{Array-of WSDLBindingOperation} =
       {new {Array-of WSDLBindingOperation}}
   field public soap-version:SOAPVersion = SOAPVersion.soap-1-1
+  field public mtom-availability:MTOMAvailability = MTOMAvailability.disable
 
   {constructor public {default name:String, type:WSDLPortType, node:WSDLDOMNode}
     {construct-super node}
@@ -429,12 +438,25 @@
   field public faults:#{Array-of WSDLBindingOperationMessage} =
       {new {Array-of WSDLBindingOperationMessage}}
   field public binding:#WSDLBinding
+  field private _mtom-availability:MTOMAvailability = MTOMAvailability.disable
 
   {constructor public {default name:String, node:WSDLDOMNode}
     {construct-super node}
     set self.name = name
   }
-
+  {getter public open {mtom-availability}:MTOMAvailability
+    {if-non-null binding = self.binding then
+        {if binding.mtom-availability.value > self._mtom-availability.value then
+            {return binding.mtom-availability}
+         else
+            self._mtom-availability
+        }
+    }
+    {return self._mtom-availability}
+  }
+  {setter public open {mtom-availability val:MTOMAvailability}:void
+    set self._mtom-availability = val
+  }
 }
 
 {define-class public open WSDLBindingOperationMessage
@@ -445,11 +467,25 @@
       {new {Array-of WSDLExtensionElement}}
   field public kind:WSDLKindOfMessage
   field public operation:#WSDLBindingOperation
+  field private _mtom-availability:MTOMAvailability = MTOMAvailability.disable
 
   {constructor public {default name:#String, kind:WSDLKindOfMessage, node:WSDLDOMNode}
     {construct-super node}
     set self.name = name
     set self.kind = kind
+  }
+  {getter public open {mtom-availability}:MTOMAvailability
+    {if-non-null op = self.operation then
+        {if op.mtom-availability.value > self._mtom-availability.value then
+            {return op.mtom-availability}
+         else
+            self._mtom-availability
+        }
+    }
+    {return self._mtom-availability}
+  }
+  {setter public open {mtom-availability val:MTOMAvailability}:void
+    set self._mtom-availability = val
   }
 }
 

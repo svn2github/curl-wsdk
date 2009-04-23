@@ -41,17 +41,16 @@
             }
         }
     }
-    {error "No root MIME part"}
+    {error {lmessage No root MIME part}}
   }
-
+  
   {method public open {get-unmarshal-context
                           context:#SOAPUnmarshalContext = null,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:SOAPUnmarshalContext
     {if context == null then
         set context = {DefaultSOAPUnmarshalContext
-                          soap-version = soap-version,
-                          supports-mtom? = true
+                          soap-version = soap-version
                       }
     }
 
@@ -88,7 +87,7 @@
     set self.attachments[{trimmed-id.to-String}] =
         {SOAPMTOMAttachment content-id, content-type, bytes}
   }
-
+  
   {method package {get-binary-data
                       content-id:String
                   }:SOAPMTOMAttachment
@@ -99,10 +98,10 @@
     {if found? then
         {return val}
      else
-        {error {lmessage }} || TOOD: message
+        {error {lmessage No specified Content-ID}} || TOOD: message
     }
   }
-
+  
   {define-proc package {parse-xop-element
                            xis:XMLInputStream,
                            unmarshal-context:SOAPUnmarshalContext

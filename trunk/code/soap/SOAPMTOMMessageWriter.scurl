@@ -18,8 +18,7 @@
 
   field public constant soap-version:SOAPVersion
   field public constant character-encoding:CharEncoding
-  field private content-id-generator:ContentIDGenerator = {ContentIDGenerator}
-
+  field private constant content-id-generator:ContentIDGenerator
   field private attachments:{Array-of SOAPMTOMAttachment}
 
   {constructor public {default
@@ -28,11 +27,8 @@
                       }
     set self.soap-version = soap-version
     set self.character-encoding = character-encoding
+    set self.content-id-generator = {ContentIDGenerator}
     set self.attachments = {{Array-of SOAPMTOMAttachment}}
-  }
-
-  {method public open {publish-id}:String
-    {return {self.content-id-generator.get-content-id}}
   }
 
   {method public open {get-marshal-context}:SOAPMarshalContext
@@ -49,19 +45,17 @@
                        start = {self.content-id-generator.get-root-content-id}
                    }
     {req-data.append
-        {MIMEPart
-            {self.get-mime-header
-                {format |"%s; charset=%s; type="%s""|,
-                    SOAPMTOMRequestData.xop-type,
-                    {char-encoding-to-http-charset self.character-encoding},
-                    req-data.start-info
-                },
-                {self.get-content-transfer-encoding},
-                {if-non-null start = req-data.start then
-                    start
-                 else
-                    {self.content-id-generator.get-root-content-id}
-                }
+        {self.compose-mime-part
+            {format |"%s; charset=%s; type="%s""|,
+                SOAPMTOMRequestData.xop-type,
+                {char-encoding-to-http-charset self.character-encoding},
+                req-data.start-info
+            },
+            {self.get-content-transfer-encoding},
+            {if-non-null start = req-data.start then
+                start
+             else
+                {self.content-id-generator.get-root-content-id}
             },
             {{Array-of byte}}
         }
@@ -69,8 +63,8 @@
     {return req-data}
   }
 
-  {method private {get-content-transfer-encoding}:String
-    || TODO: impl
+  {method protected open {get-content-transfer-encoding}:String
+    || TODO: Return applicable encoding depends on charset
     {return
         {switch self.character-encoding
          case CharEncoding.utf8 do
@@ -81,16 +75,20 @@
     }
   }
 
-  {method private {get-mime-header
-                      type:String,
-                      transfer-encoding:String,
-                      id:String
-                  }:HttpHeaders
+  {method protected open {compose-mime-part
+                             content-type:String,
+                             content-transfer-encoding:String,
+                             content-id:String,
+                             body:{Array-of byte}
+                         }:MIMEPart
     {return
-        {HttpHeaders
-            "Content-Type", type,
-            "Content-Transfer-Encoding", transfer-encoding,
-            "Content-ID", {format "<%s>", id}
+        {MIMEPart
+            {HttpHeaders
+                "Content-Type", content-type,
+                "Content-Transfer-Encoding", content-transfer-encoding,
+                "Content-ID", {format "<%s>", content-id}
+            },
+            body
         }
     }
   }
@@ -118,38 +116,22 @@
                       req-data:SOAPMTOMRequestData
                   }:void
     {for at in self.attachments do
-        {self.append-attachment
-            req-data,
-            at.content-id,
-            at.expected-content-types,
-            at.content
-        }
-    }
-    {self.attachments.clear}
-  }
-  
-  {method private {append-attachment
-                      req-data:SOAPMTOMRequestData,
-                      content-id:String,
-                      expected-content-types:#String,
-                      val:{Array-of byte}
-                  }:void
-    {req-data.append
-        {MIMEPart
-            {self.get-mime-header
-                {if-non-null ct = expected-content-types then
+        {req-data.append
+            {self.compose-mime-part
+                {if-non-null ct = at.expected-content-types then
                     || TODO: Handle expected-content-types.
-                    ||       This should not be used as is.
+                    ||       This should not be used as is occasionally.
                     ct
                  else
                     "application/octet-stream"
                 },
                 "binary",
-                content-id
-            },
-            val
+                at.content-id,
+                at.content
+            }
         }
     }
+    {self.attachments.clear}
   }
   
   {define-proc package {write-xop-element
@@ -194,7 +176,6 @@
 
   field public constant start:#String
   field public constant start-info:String
-||--  field public constant multipart-boundary:String
 
   field private multipart-writer:MultipartMessageWriter
 

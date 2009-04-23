@@ -73,65 +73,77 @@
         {encoder.encode-message message},
         partial? = true,
         {on e:AsyncStreamWriteEvent do
-            {self.enqueue-event
-                {MultipartWriteEvent
-                    e.exception,
-                    e.canceled?,
-                    e.done?,
-                    e.data-written,
-                    e.total-data-written
-                }
-            }
-            {if close-stream? and
-                stream.open? and
-                (e.exception != null or e.done?)
-             then
-                {stream.close}
-            }
-        }
-    }
-  }
-  {method public open {async-write-message2
-                          stream:ByteOutputStream,
-                          message:MultipartMessage,
-                          character-encoding:CharEncoding =
-                              self.character-encoding,
-                          close-stream?:bool = true
-                      }:void
-    set self.delimiter.character-encoding = character-encoding
-    
-    {for part key i in message do
-        def bytes = {{Array-of byte}}
-        def bos = {ByteArrayOutputStream bytes}
-        {self.write-mime-part
-            bos, part, with-new-line? = (i != 0)}
-        {stream.async-write
-            bytes,
-            {on e:AsyncStreamWriteEvent do
-                {if e.done? then
-                    {bytes.clear}
-                    {if i == message.size - 1 then
-                        {bos.close}
-                    }
-                }
-            }
-        }
-    }
-    def ba = {ByteArray}
-    {ba.concat self.delimiter.cr-lf-bytes}
-    {ba.concat self.delimiter.final-boundary-bytes}
-    {stream.async-write
-        ba,
-        {on e:AsyncStreamWriteEvent do
-            {if e.done? then
-                {if close-stream? and stream.open? then
+            {if-non-null exception = e.exception then
+                {self.enqueue-write-event e}
+                {if stream.open? then
                     {stream.close}
                 }
-                {self.enqueue-event e}
+             else
+                {if e.done? then
+                    {if close-stream? and stream.open? then
+                        {stream.close}
+                    }
+                    {self.enqueue-write-event e}
+                }
             }
         }
     }
   }
+
+  {method private {enqueue-write-event e:AsyncStreamWriteEvent}:void
+    {self.enqueue-event
+        {MultipartWriteEvent
+            e.exception,
+            e.canceled?,
+            e.done?,
+            e.data-written,
+            e.total-data-written
+        }
+    }
+  }
+
+||--  {method public open {async-write-message2
+||--                          stream:ByteOutputStream,
+||--                          message:MultipartMessage,
+||--                          character-encoding:CharEncoding =
+||--                              self.character-encoding,
+||--                          close-stream?:bool = true
+||--                      }:void
+||--    set self.delimiter.character-encoding = character-encoding
+||--    
+||--    {for part key i in message do
+||--        def bytes = {{Array-of byte}}
+||--        def bos = {ByteArrayOutputStream bytes}
+||--        {self.write-mime-part
+||--            bos, part, with-new-line? = (i != 0)}
+||--        {stream.async-write
+||--            bytes,
+||--            {on e:AsyncStreamWriteEvent do
+||--                {if e.done? then
+||--                    {bytes.clear}
+||--                    {if i == message.size - 1 then
+||--                        {bos.close}
+||--                    }
+||--                }
+||--            }
+||--        }
+||--    }
+||--
+||--    def final-bytes = {{Array-of byte}}
+||--    {final-bytes.concat self.delimiter.cr-lf-bytes}
+||--    {final-bytes.concat self.delimiter.final-boundary-bytes}
+||--    {stream.async-write
+||--        final-bytes,
+||--        {on e:AsyncStreamWriteEvent do
+||--            {if e.done? then
+||--                {if close-stream? and stream.open? then
+||--                    {stream.close}
+||--                }
+||--                {self.enqueue-event e}
+||--            }
+||--        }
+||--    }
+||--  }
 
   {method protected open {write-mime-part
                              stream:ByteOutputStream,
@@ -178,6 +190,7 @@
     }
   }
 }
+
 {define-class public open MultipartMessageEncoder
   field private delimiter:MultipartDelimiter
 
@@ -225,6 +238,7 @@
             character-encoding = self.delimiter.character-encoding}}
   }
 }
+
 {define-class public open MultipartWriteEvent
   {inherits AsyncWorkEvent}
 
@@ -260,85 +274,5 @@
   {getter public open {done?}:bool
     {self.check-exception}
     {return self._done?}
-  }
-}
-{define-class package MultipartDelimiter
-  field private _character-encoding:CharEncoding
-  field private _boundary:#String
-  field private _boundary-bytes:#{Array-of byte}
-  field private _final-boundary-bytes:#{Array-of byte}
-  field private _cr-lf-bytes:#{Array-of byte}
-
-  {constructor package {default
-                           character-encoding:CharEncoding = CharEncoding.utf8,
-                           boundary:#String = null
-                       }
-    set self._character-encoding = character-encoding
-    set self._boundary = boundary
-  }
-
-  {getter package {character-encoding}:CharEncoding
-    {return self._character-encoding}
-  }
-
-  {setter package {character-encoding val:CharEncoding}:void
-    {if self._character-encoding != val then
-        set self._character-encoding = val
-        set self._boundary-bytes = null
-        set self._final-boundary-bytes = null
-        set self._cr-lf-bytes = null
-    }
-  }
-
-  {getter package {boundary}:String
-    {if self._boundary == null then
-        set self._boundary =
-            {MultipartDelimiter.random-multipart-boundary}
-    }
-    {return {non-null self._boundary}}
-  }
-
-  {setter package {boundary val:String}:void
-    {if self._boundary != val then
-        set self._boundary = val
-        set self._boundary-bytes = null
-        set self._final-boundary-bytes = null
-    }
-  }
-
-  {getter package {boundary-bytes}:{Array-of byte}
-    {if self._boundary-bytes == null then
-        set self._boundary-bytes =
-            {encode-string
-                {format "--%s\r\n", self.boundary}, ||""
-                character-encoding = self.character-encoding}} 
-    {return {non-null self._boundary-bytes}}
-  }
-
-  {getter package {final-boundary-bytes}:{Array-of byte}
-    {if self._final-boundary-bytes == null then
-        set self._final-boundary-bytes =
-            {encode-string
-                {format "--%s--", self.boundary}, ||""
-                character-encoding = self.character-encoding}}
-    {return {non-null self._final-boundary-bytes}}
-  }
-
-  {getter package {cr-lf-bytes}:{Array-of byte}
-    {if self._cr-lf-bytes == null then
-        set self._cr-lf-bytes =
-            {encode-string "\r\n",
-                character-encoding = self.character-encoding}}
-    {return {non-null self._cr-lf-bytes}}
-  }
-
-  {define-proc package {random-multipart-boundary}:String
-    let r:Random = {Random}
-    {return
-        {format "SEPARATOR%x-%x", ||""
-            {r.next-non-negative-int32},
-            {r.next-non-negative-int32}
-        }
-    }
   }
 }

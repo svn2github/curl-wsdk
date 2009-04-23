@@ -31,18 +31,6 @@
     set self.delimiter.boundary = {self.derive-boundary}
 ||--    {self.verify-multipart}
   }
-  {method private {derive-boundary}:String
-    ||----------------- FOR TEST -----------------------
-    {return "----=_Part_0_25211438.1236728210453"}
-    ||--------------------------------------------------
-    def boundary = {HttpHeaders.get-parameter
-                       self.content-type, "boundary"}
-    {if-non-null b = boundary then
-        {return b}
-     else
-        {error {lmessage No boundary}}
-    }
-  }
 
   {getter public open {content-type}:String
     {if self._content-type == null then
@@ -62,9 +50,11 @@
   {getter private {boundary}:String
     {return self.delimiter.boundary}
   }
+
   {getter private {boundary-bytes}:{Array-of byte}
     {return self.delimiter.boundary-bytes}
   }
+
   {getter private {final-boundary-bytes}:{Array-of byte}
     {return self.delimiter.final-boundary-bytes}
   }
@@ -304,6 +294,7 @@
     }
   }
 
+  || FOR DEBUG
 ||--  {method private {get-boundary bytes:ByteArray}:String
 ||--    def (n, c) = {decode-characters
 ||--                     bytes.underlying-FastArray,
@@ -318,26 +309,25 @@
 ||--    {error "No boundary"}
 ||--  }
 
+  {method private {derive-boundary}:String
+    ||----------------- FOR TEST -----------------------
+    {return "----=_Part_0_25211438.1236728210453"}
+    ||--------------------------------------------------
+    def boundary = {HttpHeaders.get-parameter
+                       self.content-type, "boundary"}
+    {if-non-null b = boundary then
+        {return b}
+     else
+        {error {lmessage No boundary}}
+    }
+  }
+
   {method private {verify-multipart}:void
     {if not {self.content-type.prefix? "multipart"} then
         {error "non-multipart message"}
     }
   }
 }
-
-{define-proc package inline {encode-string
-                                in:String,
-                                character-encoding:CharEncoding =
-                                    CharEncoding.utf8
-                            }:{Array-of byte}
-    def out =
-        {ByteVec
-            max-size =
-                character-encoding.transcode-max-expansion-factor * in.size}
-    {encode-characters in, out, character-encoding}
-    {return {{Array-of byte}.from-FastArray out}}
-}
-
 
 {define-class public open MultipartReadEvent
   {inherits AsyncWorkEvent}

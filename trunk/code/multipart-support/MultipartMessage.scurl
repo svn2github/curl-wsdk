@@ -30,21 +30,18 @@
 
 {define-class public open MIMEPart
 
-  field public headers:#HttpHeaders
-  field public body:ByteArray
+  field public constant headers:HttpHeaders
+  field public constant body:ByteArray
 
   {constructor public {default
-                          headers:#HttpHeaders,
-                          body:ByteArray
+                          body:ByteArray,
+                          headers:HttpHeaders = {HttpHeaders}
                       }
     set self.headers = headers
     set self.body = body
   }
 
   {method public open {add-header key:String, val:String}:void
-    {if self.headers == null then
-        set self.headers = {HttpHeaders}
-    }
     set self.headers[key] = val
   }
 }

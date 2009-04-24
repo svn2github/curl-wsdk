@@ -31,12 +31,10 @@
   {method public open {get-root-stream}:ByteInputStream
     {if not self.message.empty? then
         def root-part = self.message[0]
-        {if-non-null rh = root-part.headers then
-            {if rh.mime-type == SOAPMTOMRequestData.xop-type then
-                {return
-                    {{ByteInputStream-from ByteArray}
-                        (root-part.body asa ByteArray)
-                    }
+        {if root-part.headers.mime-type == SOAPMTOMRequestData.xop-type then
+            {return
+                {{ByteInputStream-from ByteArray}
+                    (root-part.body asa ByteArray)
                 }
             }
         }
@@ -59,17 +57,14 @@
     || except the root part
     {for i:int = 1 below self.message.size do
         def part = self.message[i]
-        {if-non-null headers = part.headers then
-            def (id, found?) = {headers.get-if-exists "Content-ID"}
-            {if found? then
-                {context.set-binary-data
-                    id, headers.content-type, part.body
-                }
-             else
-                {error {lmessage No Content-ID}}
+        def headers = part.headers
+        def (id, found?) = {headers.get-if-exists "Content-ID"}
+        {if found? then
+            {context.set-binary-data
+                id, headers.content-type, part.body
             }
          else
-            {error {lmessage No Headers}}
+            {error {lmessage No Content-ID}}
         }
     }
     {return {non-null context}}
@@ -106,7 +101,8 @@
                            xis:XMLInputStream,
                            unmarshal-context:SOAPUnmarshalContext
                        }:(val:any, found?:bool)
-    def xt = {xis.read-one}
+    def (xt, eof?) = {xis.read-one}
+    {if eof? then {return null, false}}
     {if not (xt isa XMLStartElement) or
         (xt asa XMLStartElement).element != SOAPMTOMRequestData.xop-include-name
      then
@@ -117,7 +113,11 @@
     let ret:any = null
     let found?:bool = false
     {while true do
-        {type-switch {xis.read-one}
+        def (val, eof?) = {xis.read-one}
+        {if eof? then
+            {return null, false}
+        }
+        {type-switch val
          case at:XMLAttribute do
             {if at.name == unmarshal-context.reference-attribute-name and
                 at.value isa String and
@@ -131,6 +131,10 @@
             }
          case ee:XMLEndElement do
             {break}
+         else
+            {throw-unmarshal-exception
+                {lmessage "Final token was not an expected type."}
+            }
         }
     }
     {return ret, found?}

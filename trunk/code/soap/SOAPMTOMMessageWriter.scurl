@@ -64,15 +64,16 @@
   }
 
   {method protected open {get-content-transfer-encoding}:String
-    || TODO: Return applicable encoding depends on charset
-    {return
-        {switch self.character-encoding
-         case CharEncoding.utf8 do
-            "8bit"
-         else
-            "7bit"
-        }
-    }
+    || FIXME: Return applicable encoding depends on charset
+||--    {return
+||--        {switch self.character-encoding
+||--         case CharEncoding.utf8 do
+||--            "8bit"
+||--         else
+||--            "7bit"
+||--        }
+||--    }
+    {return "binary"}
   }
 
   {method protected open {compose-mime-part
@@ -83,12 +84,13 @@
                          }:MIMEPart
     {return
         {MIMEPart
-            {HttpHeaders
-                "Content-Type", content-type,
-                "Content-Transfer-Encoding", content-transfer-encoding,
-                "Content-ID", {format "<%s>", content-id}
-            },
-            body
+            body,
+            headers = 
+                {HttpHeaders
+                    "Content-Type", content-type,
+                    "Content-Transfer-Encoding", content-transfer-encoding,
+                    "Content-ID", {format "<%s>", content-id}
+                }
         }
     }
   }
@@ -260,7 +262,7 @@
 }
 
 {define-enum public SOAPMTOMSupportRange
-    non,
+    none,
     request,
     response,
     both

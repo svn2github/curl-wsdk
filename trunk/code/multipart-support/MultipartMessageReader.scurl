@@ -20,6 +20,17 @@
   field private _content-type:#String
   field private delimiter:MultipartDelimiter
 
+  || parameters for reading a message
+  field private ret-msg:MultipartMessage = {MultipartMessage}
+  field private processing-part:MIMEPart = {MIMEPart {ByteArray}}
+  field private compare-index:int = 0
+  field private start-index:int = -1
+  field private end-index:int = -1
+  field private part-start?:bool = false
+  field private seperate-index:int = 0
+  field private break-count:int = 0
+  field private processing-header?:bool = true
+
   {constructor public {default
                           headers:HttpResponseHeaders,
                           character-encoding:CharEncoding = CharEncoding.utf8
@@ -65,7 +76,7 @@
                       }:(message:MultipartMessage,
                          response-headers:HttpHeaders)
     let eof?:bool = false
-    let see-end?:bool = false
+    let seen-end?:bool = false
     {while not eof? do
         def (bytes, num-read) =
             {stream.read allow-short-read? = true}
@@ -73,60 +84,56 @@
             set eof? = true
             {break}
         }
-        set see-end? = {self.derive-mime-parts bytes}
+        set seen-end? = {self.derive-mime-parts bytes}
     }
-    {if not see-end? then
+    {if not seen-end? then
         {error {lmessage Unexpected end}}
     }
     {if close-stream? and stream.open? then
         {stream.close}
     }
 
-    def message = {MultipartMessage}
-    {for b key i in self.bodies do
-        {message.append {MIMEPart self.mheaders[i], b}}
-    }
-    {return message, self.headers}
+    def ret = self.ret-msg
+    {self.initialize-read-params}
+    {return ret, self.headers}
   }
 
   {method public open {async-read-message
                           stream:ByteInputStream,
                           close-stream?:bool = true
                       }:void
-    let see-end?:bool = false
+    || TODO: do we need to handle when canceled?
+    let seen-end?:bool = false
     {stream.async-read
         partial? = true,
         {on e:AsyncStreamReadEvent do
             {if-non-null exception = e.exception then
-                {self.enqueue-event
-                    {MultipartReadEvent exception, false, null}}
+                {self.enqueue-read-event e, null}
                 {if stream.open? then
                     {stream.close}
                 }
              else
                 {if e.canceled? then
-                    {self.enqueue-event
-                        {MultipartReadEvent null, true, null}}
+                    {self.enqueue-read-event e, null}
                  elseif e.done? then
-                    {if not see-end? then
-                        {error {lmessage Unexpected end}}
-                    }
                     {if close-stream? and stream.open? then
                         {stream.close}
                     }
-                    def message = {MultipartMessage}
-                    {for b key i in self.bodies do
-                        {message.append {MIMEPart self.mheaders[i], b}}
-                    }
-                    {self.enqueue-event
-                        {MultipartReadEvent
-                            null,
-                            false,
-                            message
+                    {if seen-end? then
+                        def ret = self.ret-msg
+                        {self.initialize-read-params}
+                        {self.enqueue-read-event e, ret}
+                     else
+                        {self.enqueue-read-event
+                            e, null,
+                            throwed-exception =
+                                {MultipartParseException
+                                    {lmessage Expected end of multipart message not found.}
+                                }
                         }
                     }
                  else
-                    set see-end? =
+                    set seen-end? =
                         {self.derive-mime-parts (e.data asa ByteArray)}
                 }
             }
@@ -134,122 +141,170 @@
     }
   }
 
-  field private stored-decoding:ByteArray = {ByteArray}
-  field private saved-bytes:ByteArray = {ByteArray}
-  field private compare-index:int = 0
-  field private first?:bool = true
+  {method private {enqueue-read-event
+                      e:AsyncStreamReadEvent,
+                      message:#MultipartMessage,
+                      throwed-exception:#Exception = null
+                  }:void
+    {self.enqueue-event
+        {AsyncMultipartReadEvent
+            {if-non-null ex = throwed-exception then
+                ex
+             else
+                e.exception
+            },
+            e.canceled?,
+            e.done?,
+            message
+        }
+    }
+  }
+
+  {method private {initialize-read-params}:void
+    set self.compare-index = 0
+    set self.start-index = 0
+    set self.end-index = 0
+    set self.part-start? = false
+    set self.seperate-index = 0
+    set self.break-count = 0
+    set self.processing-header? = false
+    set self.ret-msg = {MultipartMessage}
+    set self.processing-part = {MIMEPart {ByteArray}}
+  }
+
   {method private {derive-mime-parts bytes:ByteArray}:bool
-    let see-end?:bool = false
+    let seen-end?:bool = false
+
     {for b key i in bytes do
         {if {self.boundary-bytes.in-bounds? self.compare-index} and
             self.boundary-bytes[self.compare-index] == b
          then
+            {if self.compare-index == 0 then
+                set self.end-index = i - 1
+            }
             {if self.compare-index >= self.boundary-bytes.size - 1 then
-                {if self.first? then
-                    set self.first? = false
-                 else
-                    {self.bodies.append self.stored-decoding}
+                {if self.start-index < self.end-index and
+||--                    self.start-index != -1 and
+                    self.part-start?
+                 then
+                    {self.append-body-by-index
+                        self.processing-part.body,
+                        bytes,
+                        self.start-index,
+                        self.end-index
+                    }
+                    {self.ret-msg.append self.processing-part}
+                    set self.processing-part = {MIMEPart {ByteArray}}
                 }
-                set self.stored-decoding = {ByteArray}
+                {if not self.part-start? then
+                    set self.part-start? = true
+                }
+                set self.start-index = i + 1
                 set self.compare-index = 0
-                {self.saved-bytes.clear}
                 set self.processing-header? = true
              else
                 {inc self.compare-index}
-                {self.saved-bytes.append b}
             }
 
          elseif self.final-boundary-bytes[self.compare-index] == b then
             {if self.compare-index >=
                 self.final-boundary-bytes.size - 1
              then
-                {self.bodies.append self.stored-decoding}
+                {if self.start-index < self.end-index and
+||--                    self.start-index != -1 and
+                    self.part-start?
+                 then
+                    {self.append-body-by-index
+                        self.processing-part.body,
+                        bytes,
+                        self.start-index,
+                        self.end-index
+                    }
+                    {self.ret-msg.append self.processing-part}
+                    set self.processing-part = {MIMEPart {ByteArray}}
+                }
                 set self.compare-index = 0
-                {self.saved-bytes.clear}
-                set see-end? = true
+                set seen-end? = true
+
                 {break}
              else
                 {inc self.compare-index}
-                {self.saved-bytes.append b}
             }
          else
             {if self.compare-index != 0 then
                 set self.compare-index = 0
-                {for sb in self.saved-bytes do
-                    {self.decode-byte sb}
-                }
-                {self.saved-bytes.clear}
                 {if self.boundary-bytes[self.compare-index] == b then
                     {inc self.compare-index}
-                    {self.saved-bytes.append b}
                     {continue}
                 }
             }
-            {self.decode-byte b}
+            {self.decode-byte b, i, bytes}
         }
     }
-    {return see-end?}
+    {return seen-end?}
   }
 
-  field private constant seperator:ByteArray =
-      {encode-string "\r\n", character-encoding = CharEncoding.utf8}
-  field private seperate-index:int = 0
-  field private break-count:int = 0
-  field private saved-decoding:ByteArray = {ByteArray}
-  field private processing-header?:bool = true
-  field private mheaders:{Array-of HttpHeaders} = {{Array-of HttpHeaders}}
-  field private bodies:{Array-of ByteArray} = {{Array-of ByteArray}}
-  {method private inline {decode-byte b:byte}:void
+  {method private inline {decode-byte b:byte, i:int, ys:ByteArray}:void
     {if not self.processing-header? then
-        {self.stored-decoding.append b}
         {return}
     }
-    {if b == self.seperator[self.seperate-index] then
-        {if self.seperate-index == self.seperator.size - 1 then
+    def seperator = self.delimiter.cr-lf-bytes
+    {if b == seperator[self.seperate-index] then
+        {if self.seperate-index == 0 then
+            set self.end-index = i - 1
+        }
+        {if self.seperate-index == seperator.size - 1 then
             set self.seperate-index = 0
             {inc self.break-count}
          else
             {inc self.seperate-index}
         }
-        {self.saved-decoding.append b}
      else
         {if self.seperate-index != 0 then
             set self.seperate-index = 0
-            {self.stored-decoding.concat self.saved-decoding}
-            {self.saved-decoding.clear}
         }
         {if self.break-count > 1 then
-            {self.mheaders.append {self.read-header self.stored-decoding}}
-            {self.stored-decoding.clear}
-            {self.saved-decoding.clear}
+            {self.append-header-by-index
+                self.processing-part.headers,
+                ys,
+                self.start-index,
+                self.end-index
+            }
+            set self.start-index = i
             set self.break-count = 0
             set self.seperate-index = 0
             set self.processing-header? = false
-            {if b == self.seperator[self.seperate-index] then
+
+            {if b == seperator[self.seperate-index] then
                 {inc self.seperate-index}
-                {self.saved-decoding.append b}
-             else
-                {self.stored-decoding.append b}
             }
          else
-            {if not self.saved-decoding.empty? then
-                {self.stored-decoding.concat self.saved-decoding}
-                {self.saved-decoding.clear}
-            }
             set self.break-count = 0
-            {self.stored-decoding.append b}
         }
     }
   }
-
-  {method private {read-header ba:ByteArray}:HttpHeaders
+  
+  {method private {append-header-by-index
+                      headers:HttpHeaders,
+                      bytes:{Array-of byte},
+                      start-index:int,
+                      end-index:int
+                  }:void
+    def bv = {ByteVec
+                 max-size = end-index - start-index + 1}
+    {for i:int = start-index to end-index do
+        {bv.append bytes[i]}
+    }
+    {self.append-header headers, bv}
+  }
+  
+  {method private {append-header headers:HttpHeaders, bv:ByteVec}:void
     let (num:int, str:String) = {decode-characters
-                                    ba.underlying-FastArray,
+                                    bv,
                                     self.character-encoding
                                 }
     let idx:int = 0
     let last-key:String = ""
-    def headers = {HttpHeaders}
     {while idx != -1 do
         set idx = {str.find-string "\r\n"}
 
@@ -262,10 +317,10 @@
         }
         {if not header-field.empty? then
             {if {header-field.prefix? " "} then
-                {self.add-to-exist-header headers,
+                {self.add-to-existing-header headers,
                     last-key, header-field, CharClass.whitespace-chars}
              elseif {header-field.prefix? "\t"} then
-                {self.add-to-exist-header headers,
+                {self.add-to-existing-header headers,
                     last-key, header-field, '\t'}
              else
                 def (key,val) = {HttpHeaders.parse-header-field
@@ -276,10 +331,9 @@
             }
         }
     }
-    {return headers}
   }
 
-  {method private {add-to-exist-header
+  {method private {add-to-existing-header
                       headers:HttpHeaders,
                       key:String,
                       val:String,
@@ -291,6 +345,17 @@
         set headers[key] = headers[key] & trimmed-val
      else
         {error {lmessage Invalid header format}}
+    }
+  }
+
+  {method private {append-body-by-index
+                      body:{Array-of byte},
+                      source:{Array-of byte},
+                      start-index:int,
+                      end-index:int
+                  }:void
+    {for i:int = start-index to end-index do
+        {body.append source[i]}
     }
   }
 
@@ -329,20 +394,23 @@
   }
 }
 
-{define-class public open MultipartReadEvent
+{define-class public open AsyncMultipartReadEvent
   {inherits AsyncWorkEvent}
 
   field private constant _exception:#Exception
   field private constant _canceled?:bool
+  field private constant _done?:bool
   field private constant _message:#MultipartMessage
 
   {constructor public {default 
                           exception:#Exception,
                           canceled?:bool,
+                          done?:bool,
                           message:#MultipartMessage
                       }
     set self._exception = exception
     set self._canceled? = canceled?
+    set self._done? = done?
     set self._message = message
   }
 
@@ -353,6 +421,11 @@
   {getter public open {canceled?}:bool
     {self.check-exception}
     {return self._canceled?}
+  }
+
+  {getter public open {done?}:bool
+    {self.check-exception}
+    {return self._done?}
   }
 
   {getter public open {message}:#MultipartMessage

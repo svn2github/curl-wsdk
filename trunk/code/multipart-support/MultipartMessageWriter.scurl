@@ -16,7 +16,7 @@
 
 {define-class public open MultipartMessageWriter {inherits EventTarget}
 
-  field private delimiter:MultipartDelimiter
+  field private constant delimiter:MultipartDelimiter
 
   {constructor public {default
                           character-encoding:CharEncoding = CharEncoding.utf8,
@@ -154,9 +154,7 @@
         {self.write-to-stream stream, self.delimiter.cr-lf-bytes}
     }
     {self.write-to-stream stream, self.delimiter.boundary-bytes}
-    {if-non-null headers = part.headers then
-        {self.write-headers stream, headers}
-    }
+    {self.write-headers stream, part.headers}
     {self.write-to-stream stream, self.delimiter.cr-lf-bytes}
     {self.write-to-stream stream, part.body}
   }
@@ -213,14 +211,11 @@
   {method public open {encode-mime-part part:MIMEPart}:{Array-of byte}
     def bytes = {{Array-of byte}}
     {bytes.concat self.delimiter.boundary-bytes}
-    {if-non-null headers = part.headers then
+    {if not part.headers.empty? then
         {bytes.concat
-            {self.encode-headers headers}}
+            {self.encode-headers part.headers}}
     }
-    {bytes.concat
-        {encode-string "\r\n",
-            character-encoding = self.delimiter.character-encoding}
-    }
+    {bytes.concat self.delimiter.cr-lf-bytes}
     {bytes.concat part.body}
     {return bytes}
   }
@@ -230,12 +225,14 @@
                          }:{Array-of byte}
     def buf = {StringBuf}
     {for val key keyword in headers do
-        {buf.concat {format "%s: %s\r\n", keyword, val}}
+        {buf.concat {format "%s: %s", keyword, val}}
     }
-    {return
+    def buf-bytes = 
         {encode-string
             {buf.to-String},
-            character-encoding = self.delimiter.character-encoding}}
+            character-encoding = self.delimiter.character-encoding}
+    {buf-bytes.concat self.delimiter.cr-lf-bytes}
+    {return buf-bytes}
   }
 }
 

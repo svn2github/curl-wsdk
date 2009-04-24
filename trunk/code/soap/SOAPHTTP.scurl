@@ -193,7 +193,7 @@
                           http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           content-type:String =
                               {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version},
-                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.non
+                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
                       }:(request-data:HttpRequestData,
                          request-http-headers:#HttpRequestHeaders)
     || could just save the arguments and do this when demanded by
@@ -336,7 +336,7 @@
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           content-type:String = "text/xml",
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.non
+                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
                       }:(request-data:HttpRequestData,
                          xml-stream:XMLOutputStream,
                          marshal-context:#SOAPMarshalContext,
@@ -460,7 +460,7 @@
                           response-types:{Array-of SOAPObjectType},
                           response-headers:HttpResponseHeaders,
                           mtom-support-range:SOAPMTOMSupportRange =
-                              SOAPMTOMSupportRange.non
+                              SOAPMTOMSupportRange.none
                       }:(xml-input-stream:XMLInputStream,
                          response-names:{Array-of #XMLName},
                          response-types:{Array-of SOAPObjectType},
@@ -689,7 +689,7 @@
                           http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           mtom-support-range:SOAPMTOMSupportRange =
-                              SOAPMTOMSupportRange.non
+                              SOAPMTOMSupportRange.none
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
                          header-roles:#{Array-of #String},
@@ -815,7 +815,7 @@
                           trace-stream:#TextOutputStream = self.trace-stream,
                           http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.non,
+                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none,
                           ...:EventHandler
                       }:SOAPHTTPRPCPostAsyncWorker
     || .. code in here to do this in terms of get-request-data-stream,
@@ -928,7 +928,7 @@
                              character-encoding:CharEncoding = CharEncoding.utf8,
                              trace-stream:#TextOutputStream = self.trace-stream,
                              soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                             mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.non
+                             mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
                          }:void
     {if {aw.async-open-finished bis} then
         || now start reading...
@@ -1012,7 +1012,7 @@
                             character-encoding:CharEncoding = CharEncoding.utf8,
                             trace-stream:#TextOutputStream = null,
                             soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                            mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.non
+                            mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
                         }:(responses:{Array-of any},
                            headers:#{Array-of any},
                            header-roles:#{Array-of #String},

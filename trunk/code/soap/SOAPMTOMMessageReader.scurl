@@ -16,6 +16,7 @@
 
 {define-class public open SOAPMTOMMessageReader
 
+  field private response-headers:HttpResponseHeaders
   field private message:MultipartMessage
   field private attachments:{HashTable-of String, SOAPMTOMAttachment}
 
@@ -23,6 +24,7 @@
                           stream:ByteInputStream,
                           response-headers:HttpResponseHeaders
                       }
+    set self.response-headers = response-headers
     set self.attachments = {{HashTable-of String, SOAPMTOMAttachment}}
     def mr = {MultipartMessageReader response-headers}
     set self.message = {mr.read-message stream}
@@ -30,16 +32,31 @@
 
   {method public open {get-root-stream}:ByteInputStream
     {if not self.message.empty? then
-        def root-part = self.message[0]
-        {if root-part.headers.mime-type == SOAPMTOMRequestData.xop-type then
-            {return
-                {{ByteInputStream-from ByteArray}
-                    (root-part.body asa ByteArray)
+        {if-non-null start = {self.derive-start-param} then
+            {for mp in self.message do
+                def (id, found?) = {mp.headers.get-if-exists "Content-ID"}
+                {if found? and id == start then
+                    {return {ByteArrayInputStream mp.body}}
                 }
+            }
+         else
+            def root-part = self.message[0]
+            {if root-part.headers.mime-type == SOAPMTOMRequestData.xop-type then
+                {return {ByteArrayInputStream root-part.body}}
             }
         }
     }
     {error {lmessage No root MIME part}}
+  }
+
+  {method private {derive-start-param}:#String
+    {if-non-null ct = self.response-headers.content-type then
+        def start = {HttpHeaders.get-parameter ct, "start", default = ""}
+        {if not start.empty? then
+            {return start}
+        }
+    }
+    {return null}
   }
   
   {method public open {get-unmarshal-context
@@ -80,7 +97,7 @@
     {trimmed-id.trim-right trim-chars = '>'}
 
     set self.attachments[{trimmed-id.to-String}] =
-        {SOAPMTOMAttachment content-id, content-type, bytes}
+        {SOAPMTOMAttachment content-id, null, content-type, bytes}
   }
   
   {method package {get-binary-data
@@ -103,6 +120,7 @@
                        }:(val:any, found?:bool)
     def (xt, eof?) = {xis.read-one}
     {if eof? then {return null, false}}
+    
     {if not (xt isa XMLStartElement) or
         (xt asa XMLStartElement).element != SOAPMTOMRequestData.xop-include-name
      then
@@ -112,6 +130,7 @@
     
     let ret:any = null
     let found?:bool = false
+    let handled?:bool = false
     {while true do
         def (val, eof?) = {xis.read-one}
         {if eof? then
@@ -119,13 +138,35 @@
         }
         {type-switch val
          case at:XMLAttribute do
+            {if handled? then
+                {error {lmessage Invalid XOP format}}
+            }
             {if at.name == unmarshal-context.reference-attribute-name and
                 at.value isa String and
                 {(at.value asa String).prefix? "cid:"}
              then
+                set handled? = true
                 def val = {unmarshal-context.get-binary-data
                               at.value asa String
                           }
+                {if-non-null ct = val.content-type then
+                    def charset = {HttpHeaders.get-parameter
+                                      ct,
+                                      "charset",
+                                      default = ""
+                                  }
+                    {if not charset.empty? then
+                        def (num, str) =
+                            {decode-characters
+                                val.content.underlying-FastArray,
+                                {http-charset-to-char-encoding
+                                    {non-null charset}}
+                            }
+                        set ret = str
+                        set found? = true
+                        {continue}
+                    }
+                }
                 set ret = val.content
                 set found? = true
             }

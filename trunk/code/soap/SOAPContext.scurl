@@ -173,7 +173,7 @@
   {method package abstract {register-binary-data
                                val:{Array-of byte},
                                type:SOAPObjectType
-                           }:String
+                           }:(#String, bool)
   }
 
   {method package abstract {append-remaining-attachments
@@ -375,15 +375,18 @@
 {define-class package sealed SOAPMTOMAttachment
   field package content-id:String
   field package expected-content-types:#String
+  field package content-type:#String
   field package content:{Array-of byte}
 
   {constructor package {default
                            content-id:String,
                            expected-content-types:#String,
+                           content-type:#String,
                            content:{Array-of byte}
                        }
     set self.content-id = content-id
     set self.expected-content-types = expected-content-types
+    set self.content-type = content-type
     set self.content = content
   }
 }
@@ -447,7 +450,7 @@
   {method package {register-binary-data
                       val:ByteArray,
                       type:SOAPObjectType
-                  }:String
+                  }:(id:#String, registered?:bool)
     {if-non-null writer = self.mtom-writer then
         {return {writer.register-binary-data val, type}}
      else

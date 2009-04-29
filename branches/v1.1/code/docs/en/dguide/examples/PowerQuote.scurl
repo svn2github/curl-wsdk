@@ -1,10 +1,10 @@
-{curl 7.0, 6.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/docs/en/dguide/examples/PowerQuote.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/code/docs/en/dguide/examples/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/docs/en/dguide/examples/PowerQuote.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/code/docs/en/dguide/examples/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
@@ -268,7 +268,7 @@
             },
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
                     nillable? = true
                 }
@@ -373,7 +373,7 @@
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
                     element-name = {XMLName "http://ws.cdyne.com/", "DataSet"},
-                    xml-type = {XMLName "http://ws.cdyne.com/", "DataSet"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_DataSet"},
                     curl-type = DataSet,
                     nillable? = true
                 },
@@ -391,7 +391,7 @@
         let constant doc-marshaler:SOAPXMLDocumentMarshaler =
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
-                    xml-type = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
                     nillable? = true
                 },
@@ -557,7 +557,7 @@
             {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "4"
+        generated-using-version = "5"
     }
   }
 }

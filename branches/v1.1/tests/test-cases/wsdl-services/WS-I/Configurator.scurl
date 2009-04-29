@@ -1,10 +1,10 @@
-{curl 7.0, 6.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Configurator,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/WS-I/Configurator.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/WS-I/Configurator.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/support/test-cases/wsdl-services/WS-I/Configurator.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/WS-I/Configurator.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public ConfiguratorService {inherits WSDLHTTPRPCPostClient}
@@ -12,15 +12,15 @@
   {doc-next 
     {details 
       This message is used to obtain all of the discovered showcase implementations of 
-                the WS-I services.  It contains useful information on which selections can be made, 
-                such as platform, in addition to vital information about the choices, such as the
-                endpoints.  The service may perform discovery in response to this message or may
-                return cached information.  When the refresh bit is on, the implementation must
-                perform (re)discovery.
+		the WS-I services.  It contains useful information on which selections can be made, 
+		such as platform, in addition to vital information about the choices, such as the
+		endpoints.  The service may perform discovery in response to this message or may
+		return cached information.  When the refresh bit is on, the implementation must
+		perform (re)discovery.
       This message is returned in response to getConfigurationOptions and contains 
-                a list of alternative showcase implementations of the WS-I Basic Sample Application
-                Web services.  The endpoints for the services and information about the service is
-                provided to aid in selection.
+		a list of alternative showcase implementations of the WS-I Basic Sample Application
+		Web services.  The endpoints for the services and information about the service is
+		provided to aid in selection.
       This message is used to indicate the configurator was unable to obtain configuration options.
     }
   }
@@ -46,15 +46,15 @@
   {doc-next 
     {details 
       This message is used to obtain all of the discovered showcase implementations of 
-                the WS-I services.  It contains useful information on which selections can be made, 
-                such as platform, in addition to vital information about the choices, such as the
-                endpoints.  The service may perform discovery in response to this message or may
-                return cached information.  When the refresh bit is on, the implementation must
-                perform (re)discovery.
+		the WS-I services.  It contains useful information on which selections can be made, 
+		such as platform, in addition to vital information about the choices, such as the
+		endpoints.  The service may perform discovery in response to this message or may
+		return cached information.  When the refresh bit is on, the implementation must
+		perform (re)discovery.
       This message is returned in response to getConfigurationOptions and contains 
-                a list of alternative showcase implementations of the WS-I Basic Sample Application
-                Web services.  The endpoints for the services and information about the service is
-                provided to aid in selection.
+		a list of alternative showcase implementations of the WS-I Basic Sample Application
+		Web services.  The endpoints for the services and information about the service is
+		provided to aid in selection.
       This message is used to indicate the configurator was unable to obtain configuration options.
     }
   }
@@ -77,15 +77,15 @@
   {doc-next 
     {details 
       This message is used to obtain all of the discovered showcase implementations of 
-                the WS-I services.  It contains useful information on which selections can be made, 
-                such as platform, in addition to vital information about the choices, such as the
-                endpoints.  The service may perform discovery in response to this message or may
-                return cached information.  When the refresh bit is on, the implementation must
-                perform (re)discovery.
+		the WS-I services.  It contains useful information on which selections can be made, 
+		such as platform, in addition to vital information about the choices, such as the
+		endpoints.  The service may perform discovery in response to this message or may
+		return cached information.  When the refresh bit is on, the implementation must
+		perform (re)discovery.
       This message is returned in response to getConfigurationOptions and contains 
-                a list of alternative showcase implementations of the WS-I Basic Sample Application
-                Web services.  The endpoints for the services and information about the service is
-                provided to aid in selection.
+		a list of alternative showcase implementations of the WS-I Basic Sample Application
+		Web services.  The endpoints for the services and information about the service is
+		provided to aid in selection.
       This message is used to indicate the configurator was unable to obtain configuration options.
     }
   }
@@ -326,7 +326,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
-                    curl-type = _ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray
+                    curl-type = ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray
                 }
             },
             {{Array-of String}
@@ -382,7 +382,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
-                    curl-type = _ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray
+                    curl-type = ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray
                 }
             },
             {{Array-of String}
@@ -461,6 +461,39 @@
                 data-has-root-element? = true
             }
         {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
+                        curl-type = ConfigurationEndpointRole
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
+                        curl-type = ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
+                    },
+                check-element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -552,39 +585,6 @@
             {SOAPArrayMarshaler.from-element-type-array
                 {{Array-of SOAPObjectType}
                     {SOAPObjectType
-                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
-                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
-                        curl-type = ConfigurationEndpointRole
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
-                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
-                        curl-type = _ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray,
-                        nillable? = true
-                    }
-                },
-                element-names =
-                    {{Array-of #XMLName}
-                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
-                    },
-                check-element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointType"},
                         curl-type = ConfigurationEndpointType
@@ -592,7 +592,7 @@
                     {SOAPObjectType
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
-                        curl-type = _ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray,
+                        curl-type = ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray,
                         nillable? = true
                     }
                 },
@@ -628,7 +628,7 @@
             {abs-url "http://localhost:8888/ws-i/supplychain/services/Configurator"}
     }
     {construct-super service-location,
-        generated-using-version = "4"
+        generated-using-version = "5"
     }
   }
 }
@@ -693,14 +693,14 @@
 {define-class public open ConfigurationFaultType
 
   field public message:String = ""
-  field public erroneous-element:#_ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray
+  field public erroneous-element:#ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray
   field public must-understand:bool
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
       message:String = {required-keyword "ConfigurationFaultType.message"} asa String,
-      erroneous-element:#_ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray = {uninitialized-value-for-type #_ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray},
+      erroneous-element:#ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray = {uninitialized-value-for-type #ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray},
       must-understand:bool = {uninitialized-value-for-type bool}
     }
     {if {keyword-supplied? message} then
@@ -716,14 +716,14 @@
 {define-class public open ConfigurationType
 
   field public user-id:String = ""
-  field public service-url:_ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray = {uninitialized-value-for-type _ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray}
+  field public service-url:ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray = {uninitialized-value-for-type ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray}
   field public must-understand:bool
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
       user-id:String = {required-keyword "ConfigurationType.user-id"} asa String,
-      service-url:_ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray = {required-keyword "ConfigurationType.service-url"} asa _ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray,
+      service-url:ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray = {required-keyword "ConfigurationType.service-url"} asa ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray,
       must-understand:bool = {uninitialized-value-for-type bool}
     }
     {if {keyword-supplied? user-id} then
@@ -741,6 +741,8 @@
 {let public constant EncodingStyle:ClassType = {Array-of Url}}
 
 {let public constant Envelope:Type = any}
+
+{let public constant ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray:ClassType = {Array-of ConfigurationEndpointRole}}
 
 {define-class public open Fault
 
@@ -771,7 +773,5 @@
 
 {let public constant Header:Type = any}
 
-{let public constant _ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray:ClassType = {Array-of ConfigurationEndpointRole}}
-
-{let public constant _ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray:ClassType = {Array-of ConfigurationEndpointType}}
+{let public constant ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray:ClassType = {Array-of ConfigurationEndpointType}}
 

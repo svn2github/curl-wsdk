@@ -14,7 +14,7 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0 applet}
+{curl 7.0, 6.0 applet}
 {applet manifest = "manifest.mcurl",
     {compiler-directives careful? = true}
 }
@@ -23,6 +23,42 @@
 
 {document-style PlainDocument}
 {set-document-properties hstretch? = true, vstretch? = true}
+
+|| ===== \\
+{import * from CURL.IDE.COVERAGE}
+{import COM.CURL.WSDK.WSDL}
+{import COM.CURL.WSDK.SOAP}
+{import COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import COM.CURL.WSDK.XML-DISPLAY}
+{import COM.CURL.WSDK.XML-ELABORATION}
+{import COM.CURL.WSDK.XML-QUERY-FUNCTIONS}
+{import COM.CURL.WSDK.RECORDSET-FOR}
+{def start-coverage =
+    {CommandButton
+        label = "Start Coverage",
+        {on Action do
+            {coverage-enable}
+            {coverage-instrument
+                COM.CURL.WSDK.WSDL,
+                COM.CURL.WSDK.SOAP,
+                COM.CURL.WSDK.XML-DOCUMENT-MODEL,
+                COM.CURL.WSDK.XML-DISPLAY,
+                COM.CURL.WSDK.XML-ELABORATION,
+                COM.CURL.WSDK.XML-QUERY-FUNCTIONS,
+                COM.CURL.WSDK.RECORDSET-FOR
+            }
+            {coverage-start}
+        }}
+}
+{def stop-coverage =
+    {CommandButton
+        label = "Stop Coverage",
+        {on Action do
+            {coverage-stop}
+            {coverage-view {coverage-results}}
+        }}
+} 
+|| ===== //
 
 {value
     || override standard tests from query arg, if specified
@@ -40,5 +76,10 @@
     let suite:TestSuite = {TestSuite.import loc}
     
     || presentation
-    {test-ui suite}
+    {VBox
+        {HBox
+            start-coverage,
+            stop-coverage,
+            {Fill}},
+        {test-ui suite}}
 }

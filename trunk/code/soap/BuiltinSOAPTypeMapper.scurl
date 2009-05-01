@@ -34,12 +34,12 @@
   }
 
   {let constant package any-xml-types:{FastArray-of XMLName} =
-        {new {FastArray-of XMLName},
-||--            SOAPTypeMapper.xml-schema-any-type,
-            SOAPTypeMapper.xml-schema-any-simple-type,
-            SOAPTypeMapper.xml-schema-simple-type,
-            SOAPTypeMapper.xml-schema-complex-type
-        }
+    {new {FastArray-of XMLName},
+        SOAPTypeMapper.xml-schema-any-type,
+        SOAPTypeMapper.xml-schema-any-simple-type,
+        SOAPTypeMapper.xml-schema-simple-type,
+        SOAPTypeMapper.xml-schema-complex-type
+    }
   }
 
   || FIXME add other string types
@@ -3547,7 +3547,7 @@
         true
     }
     || add missing int types...
-    || TODO should any really be in here?
+    || TODO should any really be in here?  Should other xml any types show up?
     
     {table.set-curl-type-to-xml-type
         StandardXDMElement, ||any,
@@ -3745,6 +3745,7 @@
 ||--        SOAPTypeMultipleReference.unknown,
 ||--        true
 ||--    }
+    || Should we also list complexType and simpleType?
     {table.set-xml-type-to-curl-type
         SOAPTypeMapper.xml-schema-any-simple-type,
         any,
@@ -3859,7 +3860,7 @@
         let constant doc-marshaler:SOAPXMLDocumentMarshaler =
             {new SOAPXMLDocumentMarshaler,
                 {new SOAPObjectType,
-                    xml-type = {new XMLName, "http://www.w3.org/2001/XMLSchema", "anyType"},
+                    xml-type = SOAPTypeMapper.xml-schema-any-type,
                     curl-type = curl-type,
                     nillable? = true
                 }

@@ -1,0 +1,196 @@
+{curl 6.0, 7.0 package}
+{package COM.CURL.WSDL.TranslationEngine,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/TranslationEngine.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/TranslationEngine.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public TranslateService {inherits WSDLHTTPRPCPostClient}
+
+  {doc-next 
+    {details 
+      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+    }
+  }
+  {method public {translate language-mode:Language, text:String}:(translate-result:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                language-mode,
+                text
+            },
+            {splice self.operations["translate"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+    }
+  }
+  {method public {async-translate language-mode:Language, text:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                language-mode,
+                text
+            },
+            {splice self.operations["translate"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+    }
+  }
+  {method public {define-translate}:void
+    set self.operations["translate"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://www.webservicex.net", "LanguageMode"},
+                {XMLName "http://www.webservicex.net", "Text"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.webservicex.net", "Language"},
+                    curl-type = Language
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.webservicex.net", "TranslateResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://www.webservicex.net/Translate",
+            request-operation = {XMLName "http://www.webservicex.net", "Translate"},
+            response-operation = {XMLName "http://www.webservicex.net", "TranslateResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-translate}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant enum-marshaler:SOAPEnumMarshaler =
+            {SOAPEnumMarshaler
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.webservicex.net", "Language"},
+                    curl-type = Language
+                },
+                use-value? = true
+            }
+        {enum-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://www.webservicex.com/TranslateService.asmx"}
+    }
+    {construct-super service-location,
+        generated-using-version = "5"
+    }
+  }
+}
+
+{define-enum public Language
+    english-tochinese = "EnglishTOChinese",
+    english-tofrench = "EnglishTOFrench",
+    english-togerman = "EnglishTOGerman",
+    english-toitalian = "EnglishTOItalian",
+    english-tojapanese = "EnglishTOJapanese",
+    english-tokorean = "EnglishTOKorean",
+    english-toportuguese = "EnglishTOPortuguese",
+    english-tospanish = "EnglishTOSpanish",
+    chinese-toenglish = "ChineseTOEnglish",
+    french-toenglish = "FrenchTOEnglish",
+    french-togerman = "FrenchTOGerman",
+    german-toenglish = "GermanTOEnglish",
+    german-tofrench = "GermanTOFrench",
+    italian-toenglish = "ItalianTOEnglish",
+    japanese-toenglish = "JapaneseTOEnglish",
+    korean-toenglish = "KoreanTOEnglish",
+    portuguese-toenglish = "PortugueseTOEnglish",
+    russian-toenglish = "RussianTOEnglish",
+    spanish-toenglish = "SpanishTOEnglish",
+    spanish-to-french = "SpanishToFrench",
+    portuguese-to-french = "PortugueseToFrench",
+    italian-to-french = "ItalianToFrench",
+    greek-to-french = "GreekToFrench",
+    german-to-french = "GermanToFrench",
+    french-to-greek = "FrenchToGreek",
+    french-to-italian = "FrenchToItalian",
+    french-to-portuguese = "FrenchToPortuguese",
+    french-to-dutch = "FrenchToDutch",
+    french-to-spanish = "FrenchToSpanish",
+    english-to-russian = "EnglishToRussian",
+    english-to-dutch = "EnglishToDutch",
+    dutch-to-english = "DutchToEnglish",
+    dutch-to-french = "DutchToFrench",
+    greek-to-english = "GreekToEnglish"
+}
+

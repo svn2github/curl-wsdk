@@ -1,0 +1,1404 @@
+{curl 6.0, 7.0 package}
+{package COM.CURL.WSDL.Retailer,
+    {compiler-directives careful? = true},
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/WS-I/Retailer.wsdl"}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/WS-I/Retailer.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public RetailerService {inherits WSDLHTTPRPCPostClient}
+
+  {doc-next 
+    {details 
+      returns a product catalog
+    }
+  }
+  {method public {get-catalog}:(_return:#CatalogType)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["get-catalog"]}
+        }
+    {return
+        responses[0] asa #CatalogType
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      returns a product catalog
+    }
+  }
+  {method public {async-get-catalog event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+            },
+            {splice self.operations["get-catalog"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      returns a product catalog
+    }
+  }
+  {method public {define-get-catalog}:void
+    set self.operations["get-catalog"] = 
+         {Arguments
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "CatalogType"},
+                    curl-type = CatalogType,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "",
+            request-operation = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Retailer.wsdl", "getCatalog"},
+            default-namespace = "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Retailer.wsdl",
+            rpc-style? = true,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Accept an order for quantities of multiple products
+      The Configuration fault header indicates why the configuration was invalid and enumerates all
+        of the service URLs which were not valid in Configuration header of the request message.
+    }
+  }
+  {method public {submit-order parts-order:#PartsOrderType, customer-details:#CustomerDetailsType, configuration:#ConfigurationType}:(_return:#PartsOrderResponseType)
+    let constant request-header-names:{Array-of #XMLName} =
+        {{Array-of #XMLName}
+            {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "Configuration"}
+        }
+    let constant request-header-types:{Array-of SOAPObjectType} =
+        {{Array-of SOAPObjectType}
+            {SOAPObjectType
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationType"},
+                curl-type = ConfigurationType,
+                nillable? = true
+            }
+        }
+    let constant request-headers:{Array-of any} =
+        {{Array-of any}
+            configuration
+        }
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                parts-order,
+                customer-details
+            },
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-headers = request-headers,
+            {splice self.operations["submit-order"]}
+        }
+    {return
+        responses[0] asa #PartsOrderResponseType
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Accept an order for quantities of multiple products
+      The Configuration fault header indicates why the configuration was invalid and enumerates all
+        of the service URLs which were not valid in Configuration header of the request message.
+    }
+  }
+  {method public {async-submit-order parts-order:#PartsOrderType, customer-details:#CustomerDetailsType, configuration:#ConfigurationType, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    let constant request-header-names:{Array-of #XMLName} =
+        {{Array-of #XMLName}
+            {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "Configuration"}
+        }
+    let constant request-header-types:{Array-of SOAPObjectType} =
+        {{Array-of SOAPObjectType}
+            {SOAPObjectType
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationType"},
+                curl-type = ConfigurationType,
+                nillable? = true
+            }
+        }
+    let constant request-headers:{Array-of any} =
+        {{Array-of any}
+            configuration
+        }
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                parts-order,
+                customer-details
+            },
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-headers = request-headers,
+            {splice self.operations["submit-order"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
+  {doc-next 
+    {details 
+      Accept an order for quantities of multiple products
+      The Configuration fault header indicates why the configuration was invalid and enumerates all
+        of the service URLs which were not valid in Configuration header of the request message.
+    }
+  }
+  {method public {define-submit-order}:void
+    set self.operations["submit-order"] = 
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "PartsOrder"},
+                {XMLName "", "CustomerDetails"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderType"},
+                    curl-type = PartsOrderType,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "CustomerDetailsType"},
+                    curl-type = CustomerDetailsType,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderResponseType"},
+                    curl-type = PartsOrderResponseType,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "",
+            request-operation = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Retailer.wsdl", "submitOrder"},
+            default-namespace = "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Retailer.wsdl",
+            rpc-style? = true,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-get-catalog}
+     {self.define-submit-order}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Body"},
+                    xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Body"},
+                    curl-type = Body,
+                    nillable? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "Item"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "CatalogItem"},
+                curl-type = CatalogItem,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "name"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "description"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "productNumber"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "category"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "brand"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "price"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "productNumber"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "productNumber"},
+                    curl-type = ProductNumber,
+                    multiple-reference = SOAPTypeMultipleReference.single
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                }
+            },
+            {{Array-of String}
+                "name",
+                "description",
+                "product-number",
+                "category",
+                "brand",
+                "price"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "Item"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "CatalogItem"},
+                        curl-type = CatalogItem
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "catalog"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "CatalogType"},
+                        curl-type = CatalogType,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "Item"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant enum-marshaler:SOAPEnumMarshaler =
+            {SOAPEnumMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
+                    curl-type = ConfigurationEndpointRole
+                },
+                use-value? = true
+            }
+        {enum-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointType"},
+                curl-type = ConfigurationEndpointType,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "Role"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "content"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "", "Role"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
+                    curl-type = ConfigurationEndpointRole
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
+                    curl-type = Url,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "role",
+                "content"
+            },
+            n-attributes = 1,
+            simple-content? = true,
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationFault"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationFaultType"},
+                curl-type = ConfigurationFaultType,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "mustUnderstand"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "Message"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
+                    curl-type = ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray
+                }
+            },
+            {{Array-of String}
+                "must-understand",
+                "message",
+                "erroneous-element"
+            },
+            n-attributes = 1,
+            repeating-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
+              },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "Configuration"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationType"},
+                curl-type = ConfigurationType,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "mustUnderstand"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "UserId"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
+                    curl-type = ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray
+                }
+            },
+            {{Array-of String}
+                "must-understand",
+                "user-id",
+                "service-url"
+            },
+            n-attributes = 1,
+            repeating-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "CustomerDetailsType"},
+                curl-type = CustomerDetailsType,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "custnbr"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "name"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "street1"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "street2"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "city"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "state"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "zip"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "country"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "custnbr"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "CustomerReferenceType"},
+                    curl-type = CustomerReferenceType
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "custnbr",
+                "name",
+                "street1",
+                "street2",
+                "city",
+                "state",
+                "zip",
+                "country"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "street1"},
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "street2"},
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "city"},
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "state"},
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "zip"},
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "country"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant alias-marshaler:SOAPAliasMarshaler =
+            {SOAPAliasMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "custnbr"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "CustomerReferenceType"},
+                    curl-type = CustomerReferenceType,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "normalizedString"},
+                    curl-type = XMLNormalizedString,
+                    nillable? = true
+                },
+                use-type-attribute? = true
+            }
+        {alias-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
+                    xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
+                    curl-type = Detail,
+                    nillable? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant list-marshaler:SOAPListMarshaler =
+            {SOAPListMarshaler
+                {SOAPObjectType
+                    xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "encodingStyle"},
+                    curl-type = EncodingStyle,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
+                    curl-type = Url,
+                    nillable? = true
+                }
+            }
+        {list-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
+                    xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
+                    curl-type = Envelope,
+                    nillable? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
+                        curl-type = ConfigurationEndpointRole
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
+                        curl-type = ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
+                    },
+                check-element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Fault"},
+                xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Fault"},
+                curl-type = Fault,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "faultcode"},
+                {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "faultstring"},
+                {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "faultactor"},
+                {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "QName"},
+                    curl-type = XMLName
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
+                    curl-type = Url,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
+                    xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
+                    curl-type = Detail,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "faultcode",
+                "faultstring",
+                "faultactor",
+                "detail"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "faultactor"},
+                    {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Header"},
+                    xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Header"},
+                    curl-type = Header,
+                    nillable? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "InvalidProductCode"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "InvalidProductCodeType"},
+                curl-type = InvalidProductCodeType,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Reason"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "ProductNumber"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKEN"},
+                    curl-type = {XMLSimpleValue-for "NMTOKEN"}
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "ProductNumber"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                    curl-type = RetailOrder-ProductNumber,
+                    multiple-reference = SOAPTypeMultipleReference.single
+                }
+            },
+            {{Array-of String}
+                "reason",
+                "product-number"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Item"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderItem"},
+                curl-type = PartsOrderItem,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "quantity"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "price"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                    curl-type = RetailOrder-ProductNumber,
+                    multiple-reference = SOAPTypeMultipleReference.single
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"},
+                    curl-type = int64
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                }
+            },
+            {{Array-of String}
+                "product-number",
+                "quantity",
+                "price"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Item"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderResponseItem"},
+                curl-type = PartsOrderResponseItem,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "quantity"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "price"},
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "comment"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                    curl-type = RetailOrder-ProductNumber,
+                    multiple-reference = SOAPTypeMultipleReference.single
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"},
+                    curl-type = int64
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of String}
+                "product-number",
+                "quantity",
+                "price",
+                "comment"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "comment"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Item"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderResponseItem"},
+                        curl-type = PartsOrderResponseItem
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderResponseType"},
+                        curl-type = PartsOrderResponseType,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Item"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Item"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderItem"},
+                        curl-type = PartsOrderItem
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "PartsOrderType"},
+                        curl-type = PartsOrderType,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "Item"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant alias-marshaler:SOAPAliasMarshaler =
+            {SOAPAliasMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "productNumber"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailCatalog.xsd", "productNumber"},
+                    curl-type = ProductNumber,
+                    multiple-reference = SOAPTypeMultipleReference.single
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "integer"},
+                    curl-type = int64
+                },
+                use-type-attribute? = true
+            }
+        {alias-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant alias-marshaler:SOAPAliasMarshaler =
+            {SOAPAliasMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "ProductNumber"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/RetailOrder.xsd", "productNumber"},
+                    curl-type = RetailOrder-ProductNumber,
+                    multiple-reference = SOAPTypeMultipleReference.single
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "integer"},
+                    curl-type = int64
+                },
+                use-type-attribute? = true
+            }
+        {alias-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointType"},
+                        curl-type = ConfigurationEndpointType
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
+                        curl-type = ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray,
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"}
+                    },
+                check-element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/Retailer"}
+    }
+    {construct-super service-location,
+        generated-using-version = "5"
+    }
+  }
+}
+
+{let public constant Body:Type = any}
+
+{define-class public open CatalogItem
+
+  field public name:String = ""
+  field public description:String = ""
+  field public product-number:ProductNumber
+  field public category:String = ""
+  field public brand:String = ""
+  field public price:double
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      name:String = {required-keyword "CatalogItem.name"} asa String,
+      description:String = {required-keyword "CatalogItem.description"} asa String,
+      product-number:ProductNumber = {required-keyword "CatalogItem.product-number"} asa ProductNumber,
+      category:String = {required-keyword "CatalogItem.category"} asa String,
+      brand:String = {required-keyword "CatalogItem.brand"} asa String,
+      price:double = {uninitialized-value-for-type double}
+    }
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? description} then
+        set self.description = description}
+    {if {keyword-supplied? product-number} then
+        set self.product-number = product-number}
+    {if {keyword-supplied? category} then
+        set self.category = category}
+    {if {keyword-supplied? brand} then
+        set self.brand = brand}
+    {if {keyword-supplied? price} then
+        set self.price = price}
+  }
+
+}
+
+{let public constant CatalogType:ClassType = {Array-of CatalogItem}}
+
+{define-enum public ConfigurationEndpointRole
+    logging-facility = "LoggingFacility",
+    retailer = "Retailer",
+    warehouse-a = "WarehouseA",
+    warehouse-b = "WarehouseB",
+    warehouse-c = "WarehouseC",
+    manufacturer-a = "ManufacturerA",
+    manufacturer-b = "ManufacturerB",
+    manufacturer-c = "ManufacturerC"
+}
+
+{define-class public open ConfigurationEndpointType
+
+  field public content:Url = {uninitialized-value-for-type Url}
+  field public role:ConfigurationEndpointRole
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      content:Url = {required-keyword "ConfigurationEndpointType.content"} asa Url,
+      role:ConfigurationEndpointRole = {uninitialized-value-for-type ConfigurationEndpointRole}
+    }
+    {if {keyword-supplied? content} then
+        set self.content = content}
+    {if {keyword-supplied? role} then
+        set self.role = role}
+  }
+
+}
+
+{define-class public open ConfigurationFaultType
+
+  field public message:String = ""
+  field public erroneous-element:#ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray
+  field public must-understand:bool
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      message:String = {required-keyword "ConfigurationFaultType.message"} asa String,
+      erroneous-element:#ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray = {uninitialized-value-for-type #ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray},
+      must-understand:bool = {uninitialized-value-for-type bool}
+    }
+    {if {keyword-supplied? message} then
+        set self.message = message}
+    {if {keyword-supplied? erroneous-element} then
+        set self.erroneous-element = erroneous-element}
+    {if {keyword-supplied? must-understand} then
+        set self.must-understand = must-understand}
+  }
+
+}
+
+{define-class public open ConfigurationType
+
+  field public user-id:String = ""
+  field public service-url:ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray = {uninitialized-value-for-type ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray}
+  field public must-understand:bool
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      user-id:String = {required-keyword "ConfigurationType.user-id"} asa String,
+      service-url:ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray = {required-keyword "ConfigurationType.service-url"} asa ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray,
+      must-understand:bool = {uninitialized-value-for-type bool}
+    }
+    {if {keyword-supplied? user-id} then
+        set self.user-id = user-id}
+    {if {keyword-supplied? service-url} then
+        set self.service-url = service-url}
+    {if {keyword-supplied? must-understand} then
+        set self.must-understand = must-understand}
+  }
+
+}
+
+{define-class public open CustomerDetailsType
+
+  field public custnbr:CustomerReferenceType = {uninitialized-value-for-type CustomerReferenceType}
+  field public name:String = ""
+  field public street1:#String
+  field public street2:#String
+  field public city:#String
+  field public state:#String
+  field public zip:#String
+  field public country:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      custnbr:CustomerReferenceType = {required-keyword "CustomerDetailsType.custnbr"} asa CustomerReferenceType,
+      name:String = {required-keyword "CustomerDetailsType.name"} asa String,
+      street1:#String = {uninitialized-value-for-type #String},
+      street2:#String = {uninitialized-value-for-type #String},
+      city:#String = {uninitialized-value-for-type #String},
+      state:#String = {uninitialized-value-for-type #String},
+      zip:#String = {uninitialized-value-for-type #String},
+      country:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? custnbr} then
+        set self.custnbr = custnbr}
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? street1} then
+        set self.street1 = street1}
+    {if {keyword-supplied? street2} then
+        set self.street2 = street2}
+    {if {keyword-supplied? city} then
+        set self.city = city}
+    {if {keyword-supplied? state} then
+        set self.state = state}
+    {if {keyword-supplied? zip} then
+        set self.zip = zip}
+    {if {keyword-supplied? country} then
+        set self.country = country}
+  }
+
+}
+
+{let public constant CustomerReferenceType:Type = XMLNormalizedString}
+
+{let public constant Detail:Type = any}
+
+{let public constant EncodingStyle:ClassType = {Array-of Url}}
+
+{let public constant Envelope:Type = any}
+
+{let public constant ErroneousElement-ConfigurationFaultType-ConfigurationEndpointRoleArray:ClassType = {Array-of ConfigurationEndpointRole}}
+
+{define-class public open Fault
+
+  field public faultcode:XMLName = {uninitialized-value-for-type XMLName}
+  field public faultstring:String = ""
+  field public faultactor:#Url
+  field public detail:#Detail
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      faultcode:XMLName = {required-keyword "Fault.faultcode"} asa XMLName,
+      faultstring:String = {required-keyword "Fault.faultstring"} asa String,
+      faultactor:#Url = {uninitialized-value-for-type #Url},
+      detail:#Detail = {uninitialized-value-for-type #Detail}
+    }
+    {if {keyword-supplied? faultcode} then
+        set self.faultcode = faultcode}
+    {if {keyword-supplied? faultstring} then
+        set self.faultstring = faultstring}
+    {if {keyword-supplied? faultactor} then
+        set self.faultactor = faultactor}
+    {if {keyword-supplied? detail} then
+        set self.detail = detail}
+  }
+
+}
+
+{let public constant Header:Type = any}
+
+{define-class public open InvalidProductCodeType
+
+  field public reason:{XMLSimpleValue-for "NMTOKEN"} = {uninitialized-value-for-type {XMLSimpleValue-for "NMTOKEN"}}
+  field public product-number:RetailOrder-ProductNumber
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      reason:{XMLSimpleValue-for "NMTOKEN"} = {required-keyword "InvalidProductCodeType.reason"} asa {XMLSimpleValue-for "NMTOKEN"},
+      product-number:RetailOrder-ProductNumber = {required-keyword "InvalidProductCodeType.product-number"} asa RetailOrder-ProductNumber
+    }
+    {if {keyword-supplied? reason} then
+        set self.reason = reason}
+    {if {keyword-supplied? product-number} then
+        set self.product-number = product-number}
+  }
+
+}
+
+{define-class public open PartsOrderItem
+
+  field public product-number:RetailOrder-ProductNumber
+  field public quantity:int64
+  field public price:double
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      product-number:RetailOrder-ProductNumber = {required-keyword "PartsOrderItem.product-number"} asa RetailOrder-ProductNumber,
+      quantity:int64 = {uninitialized-value-for-type int64},
+      price:double = {uninitialized-value-for-type double}
+    }
+    {if {keyword-supplied? product-number} then
+        set self.product-number = product-number}
+    {if {keyword-supplied? quantity} then
+        set self.quantity = quantity}
+    {if {keyword-supplied? price} then
+        set self.price = price}
+  }
+
+}
+
+{define-class public open PartsOrderResponseItem
+
+  field public product-number:RetailOrder-ProductNumber
+  field public quantity:int64
+  field public price:double
+  field public comment:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      product-number:RetailOrder-ProductNumber = {required-keyword "PartsOrderResponseItem.product-number"} asa RetailOrder-ProductNumber,
+      quantity:int64 = {uninitialized-value-for-type int64},
+      price:double = {uninitialized-value-for-type double},
+      comment:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? product-number} then
+        set self.product-number = product-number}
+    {if {keyword-supplied? quantity} then
+        set self.quantity = quantity}
+    {if {keyword-supplied? price} then
+        set self.price = price}
+    {if {keyword-supplied? comment} then
+        set self.comment = comment}
+  }
+
+}
+
+{let public constant PartsOrderResponseType:ClassType = {Array-of PartsOrderResponseItem}}
+
+{let public constant PartsOrderType:ClassType = {Array-of PartsOrderItem}}
+
+{let public constant ProductNumber:Type = int64}
+
+{let public constant RetailOrder-ProductNumber:Type = int64}
+
+{let public constant ServiceUrl-ConfigurationType-ConfigurationEndpointTypeArray:ClassType = {Array-of ConfigurationEndpointType}}
+

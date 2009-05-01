@@ -1,0 +1,476 @@
+<ROOT xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+
+  <GROUP name='arrays'>
+    <CASE name='SimpleArray'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {StringArray "a", "b"}
+      </CURL>
+    </CASE>
+    <CASE name='StructArray'>
+      <XSD>
+        <xs:complexType name='Foo'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:string' minOccurs='0' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="Foo" type="t:Foo" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {{Array-of Foo} {Foo.from-keywords id = "1"}}
+      </CURL>
+    </CASE>
+    <CASE name='OptionalElement'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+            <xs:element minOccurs="0" maxOccurs="1" name="x" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = "X"}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedElement_'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int"/>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}
+      </CURL>
+      <CURL name='empty'>
+        {Test.from-keywords q = 1, x = {StringArray}}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords q = 1, x = null}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedElementBmid'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+            <xs:element minOccurs="1" maxOccurs="1" name="z" type="xs:int" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+      {Test.from-keywords q = 1, x = {StringArray "a", "b"}, z = 2}
+      </CURL>
+      <CURL name='empty'>
+        {Test.from-keywords q = 1, x = {StringArray}, z = 2}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords q = 1, x = null, z = 2}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedElements'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:string" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {StringArray "a", "b"}, y = {StringArray "c", "d"}}
+      </CURL>
+      <CURL name='emptyFirst'>
+        {Test.from-keywords q = 1, x = {StringArray}, y = {StringArray "c", "d"}}
+      </CURL>
+      <CURL name='emptySecond'>
+        {Test.from-keywords q = 1, x = {StringArray "a", "b"}, y = {StringArray}}
+      </CURL>
+      <CURL name='emptyBoth'>
+        {Test.from-keywords q = 1, x = {StringArray}, y = {StringArray}}
+      </CURL>
+      <CURL name='nullFirst'>
+        {Test.from-keywords q = 1, x = null, y = {StringArray "c", "d"}}
+      </CURL>
+      <CURL name='nullSecond'>
+        {Test.from-keywords q = 1, x = {StringArray "a", "b"}, y = null}
+      </CURL>
+      <CURL name='nullBoth'>
+        {Test.from-keywords q = 1, x = null,y = null}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedStructElement'>
+      <XSD>
+        <xs:complexType name='Foo'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x ={{Array-of Foo} {Foo.from-keywords name = "a"}, {Foo.from-keywords name = "b"}}}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedStructElements'>
+      <XSD>
+        <xs:complexType name='Foo'>
+          <xs:sequence>
+            <xs:element name='Name' type='xs:string'/> 
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="Foo" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="Foo" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1,x = {{Array-of Foo} {Foo.from-keywords name = "a"}, {Foo.from-keywords name = "b"}}, y = {{Array-of Foo} {Foo.from-keywords name = "c"}, {Foo.from-keywords name = "c"}}}
+      </CURL>
+      <CURL name='nullFirst'>
+        {Test.from-keywords q = 1, x = null,y = {{Array-of Foo} {Foo.from-keywords name = "c"}, {Foo.from-keywords name = "c"}}}
+      </CURL>
+      <CURL name='nullLast'>
+        {Test.from-keywords q = 1,x = {{Array-of Foo} {Foo.from-keywords name = "a"}, {Foo.from-keywords name = "b"}}, y = null}
+      </CURL>
+      <CURL name='nullBoth'>
+        {Test.from-keywords q = 1, x = null, y = null}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='more arrays'>
+    <CASE name='ArrayOfArrayOfString'>
+      <XSD>
+        <xs:complexType name='ArrayOfArrayOfstring'>
+          <xs:complexContent 
+              xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' 
+              xmlns:soap11-enc='http://schemas.xmlsoap.org/soap/encoding/'>
+            <xs:restriction base='soap11-enc:Array'>
+              <xs:attribute ref='soap11-enc:arrayType' wsdl:arrayType='ArrayOfstring[]'/>
+            </xs:restriction>
+          </xs:complexContent>
+        </xs:complexType>
+        <xs:complexType name='ArrayOfstring'>
+          <xs:complexContent  
+              xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' 
+              xmlns:soap11-enc='http://schemas.xmlsoap.org/soap/encoding/'>
+            <xs:restriction base='soap11-enc:Array'>
+              <xs:attribute ref='soap11-enc:arrayType' wsdl:arrayType='xs:string[]'/>
+            </xs:restriction>
+          </xs:complexContent>
+        </xs:complexType>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='x' type='ArrayOfArrayOfstring' minOccurs='1' maxOccurs='1'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords x = {ArrayOfArrayOfstring {ArrayOfstring "a", "b"}, {ArrayOfstring "c", "d"}}}
+      </CURL>
+    </CASE>
+    <CASE name='ArrayOfArrayOfString2'>
+      <XSD>
+        <xs:complexType name='ArrayOfArrayOfstring'>
+          <xs:complexContent 
+              xmlns:wsdl='http://schemas.xmlsoap.org/wsdl/' 
+              xmlns:soap11-enc='http://schemas.xmlsoap.org/soap/encoding/'>
+            <xs:restriction base='soap11-enc:Array'>
+              <xs:attribute ref='soap11-enc:arrayType' wsdl:arrayType='xs:string[][]'/>
+            </xs:restriction>
+          </xs:complexContent>
+        </xs:complexType>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='x' type='ArrayOfArrayOfstring' minOccurs='1' maxOccurs='1'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords x = {ArrayOfArrayOfstring {StringArray "a", "b"}, {StringArray "c", "d"}}}
+
+      </CURL>
+    </CASE>
+    <CASE name='ArrayElement'>
+      <XSD>
+        <xs:complexType name="ArrayOfX">
+          <xs:sequence>
+            <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}
+      </CURL>
+    </CASE>
+    <CASE name='AnonymousArrayElement'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" minOccurs="1" maxOccurs="1">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedElement'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {StringArray "a", "b"}}
+      </CURL>
+    </CASE>
+    <CASE name='ArrayElementNullable'>
+      <XSD>
+        <xs:complexType name="ArrayOfX">
+          <xs:sequence>
+            <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" type="ArrayOfX" minOccurs="1" maxOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}
+      </CURL>
+    </CASE>
+    <CASE name='AnonymousArrayElementNullable'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" minOccurs="1" maxOccurs="1">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedElementNullable'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+
+        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='nil array elements'>
+    <CASE name='array'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="errors" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>     
+            <xs:element name="id" type="xs:string" nillable="true"/>
+            <xs:element name="success" type="xs:boolean"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL name='empty'>
+        {Test.from-keywords errors = {{Array-of #String} "ERROR"}, id = "001", success = false}
+      </CURL>
+      <CURL>
+        {Test.from-keywords errors = {{Array-of #String}}, id = "001", success = true}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords errors = null, id = "001", success = true}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='nullable primitive arrays'>
+    <CASE name='RepeatedElements'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element minOccurs="1" maxOccurs="1" name="q" type="xs:int" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="x" type="xs:int" nillable="true" />
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="y" type="xs:int" nillable="true" />
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL name='NullFirst'>
+        {Test.from-keywords q = 1, x = null, y = {{Array-of {Nullable int}} 10, null}}
+      </CURL>
+      <CURL name='NullSecond'>
+        {Test.from-keywords q = 1, x = {{Array-of {Nullable int}} 10, null}, y = null}
+      </CURL>
+      <CURL name='NullBoth'>
+        {Test.from-keywords q = 1, x = null, y = null}
+      </CURL>
+    </CASE>
+    <CASE name='ArrayElementNullable'>
+      <XSD>
+        <xs:complexType name="ArrayOfInt">
+          <xs:sequence>
+            <xs:element name="x" type="xs:int" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" type="ArrayOfInt" minOccurs="1" maxOccurs="1"/>
+          </xs:sequence>
+          </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {ArrayOfInt 1, null}}
+      </CURL>
+    </CASE>
+    <CASE name='AnonymousArrayElementNullable'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" minOccurs="1" maxOccurs="1">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="x" type="xs:int" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+          </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {{Array-of {Nullable int}} 10, null}}
+      </CURL>
+    </CASE>
+    <CASE name='RepeatedElementNullable'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="q" type="xs:int" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="x" type="xs:int" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = 1, x = {{Array-of {Nullable int}} 10, null}}
+      </CURL>
+    </CASE>
+  </GROUP>  
+
+  <GROUP name='ConfusingElementNames'>
+    <CASE name='ElementAndRepeatingElements'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="data" type="sampleData2" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData2">
+          <xs:sequence>
+            <xs:element name="address" type="xs:string" minOccurs="0"/>
+            <xs:element name="data" type="sampleData3" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData3">
+          <xs:sequence>
+            <xs:element name="value1" type="xs:string" minOccurs="0"/>
+            <xs:element name="value2" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords data =
+            {SampleData2.from-keywords data =
+                {{Array-of SampleData3}
+                    {SampleData3.from-keywords}
+                }}}
+      </CURL>
+    </CASE>
+    <CASE name='ElementAndRepeatingElementsNillable'>
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="data" type="sampleData2" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData2">
+          <xs:sequence>
+            <xs:element name="address" type="xs:string" minOccurs="0"/>
+            <xs:element name="data" type="sampleData3" minOccurs="0" maxOccurs="unbounded" nillable="true"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="sampleData3">
+          <xs:sequence>
+            <xs:element name="value1" type="xs:string" minOccurs="0"/>
+            <xs:element name="value2" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords data =
+            {SampleData2.from-keywords data =
+                {{Array-of #SampleData3}
+                    {SampleData3.from-keywords}
+                }}}
+      </CURL>
+    </CASE>
+  </GROUP>  
+
+</ROOT>

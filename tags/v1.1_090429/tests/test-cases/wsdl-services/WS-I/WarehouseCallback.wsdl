@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 2 U (http://www.xmlspy.com) by Xiaoping Wen (Oracle) -->
+<!--
+	October 15, 2002
+
+	(c) Copyright 2002, The Web Services-Interoperability Organization (WS-I)
+	Download or use of this file is governed by the Policies and Bylaws of WS-I.
+
+	For more information, send email info@ws-i.org. 	
+-->
+<wsdl:definitions name="TestWarehouseCallback"
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    targetNamespace="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-10/Manufacturer.wsdl"
+	xmlns:tns="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-10/Manufacturer.wsdl" >
+	<wsdl:import 
+		namespace="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-10/Manufacturer.wsdl" 
+		location="LOCAL/Manufacturer.wsdl"/>
+	<wsdl:service name="WarehouseCallbackService">
+		<wsdl:port name="WarehouseCallbackPort" binding="tns:WarehouseCallbackSoapBinding">
+			<soap:address location="http://localhost:8888/ws-i/supplychain/WarehouseCallback"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

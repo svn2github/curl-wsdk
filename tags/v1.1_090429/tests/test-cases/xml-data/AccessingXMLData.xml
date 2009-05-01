@@ -1,0 +1,1018 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 1998-2004, Curl Corporation.  All Rights Reserved.-->
+<!-- Maintained by: Curl Solutions -->
+<!-- <!DOCTYPE Unit SYSTEM "../../../DTD/cbt.dtd"> -->
+<Unit title="Accessing XML Data">
+	<Lesson>
+		<Topic title="Objectives">
+			<Sequence>
+				<Slide picture="../../../images/objective.gif">
+					<paragraph>After completing this lesson, you will be able to:</paragraph>
+					<itemize>
+						<item>Explain the steps to parse XML data</item>
+						<item>Override <docref>DefaultHandler</docref> class methods</item>
+						<item>Handle possible exceptions thrown when parsing XML data</item>
+						<item>Build a data-driven XML-based applet</item>
+					</itemize>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Lesson Aim</heading>
+				<paragraph>This lesson covers the Curl<trademark/> language classes used for parsing XML data. </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Overview">
+			<Sequence>
+				<Slide picture="../images/AccessingXMLOverview.gif">
+					<paragraph>Read XML data that is served by other applications.</paragraph>
+					<itemize>
+						<item>Static XML documents</item>
+						<item>Dynamically generated XML documents from scripts, databases, or other applications</item>
+					</itemize>
+					<paragraph>XML data can be obtained</paragraph>
+					<enumerate>
+						<item>By communicating with a server script</item>
+						<item>By directly accessing a static XML document</item>
+					</enumerate>
+					<paragraph>XML data is parsed using Curl's SAX2 Parser.</paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Methods of Accessing XML Data</heading>
+				<paragraph>Using Curl's SAX2 Parser, you can parse XML data.  Access to XML content can be obtained directly from an XML document located on a local machine or on a server.  You can also stream XML data from a server-side script. </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="What is XML">
+			<Sequence>
+				<Slide>
+					<paragraph>XML is:</paragraph>
+					<itemize>
+						<item>
+							<paragraph>A standard method of data formatting for the purpose of data exchange between applications.</paragraph>
+							<itemize>
+								<item>Non-proprietary</item>
+								<item>Platform independent</item>
+							</itemize>
+						</item>
+						<item>A text-based markup language </item>
+					</itemize>
+					<code><![CDATA[
+<adventure ID = "111"> 
+<location> France</location> 
+<date>April 13, 2002</date> 
+<duration>4</duration> 
+<activity>Biking</activity> 
+<cost>4800</cost> 
+</adventure> 
+]]></code>
+					<paragraph>Data interchange is similar to HTML.</paragraph>
+					<itemize>
+						<item>Like HTML, 
+data is identified using tags</item>
+						<item>Unlike HTML, 
+XML tags only identify the data,
+rather than specifying how to display it </item>
+					</itemize>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>XML</heading>
+				<paragraph>The Extensible Markup Language (XML) is a standard format that is used for structured documents and data on the Web. For additional information on XML, please see <link href="http://www.w3.org/XML/">http://www.w3.org/XML/</link>. </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="A Simple XML File">
+			<Sequence>
+				<Slide>
+					<code><![CDATA[
+<?xml version="1.0"?> 
+
+<tours>
+  <adventure ID = "111"> 
+	<location> France</location> 
+	<date>April 13, 2002</date> 
+	<duration>4</duration> 
+	<activity>Biking</activity> 
+	<cost>4800</cost> 
+  </adventure> 
+</tours
+]]></code>
+					<paragraph>XML documents begin with a version: <code>&lt;?xml version = "1.0"&gt;</code>
+					</paragraph>
+					<paragraph>XML data is structured by start and end tags: <monospace>&lt;tag&gt;</monospace>
+						<monospace>&lt;/tag&gt;</monospace>
+					</paragraph>
+					<paragraph>Data is between start and end tag </paragraph>
+					<itemize>
+						<item>
+							<monospace>France</monospace>
+						</item>
+						<item>
+							<monospace>April 13, 2002</monospace>
+						</item>
+					</itemize>
+					<paragraph>Tags also define hierarchy.</paragraph>
+					<code><![CDATA[
+
+<tours>
+  <adventure>
+  </adventure>
+</tours>
+]]></code>
+					<itemize>
+						<item>The design of the hierarchy is custom to organization of the data</item>
+					</itemize>
+					<paragraph>Tags can contain attributes, which provide additional information included as part of the tag:</paragraph>
+					<code>&lt;adventure ID = "111"&gt;</code>
+				</Slide>
+			</Sequence>
+			<WorkedExample>
+				<paragraph>Sample XML Data</paragraph>
+				<code><![CDATA[
+<?xml version="1.0"?> 
+
+<tours>
+  <adventure ID = "111"> 
+	<location> France</location> 
+	<date>April 13, 2002</date> 
+	<duration>4</duration> 
+	<activity>Biking</activity> 
+	<cost>4800</cost> 
+  </adventure> 
+
+  <adventure ID = "112"> 
+	<location> Italy</location> 
+	<date>September 6, 2002</date> 
+	<duration>5</duration> 
+	<activity>Hiking</activity> 
+	<cost>7500</cost> 
+  </adventure>
+</tours
+]]></code>
+			</WorkedExample>
+			<Note>
+				<heading>XML Tags</heading>
+				<paragraph>The tags in this example identify each sample adventure: the tour location, date, duration of tour, special activity interest, and cost of the trip. Similar to HTML, the <monospace>&lt;adventure&gt;</monospace> tag has a matching end tag: <monospace>&lt;/adventure&gt;</monospace>. The data between the tag and and its matching end tag defines an element of the XML data. The XML format has the ability for one tag to contain other tags.  This gives XML the ability to represent hierarchical data structures</paragraph>
+				<paragraph>Similar to HTML, whitespace is essentially irrelevant, so you can format the data for readability and yet still process it easily with a program. Unlike HTML, however, in XML you could easily search for adventures containing "Italy" as the location, because the XML tags identify the content of the data, rather than specifying its representation. </paragraph>
+				<heading>XML Attributes</heading>
+				<paragraph>Tags can also contain zero, one, or more attributes within the opening tag's angle brackets. Similar to HTML, the attribute name is followed by an equal sign and the attribute value, and multiple attributes are separated by spaces. The value must be enclosed in quotes.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="How Does the SAX Parser Work?">
+			<Sequence>
+				<Slide picture="../images/SAXParser.gif">
+					<paragraph>A SAX parser sequentially extracts XML content.</paragraph>
+					<itemize>
+						<item>Event-driven methodology</item>
+						<item>Events are fired each time the parser sees a new XML tag</item>
+						<item>SAX parser methods correspond to each event type</item>
+					</itemize>
+					<paragraph>As the data is read, content handler methods are called for the different event types such as:</paragraph>
+					<itemize>
+						<item>The start of the document 						<itemize>
+								<item>The beginning of an element, including that element's attributes 						<itemize>
+										<item>The text contained within an element </item>
+									</itemize>
+								</item>
+								<item>The end of an element </item>
+							</itemize>
+						</item>
+						<item>The end of the document</item>
+					</itemize>
+					<paragraph>Event handler methods need to be customized to extract necessary information </paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>SAX Parsing </heading>
+				<paragraph>Simple API for XML (SAX) is an event-driven model.  The technique is to register your handler with a SAX parser that invokes your callback methods whenever it sees a new XML tag. You can also think of this standard as the serial access protocol for XML. </paragraph>
+				<heading>XML Parsing is Custom</heading>
+				<paragraph>While the Curl language provides an API for parsing XML data, you are required to override appropriate methods in the <docref>ContentHandler</docref> class that can:</paragraph>
+				<itemize>
+					<item>Identify XML tags and attributes that are custom to the XML format</item>
+					<item>Interpret the hierarchical flow of the XML format</item>
+					<item>Obtain XML elements from specific or all associated tags</item>
+					<item>Store the parsed data in variables or fields</item>
+				</itemize>
+			</Note>
+		</Topic>
+		<Topic title="Parsing XML Data">
+			<Sequence>
+				<Slide picture="../images/ParsingXMLData.gif">
+					<paragraph>The SAX Parser Reads XML content sequentially and passes the following events to a Content Handler: </paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Curl language SAX API</heading>
+				<paragraph>Our SAX API is a mapping of the Java-SAX 2.0 API onto the Curl language. If you are familiar with Java-SAX, the Curl language class names are identical. The following lists the high-level modifications to the contents of the classes:</paragraph>
+				<itemize>
+					<item>Curl language method names follow Curl language naming conventions rather than Java naming conventions</item>
+					<item>Overloaded Java methods have been mapped onto Curl language methods with different names</item>
+					<item>Overloaded Java constructors have been mapped onto Curl language constructors with keyword arguments</item>
+					<item>Applets written in the Curl language can access the SAX API by importing the package <docref>CURL.XML.SAX.PARSER</docref>.</item>
+				</itemize>
+			</Note>
+		</Topic>
+		<Topic title="Steps for Parsing XML Data">
+			<Sequence>
+				<Slide>
+					<code><![CDATA[
+<adventure ID = "111"> 
+  <location> France</location> 
+  <date>April 13, 2002</date> 
+  <duration>4</duration> 
+  <activity>Biking</activity> 
+  <cost>4800</cost> 
+  </adventure> 
+]]></code>
+					<enumerate>
+						<item>Declare Curl objects or variables to store and display the parsed XML data.</item>
+						<item>Create XML content handler.
+<itemize>
+								<item>Subclass the <docref>DefaultHandler</docref> class.</item>
+								<item>Create fields to hold parsed XML data.</item>
+								<item>Override content handler methods.</item>
+								<item>Instantiate the custom default handler.</item>
+							</itemize>
+						</item>
+						<item>Access SAX Parser functionality.
+<itemize>
+								<item>Import  Curl's SAX Parser package.</item>
+								<item>Instantiate a SAX Parser object.</item>
+							</itemize>
+						</item>
+						<item>Register the content handler with the SAX Parser.</item>
+						<item>Call the SAX Parser object to parse the XML data.</item>
+					</enumerate>
+				</Slide>
+			</Sequence>
+			<WorkedExample>
+				<example file="../examples/parse-xml.curl"/>
+			</WorkedExample>
+			<Note>
+				<heading>Steps to Parse XML Data</heading>
+				<paragraph>The following slides will describe each step in parsing XML content in the Curl language. </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Create Curl Objects to Store XML Content">
+			<Sequence>
+				<Slide>
+					<code><![CDATA[
+<adventure ID = "111"> 
+  <location> France</location> 
+  <date>April 13, 2002</date> 
+  <duration>4</duration> 
+  <activity>Biking</activity> 
+  <cost>4800</cost> 
+  </adventure> 
+]]></code>
+					<paragraph>Storing XML content is custom to XML data and application functionality</paragraph>
+					<itemize>
+						<item>It is common to create a class that will store parsed XML content</item>
+						<item>Field data can be obtained at a later time for presentation or other application functionality</item>
+					</itemize>
+					<code>
+|| Custom Class to store XML content
+
+{define-class public Tour
+  field public id:String=""
+  field public location:String=""
+  field public date:String=""
+  field public duration:int
+  field public activity:String=""
+  field public cost:double
+}
+</code>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Creating Objects</heading>
+				<paragraph>In the example above, fields are created in the Tour class to represent each element of data that will be parsed from the XML document.  Each field defined will eventually store the corresponding values parsed.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Create the Content Handler">
+			<Sequence>
+				<Slide>
+					<paragraph>The <docref>DefaultHandler</docref> class: </paragraph>
+					<itemize>
+						<item>Provides default implementations for callbacks of the SAX Parser</item>
+						<item>Is your main interface for parsing XML Data</item>
+					</itemize>
+					<code>
+|| Create a subclass of DefaultHandler
+{define-class public TourHandler {inherits DefaultHandler}
+	|| Override event-driven methods 
+	|| Create fields to hold parsed XML data
+}
+</code>
+					<paragraph>Methods contained in <docref>DefaultHandler</docref> correspond each type of event</paragraph>
+					<itemize>
+						<item>By default, methods do nothing</item>
+						<item>Override necessary methods for parsing XML content 
+<itemize>
+								<item>
+									<docref-abbr>DefaultHandler.start-document</docref-abbr>
+								</item>
+								<item>
+									<docref-abbr>DefaultHandler.end-document</docref-abbr>
+								</item>
+								<item>
+									<docref-abbr>DefaultHandler.start-element</docref-abbr>
+								</item>
+								<item>
+									<docref-abbr>DefaultHandler.characters</docref-abbr>
+								</item>
+								<item>
+									<docref-abbr>DefaultHandler.end-element</docref-abbr>
+								</item>
+							</itemize>
+						</item>
+					</itemize>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>
+					<monospace>DefaultHandler</monospace> Methods</heading>
+				<paragraph>The following lists all events that are included in the Curl language:</paragraph>
+				<itemize>
+					<item>characters: text contained within an element</item>
+					<item>
+						<docref-abbr>DefaultHandler.end-document</docref-abbr>: end of the document</item>
+					<item>
+						<docref-abbr>DefaultHandler.end-element</docref-abbr>: end of the element</item>
+					<item>
+						<docref-abbr>DefaultHandler.end-prefix-mapping</docref-abbr>: end of a namespace mapping</item>
+					<item>
+						<docref-abbr>DefaultHandler.error</docref-abbr>: recoverable parser error</item>
+					<item>
+						<docref-abbr>DefaultHandler.fatal-error</docref-abbr>: fatal parser error</item>
+					<item>
+						<docref-abbr>DefaultHandler.ignorable-whitespace</docref-abbr>: ignore whitespace</item>
+					<item>
+						<docref-abbr>DefaultHandler.notation-decl</docref-abbr>: notation declaration</item>
+					<item>
+						<docref-abbr>DefaultHandler.processing-instruction</docref-abbr>: processing instruction data</item>
+					<item>
+						<docref-abbr>DefaultHandler.resolve-entity</docref-abbr>: resolve an external entity</item>
+					<item>
+						<docref-abbr>DefaultHandler.set-document-locator</docref-abbr>: a locator object for document events</item>
+					<item>
+						<docref-abbr>DefaultHandler.skipped-entity</docref-abbr>: name of skipped entity</item>
+					<item>
+						<docref-abbr>DefaultHandler.start-document</docref-abbr>: start of the document</item>
+					<item>
+						<docref-abbr>DefaultHandler.start-element</docref-abbr>: start of the element</item>
+					<item>
+						<docref-abbr>DefaultHandler.start-prefix-mapping</docref-abbr>: start of a namespace mapping</item>
+					<item>
+						<docref-abbr>DefaultHandler.unparsed-entity-decl</docref-abbr>: unparsed entity declaration</item>
+					<item>
+						<docref-abbr>DefaultHandler.warning</docref-abbr>: parser warning</item>
+				</itemize>
+			</Note>
+		</Topic>
+		<Topic title="Create Fields to Hold Parsed XML">
+			<Sequence>
+				<Slide>
+					<paragraph>Create Fields to hold parsed data.</paragraph>
+					<itemize>
+						<item>Hold current <monospace>Tour</monospace> content: <monospace>tour</monospace>
+						</item>
+						<item>Hold every <monospace>Tour</monospace> in an array: <monospace>tours</monospace>
+						</item>
+						<item>Temporarily hold current data: <monospace>data</monospace>
+						</item>
+					</itemize>
+					<paragraph>Instantiate the <monospace>tour</monospace> and <monospace>tours</monospace> fields in the constructor.</paragraph>
+					<code>{define-class public TourHandler {inherits DefaultHandler}
+  field public tours:{Array-of Tour}
+  field private tour:Tour
+  field private data:StringBuf
+
+  {constructor public {default}
+    set self.tours = {{Array-of Tour}}
+    set self.tour = {Tour}
+    set self.data = {StringBuf}
+    {construct-super}
+  }
+  || Override event-driven methods 
+}
+</code>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Details of the Code</heading>
+				<itemize>
+					<item>Fields are created to hold the parsed data</item>
+					<item>The <monospace>tour</monospace> field is defined as a <monospace>Tour</monospace> object and will store the data from the "current" <monospace>tour</monospace> being parsed</item>
+					<item>The <monospace>tours</monospace> field is an array of type <monospace>Tour</monospace>.  The elements of the array will correspond to the number of <monospace>tours</monospace> in the XML document.</item>
+					<item>The constructor initializes the <monospace>tour</monospace> and <monospace>tours</monospace> fields.</item>
+				</itemize>
+			</Note>
+		</Topic>
+		<Topic title="Override Methods: start-document">
+			<Sequence>
+				<Slide>
+					<code>|| Clear the tour array at the 
+|| beginning of the xml document
+
+{method public {start-document}:void
+    {self.tours.clear}
+}
+</code>
+					<paragraph>Override <docref-abbr>DefaultHandler.start-document</docref-abbr> to handle the beginning of XML content.</paragraph>
+					<itemize>
+						<item>Commonly used to initialize fields</item>
+						<item>Can also use to return document status to the end user: 
+"Starting document"</item>
+					</itemize>
+					<paragraph>There is always a corresponding <docref-abbr>DefaultHandler.end-document</docref-abbr> event for each <docref-abbr>DefaultHandler.start-document</docref-abbr>.</paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>The <monospace>start-document</monospace> Method</heading>
+				<paragraph>This method receives notification of the beginning of the document. By default, this method does nothing. Application writers must override this method to take specific actions. </paragraph>
+				<paragraph>There will be a corresponding <docref-abbr>DefaultHandler.end-document</docref-abbr> event for every <docref-abbr>DefaultHandler.start-document</docref-abbr> event.  </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Override Methods: start-element">
+			<Sequence>
+				<Slide>
+					<paragraph>Use the <docref-abbr>DefaultHandler.start-element</docref-abbr> method to handle the beginning of each element.</paragraph>
+					<paragraph>Can check the element tag for type and associated attributes.</paragraph>
+					<code>
+{method public {start-element 
+                   uri:String, name:String, 
+                   qname:String, atts:Attributes
+               }:void
+    || Check if element name is "adventure" 
+    {switch name
+     case "adventure" do
+        || Create a new tour for each new adventure
+        set self.tour = {Tour}
+        || Capture the adventure ID
+        {if {atts.get-length} > 0 then
+            set self.tour.id = {non-null{atts.get-value 0}}
+        }       
+     else || Ignore other element tags with attributes
+    } ||end switch
+} ||end start-element
+</code>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>The <monospace>start-element</monospace> Method</heading>
+				<paragraph>The Parser will invoke this method at the beginning of every element in the XML document; there will be a corresponding <docref-abbr>DefaultHandler.end-element</docref-abbr> event for every <docref-abbr>DefaultHandler.start-element</docref-abbr> event.  All of the element's content will be reported, in order, before the corresponding <docref-abbr>DefaultHandler.end-element</docref-abbr> event.</paragraph>
+				<paragraph>This method allows up to three name components for each element: </paragraph>
+				<itemize>
+					<item>
+						<monospace>uri</monospace>: the Namespace URI</item>
+					<item>
+						<monospace>local-name</monospace>: the local name </item>
+					<item>
+						<monospace>q-name</monospace>: the qualified (prefixed) name</item>
+				</itemize>
+				<paragraph>The attribute list (<monospace>atts</monospace>) will contain attributes used for Namespace declarations.</paragraph>
+				<heading>The <monospace>non-null</monospace> Method</heading>
+				<paragraph>This method verifies that a value is not <docref>null</docref>.  It casts the value to a corresponding <docref>non-null</docref> type, and returns the value.  So <monospace>{non-null x}</monospace> yields a version of <monospace>x</monospace> that is guaranteed to not be <docref>null</docref>, or it throws an error.  A <docref>non-null</docref> value is required when appending an element to an existing <docref>Array</docref>.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Override Methods: characters">
+			<Sequence>
+				<Slide>
+					<code>{method public {characters
+                   ch:StringBuf, 
+                   start:int, 
+                   length:int
+               }:void
+    
+    || clear the StringBuf to hold new xml content
+    {self.data.clear}
+    
+    || concat the characters to the StringBuf
+    {self.data.concat{ch.substr start, length}}
+
+} ||end characters
+</code>
+					<paragraph>Use the <docref-abbr>DefaultHandler.characters</docref-abbr> method to handle the character data associated with each element.</paragraph>
+					<paragraph>Use the data field to temporarily hold the read information.</paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>The <monospace>characters</monospace> Method</heading>
+				<paragraph>This method receives notification of character data inside an element.  It has three arguments:</paragraph>
+				<itemize>
+					<item>
+						<monospace>chars</monospace>: The characters.</item>
+					<item>
+						<monospace>start</monospace>: The start position in the character Array</item>
+					<item>
+						<monospace>length</monospace>: The number of characters to use from the character Array</item>
+				</itemize>
+				<paragraph>By default, this method does nothing. Application writers must override this method to take specific actions for each chunk of character data.</paragraph>
+				<paragraph>Note: Be sure to adhere to the <monospace>start</monospace> and <monospace>length</monospace> arguments or your data may be incorrect.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Override Methods: end-element">
+			<Sequence>
+				<Slide>
+					<code>{method public {end-element
+                   uri:String, name:String, qname:String}:void
+    {switch name
+        ||Place the data in the appropriate field     
+    	case "location" do set self.tour.location = {self.data.to-String}
+     	case "date" do set self.tour.date = {self.data.to-String}
+    	case "duration" do set self.tour.duration = {self.data.to-int}
+     	case "activity" do set self.tour.activity = {self.data.to-String}
+     	case "cost" do set self.tour.cost = {self.data.to-double}
+
+        || Ending "adventure" element indicates the end of the 'record'
+        || Append the tour data to the tours array
+     	case "adventure" do {self.tours.append self.tour}
+     else
+    }  ||end switch 
+} ||end end-element
+</code>
+					<paragraph>Use the <docref-abbr>DefaultHandler.end-element</docref-abbr> method to handle the end of each element.</paragraph>
+					<itemize>
+						<item>Set the appropriate field with the character data</item>
+						<item>At the end of the Adventure Tour data, add the <monospace>self.tour</monospace> to the <monospace>tours</monospace> array</item>
+					</itemize>
+					<paragraph>There is always a corresponding <docref-abbr>DefaultHandler.end-element</docref-abbr> event for each <docref-abbr>DefaultHandler.start-element</docref-abbr>
+					</paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>The <monospace>end-element</monospace> Method</heading>
+				<paragraph>The Parser will invoke this method at the end of every element in the XML document; there will be a corresponding <docref-abbr>DefaultHandler.start-element</docref-abbr> event for every <docref-abbr>DefaultHandler.end-element</docref-abbr> event. </paragraph>
+				<paragraph>This method allows up to three name components for each element: </paragraph>
+				<itemize>
+					<item>
+						<monospace>uri</monospace>: the Namespace URI</item>
+					<item>
+						<monospace>local-name</monospace>: the local name </item>
+					<item>
+						<monospace>q-name</monospace>: the qualified (prefixed) name</item>
+				</itemize>
+			</Note>
+		</Topic>
+		<Topic title="Override Methods: end-document">
+			<Sequence>
+				<Slide>
+					<code>
+{method public {end-document}:void    
+    
+}
+</code>
+					<paragraph>There is always a corresponding <docref-abbr>DefaultHandler.start-document</docref-abbr> event for each <docref-abbr>DefaultHandler.end-document</docref-abbr>.</paragraph>
+					<paragraph>Override <docref-abbr>DefaultHandler.end-document</docref-abbr> methods to handle the end of XML content.</paragraph>
+					<paragraph>Depending on the desired functionality, you may or may not need to override this method.</paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>The <monospace>end-document</monospace> Method</heading>
+				<paragraph>This method receives notification of the end of the document. By default, this method does nothing. Application writers must override this method to take specific actions.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Instantiate the SAX Parser Object and Register the Handler">
+			<Sequence>
+				<Slide>
+					<paragraph> Import the package <docref>CURL.XML.SAX.PARSER</docref> package </paragraph>
+					<itemize>
+						<item>Not included in default packages loaded with an applet</item>
+					</itemize>
+					<paragraph>Instantiate the SAX Parser </paragraph>
+					<itemize>
+						<item>The SAX Parser object will be later used to parse the XML data.</item>
+					</itemize>
+					<paragraph> Register the Content Handler
+</paragraph>
+					<itemize>
+						<item>Use the <docref-abbr>SAXParser.set-content-handler</docref-abbr> method to register the content handler. </item>
+						<item>Identify the subclass that overrides content-related methods</item>
+					</itemize>
+					<code>|| Import the SAX parser package
+|| at the beginning of the file
+{import * from CURL.XML.SAX.PARSER}
+
+|| Create a SAXParser object
+let tour-parser:SAXParser = {SAXParser}    
+
+|| Create a TourHandler object
+let tour-handler:TourHandler = {TourHandler}
+|| Register the content handler
+{tour-parser.set-content-handler tour-handler}
+
+</code>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Registering the Content Handler</heading>
+				<paragraph>If the application does not register a content handler, all content events reported by the SAX parser will be silently ignored.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Parse the XML Data">
+			<Sequence>
+				<Slide>
+					<paragraph>The <docref>InputSource</docref> identifies the type of XML data.</paragraph>
+					<itemize>
+						<item>Use <docref-abbr>InputSource.character-stream</docref-abbr> for text streams</item>
+						<item>Use <docref-abbr>InputSource.byte-stream</docref-abbr> for byte streams</item>
+						<item>Use <docref-abbr>InputSource.system-id</docref-abbr> for direct connection to a resource</item>
+					</itemize>
+					<paragraph>Parse the XML data using the <docref-abbr>SAXParser.parse</docref-abbr> method. Identify the input source for the XML entity.</paragraph>
+					<paragraph>The parse method is synchronous: It will not return until parsing has ended.</paragraph>
+					<code>|| Identify the XML data
+let input-xml:#Url = {url "xml-data.xml"} 
+let input-stream:TextInputStream = {read-open input-xml}
+let xml-source:InputSource = {InputSource
+				 character-stream = input-stream
+			       }
+|| Parse the XML data
+{tour-parser.parse xml-source}
+</code>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Input Source</heading>
+				<paragraph>The SAX parser will use the <docref>InputSource</docref> object to determine how to read XML input. If there is a character stream available, the parser will read that stream directly; if not, the parser will use a byte stream, if available; if neither a character stream nor a byte stream is available, the parser will attempt to open a URI connection to the resource identified by the system identifier.</paragraph>
+				<paragraph>For text streams:</paragraph>
+				<itemize>
+					<item>Create a <docref>TextInputStream</docref> to read the data using the read-open procedure</item>
+					<item>Create the <docref>InputSource</docref> by specifying the <docref>TextInputStream</docref> object as the <docref-abbr>InputSource.character-stream</docref-abbr>
+					</item>
+				</itemize>
+				<paragraph>For byte streams: </paragraph>
+				<itemize>
+					<item>Identify the input stream using the <docref-abbr>InputSource.byte-stream</docref-abbr> accessor
+					</item>
+					<item>The input stream opens a specified URI for read</item>
+				</itemize>
+				<heading>Parsing XML Data</heading>
+				<paragraph>An application can use the parse method to instruct <docref>SAXParser</docref> to begin parsing an XML document from any valid input source. </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Handling Errors ">
+			<Sequence>
+				<Slide>
+					<paragraph>The <docref>ErrorHandler</docref> class handles exceptions thrown during the parse.</paragraph>
+					<itemize>
+						<item>Inherited by <docref>DefaultHandler</docref> class</item>
+						<item>Contains error-related methods</item>
+					</itemize>
+					<paragraph>Override methods in the <docref>DefaultHandler</docref> subclass </paragraph>
+					<itemize>
+						<item>
+							<docref-abbr>ErrorHandler.error</docref-abbr>: recoverable parser error</item>
+						<item>
+							<docref-abbr>ErrorHandler.fatal-error</docref-abbr>: fatal parser error</item>
+						<item>
+							<docref-abbr>ErrorHandler.warning</docref-abbr>: parser warning</item>
+					</itemize>
+					<code>{method public {error exception:SAXParseException}:void    
+    {throw exception}
+}
+{method public {fatal-error exception:SAXParseException}:void    
+    {throw exception}
+}
+{method public {warning exception:SAXParseException}:void    
+    {throw exception}
+}
+</code>
+					<paragraph>Override methods:</paragraph>
+					<itemize>
+						<item>In the same subclass used for handling  XML content or create new subclass.</item>
+						<item>That are applicable in your <docref>DefaultHandler</docref> subclass.</item>
+					</itemize>
+					<paragraph>Each method corresponds to a specific type of <docref>SAXParseException</docref> exception.</paragraph>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Handling Errors</heading>
+				<paragraph>When the SAX driver detects a warning or error, it calls one of three methods: <docref-abbr>ErrorHandler.error</docref-abbr>, <docref-abbr>ErrorHandler.fatal-error</docref-abbr>, or <docref-abbr>ErrorHandler.warning</docref-abbr>. The SAX driver calls these methods with an argument of type <docref>SAXParseException</docref>. For simplicity, we will implement all three methods in the same way. We will re-throw the exception, and put a try-catch block around the parse call.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Add Error Handling to the Parse">
+			<Sequence>
+				<Slide>
+					<code>{try
+
+    ||Register the handlers
+    {tour-parser.set-content-handler tour-handler}
+    {tour-parser.set-error-handler tour-handler}
+
+    || Parse XML data
+    {tour-parser.parse {InputSource system-id = tf.value}}
+
+    || Catch exceptions
+ catch e:SAXParseException do
+    {results.add {bold XML exception: {value e}}}
+}
+</code>
+					<paragraph>Enclose code in <monospace>try/catch</monospace> expression
+Register the content and error handlers.</paragraph>
+					<paragraph>Use the <docref-abbr>SAXParser.set-content-handler</docref-abbr> method to register the content handler </paragraph>
+					<paragraph>Use the <docref-abbr>SAXParser.set-error-handler</docref-abbr> method to register the error handler </paragraph>
+					<itemize>
+						<item>Parse the XML content using the parse method</item>
+						<item>Catch any exceptions thrown during the parse</item>
+					</itemize>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<heading>Error Handlers</heading>
+				<paragraph>If the application does not register an error handler, all error events reported by the SAX parser will be silently ignored; however, normal processing may not continue. It is highly recommended that all SAX applications implement an error handler to avoid unexpected bugs. Applications may register a new or different handler in the middle of a parse, and the SAX parser must begin using the new handler immediately.</paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Displaying the Parsed Data">
+			<Sequence>
+				<Slide picture="../images/DisplayingParsedData.gif">
+					<paragraph>Now that you have the data, you can display it in multiple ways.</paragraph>
+					<itemize>
+						<item>Graphical presentation</item>
+						<item>List in GUI control</item>
+						<item>Use values for other calculations</item>
+					</itemize>
+					<paragraph>No need to contact server to re-display data.</paragraph>
+					<itemize>
+						<item>Perform client-side processing such as sort or filter processes</item>
+						<item>Re-use parsed data as many times as needed</item>
+					</itemize>
+					<paragraph>Note: parsing functionality did not need to store all data.</paragraph>
+					<itemize>
+						<item>Best practice to read once and use multiple times</item>
+						<item>Use discretion; there is no need to store xml content if it will never be used in the applet</item>
+					</itemize>
+				</Slide>
+			</Sequence>
+			<WorkedExample>
+				<example file="../examples/parse-xml.curl"/>
+			</WorkedExample>
+			<Note>
+				<heading>Displaying the Parsed Data</heading>
+				<paragraph>Once the Curl applet has received XML content, it can display the data in multiple ways.  The display of the data will depend on the applet's implementation and desired views of the information.  Remember that the Curl applet can also store and retrieve the data at a future time.   </paragraph>
+			</Note>
+		</Topic>
+		<Topic title="Summary">
+			<Sequence>
+				<Slide>
+					<paragraph>In this lesson, you should have learned the following:</paragraph>
+					<itemize>
+						<item>SAX Parsing is event driven</item>
+						<item>Each type of event corresponds to a method contained within <docref>DefaultHandler</docref> class</item>
+						<item>By default, <docref>DefaultHandler</docref> methods do nothing</item>
+						<item>Override applicable methods in your <docref>DefaultHandler</docref> subclass to perform desired parsing functionality</item>
+						<item>Once the XML data is read, further client-side processing can be performed without querying the original XML content</item>
+					</itemize>
+				</Slide>
+			</Sequence>
+			<WorkedExample/>
+			<Note>
+				<paragraph>You can view the example files contained within this lesson by opening the corresponding Project. Select the following button to open the Project in the Surge Lab<trademark/> Integrated Development Environment (IDE).</paragraph>
+				<ide file="../examples/xml.cprj">Accessing XML Data</ide>
+			</Note>
+		</Topic>
+	</Lesson>
+	<Homework>
+		<Problem title="Introduction">
+			<Description>
+				<paragraph>Objective: The objective of this exercise is to create a Travel Trivia Quiz from XML content.  The XML data will contain the question, the answer, and possible answers that will be presented to the user.</paragraph>
+				<paragraph>The following lists the questions and answers used for the Travel Trivia Quiz:</paragraph>
+				<enumerate>
+					<item>The Cannes Film Festival takes place in what country?<itemize>
+							<item>Answer: France</item>
+							<item>Selections: Italy, Greece, Spain, France</item>
+						</itemize>
+					</item>
+					<item>Transylvania, the legendary home of Count Dracula, is located in what country?<itemize>
+							<item>Answer: Romania</item>
+							<item>Selections: Russia, Yugoslavia, Poland, Romania</item>
+						</itemize>
+					</item>
+					<item>Java, Sumatra, and Bali are popular destinations in what country?<itemize>
+							<item>Answer: Indonesia</item>
+							<item>Selections: India, Indonesia, Taiwan, Philippines </item>
+						</itemize>
+					</item>
+					<item>What country was formerly known as Zaire?<itemize>
+							<item>Answer: Congo</item>
+							<item>Selections: Burma, Swaziland, Congo, South Africa</item>
+						</itemize>
+					</item>
+					<item>What Caribbean island is said to be the model for the island in Robinson Crusoe?<itemize>
+							<item>Answer: Tobago</item>
+							<item>Selections: Cuba, Puerto Rico, Tobago, Aruba</item>
+						</itemize>
+					</item>
+					<item>What country has the most kilometers of waterways?<itemize>
+							<item>Answer: Russia</item>
+							<item>Selections: United States, Russia, Brazil, China</item>
+						</itemize>
+					</item>
+					<item>If you are hiking in Cameron Highlands, what country are you in? <itemize>
+							<item>Answer: Malaysia</item>
+							<item>Selections: Macedonia, Ireland, Indonesia, Malaysia</item>
+						</itemize>
+					</item>
+					<item>The Mayan ruins of Tikal are a top attraction in what country?<itemize>
+							<item>Answer: Guatemala</item>
+							<item>Selections: Guatemala, Brazil, Portugal, Mexico</item>
+						</itemize>
+					</item>
+					<item>What country has beaches on both the Indian and Pacific Oceans?<itemize>
+							<item>Answer: Australia</item>
+							<item>Selections: Australia, India, Philippines, United States</item>
+						</itemize>
+					</item>
+					<item>In what European country can you find volcanoes and hot springs?<itemize>
+							<item>Answer: Iceland</item>
+							<item>Selections: Greenland, Iceland, Norway, Finland</item>
+						</itemize>
+					</item>
+				</enumerate>
+				<paragraph>The user interface will resemble the following:</paragraph>
+				<image source="../images/TravelTrivia-2.gif"/>
+			</Description>
+		</Problem>
+		<Problem title="Open the Accessing XML Data Project">
+			<Description>
+				<enumerate>
+					<item>
+						<paragraph>Open the Accessing XML Data project (<monospace>xml.cprj</monospace>) in the Surge Lab IDE by selecting the following button:
+</paragraph>
+						<ide file="../exercise-start/xml.cprj">Open Project</ide>
+					</item>
+					<item>View the file <monospace>trivia.xml</monospace> that contains XML content.  This content will be accessed from the Curl applet and parsed in order to display the questions to the use and also to compute the score from the answers.</item>
+					<item>
+						<paragraph>View the <monospace>start.curl</monospace> file.  This file contains necessary code to display the Trivia quiz.  The final display of the Trivia Quiz will be accomplished by calling the <monospace>generate-quiz</monospace> procedure.  This code is placed at the bottom of the file.</paragraph>
+						<paragraph>There are place holders for content that you will provide in the following steps.  These place holders contain the classes and procedures necessary for parsing the XML data. Place holders are created for the following classes and procedure:</paragraph>
+						<itemize>
+							<item>The <monospace>Trivia</monospace> class</item>
+							<item>The <monospace>TriviaHandler</monospace> class</item>
+							<item>The <monospace>parse-trivia-questions</monospace> procedure</item>
+						</itemize>
+						<paragraph>There are also procedures that have already been created for you that access the parsing functionality that will be created in this exercise and display the parsed XML content to the user.</paragraph>
+						<paragraph>The list below details the procedures that have been created for you.</paragraph>
+						<itemize>
+							<item>The <monospace>generate-quiz</monospace> procedure has the following functionality:
+      <itemize>
+									<item>Calls the <monospace>parse-trivia-questions</monospace> procedure to parse the XML data. You will create this procedure in subsequent steps.</item>
+									<item>Calls the <monospace>display-trivia-questions</monospace> procedure that formats the parsed XML data in a graphical container.  This procedure will be provided for you.</item>
+									<item>Returns a <docref>Dialog</docref> of the graphical content.</item>
+								</itemize>
+            This procedure contains the following code.
+            <code>
+{define-proc {generate-quiz}:Dialog
+    {try
+        
+        || Parse the XML data
+        let trivia-question-data:{Array-of Trivia} = 
+            {parse-trivia-questions "trivia.asp"}
+        
+        || Use the parsed data to create the display
+        set display-content = 
+            {display-trivia-questions trivia-question-data}
+        
+        || Catch exceptions
+     catch e:SAXParseException do
+        {display-content.add
+            {bold color = "red", XML exception: {value e}}
+        }
+    }
+    {return {Dialog display-content}}
+}
+      </code>
+							</item>
+							<item>The  
+      <monospace>display-trivia-questions</monospace> procedure has the following functionality:<itemize>
+									<item>Takes an array of the parsed Trivia question groupings as input and returns a <docref>VBox</docref> to display the XML content.</item>
+									<item>Formats a <docref>VBox</docref> containing the question and answer selections.</item>
+									<item>Adds a <docref>CommandButton</docref> to the <docref>VBox</docref> that calculates the score from the parsed answer data.</item>
+								</itemize>
+							</item>
+						</itemize>
+						<paragraph>Please view the <monospace>display-trivia-questions</monospace> procedure code in the <monospace>start.curl</monospace> file.</paragraph>
+					</item>
+				</enumerate>
+			</Description>
+		</Problem>
+		<Problem title="Build the Applet">
+			<Description>
+				<enumerate>
+					<item>At the beginning of the file, use the import statement to import the <docref>CURL.XML.SAX.PARSER</docref> package.</item>
+					<item>
+						<paragraph>Create the <monospace>Trivia</monospace> Class using <docref>define-class</docref>.  Make this class a public class. This class will represent each trivia question grouping from the XML data.
+</paragraph>
+						<paragraph>Define public fields to represent the trivia data from the XML content.</paragraph>
+						<itemize>
+							<item>
+								<monospace>field public question:String = " "</monospace>
+							</item>
+							<item>
+								<monospace>field public answer:String = " "</monospace>
+							</item>
+							<item>
+								<monospace>field public selection-array:{Array-of String} = {{Array-of String}}</monospace>
+							</item>
+						</itemize>
+					</item>
+					<item>
+						<paragraph>Create the <monospace>TriviaHandler</monospace> class using <docref>define-class</docref>.  Make this class a public class and inherit from <docref>DefaultHandler</docref>. </paragraph>
+						<paragraph>Define fields to hold the trivia data from the XML content.</paragraph>
+						<itemize>
+							<item>
+								<code>field public trivia-questions:{Array-of Trivia}</code>
+							</item>
+							<item>
+								<code>field private trivia-question:Trivia</code>
+							</item>
+							<item>
+								<code>field private data:StringBuf</code>
+							</item>
+						</itemize>
+						<paragraph>Create a constructor to initialize the fields by inserting the following code into <monospace>TriviaHandler</monospace>.	</paragraph>
+						<code>
+{constructor public {default}
+    set self.trivia-questions = {{Array-of Trivia}}
+    set self.trivia-question = {Trivia}
+    set self.data = {StringBuf}
+    {construct-super}
+  }
+</code>
+						<paragraph>Override the <docref-abbr>DefaultHandler.start-document</docref-abbr> method.</paragraph>
+						<itemize>
+							<item>Clear the <monospace>trivia-questions</monospace> field in the <docref-abbr>DefaultHandler.start-document</docref-abbr> method. You can use the clear method to perform this task.
+</item>
+						</itemize>
+						<paragraph>Override the <docref-abbr>DefaultHandler.start-element</docref-abbr> method.</paragraph>
+						<itemize>
+							<item>Clear the data field in the <docref-abbr>DefaultHandler.start-document</docref-abbr> method. You can use the <monospace>clear</monospace> method to perform this task.</item>
+							<item>Using a <docref>switch</docref> statement, check the value of the <monospace>name </monospace>of the <monospace>start-element</monospace>. If the <monospace>name </monospace>is equal to "<monospace>trivia</monospace>" then set <monospace>self.trivia-question = {Trivia}</monospace>.  Do nothing if it is not equal to "trivia".</item>
+						</itemize>
+						<paragraph>Override the <docref-abbr>DefaultHandler.characters</docref-abbr> method.</paragraph>
+						<itemize>
+							<item>Concatenate the character data into the <monospace>data </monospace>field. You can use the <monospace>concat</monospace> method to perform this task.</item>
+						</itemize>
+						<paragraph>Override the <docref-abbr>DefaultHandler.end-element</docref-abbr> method.  Record the stored character data in the appropriate <monospace>trivia-question</monospace> field.  Using a <docref>switch</docref> statement, check the value of the <monospace>name</monospace> of the  <docref-abbr>DefaultHandler.end-element</docref-abbr>.  If the <monospace>name</monospace> is:</paragraph>
+						<itemize>
+							<item>"question", then <code>set self.trivia-question.question = {self.data.to-String}</code>
+							</item>
+							<item>"answer", then	
+<code>set self.trivia-question.answer = {self.data.to-String}</code>
+							</item>
+							<item>"selection", then 	
+<code>{self.trivia-question.selection-array.append {self.data.to-String}}</code>
+							</item>
+							<item>"trivia", then	
+<code>{self.trivia-questions.append self.trivia-question}</code>
+							</item>
+						</itemize>
+					</item>
+					<item>
+						<paragraph>After the <monospace>TriviaHandler</monospace> class, instantiate the parser and the handler by adding the following variable declarations:</paragraph>
+						<code>{let trivia-question-parser:SAXParser = {SAXParser}}
+{let trivia-question-handler:TriviaHandler = {TriviaHandler}}
+</code>
+					</item>
+					<item>
+						<paragraph>Following the code for the variable declarations defined in the previous step, create the <monospace>parse-trivia-questions</monospace> procedure.  This procedure has one input and one output: </paragraph>
+						<itemize>
+							<item>Input: <monospace>input-xml</monospace> is a <docref>String</docref> that represents the location of the XML content to be parsed.</item>
+							<item>Output: The output of the procedure is an <monospace>{Array-of Trivia}</monospace> that has each Trivia question grouping contained as an element of the <docref>Array</docref>.</item>
+						</itemize>
+						<paragraph>The body of the <monospace>parse-trivia-questions</monospace> procedure will perform the following tasks: </paragraph>
+						<itemize>
+							<item>Sets the content handler using the <docref-abbr>SAXParser.set-content-handler</docref-abbr> method.</item>
+							<item>Parses the XML data using the parse method.  </item>
+							<item>Returns the parsed XML data in the form of an <monospace>{Array-of Trivia}</monospace>. </item>
+						</itemize>
+					</item>
+					<item>Run the applet in your Web browser.  Select the "Submit" <docref>CommandButton</docref> and check your score.  Note that the "Submit" button does not place a call to a server, rather it uses the parsed XML answer data to validate the user's selections and return a score.</item>
+				</enumerate>
+			</Description>
+			<WorkedExample>
+				<paragraph>Click this button to open the Project that contains all files used for the solution in this lesson.</paragraph>
+				<paragraph>
+					<ide file="../exercises/xml.cprj">Open Project</ide>
+				</paragraph>
+				<heading>Modifying the Form Solution</heading>
+				<example file="../exercises/start.curl"/>
+			</WorkedExample>
+		</Problem>
+	</Homework>
+</Unit>

@@ -1,0 +1,1443 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next
+    {purpose
+        This is the abstract class for the interface that handles
+        unmarshaling a SOAP message into a an array of values.
+    }
+    {notes
+        See {docref SOAPRPCMessageReader} for a basic implementation
+        of this interface.
+    }
+}
+{define-class public abstract open SOAPMessageReader
+
+  {doc-next
+    {purpose
+        The local-name of the SOAP 1.1 fault code element.  Which can appear
+        under the SOAP 1.1 Fault element.
+    }
+  }
+  {let public constant soap-1-1-fault-code-name:String = "faultcode"}
+
+  {doc-next
+    {purpose
+        The local-name of the SOAP 1.2 fault code element.  Which can appear
+        under the SOAP 1.2 Fault element.
+    }
+  }
+  {let public constant soap-1-2-fault-code-name:String = "Code"}
+
+  {doc-next
+    {purpose
+        The local-name of the SOAP 1.1 fault string element.  Which can appear
+        under the SOAP 1.1 Fault element.
+    }
+  }
+  {let public constant soap-1-1-fault-string-name:String = "faultstring"}
+
+  {doc-next
+    {purpose
+        The local-name of the SOAP 1.2 fault string element.  Which can appear
+        under the SOAP 1.2 Fault element.
+    }
+  }
+  {let public constant soap-1-2-fault-string-name:String = "Reason"}
+
+  {doc-next
+    {purpose
+        The local-name of the SOAP 1.1 detail element.  Which can appear
+        under the SOAP 1.1 Fault element.
+    }
+  }
+  {let public constant soap-1-1-detail-name:String = "detail"}
+
+|| FIXME needs a way to do 1.2 style packaging
+  {doc-next
+    {purpose
+        Read in a SOAP message into an array of values from a
+        {docref XMLInputStream}.
+    }
+    {override
+        Non-abstract classes must provide an implementation of this.
+    }
+    {parameter stream,
+        {docref XMLInputStream} where the {docref XMLToken}s of SOAP
+        XML data to be converted into Curl values are read from.
+    }
+    {parameter response-names,
+        An {ctext {Array-of #XMLName}} with names for the response values,
+        or {ctext null} if no name is needed.  Each response name in
+        {param response-names} matches up with a response type in
+        {param response-types} of the same index.
+        If there is no response name for a given response,
+        then it will be read based on index.
+    }
+    {parameter response-types,
+        An {ctext {Array-of #SOAPObjectType}} with types for the
+        response values, if a type is needed.  Each response type in
+        {param response-types} matches up with a response name in
+        {param response-names} of the same index.  If the type does
+        not have enough information to unmarshal the response, it will
+        be filled in based on the element name of the response, and by
+        using type mapping information.
+    }
+    {parameter default-encoding,
+        The encoding to use for the conversion of XML into
+        values, if no encoding attributes are found in the XML.
+        {ctext null} means any encoding, or the default for
+        this {docref SOAPMessageReader}.
+    }
+    {parameter check-type-attribute?,
+        A {ctext bool} that indicates if the type attributes should be
+        checked against {param parameter-types} by the unmarshal calls.  For
+        SOAP 1.1 that mostly means an attribute named
+        {ctext {XMLName SOAPTypeMapper.xml-schema-instance-uri, "type"}}
+        with the name of the XML type as its value.
+    }
+    {parameter unmarshal-context,
+        The {docref SOAPUnmarshalContext} which is used to keep track
+        of ids and such for multiple reference support.  The default
+        of {ctext null} means that the {docref SOAPMessageReader}
+        will make one of its own choice.
+    }
+    {parameter default-namespace,
+        A namespace to use as the namespace for response elements with
+        no namespace if the element name then matches a response name.
+    }
+    {parameter operation,
+        The name of the operation for this SOAP message, or {ctext null}
+        if no operation.  If this is not {ctext null} then this will be
+        expected as a surrounding element of the responses for rpc and
+        document style message.
+    }
+    {return-vals
+        The response values in an {ctext {Array-of any}}, and
+        the SOAP message headers (if any) in an {ctext {Array-of XMLToken}}.
+    }
+    {throws
+        {exception SOAPException,
+            if there is a Fault element in the Body of message.
+            For a SOAP 1.1 fault it would throw a
+            {docref SOAP-1-1-FaultException}.
+        }
+        {exception SOAPUnmarshalException,
+            if there is a problem with the types being unmarshaled
+            or if there is a problem with the format of the XML data.
+        }
+    }
+  }
+  {method public abstract open {read-response
+                                   stream:XMLInputStream,
+                                   response-names:{Array-of #XMLName},
+                                   || has xml-name + some type info
+                                   response-types:{Array-of SOAPObjectType},
+                                   || default this?
+                                   default-encoding:#String,
+                                   || does this make sense, should this be in
+                                   || types and element names already?
+                                   unmarshal-context:#SOAPUnmarshalContext =
+                                       null,
+                                   check-type-attribute?:bool = false,
+                                   default-namespace:#String = null,
+                                   operation:#XMLName = null,
+                                   envelope-namespace:String =
+                                       SOAPMessageWriter.soap-1-1-envelope-uri,
+                                   header-names:#{Array-of #XMLName} = null,
+                                   header-types:#{Array-of SOAPObjectType} = null,
+                                   header-attribute-namespace:String =
+                                       SOAPMessageWriter.soap-1-1-envelope-uri
+                               }:(responses:{Array-of any},
+                                  headers:#{Array-of any},
+                                  header-roles:#{Array-of #String},
+                                  header-must-understands:#{Array-of bool})
+  }
+}
+
+{doc-next
+    {purpose
+        A non-abstract sub-class of {docref SOAPMessageReader} with
+        additional methods to allow more control over decoding RPC and
+        document style SOAP messages.
+    }
+}
+{define-class public open SOAPRPCMessageReader
+  {inherits SOAPMessageReader}
+
+  {doc-next
+    {purpose
+        The {docref SOAPTypeMapper} being used to unmarshal stuff in
+        the current message.
+    }
+  }
+  field public constant type-mapper:SOAPTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPElementNameToXMLTypeMapper} being used to
+        fill in missing type information during unmarshaling.
+    }
+  }
+  field public constant element-name-to-xml-type:SOAPElementNameToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPXMLTypeToCurlTypeMapper} being used to
+        fill in missing type information during unmarshaling.
+        Also passed to {docref SOAPTypeMapper.unmarshal}.
+    }
+  }
+  field public constant xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPCurlTypeToXMLTypeMapper} being used to
+        fill in missing type information during unmarshaling.
+    }
+  }
+  field public constant curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        The {docref SOAPXMLTypeToElementNameMapper} being used to
+        fill in missing type information during unmarshaling.
+    }
+  }
+  field public constant xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+
+
+
+{doc-next
+    {purpose
+        Construct a {docref SOAPRPCMessageReader} which can then be used
+        to read various SOAP messages.
+    }
+    {notes
+        The parameters simply fill in the fields of the same names.
+    }
+  }
+  {constructor public {default
+                          type-mapper:SOAPTypeMapper =
+                              builtin-soap-type-mapper,
+                          element-name-to-xml-type:SOAPElementNameToXMLTypeMapper =
+                              builtin-soap-element-name-to-xml-type-mapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper
+                      }
+    set self.type-mapper = type-mapper
+    set self.element-name-to-xml-type = element-name-to-xml-type
+    set self.xml-type-to-curl-type = xml-type-to-curl-type
+    set self.curl-type-to-xml-type = curl-type-to-xml-type
+    set self.xml-type-to-element-name = xml-type-to-element-name
+  }
+
+  {method public open {read-response
+                          stream:XMLInputStream,
+                          response-names:{Array-of #XMLName},
+                          || has xml-name + some type info
+                          response-types:{Array-of SOAPObjectType},
+                          || default this?
+                          default-encoding:#String,
+                          || does this make sense, should this be in
+                          || types and element names already?
+                          unmarshal-context:#SOAPUnmarshalContext =
+                              null,
+                          check-type-attribute?:bool = false,
+                          default-namespace:#String = null,
+                          operation:#XMLName = null,
+                          envelope-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          header-names:#{Array-of #XMLName} = null,
+                          header-types:#{Array-of SOAPObjectType} = null,
+                          header-attribute-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri
+                      }:(responses:{Array-of any},
+                         headers:#{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool})
+    {return
+        {self.read-rpc-response
+            stream,
+            response-names,
+            response-types,
+            default-encoding,
+            unmarshal-context = unmarshal-context,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            operation = operation,
+            envelope-namespace = envelope-namespace,
+            header-names = header-names,
+            header-types = header-types,
+            header-attribute-namespace = header-attribute-namespace
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Read in a SOAP message into an array of values from a
+        {docref XMLInputStream}.
+    }
+    {details
+        This is the same as {docref SOAPMessageReader.read-response}
+        except that it has some extra RPC related parameters to allow
+        more control over what is read.  And it has some additional
+        return values.
+    }
+    {notes
+        All of the parameters not explicitly mentioned are the same as 
+        the parameters in {docref SOAPMessageReader.read-response}.
+    }
+    {parameter rpc-style?,
+        Should the message be read as a document style or rpc style
+        SOAP message.  (rpc style messages have an element named after the
+        operation as the element in the Body that contains all of the
+        arguments.  document style messages have the arguments directly
+        under the Body element, although if {param operation} is
+        not {ctext null} document style is basically the same as
+        rpc style.)
+    }
+    {parameter operation,
+        The name of the operation for this SOAP message, or {ctext null}
+        if no operation.  If this is not {ctext null} then this will be
+        expected as a surrounding element of the responses for rpc and
+        document style message.
+    }
+    {return-vals
+        In addition to the return values that are the same as those
+        from {docref SOAPMessageReader.read-response}, this also has a
+        return value of an array of any attributes that were read from
+        the root element of the message (which will be a SOAP Envelope
+        element.)
+    }
+  }
+  {method public open {read-rpc-response
+                          stream:XMLInputStream,
+                          response-names:{Array-of #XMLName},
+                          || has xml-name + some type info
+                          response-types:{Array-of SOAPObjectType},
+                          || default this?
+                          default-encoding:#String,
+                          unmarshal-context:#SOAPUnmarshalContext = null,
+                          || does this make sense, should this be in
+                          || types and element names already?
+                          check-type-attribute?:bool = false,
+                          default-namespace:#String = null,
+                          operation:#XMLName = null,
+                          envelope-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          header-names:#{Array-of #XMLName} = null,
+                          header-types:#{Array-of SOAPObjectType} = null,
+                          header-attribute-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          rpc-style?:bool = true
+                      }:(responses:{Array-of any},
+                         headers:#{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool},
+                         root-element-attributes:#{Array-of XMLAttribute}
+                        )
+    {if response-names.size < response-types.size then
+        {response-names.set-size response-types.size, null}
+     elseif response-names.size > response-types.size then
+        {response-types.set-size response-names.size, {new SOAPObjectType}}
+    }
+
+    let (current-token:XMLToken, eof?:bool) = {stream.read-one}
+    let constant read-document-start?:bool =
+        not eof? and current-token isa XMLStartDocument
+    || we will do two reads on an EOF, but that is an error case, so
+    || it is ok.
+    {if read-document-start? then
+        set (current-token, eof?) = {stream.read-one}
+    }
+    {if eof? then
+        || right kind of error
+        {throw-unmarshal-exception
+            {localize "Got an EOF instead of expected evelope element."}
+        }
+    }
+      || read Envelope start
+    {type-switch current-token
+     case se:XMLStartElement do
+|| FIXME: if it was a SOAP 1.2 envelope, handle that...
+        {if se.element.local-name != "Envelope" or
+            se.element.namespace != envelope-namespace
+         then
+            || right kind of error
+            {throw-unmarshal-exception
+                {lformat
+                    "Got %y instead of expected envelope element",
+                    se.element
+                }
+            }
+        }
+     else
+        {throw-unmarshal-exception
+            {lformat
+                "Got %y instead of a envelope XMLStartElement",
+                current-token
+            }
+        }
+    }
+    || now read Envelope attributes
+    || look for encodingStyle
+    let constant root-element-attributes:#{Array-of XMLAttribute} =
+        {reader-read-attributes stream}
+    set default-encoding =
+        {reader-check-attributes-for-encoding
+            root-element-attributes, default-encoding
+        }
+    || check for Header, and save if found
+    set (current-token, eof?) = {stream.read-one}
+    {if eof? then
+        || right kind of error
+        {throw-unmarshal-exception
+            {localize "Got an EOF instead of expected body or header element"}
+        }
+    }
+    let headers:#{Array-of any}
+    let header-roles:#{Array-of #String}
+    let header-must-understands:#{Array-of bool}
+    {type-switch current-token
+     case se:XMLStartElement do
+        {if se.element.local-name == "Header" and
+            se.element.namespace == envelope-namespace
+         then
+            set (headers, header-roles, header-must-understands) =
+                {self.read-header-values
+                    stream,
+                    {if-non-null header-names then
+                        header-names
+                     else
+                        {new {Array-of #XMLName}}
+                    },
+                    {if-non-null header-types then
+                        header-types
+                     else
+                        {new {Array-of SOAPObjectType}}
+                    },
+                    default-encoding,
+                    unmarshal-context,
+                    default-namespace = default-namespace,
+                    check-type-attribute? = check-type-attribute?,
+                    header-attribute-namespace = header-attribute-namespace
+                }
+            set (current-token, eof?) = {stream.read-one}
+            {if eof? or not current-token isa XMLEndElement then
+                {throw-unmarshal-exception
+                    {localize "Did not get expected end of Header."}
+                }
+            }
+            set (current-token, eof?) = {stream.read-one}
+        }
+     else
+        {throw-unmarshal-exception
+            {lformat "Got %s instead of header XMLStartElement.", current-token}
+        }
+    }
+      || read Body start
+    {if eof? then
+        || right kind of error
+        {throw-unmarshal-exception
+            {localize "Got an EOF instead of expected body or header element."}
+        }
+    }
+    {type-switch current-token
+     case se:XMLStartElement do
+        {if se.element.local-name != "Body" or
+            se.element.namespace != envelope-namespace
+         then
+            {throw-unmarshal-exception
+                {lformat
+                    "Got %s instead of expected body element.", current-token
+                }
+            }
+        }
+     else
+        {throw-unmarshal-exception
+            {lformat "Got %s instead of a body XMLStartElement.", current-token}
+        }
+    }
+
+    || skip attributes for body...
+    || look for encodingStyle
+    let constant body-attributes:#{Array-of XMLAttribute} =
+        {reader-read-attributes stream}
+    set default-encoding =
+        {reader-check-attributes-for-encoding body-attributes, default-encoding}
+
+    || now get top level RPC element
+    set (current-token, eof?) = {stream.read-one}
+    {if eof? then
+        {throw-unmarshal-exception
+            {localize "Got an EOF instead of expected operation XMLStartElement."}
+        }
+    }
+    let skip-values?:bool = false
+    let actual-operation:#XMLName = null
+    {type-switch current-token
+     case se:XMLStartElement do
+        {if se.element.local-name == "Fault" and
+            se.element.namespace == envelope-namespace
+         then
+            || what other params does fault need?
+            || does not return?
+            {self.handle-soap-1-1-fault
+                stream, null, null, null, body-attributes,
+                envelope-namespace = envelope-namespace
+            }
+            {return {new {Array-of any}}, null, null, null, null}
+        }
+        {if-non-null operation then
+            || NOTE: name of RPC 'Response' element does not matter
+            {if false
+||--                (se.element.namespace != operation.namespace or 
+||--                 (se.element.local-name != operation.local-name and
+||--                  se.element.local-name != operation.local-name & "Response"))
+              then
+                {throw-unmarshal-exception
+                    {lformat
+                        "Got %y instead of expected operation start element.",
+                        se.element
+                    }
+                }
+            }
+            set actual-operation = se.element
+         else
+            {if rpc-style? then
+                || allow this for now, although it is a lame reduction of
+                || error checking.
+|#
+                {throw-soap-exception
+                    {localize "If rpc-style? is 'true', then there must be an operation."}
+                }
+#|
+             else
+                {stream.unread-one current-token}
+            }
+        }
+     case ee:XMLEndElement do
+        || Hum must be done...
+        {stream.unread-one current-token}
+        set skip-values? = true
+     else
+        {throw-unmarshal-exception
+            {lformat
+                "Got %s instead of first XMLStartElement in body/operation.",
+                current-token
+            }
+        }
+    }
+
+    let constant responses:{Array-of any} =
+        {if not skip-values? then
+            || skip attributes for operation...
+            || look for encodingStyle
+            let constant operation-attributes:#{Array-of XMLAttribute} =
+                {reader-read-attributes stream}
+            set default-encoding =
+                {reader-check-attributes-for-encoding
+                    operation-attributes, default-encoding
+                }
+
+            || read all of the response values (and any hrefed stuff after that.)
+            {self.read-response-values
+                stream,
+                response-names,
+                response-types,
+                default-encoding,
+                unmarshal-context,
+                default-namespace = default-namespace,
+                check-type-attribute? = check-type-attribute?,
+                operation = actual-operation,
+                rpc-style? = rpc-style?
+            }
+
+         else
+            {if-non-null actual-operation then
+                || get end of operation element
+                set (current-token, eof?) = {stream.read-one}
+                {if eof? then
+                    {throw-unmarshal-exception
+                        {localize "Got EOF instead of the expected operation XMLEndElement."}
+                    }
+                }
+                {if not current-token isa XMLEndElement then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Got %s instead of the expected operation XMLEndElement.",
+                            current-token
+                        }
+                    }
+                }
+            }
+            {new {Array-of any}}
+        }
+
+
+    || read Body end
+    set (current-token, eof?) = {stream.read-one}
+    || FIXME check token
+    {if eof? then
+        {throw-unmarshal-exception
+            "Got EOF instead of the expected Body XMLEndElement."
+        }
+    }
+    {if not current-token isa XMLEndElement then
+        || right type of error?
+        {throw-unmarshal-exception
+            {lformat
+                "Got %s instead of the expected Body XMLEndElement.",
+                current-token
+            }
+        }
+    }
+
+    || read Envelope end
+    set (current-token, eof?) = {stream.read-one}
+    || FIXME check token
+    {if eof? then
+        || right type of error?
+        {throw-unmarshal-exception
+            "Got EOF instead of the expected Envelope XMLEndElement."
+        }
+    }
+    {if not current-token isa XMLEndElement then
+        {throw-unmarshal-exception
+            {lformat
+                "Got %s instead of the expected Envelope XMLEndElement.",
+                current-token
+            }
+        }
+    }
+
+    {if read-document-start? then
+        set current-token = {stream.read-one}
+        {if not current-token isa XMLEndDocument then
+            {throw-unmarshal-exception
+                {lformat
+                    "Got %s instead of the expected XMLEndDocument.",
+                    current-token
+                }
+            }
+        }
+    }
+
+    {return responses,
+        headers, header-roles, header-must-understands,
+        root-element-attributes
+    }
+  }
+
+
+  {method public open {read-header-values
+                          stream:XMLInputStream,
+                          header-names:{Array-of #XMLName},
+                          || has xml-name + some type info
+                          header-types:{Array-of SOAPObjectType},
+                          || default this?
+                          default-encoding:#String,
+                          unmarshal-context:#SOAPUnmarshalContext,
+                          || does this make sense, should this be in
+                          || types and element names already?
+                          check-type-attribute?:bool = false,
+                          default-namespace:#String = null,
+                          header-attribute-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri
+                      }:(headers:{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool})
+    {return
+        {self.read-response-or-header-values
+            stream,
+            header-names,
+            header-types,
+            default-encoding,
+            unmarshal-context,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            header-attribute-namespace = header-attribute-namespace,
+            headers? = true
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Unmarshals the response values from {param stream}, assuming
+        that the code calling this will have already read the elements
+        before the response values and will read the elements after
+        the response values afterwards.
+    }
+    {notes
+        Used by {docref SOAPRPCMessageReader.read-rpc-response}, and
+        should generally only be used by things which are overriding that.
+    }
+    {details
+        The parameters and return values match the similarly named ones from
+        {docref SOAPMessageReader.read-response}.
+    }
+  }
+  {method public open {read-response-values
+                          stream:XMLInputStream,
+                          response-names:{Array-of #XMLName},
+                          || has xml-name + some type info
+                          response-types:{Array-of SOAPObjectType},
+                          || default this?
+                          default-encoding:#String,
+                          unmarshal-context:#SOAPUnmarshalContext,
+                          || does this make sense, should this be in
+                          || types and element names already?
+                          check-type-attribute?:bool = false,
+                          default-namespace:#String = null,
+                          operation:#XMLName = null,
+                          rpc-style?:bool = false
+                      }:(responses:{Array-of any})
+    {return
+        {self.read-response-or-header-values
+            stream,
+            response-names,
+            response-types,
+            default-encoding,
+            unmarshal-context,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            operation = operation,
+            rpc-style? = rpc-style?
+        }
+    }
+  }
+
+  {method public open {read-response-or-header-values
+                          stream:XMLInputStream,
+                          response-names:{Array-of #XMLName},
+                          || has xml-name + some type info
+                          response-types:{Array-of SOAPObjectType},
+                          || default this?
+                          default-encoding:#String,
+                          unmarshal-context:#SOAPUnmarshalContext,
+                          || does this make sense, should this be in
+                          || types and element names already?
+                          check-type-attribute?:bool = false,
+                          default-namespace:#String = null,
+                          header-attribute-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri,
+                          headers?:bool = false,
+                          operation:#XMLName = null,
+                          rpc-style?:bool = false
+                      }:(responses:{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool})
+
+      || In a loop reads XMLStartElement from stream, then
+      || uses various type mapper things to figure out how to
+      || unmarshal the thing, then reads the XMLEndElement.
+      || most of the fault handling will be here...but it varies between
+      || 1.1 and 1.2, but not a lot.
+
+      || creates a SOAPUnmarshalContext
+    let constant context:SOAPUnmarshalContext =
+        {if-non-null unmarshal-context then
+            unmarshal-context
+         else
+            {new DefaultSOAPUnmarshalContext}
+        }
+
+    let constant responses:{Array-of any} =
+        {new {Array-of any}.from-size, response-types.size, null}
+    let header-roles:#{Array-of #String}
+    let header-must-understands:#{Array-of bool}
+    {if headers? then
+        set header-roles =
+            {new {Array-of #String}.from-size, response-types.size, null}
+        set header-must-understands =
+            {new {Array-of bool}.from-size, response-types.size, false}
+    }
+    let previous-response-index:int = -1, current-response-index:int
+    let constant used-responses?:{FastArray-of bool} =
+        {new {FastArray-of bool}.from-size, response-types.size, false}
+    let maybe-in-values?:bool = true
+
+    {while true do
+        let (current-token:XMLToken, eof?:bool) = {stream.read-one}
+        {if eof? then
+            {throw-unmarshal-exception
+                "Got EOF early at start of body."
+            }
+        }
+        {type-switch current-token
+         case se:XMLStartElement do
+            || data, handle it!
+            let constant attributes:#{Array-of XMLAttribute} =
+                {reader-read-attributes stream}
+            || see if it might be the next response
+            {if maybe-in-values? then
+                set current-response-index = previous-response-index + 1
+                || if current-response-index doesn't look right...
+                {if current-response-index >= response-types.size or
+                    used-responses?[current-response-index] or
+                    
+                    (response-names[current-response-index] != null and
+                     
+                     || NOTE: name of RPC 'return' element does not matter
+                     ((not rpc-style?) or current-response-index > 0) and                     
+                     
+                     not {SOAPRPCMessageReader.element-matches-field-name?
+                             se.element,
+                             {non-null response-names[current-response-index]},
+                             default-namespace
+                         }
+                    )
+                 then
+                    || Nope, is it in the response list at all?
+                    set current-response-index = -1
+                    {for rn key i in response-names do
+                        {if (not used-responses?[i] and
+                             rn != null and
+                             {SOAPRPCMessageReader.element-matches-field-name?
+                                 se.element,
+                                 {non-null rn},
+                                 default-namespace
+                             }
+                            )
+                         then
+                            set current-response-index = i
+                            {break}
+                        }
+                    }
+                }
+             else
+                set current-response-index = -1
+            }
+            || Note that we are not getting any type info from the attributes,
+            || the thing should be declared as and anyType, and the
+            || unmarshaler could look for the type then.
+            let type:SOAPObjectType =
+                {if current-response-index < 0 then
+                    {new SOAPObjectType, element-name = se.element}
+                 else
+                    set used-responses?[current-response-index] = true
+                    response-types[current-response-index]
+                }
+            let type-known?:bool = true
+            {if type.element-name == null then
+                set type =
+                    {SOAPObjectType.clone-with type, element-name = se.element}
+            }
+            || fill in missing type information.
+            set type =
+                {SOAPObjectType.fill-in-from-element-name-mapper
+                    type,
+                    self.element-name-to-xml-type,
+                    self.xml-type-to-curl-type
+                }
+            || if we don't know the xml-type, then we need to see if there
+            || are any useful attributes
+            {if type.xml-type == null or type.curl-type == null then
+                {if-non-null attributes then
+                    set type =
+                        {any-find-type-from-attributes
+                            type,
+                            attributes,
+                            self.xml-type-to-curl-type
+                        }
+                }
+            }
+            || if we don't know the xml-type, then we need to see if there
+            || this is sort of a backwards fill
+            set type =
+                {SOAPObjectType.fill-in-from-curl-type-mapper
+                    type,
+                    self.curl-type-to-xml-type,
+                    self.xml-type-to-element-name
+                }
+            {if type.xml-type == null then
+                || this is kind of bogus using the element-name as the type
+                set type =
+                    {SOAPObjectType.clone-with
+                        type,
+                        xml-type = type.element-name
+                    }
+                set type =
+                    {SOAPObjectType.fill-in-from-element-name-mapper
+                        type,
+                        null,
+                        self.xml-type-to-curl-type
+                    }
+            }
+            {if type.xml-type == null then
+                {if not headers? then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Can't figure out XML type of response %s.",
+                            type.element-name
+                        }
+                    }
+                }
+                set type-known? = false
+            }
+            {if type.curl-type == null then
+                {if not headers? then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Can't figure out Curl type of response %s.",
+                            type.element-name
+                        }
+                    }
+                }
+                set type-known? = false
+            }
+
+            || get encoding from attributes
+            let constant encoding:#String =
+                {reader-check-attributes-for-encoding
+                    attributes,
+                    default-encoding
+                }
+
+            {if headers? then
+                let constant header-index:int =
+                    {if current-response-index < 0 then
+                        {responses.append null}
+                        {header-roles.set-size responses.size, null}
+                        {header-must-understands.set-size responses.size, false}
+                        responses.size - 1
+                     else
+                        current-response-index 
+                    }
+                {if-non-null attributes then
+                    {for a in attributes do
+                        let constant namespace:String = a.name.namespace
+                        let constant local-name:String = a.name.local-name
+                        {if ((header-attribute-namespace ==
+                              SOAPMessageWriter.soap-1-1-envelope-uri or
+                              header-attribute-namespace == "")
+                             and
+                             (namespace == header-attribute-namespace or
+                              namespace == "") and
+                             local-name == "actor"
+                            ) or
+                            ((header-attribute-namespace !=
+                              SOAPMessageWriter.soap-1-1-envelope-uri and
+                              header-attribute-namespace != "")
+                             and
+                             (namespace == header-attribute-namespace and
+                              local-name == "role")
+                            )
+                         then
+                            {if-non-null header-roles then
+                                set header-roles[header-index] =
+                                    a.value asa String
+                            }
+                         elseif (header-attribute-namespace == namespace or
+                                 (header-attribute-namespace ==
+                                  SOAPMessageWriter.soap-1-1-envelope-uri and
+                                  header-attribute-namespace == "")) and
+                                local-name == "mustUnderstand"
+                         then
+                            {if-non-null header-must-understands then
+                                set header-must-understands[header-index] =
+                                    {if a.value == "1" then
+                                        true
+                                     else
+                                        false
+                                    }
+                            }
+                        }
+                    }
+                }
+            }
+
+            {if headers? and current-response-index < 0 then
+                let constant hx:{Array-of XMLToken} = {new {Array-of XMLToken}}
+                {hx.append se}
+                {if-non-null attributes then
+                    {for a in attributes do
+                        {hx.append a}
+                    }
+                }
+                let start-unreadable:int = hx.size
+                {reader-read-through-end-element
+                    stream,
+                    se,
+                    include-end-element? = true,
+                    out = hx
+                }
+                set responses[responses.size - 1] = 
+                    {XDMElement-from-tokens hx}
+                
+                {if type-known? then
+                    {for i:int = hx.size - 1 downto start-unreadable do
+                        {stream.unread-one hx[i]}
+                    }
+                }
+            }
+            {if type-known? then || not type-known? implies headers?
+                || extract header related attributes
+                let constant response:any =
+                    {self.type-mapper.unmarshal
+                        stream,
+                        attributes,
+                        type,
+                        encoding,
+                        context,
+                        self.type-mapper,
+                        self.xml-type-to-curl-type,
+                        check-type-attribute? = check-type-attribute?
+                    }
+                {type-switch response
+                 case state:SOAPUnmarshalObjectState do
+                    || it is incomplete, just set a callback if we need it for
+                    || the response...
+                    {if current-response-index >= 0 then
+                        let constant index:int = current-response-index
+                        {context.append-callback
+                            state.id,
+                            {proc {
+                                      object:any,
+                                      status:SOAPUnmarshalObjectStatus
+                                  }:bool
+                                set responses[index] = object
+                                || no need to call us again
+                                {return true}
+                            },
+                            || would be good if it were complete, but we don't
+                            || really care.
+                            min-status = SOAPUnmarshalObjectStatus.complete
+                        }
+                    }
+                }
+                {if current-response-index >= 0 then
+                    set responses[current-response-index] = response
+                    set previous-response-index = current-response-index
+                }
+                || read end element for this value
+                set (current-token, eof?) = {stream.read-one}
+                {if eof? then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Got EOF instead of end of response %y.", se.element
+                        }
+                    }
+                }
+                {type-switch current-token
+                 case ee:XMLEndElement do
+                    {if ee.element != null and
+                        ee.element != se.element
+                     then
+                        {throw-unmarshal-exception
+                            {lformat
+                                "Expected XMLEndElement for %y got %y.",
+                                se.element, current-token
+                            }
+                        }
+                    }
+                 else
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Expected XMLEndElement for %y got %y.",
+                            se.element, current-token
+                        }
+                    }
+                }
+            }
+         case ee:XMLEndElement do
+            || unread it...
+            {if-non-null operation then
+                {if not maybe-in-values? then
+                    {stream.unread-one ee}
+                    {break}
+                }
+                {if ee.element != null and ee.element != operation then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Got end of %y instead of end of operation.",
+                            ee.element
+                        }
+                    }
+                }
+                set maybe-in-values? = false
+             else
+                {stream.unread-one ee}
+                {break}
+            }
+         case ed:XMLEndDocument do
+            {stream.unread-one ed}
+            {break}
+         else
+            {throw-unmarshal-exception
+                {lformat
+                    "Got %y instead of a XMLStartElement or XMLEndElement.",
+                    current-token
+                }
+            }
+        }
+    }
+    {if-non-null operation then
+        {if maybe-in-values? then
+            {throw-unmarshal-exception
+                {lformat
+                    "Never saw end of operation %y.",
+                    operation
+                }
+            }
+        }
+    }
+
+    {context.check-leftover-unmarshaled-objects}
+    {return responses, header-roles, header-must-understands}
+  }
+
+  {define-proc package {element-matches-field-name?
+                           element-name:XMLName,
+                           field-name:XMLName,
+                           default-namespace:#String
+                       }:bool
+    {return
+        element-name == field-name or
+        (field-name.local-name == element-name.local-name and
+         field-name.namespace == "" and
+         element-name.namespace == default-namespace)
+    }
+  }
+
+  {doc-next
+    {purpose
+        Handles turning a SOAP 1.1 Fault element into a thrown
+        {docref SOAP-1-1-FaultException} with the fault information
+        in it.  Assumes that the {docref XMLStartElement} for the
+        Fault has been read.
+    }
+    {notes
+        Used by {docref SOAPRPCMessageReader.read-rpc-response}, and
+        should generally only be used by things which are overriding that.
+    }
+    {throws
+        {exception SOAP-1-1-FaultException,
+            filled in with the data from the Fault XML element.
+        }
+        {exception SOAPException,
+            if there is a problem with the format of the Fault XML
+            element.
+        }
+    }
+  }
+  {method public open {handle-soap-1-1-fault
+                          stream:XMLInputStream,
+                          headers:#{Array-of any},
+                          header-roles:#{Array-of #String},
+                          header-must-understands:#{Array-of bool},
+                          body-attributes:#{Array-of XMLAttribute},
+                          envelope-namespace:String =
+                              SOAPMessageWriter.soap-1-1-envelope-uri
+                      }:void
+|| FIXME: does partial handling of SOAP 1.2 Faults, but does not handle
+|| Node, or Role and some of the details
+    let fault-code:#XMLName
+    let fault-string:#String
+    let detail:#{Array-of XMLToken}
+    let fault-other-elements:#{Array-of XMLToken}
+
+    let constant fault-attributes:#{Array-of XMLAttribute} =
+        {reader-read-attributes stream}
+
+    {while true do
+        let (token:XMLToken, eof?:bool) = {stream.read-one}
+        {if eof? then
+            {break}
+        }
+        {type-switch token
+         case se:XMLStartElement do
+            let constant local-name:String = se.element.local-name
+            let constant namespace:String = se.element.namespace
+            let constant fault-element-attributes:#{Array-of XMLAttribute} =
+                {reader-read-attributes stream}
+            {if (namespace == SOAPMessageWriter.soap-1-1-envelope-uri and
+                 local-name == SOAPMessageReader.soap-1-1-fault-code-name) or
+                (namespace == "" and
+                 local-name == SOAPMessageReader.soap-1-1-fault-code-name) or
+                (namespace != SOAPMessageWriter.soap-1-1-envelope-uri and
+                 local-name == SOAPMessageReader.soap-1-2-fault-code-name)
+             then
+                {if-non-null fault-code then
+                    {throw-soap-exception
+                        {lformat
+                            "Multiple %s elements in a SOAP Fault.",
+                            local-name
+                        }
+                    }
+                 else
+                    || get characters.xml-name-values
+                    let constant characters:#XMLCharacters =
+                        {unmarshal-read-characters stream}
+                    set fault-code =
+                        {if-non-null characters then
+                            {if-non-null xnv = characters.xml-name-values then
+                                xnv[0]
+                             else
+                                || This should not happen, but we don't want to
+                                || throw away the info.
+                                {new XMLName, "", characters.characters}
+                            }
+                         else
+                            {new XMLName, "", ""}
+                        }
+                    || skip XMLEndElement for faultcode
+                    {stream.read-one}
+                }
+             elseif 
+                (namespace == SOAPMessageWriter.soap-1-1-envelope-uri and
+                 local-name == SOAPMessageReader.soap-1-1-fault-string-name) or
+                (namespace == "" and
+                 local-name == SOAPMessageReader.soap-1-1-fault-string-name) or
+                (namespace != SOAPMessageWriter.soap-1-1-envelope-uri and
+                 local-name == SOAPMessageReader.soap-1-2-fault-string-name)
+              then
+                {if-non-null fault-string then
+                    {throw-soap-exception
+                        {lformat
+                            "Multiple %s elements in a SOAP Fault.",
+                            local-name
+                        }
+                    }
+                 else
+                    let constant characters:#XMLCharacters =
+                        {unmarshal-read-characters stream}
+                    set fault-string =
+                        {if-non-null characters then
+                            characters.characters
+                         else
+                            ""
+                        }
+                    || skip XMLEndElement for faultstring
+                    {stream.read-one}
+                }
+             elseif local-name == SOAPMessageReader.soap-1-1-detail-name then
+                {if-non-null detail then
+                    {throw-soap-exception
+                        {lformat
+                            "Multiple %s elements in a SOAP 1.1 Fault.",
+                            SOAPMessageReader.soap-1-1-detail-name
+                        }
+                    }
+                 else
+                    || get all tokens and store them in there
+                    set detail = {reader-read-through-end-element stream, se,
+                                     include-end-element? = true}
+                    {if detail == null then
+                        set detail = {new {Array-of XMLToken}}
+                     else
+                        {detail.insert se, 0}
+                    }
+                }
+             else
+                let constant foe:{Array-of XMLToken} =
+                    {if-non-null fault-other-elements then
+                        fault-other-elements
+                     else
+                        let constant foe:{Array-of XMLToken} =
+                            {new {Array-of XMLToken}}
+                        set fault-other-elements = foe
+                        foe
+                    }
+                {foe.append se}
+                || append until match into foe
+                let constant tmp:#{Array-of XMLToken} =
+                    {reader-read-through-end-element
+                        stream, se, include-end-element? = true}
+                {if-non-null tmp then
+                    {foe.concat tmp}
+                }
+            }
+         case characters:XMLCharacters do
+            || Put in others?
+            let constant foe:{Array-of XMLToken} =
+                {if-non-null fault-other-elements then
+                    fault-other-elements
+                 else
+                    let constant foe:{Array-of XMLToken} =
+                        {new {Array-of XMLToken}}
+                    set fault-other-elements = foe
+                    foe
+                }
+            {foe.append characters}
+         case attribute:XMLAttribute do
+            || toss them, no idea what to do with these...
+         case ee:XMLEndElement do
+            {if-non-null e = ee.element then
+                {if e.local-name != "Fault" or
+                    e.namespace != envelope-namespace
+                 then
+                    {throw-soap-exception
+                        {lformat
+                            "SOAP Fault End element mismatch %y",
+                            e
+                        }
+                    }
+                }
+            }
+            {stream.unread-one ee}
+            {break}
+         else
+            {stream.unread-one token}
+            {break}
+        }
+    }
+    {throw
+        {new SOAP-1-1-FaultException,
+            {if-non-null fault-code then
+                fault-code
+             else
+                || maybe we should throw a different exception instead?
+                || this is illegal...
+                {new XMLName, "", ""}
+            },
+            {if-non-null fault-string then
+                fault-string
+             else
+                "faultstring missing."
+            },
+            detail = 
+                {if-non-null detail then
+                    {if detail.empty? then null
+                     else
+                        {XDMElement-from-tokens detail}}
+                 else null},
+            fault-other-elements = fault-other-elements,
+            headers = headers,
+            header-roles = header-roles,
+            header-must-understands = header-must-understands,
+            body-attributes = body-attributes
+        }
+    }
+  }
+}
+
+{define-proc package {reader-read-attributes
+                        stream:XMLInputStream
+                     }:#{Array-of XMLAttribute}
+    let attributes:#{Array-of XMLAttribute}
+    {while true do
+        let constant (token:XMLToken, eof?:bool) = {stream.read-one}
+        {if eof? then
+            {break}
+        }
+        {type-switch token
+         case attribute:XMLAttribute do
+            let nn-attributes:{Array-of XMLAttribute} =
+                {if-non-null attributes then
+                    attributes
+                 else
+                    let nn-a:{Array-of XMLAttribute} =
+                        {new {Array-of XMLAttribute}}
+                    set attributes = nn-a
+                    nn-a
+                }
+            {nn-attributes.append attribute}
+         else
+            {stream.unread-one token}
+            {break}
+        }
+    }
+    {return attributes}
+}
+
+{define-proc package {reader-read-through-end-element
+                        stream:XMLInputStream,
+                        start-element:#XMLStartElement,
+                        include-end-element?:bool = false,
+                        out:#{Array-of XMLToken} = null
+                     }:(#{Array-of XMLToken})
+    let tokens:#{Array-of XMLToken} = out
+    let nest-level:int = 0
+    {while true do
+        let constant (token:XMLToken, eof?:bool) = {stream.read-one}
+        {if eof? then
+            {throw-soap-exception
+                {lformat
+                    "un-matched end elements, hit EOF for %y.",
+                    {if-non-null start-element then
+                        start-element.element
+                     else
+                        "???"
+                    }
+                }
+            }
+        }
+        {type-switch token
+         case end:XMLEndElement do
+            {if nest-level == 0 then
+                {if end.element == null or
+                    start-element == null or
+                    (start-element != null and
+                     end.element == start-element.element)
+                 then
+                    {if include-end-element? then
+                        {if-non-null tokens then
+                            {tokens.append end}
+                         else
+                            set tokens = {new {Array-of XMLToken}, end}
+                        }
+                    }
+                    {return tokens}
+                 else
+                    {throw-soap-exception
+                        {lformat
+                            "Expected XMLEndElement for %y got %y.",
+                            {if-non-null start-element then
+                                start-element.element
+                             else
+                                "???"
+                            },
+                            token
+                        }
+                    }
+                }
+            }
+            set nest-level = nest-level - 1
+         case start:XMLStartElement do
+            set nest-level = nest-level + 1
+        }
+        {if-non-null tokens then
+            {tokens.append token}
+         else
+            set tokens = {new {Array-of XMLToken}, token}
+        }
+    }
+    {return tokens}
+}
+
+{define-proc package {reader-check-attributes-for-encoding
+                         attributes:#{Array-of XMLAttribute},
+                         current-encoding:#String
+                     }:#String
+    {if-non-null attributes then
+        {for a in attributes do
+            {if a.name == SOAPMessageWriter.
+                soap-1-1-encoding-style-attribute-xml-name
+             then
+                {return a.value asa String}
+            }
+        }
+    }
+    {return current-encoding}
+}

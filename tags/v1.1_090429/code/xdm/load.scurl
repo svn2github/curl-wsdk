@@ -1,0 +1,174 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 package}
+{package
+    COM.CURL.WSDK.XML-DOCUMENT-MODEL,
+    version = "1.0.5",
+    resource-directory = "../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        careful? = true
+    }
+}
+
+{import * from CURL.IO.SERIALIZE}
+{import * from CURL.XML.SAX.PARSER} 
+|| -- for char-encoding-to-http-charset
+{import * from CURL.IO.HTTP} 
+|| -- for CurlSource
+{import * from CURL.LANGUAGE.SOURCE} 
+|| -- for XDMDisplayContext
+{import * from CURL.GUI.STANDARD}
+|| -- for WeakPointer-to
+{import * from CURL.UTIL.POINTER-TO}
+
+|| Support functions.
+{include "support.scurl"}
+
+|| Two enums.
+{include "XMLSpace.scurl"}
+{include "XDMAttributeType.scurl"}
+
+|| Public interface and documentation
+{include "API.scurl"}
+
+|| Classes.
+{include "XDMName.scurl"}
+{include "XDMException.scurl"}
+{include "XDMBuilder.scurl"}
+
+{include "XDMAttribute.scurl"}
+{include "XDMAttributes.scurl"}
+{include "XDMDocument.scurl"}
+{include "XDMNode.scurl"}
+{include "XDMText.scurl"}
+{include "XDMElement.scurl"}
+{include "XDMNamespaceDeclaration.scurl"}
+{include "XDMProcessingInstruction.scurl"}
+
+{include "writer.scurl"}
+
+|| standard XMLNames
+|| --------------------
+{let package constant xml-base:XDMName =
+    {XDMName "http://www.w3.org/XML/1998/namespace", "base"}
+}
+{let package constant xml-space:XDMName =
+    {XDMName "http://www.w3.org/XML/1998/namespace", "space"}
+}
+{let package constant xml-lang:XDMName =
+    {XDMName "http://www.w3.org/XML/1998/namespace", "lang"}
+}
+
+|| XDMPath 
+|| --------------------
+{include
+    "../xdm-query/value.scurl",
+    "../xdm-query/parse.scurl",
+    "../xdm-query/scan.scurl",
+    "../xdm-query/match.scurl",
+    "../xdm-query/search.scurl",
+    "../xdm-query/binding.scurl",
+    "../xdm-query/functions.scurl"
+}
+
+|| XDMPathParser debug viewer
+|| --------------------
+|| TODO: consolidate object-describe -> summary here
+|| - maybe in tree-item-creation-proc
+{import * from CURL.RUNTIME.DEBUGGER-SUPPORT}
+{define-proc public {debug-info 
+                        subject:any = StandardXDMPath.interned
+                    }:void 
+    let fs:{proc-type {any}:Array} =
+        {proc {x:any}:Array
+            let xs:Array = {Array}
+            {type-switch x
+             case x:{HashTable-of String, StandardXDMPath} do
+                let ks:StringArray = {StringArray}
+                {for key k in x do {ks.append k}}
+                {ks.sort}
+                {for k in ks do 
+                    {if-non-null p = x[k]._parser then
+                        {xs.append p}}}
+             case x:XDMSearchParser do
+                {xs.append {bold {value x._source}}}
+                {xs.append x.current-node.children[0]}
+                {xs.append x.expression}
+             case x:ParsedNode do
+                {for n in x.terms do {xs.append n}}
+                {for n in x.children do {xs.append n}}                
+             case x:PathExpression do
+                {xs.append x.path}
+             case x:UnaryExpression do
+                {xs.append x.argument}
+             case x:BinaryExpression do
+                {xs.append x.argument1}
+                {xs.append x.argument2}
+             case x:BooleanExpression do
+                {xs.append x.argument1}
+                {xs.append x.argument2}
+             case x:TernaryExpression do
+                {xs.append x.argument1}
+                {xs.append x.argument2}
+                {xs.append x.argument3}
+             case x:PathFunction do
+                {for n in x.steps do {xs.append n}}
+             case x:PathStep do
+                {xs.append x.step}
+                {for x in x.predicates do
+                    {xs.append x}}
+             case x:MatchExpression do
+                {xs.append x.expression}
+             case x:MatchPredicate do
+                {xs.append x.expression}
+            }
+            {return xs}}
+    let f:{proc-type {any}:TreeNode} =
+        {proc {x:any}:TreeNode
+            let node:TreeNode = {TreeNode node-data = x}
+            let xs:Array = {fs x}
+            {for x in xs do {node.append {f x}}}
+            {return node}}    
+    let t:TreeModel = {TreeModel root = {f subject}}
+    let action-handler:EventHandler =
+        {on e:Action at c:TreeControl do
+            {if-non-null node = c.current-node then
+                {c.expand-node node,
+                    expand-descendants? = true}}}
+    let break-handler:EventHandler =
+        {context-popup menu-pane-proc =
+            {proc {v:Visual}:MenuPane
+                {return
+                    {MenuPane 
+                        {MenuAction label = {message Break},
+                            {on Action do
+                                {type-switch v
+                                 case c:TreeControl do
+                                    {if-non-null node = c.current-node then
+                                        let node-data:any = node.node-data
+                                        {breakpoint}}}}}}}}}
+    {popup-message 
+        modal? = false,
+        {ScrollBox background = "white",
+            width = 4in,
+            height = 6in,
+            {TreeControl
+                data-model = t,
+                action-handler,
+                break-handler}}}
+}

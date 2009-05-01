@@ -1,0 +1,1261 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{doc-next
+    {purpose
+        This class handles requests from the {docref BookDemoDisplay} to make
+        calls to web services. It deals with the specifics of calling each
+        service and handles each response in accordance with that service's
+        data format. It also provides a class procedure for quickly checking
+        to see if a server is responding.
+    }
+}
+{define-class public open RemoteMethodDelegate
+  field protected service-data:BookDemoServiceData
+  field protected ui:#BookDemoDisplay
+  field public async?:bool
+  field protected total-akw-results:int = 0
+  field protected timeout:Time = 5s
+  field protected workers:{Array-of SOAPHTTPRPCPostAsyncWorker} =
+      {new {Array-of SOAPHTTPRPCPostAsyncWorker}}
+  field protected current-worker:#SOAPHTTPRPCPostAsyncWorker
+
+  {doc-next
+    {purpose
+        Creates a {docref BookDemoServiceData}.
+    }
+    {parameter
+        service-data,
+        A {docref BookDemoServiceData}.
+    }
+    {parameter
+        async?,
+        A {docref bool} specifying whether or not to handle asynchronous
+        methods.
+    }
+    {parameter
+        ui,
+        The {docref BookDemoDisplay} this {docref RemoteMethodDelegate}
+        services.
+    }
+  }
+  {constructor public {default
+                          service-data:BookDemoServiceData,
+                          async?:bool = true,
+                          ui:#BookDemoDisplay = null
+                      }
+    set self.service-data = service-data
+    set self.async? = async?
+    set self.ui = ui
+  }
+
+  {doc-next
+    {purpose
+        Checks to see if a specified server is responding.
+    }
+    {parameter
+        s,
+        A {docref String} specifying the host to check.
+    }
+    {parameter
+        timeout,
+        An amount of {docref Time} within which a server must respond to be
+        considered responsive.
+    }
+    {return-vals
+        A {docref bool} indicating whether or not the server responded within
+        the specified timeout.
+    }
+  }
+  {define-proc public {ping-wsdl-server s:String, timeout:Time}:bool
+    let ret?:bool = true
+    {try
+        let x:DataTCPSocket =
+            {new DataTCPSocket,
+                remote-address =  {SocketInetAddress s},
+                remote-port = 80,
+                timeout = timeout
+            }
+        {x.start-connect}
+        {x.finish-connect}
+        {x.close}
+     catch e:Exception do
+        {output "Exception while trying to reach " & s}
+        set ret? = false
+    }
+    {return ret?}
+  }
+
+  {doc-next
+    {purpose
+        Finds a {docref Package} with the specified name.
+    }
+    {parameter
+        s,
+        A {docref String} specifying the name of the desired {docref Package}.
+    }
+    {return-vals
+        A {docref Package} of the specified name.
+    }
+  }
+  {method public open {get-package-by-name name:String}:#Package
+    {for pkg in self.service-data.packages do
+        {if pkg.name == name then
+            {return pkg}
+        }
+    }
+    {return null}
+  }
+
+  {doc-next
+    {purpose
+        Makes a web service call.
+    }
+    {parameter
+        call,
+        A {docref String} specifying the type of call.
+    }
+    {parameter
+        pname,
+        A {docref String} specifying the name of the {docref Package} defining
+        the call.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the argument to pass to the call. This is
+        typically an ISBN number or a keyword {docref String}.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method public open {make-service-call
+                          call:String,
+                          pname:String,
+                          arg:String,
+                          rda:{Array-of RecordData}
+                      }:void
+    || Find the right service by name
+    let pkg:#Package = {self.get-package-by-name pname}
+    {if-non-null pkg then
+        {with-compiler-directives
+            allow-any-calls? = true,
+            allow-implicit-any-casts? = true
+         do
+            let class:#String = {self.service-data.get-class-name pname}
+            {if-non-null class then
+                let type:any = {pkg.lookup class}
+                {if-non-null type then
+                    let service:any = {new type}
+                    let response:BookDemoBookInfo = {new BookDemoBookInfo}
+                    {switch class
+                     case "AmazonSearchService" do
+                        let product-info:any
+                        {switch call
+                         case "execute-isbn-search" do
+                            set product-info =
+                                {self.execute-amazon-isbn-search
+                                    service, pkg, arg, response, rda}
+                         case "execute-keyword-search" do
+                            {self.execute-amazon-keyword-search
+                                service, pkg, arg, response, rda
+                            }
+                         else
+                            {output "Call " & call & " not supported."}
+                        }
+                        {if-non-null product-info then
+                            || Assume a single detail object
+                            {self.handle-amazon-data
+                                product-info.details[0],
+                                response,
+                                rda
+                            }
+                        }
+                     case "BNPrice" do
+                        {switch call
+                         case "execute-isbn-search" do
+                            let data:String = {self.execute-bnprice-isbn-search
+                                                  service, arg, response, rda}
+                            {if not data.empty? then
+                                {self.handle-bnprice-isbn-data
+                                    data, response, rda}
+                            }
+                         else
+                            {output "Call " & call & " not supported."}
+                        }
+                     case "ISBN" do
+                        {switch call
+                         case "execute-isbn-search" do
+                            let data:String = {self.execute-ISBN-isbn-search
+                                                  service, arg, response, rda}
+                            {if not data.empty? then
+                                {self.handle-ISBN-isbn-data data, response, rda}
+                            }
+                         else
+                            {output "Call " & call & " not supported."}
+                        }
+                     case "LookyBookService" do
+                        {switch call
+                         case "execute-isbn-search" do
+                            let book-info:any =
+                                {self.execute-looky-book-isbn-search
+                                    service, arg, response, rda}
+                            {if-non-null book-info then
+                                {self.handle-looky-book-isbn-data
+                                    book-info, response, rda}
+                            }
+                         case "execute-keyword-search" do
+                            let book-info-array:any =
+                                {self.execute-looky-book-keyword-search
+                                    service, arg, response, rda}
+                            {if-non-null book-info-array then
+                                {self.handle-looky-book-keyword-data
+                                    book-info-array,
+                                    response,
+                                    rda
+                                }
+                            }
+                         case "execute-keyword-search-ex" do
+                            {output "Call " & call & " not supported."}
+                            || NOTE: LookyBook supports {do-keyword-search-ex
+                            ||                              keyword:String,
+                            ||                              source:String}
+                            || where source can be either Bookshop.co.uk or
+                            || Barnes & Noble
+                         else
+                            {output "Call " & call & " not supported."}
+                        }
+                    }
+                }
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a call to the Amazon service's ISBN search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the Amazon service object.
+    }
+    {parameter
+        pkg,
+        A {docref Package} used to lookup supporting objects.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the ISBN value.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        Amazon service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {execute-amazon-isbn-search
+                             service:any,
+                             pkg:Package,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:any
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        let request-type:any = {pkg.lookup "AsinRequest"}
+        {if-non-null request-type then
+            let asin-request:any = {new request-type}
+            set asin-request.asin = arg
+            set asin-request.devtag = "1129F8C3V2MDH2R8VP82"
+            set asin-request.type = "heavy"
+            || Optional
+            set asin-request.tag = ""
+||--            set asin-request.tag = "webservices-20"
+            let product-info:any =
+                {if self.async? then
+                    let worker:SOAPHTTPRPCPostAsyncWorker =
+                        {service.async-asin-search-request
+                            asin-request,
+                            {new EventHandler,
+                                SOAPHTTPRPCPostAsyncEvent,
+                                {proc {e:Event, target:EventTarget}:void
+                                    {type-switch e
+                                     case ae:SOAPHTTPRPCPostAsyncEvent do
+                                        {if not ae.canceled? then
+                                            || Get the data from responses
+                                            {if-non-null
+                                                pinfo = ae.responses
+                                             then
+                                                || Assume a single response
+                                                {if not pinfo.empty? then
+                                                    {self.handle-amazon-data
+                                                        pinfo[0].details[0],
+                                                        response,
+                                                        rda
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    {self.advance-workers-queue}
+                                }
+                            }
+                        }
+                    {self.workers.append worker}
+                    || There may be another worker in the queue, so check first
+                    {if self.current-worker == null then
+                        set self.current-worker = worker
+                        {self.monitor-worker-for-timeout worker}
+                    }
+                    || The asynchronous response will be handled separately
+                    null
+                 else
+                    {service.asin-search-request asin-request}
+                }
+            {return product-info}
+        }
+        {return null}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a call to the BNPrice service's ISBN search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the BNPrice service object.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the ISBN value.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        BNPrice service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {execute-bnprice-isbn-search
+                             service:any,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:String
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {if self.async? then
+            let worker:SOAPHTTPRPCPostAsyncWorker =
+                {service.async-get-bnquote
+                    arg,
+                    {new EventHandler,
+                        SOAPHTTPRPCPostAsyncEvent,
+                        {proc {e:Event, target:EventTarget}:void
+                            {type-switch e
+                             case ae:SOAPHTTPRPCPostAsyncEvent do
+                                {if not ae.canceled? then
+                                    || Get the data from responses
+                                    {if-non-null
+                                        quotes = ae.responses
+                                     then
+                                        || Assume a single response
+                                        {if not quotes.empty? then
+                                            {self.handle-bnprice-isbn-data
+                                                quotes[0] asa String,
+                                                response,
+                                                rda
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            {self.advance-workers-queue}
+                        }
+                    }
+                }
+            {self.workers.append worker}
+            || There may be another worker in the queue, so check first
+            {if self.current-worker == null then
+                set self.current-worker = worker
+                {self.monitor-worker-for-timeout worker}
+            }
+            || The asynchronous response will be handled separately
+            {return ""}
+         else
+            {return "$" & {service.get-bnquote arg} asa String}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a call to the ISBN service's ISBN search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the ISBN service object.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the ISBN value.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        ISBN service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {execute-ISBN-isbn-search
+                             service:any,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:String
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {if self.async? then
+            let worker:SOAPHTTPRPCPostAsyncWorker =
+                {service.async-get-isbninformation
+                    arg,
+                    {new EventHandler,
+                        SOAPHTTPRPCPostAsyncEvent,
+                        {proc {e:Event, target:EventTarget}:void
+                            {type-switch e
+                             case ae:SOAPHTTPRPCPostAsyncEvent do
+                                {if not ae.canceled? then
+                                    || Get the data from responses
+                                    {if-non-null
+                                        info = ae.responses
+                                     then
+                                        || Assume a single response
+                                        {if not info.empty? then
+                                            {self.handle-ISBN-isbn-data
+                                                info[0] asa String,
+                                                response,
+                                                rda
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            {self.advance-workers-queue}
+                        }
+                    }
+                }
+            {self.workers.append worker}
+            || There may be another worker in the queue, so check first
+            {if self.current-worker == null then
+                set self.current-worker = worker
+                {self.monitor-worker-for-timeout worker}
+            }
+            || The asynchronous response will be handled separately
+            {return ""}
+         else
+            {return {service.get-isbninformation arg} asa String}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a call to the LookyBook service's ISBN
+        search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the LookyBook service object.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the ISBN value.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        LookyBook service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {execute-looky-book-isbn-search
+                             service:any,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:any
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {if self.async? then
+            let worker:SOAPHTTPRPCPostAsyncWorker =
+                {service.async-get-info
+                    arg,
+                    {new EventHandler,
+                        SOAPHTTPRPCPostAsyncEvent,
+                        {proc {e:Event, target:EventTarget}:void
+                            {type-switch e
+                             case ae:SOAPHTTPRPCPostAsyncEvent do
+                                {if not ae.canceled? then
+                                    || Get the data from responses
+                                    {if-non-null
+                                        book-info = ae.responses
+                                     then
+                                        || Assume a single response
+                                        {if not book-info.empty? then
+                                            {self.handle-looky-book-isbn-data
+                                                book-info[0],
+                                                response,
+                                                rda
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            {self.advance-workers-queue}
+                        }
+                    }
+                }
+            {self.workers.append worker}
+            || There may be another worker in the queue, so check first
+            {if self.current-worker == null then
+                set self.current-worker = worker
+                {self.monitor-worker-for-timeout worker}
+            }
+            || The asynchronous response will be handled separately
+            {return null}
+         else
+            {return {service.get-info arg}}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a call to the Amazon service's keyword search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the Amazon service object.
+    }
+    {parameter
+        pkg,
+        A {docref Package} used to lookup supporting objects.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the keyword {docref String}.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        Amazon service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+    {parameter
+        page,
+        A {docref String} indicating which page of responses this method
+        is handling.
+    }
+    {parameter
+        repeat?,
+        A {docref bool} indicating whether this method needs to recurse. When
+        repeat? = true, the method recurses a single level, or repeats the call
+        once.
+    }
+  }
+  {method protected open {execute-amazon-keyword-search
+                             service:any,
+                             pkg:Package,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData},
+                             page:String = "1",
+                             repeat?:bool = true
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        let request-type:any = {pkg.lookup "KeywordRequest"}
+        {if-non-null request-type then
+            let kr:any = {new request-type}
+            set kr.devtag = "1129F8C3V2MDH2R8VP82"
+            set kr.keyword = arg
+            set kr.mode = "books"
+            set kr.sort = "titlerank"
+            set kr.type = "heavy"
+            set kr.page = page
+            set kr.tag = "webservices-20"
+            {if not self.async? then
+                {self.execute-synchronous-amazon-keyword-search
+                    service, arg, kr, response, rda}
+                {return}
+            }
+            let worker:SOAPHTTPRPCPostAsyncWorker =
+                {service.async-keyword-search-request
+                    kr,
+                    {new EventHandler,
+                        SOAPHTTPRPCPostAsyncEvent,
+                        {proc {e:Event, target:EventTarget}:void
+                            {self.amazon-event-handler-proc-handler
+                                e, target, service, pkg, arg,
+                                response, rda, repeat?
+                            }
+                        }
+                    }
+                }
+            {self.workers.append worker}
+            {if self.current-worker == null then
+                set self.current-worker = worker
+                {self.monitor-worker-for-timeout worker}
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a synchronous call to the Amazon service's keyword search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the Amazon service object.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the keyword {docref String}.
+    }
+    {parameter
+        kr,
+        An {docref any} which represents an Amazon-specific object known as
+        a {ctext KeywordRequest}.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        Amazon service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {execute-synchronous-amazon-keyword-search
+                             service:any,
+                             arg:String,
+                             kr:any,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        let product-info:any = {service.keyword-search-request kr}
+        {if-non-null pinfo = product-info then
+            {for detail in pinfo.details do
+                {self.handle-amazon-data
+                    detail, response, rda, update-display? = false}
+            }
+            {if-non-null self.ui then
+                {self.ui.update-display rda}
+                {dispatch-events false}
+            }
+            || Repeat as many times as necessary
+            set self.total-akw-results = {pinfo.total-results.to-int}
+            || Subtract the first page worth of results
+            set self.total-akw-results = self.total-akw-results - 10
+            let repeat:int = {ceiling self.total-akw-results, 10}
+            {for i:int = 0 below repeat do
+                set kr.page = {new String, 2 + i}
+                set product-info = {service.keyword-search-request kr}
+                {if-non-null pinfo = product-info then
+                    {for detail in pinfo.details do
+                        {self.handle-amazon-data
+                            detail, response, rda, update-display? = false}
+                    }
+                    {if-non-null self.ui then
+                        {self.ui.update-display rda}
+                        {dispatch-events false}
+                    }
+                }
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Makes a call to the LookyBook service's keyword search method.
+    }
+    {parameter
+        service,
+        An {docref any} representing the LookyBook service object.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the keyword {docref String}.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} which stores the data returned by the
+        LookyBook service as a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {execute-looky-book-keyword-search
+                             service:any,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:any
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {if self.async? then
+            let worker:SOAPHTTPRPCPostAsyncWorker =
+                {service.async-do-keyword-search
+                    arg,
+                    {new EventHandler,
+                        SOAPHTTPRPCPostAsyncEvent,
+                        {proc {e:Event, target:EventTarget}:void
+                            {type-switch e
+                             case ae:SOAPHTTPRPCPostAsyncEvent do
+                                {if not ae.canceled? then
+                                    || Get the data from responses
+                                    {if-non-null
+                                        data = ae.responses
+                                     then
+                                        || The service responds with a single
+                                        || response, an {Array-of BookInfo}
+                                        {self.handle-looky-book-keyword-data
+                                            data[0],
+                                            response,
+                                            rda
+                                        }
+                                    }
+                                }
+                            }
+                            {self.advance-workers-queue}
+                        }
+                    }
+                }
+            {self.workers.append worker}
+            || There may be another worker in the queue, so check first
+            {if self.current-worker == null then
+                set self.current-worker = worker
+                {self.monitor-worker-for-timeout worker}
+            }
+            || The asynchronous response will be handled separately
+            {return null}
+         else
+            {return {service.do-keyword-search arg}}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Converts data returned by the LookyBook service to a
+        {docref BookDemoBookInfo} object.
+    }
+    {parameter
+        book-demo-book-info,
+        The {docref BookDemoBookInfo} to populate.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+  }
+  {method protected open {populate-looky-book-response
+                             book-demo-book-info:BookDemoBookInfo,
+                             data:any
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {if-non-null data then
+            set book-demo-book-info.isbn = data.isbn
+            set book-demo-book-info.title = data.title
+            set book-demo-book-info.author = data.author
+            set book-demo-book-info.pubdate = data.pubdate
+            set book-demo-book-info.publisher = data.publisher
+            set book-demo-book-info.format = data.format
+            set book-demo-book-info.img-url = data.img-url
+            set book-demo-book-info.timestamp = data.timestamp
+            {if-non-null data.vendorprice then
+                set book-demo-book-info.vendor-name = data.vendorprice.name
+                set book-demo-book-info.vendor-site-url =
+                    data.vendorprice.site-url
+                set book-demo-book-info.vendor-price-prefix =
+                    data.vendorprice.price-prefix
+                set book-demo-book-info.vendor-price = data.vendorprice.price
+            }
+        }
+        set book-demo-book-info.service = "LookyBookService"
+    }
+  }
+
+  {doc-next
+    {purpose
+        Converts data returned by the Amazonservice to a
+        {docref BookDemoBookInfo} object.
+    }
+    {parameter
+        book-demo-book-info,
+        The {docref BookDemoBookInfo} to populate.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+  }
+  {method protected open {populate-amazon-response
+                             book-demo-book-info:BookDemoBookInfo,
+                             data:any
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {if-non-null data then
+            set book-demo-book-info.isbn = data.isbn
+            set book-demo-book-info.title = data.product-name
+            let author-list:StringBuf = {new StringBuf}
+            {if-non-null authors = data.authors then
+                {for author in authors do
+                    {author-list.concat author & ", "}
+                }
+                {author-list.remove author-list.size - 2, length = 2}
+            }
+            set book-demo-book-info.author = {author-list.to-String}
+            set book-demo-book-info.pubdate = data.release-date
+            set book-demo-book-info.publisher = data.publisher
+            set book-demo-book-info.format = data.number-of-pages
+            set book-demo-book-info.img-url = data.image-url-small
+||--            set book-demo-book-info.timestamp = data.timestamp
+            set book-demo-book-info.vendor-name = "Amazon.com"
+            set book-demo-book-info.vendor-site-url = data.url
+||--            {if-non-null data.vendorprice then
+||--                set book-demo-book-info.vendor-price-prefix =
+||--                    data.vendorprice.price-prefix
+||--            }
+            set book-demo-book-info.vendor-price = data.our-price
+        }
+        set book-demo-book-info.service = "AmazonSearchService"
+    }
+  }
+
+  {doc-next
+    {purpose
+        Processes the data returned by the Amazon service and
+        updates the display.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} to store the data in a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+    {parameter
+        update-display?,
+        A {docref bool} indicating whether or not to update the display.
+    }
+  }
+  {method protected open {handle-amazon-data
+                             data:any,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData},
+                             update-display?:bool = true
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true
+     do
+        || Assume a single detail object
+        {self.populate-amazon-response
+            response, data
+        }
+        let rd:RecordData = {response.to-RecordData}
+        {rda.append rd}
+
+        {if-non-null self.ui then
+            {if update-display? then
+                {self.ui.update-display rda}
+                {dispatch-events false}
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Processes the data returned by the BNPrice service and
+        updates the display.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} to store the data in a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {handle-bnprice-isbn-data
+                             data:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:void
+    set response.vendor-price = data
+    set response.service = "BNPrice Service"
+    let rd:RecordData = {response.to-RecordData}
+    {rda.append rd}
+
+    {if-non-null self.ui then
+        {self.ui.update-display rda}
+        {dispatch-events false}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Processes the data returned by the ISBN service and updates the display.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} to store the data in a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {handle-ISBN-isbn-data
+                             data:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:void
+    set response.data = data
+    set response.service = "ISBN Service"
+    let rd:RecordData = {response.to-RecordData}
+    {rda.append rd}
+
+    {if-non-null self.ui then
+        {self.ui.update-display rda}
+        {dispatch-events false}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Processes the data returned by the LookyBook ISBN service and
+        updates the display.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} to store the data in a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+  }
+  {method protected open {handle-looky-book-isbn-data
+                             data:any,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:void
+    {self.populate-looky-book-response
+        response, data
+    }
+    let rd:RecordData = {response.to-RecordData}
+    {rda.append rd}
+
+    {if-non-null self.ui then
+        {self.ui.update-display rda}
+        {dispatch-events false}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Processes the data returned by the LookyBook keyword search service
+        and updates the display.
+    }
+    {parameter
+        data,
+        The data from the service.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} to store the data in a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+    {parameter
+        update-display?,
+        A {docref bool} indicating whether or not to update the display.
+    }
+  }
+  {method protected open {handle-looky-book-keyword-data
+                             data:any,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData}
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true
+     do
+        {for book-info in data do
+            {self.populate-looky-book-response
+                response, book-info
+            }
+            let rd:RecordData = {response.to-RecordData}
+            {rda.append rd}
+            {if-non-null self.ui then
+                {self.ui.update-display rda}
+                {dispatch-events false}
+            }
+        }
+    }
+
+    {if-non-null self.ui then
+        {self.ui.update-display rda}
+        {dispatch-events false}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Handles asynchronous responses from the Amazon service.
+    }
+    {parameter
+        event,
+        The {docref Event} indicating that the asynchronous call has returned.
+    }
+    {parameter
+        target,
+        The {docref EventTarget} assoiated with this {docref EventHandler}.
+    }
+    {parameter
+        service,
+        An {docref any} representing the Amazon service object.
+    }
+    {parameter
+        pkg,
+        A {docref Package} used to lookup supporting objects.
+    }
+    {parameter
+        arg,
+        A {docref String} specifying the keyword {docref String}.
+    }
+    {parameter
+        response,
+        A {docref BookDemoBookInfo} to store the data in a Curl object.
+    }
+    {parameter
+        rda,
+        An {docref Array-of} {docref RecordData} that will receive the data
+        from the responses.
+    }
+    {parameter
+        repeat?,
+        A {docref bool} indicating whether this method needs to recurse. When
+        repeat? = true, the method recurses a single level, or repeats the call
+        once.
+    }
+  }
+  {method protected open {amazon-event-handler-proc-handler
+                             event:Event,
+                             target:EventTarget,
+                             service:any,
+                             pkg:Package,
+                             arg:String,
+                             response:BookDemoBookInfo,
+                             rda:{Array-of RecordData},
+                             repeat?:bool
+                         }:void
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true
+     do
+        {type-switch event
+         case ae:SOAPHTTPRPCPostAsyncEvent do
+            {try
+                || Checking ae.canceled? might throw an Exception
+                {if not ae.canceled? then
+                    || Get the data from responses
+                    {if-non-null data = ae.responses then
+                        || The service responds with a single response,
+                        || an array of any (BookInfo)
+                        {if not data.empty? then
+                            {for detail in data[0].details do
+                                {self.handle-amazon-data
+                                    detail, response, rda,
+                                    update-display? = false
+                                }
+                            }
+                            {if-non-null self.ui then
+                                {self.ui.update-display rda}
+                                {dispatch-events false}
+                            }
+                            || Repeat as many times as necessary
+                            set self.total-akw-results =
+                                {data[0].total-results.to-int}
+                            || Subtract the first set of results
+                            set self.total-akw-results =
+                                self.total-akw-results - 10
+                            || We only want a single level of recursion
+                            let repeat:int =
+                                {if repeat? then
+                                    {ceiling self.total-akw-results, 10}
+                                 else
+                                    0
+                                }
+                            {for i:int = 0 below repeat do
+                                {self.execute-amazon-keyword-search
+                                    service, pkg, arg,
+                                    response, rda,
+                                    page = {new String, 2 + i},
+                                    || We only want a single level of recursion
+                                    repeat? = false
+                                }
+                            }
+                        }
+                    }
+                }
+                {self.advance-workers-queue}
+             catch exception:Exception do
+                {dump exception}
+                || NOTE: No attempt is made here to continue on through the
+                ||       queue of workers. Depending on the type of exception
+                ||       it may or may not be worthwhile to keep trying.
+                {self.workers.clear}
+                set self.current-worker = null
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Enforces a timeout on asynchronous Amazon service workers.
+    }
+    {parameter
+        worker,
+        The {docref SOAPHTTPRPCPostAsyncWorker} to monitor.
+    }
+  }
+  {method protected open {monitor-worker-for-timeout
+                             worker:SOAPHTTPRPCPostAsyncWorker
+                         }:void
+    || It's possible the worker is already done,
+    || so check before setting the alarm.
+    {if not worker.done? then
+        {after self.timeout do
+            {if not worker.done? then
+                {worker.cancel}
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Removes completed works from the queue and moves all the workers behind
+        it up a slot. Marks the current-worker and starts the timer for it.
+    }
+  }
+  {method protected open {advance-workers-queue}:void
+    {if-non-null cw = self.current-worker then
+        let cwi:int = {self.workers.find cw}
+        {if cwi > -1 then
+            {self.workers.remove cwi}
+        }
+        {if not self.workers.empty? then
+            set self.current-worker = self.workers[0]
+            {if-non-null cw2 = self.current-worker then
+                {self.monitor-worker-for-timeout cw2}
+            }
+         else
+            set self.current-worker = null
+        }
+    }
+  }
+}

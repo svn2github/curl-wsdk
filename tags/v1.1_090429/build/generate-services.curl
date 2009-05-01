@@ -1,0 +1,73 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 applet}
+{applet manifest = "../tests/manifest.mcurl"}
+
+{let wsdk-root:Url =
+    {url ".."}
+}
+
+{heading level = 3, Service packages included in WSDK distribution.
+}
+{paragraph
+    These should be regenerated before distribution.
+    
+    This is essential if either the original WSDL changed,
+    or the generated code is different in the new distribution.
+
+    This page contains links to applets or test suites
+    that cause regeneration of service packages.
+}
+
+{heading level = 4, DGuide}
+
+{link href = {wsdk-root.concat "code/docs/en/dguide/examples/google/generate.curl"}, 
+GoogleService
+}
+
+{link href = {wsdk-root.concat "code/docs/en/dguide/examples/ex-generate-service-package.curl"}, 
+PowerQuote
+}
+|| NOTE: this service is now defunct
+||--{heading level = 4, XMethods Test}
+||--
+||--{link href = {wsdk-root.concat "tests/test-cases/wsdl-samples/xmethods/generate.curl"},
+||--XMethodsQueryService
+||--}
+
+{heading level = 4, WSDK Samples}
+
+{link href = {wsdk-root.concat "code/docs/en/dguide/examples/WSConnection/generate.curl"}, 
+WSConnectionService
+}
+
+{heading level = 4, Test Suites}
+
+{link href = {wsdk-root.concat "tests/start-tests.curl?test-cases/wsdl-test-cases.scurl"},
+Standard WSDL Tests
+} {em-dash} just {monospace WSDL Tests`XMethods subset`services.csv}
+
+{link href = {wsdk-root.concat "tests/start-tests.curl?test-cases/extended-wsdl-test-cases.scurl"},
+WS-I, TranslationEngine, WSConnection
+} {em-dash} just {monospace WSDL Tests`WS-I interop sample`services.csv}
+and {monospace WSDL Tests`x-services.csv`TranslationEngine}
+
+|| NOTE: the samples have been excluded from the distribution
+|| - pending resolution of xmethods sample
+||--{link href = {wsdk-root.concat "tests/test-cases/wsdl-samples/books/generate-wsdl-files.curl"},
+||--Books
+||--}

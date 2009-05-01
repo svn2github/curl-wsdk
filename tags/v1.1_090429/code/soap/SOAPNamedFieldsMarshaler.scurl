@@ -1,0 +1,884 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPNamedFieldsMarshaler
+
+|| FIXME should this be called DefaultSOAPNamedFieldsMarshaler
+
+|| FIXME do we wedge this into the mappers automatically
+||      (base on Curl type only, assuming that XML type is right)
+
+|| possible types (things that say any could be a more specific type)
+|| accepts {Array-of any}, {FastArray-of any} (preferably with field-* supplied)
+|| accepts {HashTable-of XMLName, any} (preferably with field-* supplied,
+||      finding type by name (key is name).)
+|| accepts {HashTable-of SOAPObjectType, any} (but field-types must be unique,
+||      or there must be no names...)
+|| accepts {HashTable-of SOAPNamedFieldInfo, any}
+
+{define-class public sealed SOAPNamedFieldInfo
+  field public constant name:#XMLName
+  field public constant type:#SOAPObjectType
+
+  {factory public {default 
+                      name:#XMLName,
+                      type:#SOAPObjectType
+                  }:SOAPNamedFieldInfo
+    || instances are interned so pointer-equal? --> value-equal? 
+    let key:SOAPNamedFieldInfo = 
+        {SOAPNamedFieldInfo.internal name, type}   
+    let (interned:SOAPNamedFieldInfo, interned?:bool) =
+        {SOAPNamedFieldInfo.interned.get-member-if-exists key} 
+    {return
+        {if interned? then interned
+         else
+            {SOAPNamedFieldInfo.interned.insert key}
+            key}}
+  }
+  {constructor package {internal
+                           name:#XMLName,
+                           type:#SOAPObjectType
+                       }
+    set self.name = name
+    set self.type = type
+  }
+
+  let package constant interned:SOAPNamedFieldInfoSet = {SOAPNamedFieldInfoSet}
+
+||--  {getter hidden open {hidden-object-hash-secure}:int
+||--    {return
+||--        {bit-xor
+||--            {if-non-null name = self.name then
+||--                name.hidden-object-hash-secure
+||--             else
+||--                0x1000
+||--            },
+||--            {if-non-null type = self.type then
+||--                type.hidden-object-hash-secure
+||--             else
+||--                0x2000
+||--            }
+||--        }
+||--    }
+||--  }
+||--
+||--  {method hidden open {hidden-object-equal?-secure other:#Object}:bool
+||--    {return
+||--        {type-switch other
+||--         case named-field:SOAPNamedFieldInfo do
+||--            self.hidden-object-hash-secure ==
+||--                named-field.hidden-object-hash-secure and
+||--            self.name == named-field.name and
+||--            self.type == named-field.type
+||--         else
+||--            false
+||--        }
+||--    }
+||--  }
+}
+
+{define-proc package {SOAPNamedFieldInfo-hash self:SOAPNamedFieldInfo}:int
+    {return
+        {bit-xor
+            {if-non-null name = self.name then
+                {value-hash name}
+             else
+                0x1000
+            },
+            {if-non-null type = self.type then
+                {value-hash type}
+             else
+                0x2000
+            }
+        }
+    }
+  }
+
+{define-proc package {SOAPNamedFieldInfo-equal? 
+                         self:SOAPNamedFieldInfo,
+                         other:SOAPNamedFieldInfo
+                     }:bool
+    {return
+        self.name == other.name and
+        self.type == other.type
+    }
+}
+
+{let package constant SOAPNamedFieldInfoSet:ClassType =
+    {Set-of SOAPNamedFieldInfo, 
+        key-equality-proc = SOAPNamedFieldInfo-equal?,
+        key-hash-proc = SOAPNamedFieldInfo-hash}
+}
+
+{define-class public open SOAPNamedFieldsMarshaler
+  {inherits SOAPMarshaler}
+
+  field public constant field-types:#{Array-of #SOAPObjectType}
+  field public constant field-names:#{Array-of #XMLName}
+  field public constant include-null-fields?:bool
+  field public constant include-unnamed-fields?:bool
+  field public constant element-name-to-xml-type:SOAPElementNameToXMLTypeMapper
+  field public constant xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+  field public constant curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+  field public constant xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          field-types:#{Array-of #SOAPObjectType} = null,
+                          field-names:#{Array-of #XMLName} = null,
+                          include-null-fields?:bool = false,
+                          include-unnamed-fields?:bool =
+                              field-types == null and field-names == null,
+                          element-name-to-xml-type:SOAPElementNameToXMLTypeMapper =
+                              builtin-soap-element-name-to-xml-type-mapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper
+                      }
+    {construct-super.SOAPMarshaler type}
+    {if-non-null field-types then
+        {if-non-null field-names then
+            {if field-types.size < field-names.size then
+                {field-types.set-size field-names.size, null}
+            }
+            {if field-names.size < field-types.size then
+                {field-names.set-size field-types.size, null}
+            }
+        }
+    }
+    set self.field-types = field-types
+    set self.field-names = field-names
+    set self.include-null-fields? = include-null-fields?
+    set self.include-unnamed-fields? = include-unnamed-fields?
+    set self.element-name-to-xml-type = element-name-to-xml-type
+    set self.xml-type-to-curl-type = xml-type-to-curl-type
+    set self.curl-type-to-xml-type = curl-type-to-xml-type
+    set self.xml-type-to-element-name = xml-type-to-element-name
+  }
+
+  {method public open {default-marshal
+                          stream:XMLOutputStream,
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPMarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          marshal-proc:SOAPTypeMapper.MarshalProc,
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:(worked?:bool)
+
+    {self.check-type type, true}
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
+    let constant null?:bool = value == null
+
+    || handle multi-ref
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            value asa #Object,
+            type,
+            encoding,
+            context,
+            multiple-reference,
+            || FIXME: is this the right default?
+            SOAPTypeMultipleReference.single,
+            marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or 
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        let (is-array?:bool, is-name-hash-table?:bool,
+             is-type-hash-table?:bool, is-named-field-hash-table?:bool) =
+            {SOAPNamedFieldsMarshaler.identify-type {type-of value}, true}
+        || if it is a hash-table, convert it into an array
+        let field-types:#{Array-of #SOAPObjectType} = self.field-types
+        let field-names:#{Array-of #XMLName} = self.field-names
+        let field-set?:#{Array-of bool}
+
+        let constant array:any = 
+            {if is-array? then
+                value
+             else || is some sort of hash-table
+                set field-set? = {new {Array-of bool}}
+                let field-set-size:int = 0
+                {if-non-null field-names then
+                    set field-set-size = field-names.size
+                }
+                {if-non-null field-types then
+                    set field-set-size = {max field-set-size, field-types.size}
+                }
+                {field-set?.set-size field-set-size, false}
+        
+                let array:any
+                set (array, field-types, field-names) =
+                    {self.hash-table-to-array
+                        value,
+                        field-types,
+                        field-names,
+                        {non-null field-set?}
+                    }
+                array
+            }
+        || send array...
+        || need both compiler directives for the for loop, other things
+        || have the directives that that little piece needs...
+        {with-compiler-directives allow-any-calls? = true,
+            allow-implicit-any-casts? = true
+         do
+        {for v:any key i:int in array do
+            || only send it if we are sending everything, or it is from a hash
+            || table (and was set), or it is from an array and isn't null.
+            || (NB if you are sending from an array of int, all will be sent...)
+            {if self.include-null-fields? or
+                (field-set? != null and field-set?[i]) or
+                (field-set? == null and v != null)
+             then
+                let field-name:#XMLName = null
+                {if-non-null field-names then
+                    {if field-names.size > i then
+                        set field-name = field-names[i]
+                    }
+                }
+                let field-type:SOAPObjectType =
+                    {if field-types != null and field-types.size > i and
+                        field-types[i] != null
+                     then
+                        {non-null field-types[i]}
+                     else
+                        {new SOAPObjectType, curl-type = {type-of v}}
+                    }
+                {if field-type.curl-type == null then
+                    set field-type =
+                        {SOAPObjectType.clone-with
+                            field-type,
+                            curl-type = {type-of v}
+                        }
+                }
+                || now fill in type
+                set field-type =
+                    {SOAPObjectType.fill-in-from-curl-type-mapper
+                        field-type,
+                        self.curl-type-to-xml-type,
+                        self.xml-type-to-element-name
+                    }
+                {if field-type.element-name == null and field-name != null then
+                    set field-type =
+                        {SOAPObjectType.clone-with
+                            field-type,
+                            element-name = field-name
+                        }
+                }
+                set field-type =
+                    {SOAPObjectType.fill-in-from-element-name-mapper
+                        field-type,
+                        self.element-name-to-xml-type,
+                        builtin-soap-xml-type-to-curl-type-mapper
+                    }
+                {if field-name == null then
+                    set field-name = field-type.element-name
+                }
+                {if field-name == null then
+                    {throw-marshal-exception
+                        {lformat "Unable to figure out a name for '%s'.", v}
+                    }
+                }
+                {if field-type.xml-type == null then
+                    {throw-marshal-exception
+                        {lformat "Unable to figure out a type for '%s'.", v}
+                    }
+                }
+                {stream.write-one
+                    {new XMLStartElement, {non-null field-name}}
+                }
+                {current-mapper.marshal
+                    stream,
+                    v,
+                    field-type,
+                    encoding,
+                    context,
+                    current-mapper,
+                    curl-type-to-xml-type,
+                    write-type-attribute? = write-type-attribute?,
+                    multiple-reference = field-type.multiple-reference
+                }
+                {stream.write-one
+                    {new XMLEndElement, element = field-name}
+                }
+            }
+        }
+        } || compiler-directives
+    }
+    {return true}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          default-encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+    {if type.curl-type == any or
+        type.curl-type == Object or type.curl-type == #Object
+     then
+        set type =
+            {SOAPObjectType.clone-with type, curl-type = self.type.curl-type}
+    }
+    let id:#String, href:#String
+    let null?:bool = false
+    {if-non-null attributes then
+        {if check-type-attribute? then
+            {unmarshal-check-type-attribute
+                attributes,
+                {non-null type.xml-type}
+            }
+        }
+        set null? = {unmarshal-check-if-nil? attributes, type}
+        set (id, href) =
+            {unmarshal-get-id-href attributes, context}
+        {if-non-null href then
+            {if null? then
+                {throw-marshal-exception
+                    {localize "null xml type with an href attribute."}
+                }
+            }
+            let (obj:any, status:SOAPUnmarshalObjectStatus) =
+                {context.get-object href}
+            || may return a SOAPUnmarshallingObjectState
+            || ignoring any content, and just going with href...
+            {return obj, true}
+        }
+    }
+
+    let (is-array?:bool, is-name-hash-table?:bool,
+         is-type-hash-table?:bool, is-named-field-hash-table?:bool) =
+        {SOAPNamedFieldsMarshaler.identify-type
+            {non-null type.curl-type},
+            false
+        }
+    let object:#Object =
+        {if null? then 
+            null
+         else
+            let constant object:any =
+                {with-compiler-directives allow-any-calls? = true do
+                    {{(type.curl-type asa ClassType).get-instance-maker
+                        "default"
+                     }.new} asa Object
+                }
+            || Loop, reading in fields and storing them were approriate.
+            {while true do
+                let (current-token:XMLToken, eof?:bool) = {stream.read-one}
+                {if eof? then
+                    {throw-unmarshal-exception
+                        {localize "Got EOF early while unmarshaling struct."}
+                    }
+                }
+                {type-switch current-token
+                 case se:XMLStartElement do
+                    || data, handle it!
+                    let constant attributes:#{Array-of XMLAttribute} =
+                        {reader-read-attributes stream}
+                    let constant xml-name:XMLName = se.element
+                    let soap-type:#SOAPObjectType
+                    let index:int = -1
+                    {if-non-null field-names = self.field-names then
+                        set index = {field-names.find se.element}
+                    }
+                    {if-non-null field-types = self.field-types then
+                        {if index >= 0 then
+                            set soap-type = field-types[index]
+                         else || don't know the index yet
+                            {for ft key i in field-types do
+                                {if ft.element-name == se.element and
+                                    (self.field-names == null or
+                                     self.field-names.size <= i or
+                                     self.field-names[i] == null)
+                                 then
+                                    set index = i
+                                    set soap-type = ft
+                                    {break}
+                                }
+                            }
+                        }
+                    }
+                    {if soap-type == null then
+                        let new-type:SOAPObjectType =
+                            {new SOAPObjectType,
+                                element-name = xml-name
+                            }
+                        set new-type =
+                            {SOAPObjectType.fill-in-from-element-name-mapper
+                                new-type,
+                                self.element-name-to-xml-type,
+                                self.xml-type-to-curl-type
+                            }
+                        || if we actually figured out some real type info,
+                        || then save this as the type.
+                        {if new-type.xml-type != null and
+                            new-type.curl-type != null
+                         then
+                            set soap-type = new-type
+                        }
+                     else
+                        set soap-type =
+                            {SOAPObjectType.fill-in-from-element-name-mapper
+                                {non-null soap-type},
+                                self.element-name-to-xml-type,
+                                self.xml-type-to-curl-type
+                            }
+                        set soap-type =
+                            {SOAPObjectType.fill-in-from-curl-type-mapper
+                                {non-null soap-type},
+                                self.curl-type-to-xml-type,
+                                self.xml-type-to-element-name
+                            }
+                    }
+                    || we don't know the type, so fill it in as an any
+                    {if-non-null attributes then
+                        {if soap-type == null or
+                            soap-type.xml-type == null or
+                            soap-type.curl-type == null
+                         then
+                            set soap-type =
+                                {any-find-type-from-attributes
+                                    soap-type,
+                                    attributes,
+                                    xml-type-to-curl-type
+                                }
+                        }
+                     else
+                        {throw-unmarshal-exception
+                            {lformat
+                                "Not enough type information to unmarshal %y.",
+                                xml-name
+                            }
+                        }
+                    }
+                    let constant field-value:any =
+                        {current-mapper.unmarshal
+                            stream,
+                            attributes,
+                            {non-null soap-type},
+                            default-encoding,
+                            context,
+                            current-mapper,
+                            xml-type-to-curl-type,
+                            check-type-attribute? = check-type-attribute?
+                        }
+                    {with-compiler-directives allow-any-calls? = true do
+                    {type-switch field-value
+                     case state:SOAPUnmarshalObjectState do
+                        {context.append-callback
+                            state.id,
+                            {if is-array? then
+                                {proc {
+                                       value:any,
+                                       status:SOAPUnmarshalObjectStatus
+                                      }:bool
+                                    set object[index] = value
+                                    {return true}
+                                }
+                             elseif is-name-hash-table? then
+                                {proc {
+                                       value:any,
+                                       status:SOAPUnmarshalObjectStatus
+                                      }:bool
+                                    set object[xml-name] = value
+                                    {return true}
+                                }
+                             elseif is-type-hash-table? then
+                                {proc {
+                                       value:any,
+                                       status:SOAPUnmarshalObjectStatus
+                                      }:bool
+                                    set object[soap-type] = value
+                                    {return true}
+                                }
+                             elseif is-named-field-hash-table? then
+                                {proc {
+                                       value:any,
+                                       status:SOAPUnmarshalObjectStatus
+                                      }:bool
+                                    let constant key:SOAPNamedFieldInfo =
+                                        {new SOAPNamedFieldInfo,
+                                            xml-name,
+                                            soap-type
+                                        }
+                                    set object[key] = value
+                                    {return true}
+                                }
+                             else
+                                || unreachable
+                                {throw-unmarshal-exception
+                                    {localize
+                                        "Unknown type to unmarshal named field."
+                                    }
+                                }
+                            },
+                            || would be good if it were complete, but we don't
+                            || really care.
+                            min-status = SOAPUnmarshalObjectStatus.complete
+                        }
+                     else
+                        {if is-array? then
+                            set object[index] = field-value
+                         elseif is-name-hash-table? then
+                            set object[xml-name] = field-value
+                         elseif is-type-hash-table? then
+                            set object[soap-type] = field-value
+                         elseif is-named-field-hash-table? then
+                            let constant key:SOAPNamedFieldInfo =
+                                {new SOAPNamedFieldInfo, xml-name, soap-type}
+                            set object[key] = field-value
+                        }
+                    }
+                    } || compiler-directives
+                    set (current-token, eof?) = {stream.read-one}
+                    {if eof? then
+                        {throw-unmarshal-exception
+                            {lformat
+                                "Got EOF instead of end of response %y.", se.element
+                            }
+                        }
+                    }
+                    {type-switch current-token
+                     case ee:XMLEndElement do
+                        {if ee.element != null and
+                            ee.element != se.element
+                         then
+                            {throw-unmarshal-exception
+                                {lformat
+                                    "Expected XMLEndElement for %y got %y.",
+                                    se.element, current-token
+                                }
+                            }
+                        }
+                     else
+                        {throw-unmarshal-exception
+                            {lformat
+                                "Expected XMLEndElement for %y got %y.",
+                                se.element, current-token
+                            }
+                        }
+                    }
+                 case ee:XMLEndElement do
+                    || unread it...
+                    {stream.unread-one ee}
+                    {break}
+                 case ed:XMLEndDocument do
+                    {stream.unread-one ed}
+                    {break}
+                 else
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Got %y instead of a XMLStartElement or XMLEndElement.",
+                            current-token
+                        }
+                    }
+                }
+            }
+
+            object asa Object
+        }
+    {if-non-null id then
+        {context.set-object
+            '#' & id, object, SOAPUnmarshalObjectStatus.complete
+        }
+    }
+    {return object, true}
+  }
+
+  || possible types (things that say any could be a more specific type)
+  || {Array-of any}, {FastArray-of any}
+  || {HashTable-of XMLName, any}
+  || {HashTable-of SOAPObjectType, any}
+  || {HashTable-of SOAPNamedFieldInfo, any}
+  ||
+  || Could have an enum, but this is just as easy...
+  {define-proc package {identify-type
+                           type:Type,
+                           marshal?:bool
+                       }:(is-array?:bool,
+                          is-name-hash-table?:bool,
+                          is-type-hash-table?:bool,
+                          is-named-field-hash-table?:bool
+                         )
+    {type-switch type
+     case parameterized-type:ParameterizedType do
+        let constant template-name:String = parameterized-type.template.name
+        {switch template-name
+         case "Array-of", "FastArray-of" do
+            {return true, false, false, false}
+         case "HashTable-of", "BucketHashTable-of" do
+            let constant parameter0:Type =
+                parameterized-type.positional-type-parameters[0].parameter asa
+                Type
+            {switch parameter0
+             case XMLName, #XMLName do
+                {return false, true, false, false}
+             case SOAPObjectType, #SOAPObjectType do
+                {return false, false, true, false}
+             case SOAPNamedFieldInfo, #SOAPNamedFieldInfo do
+                {return false, false, false, true}
+            }
+        }
+    }
+    {throw
+        {if marshal? then
+            {new SOAPMarshalException,
+                {lformat
+                    "Type can't be marshaled by SOAPNamedFieldMarshaler %s.",
+                    type
+                }
+            }
+         else
+            {new SOAPUnmarshalException,
+                {lformat
+                    "Type can't be unmarshaled by SOAPNamedFieldMarshaler %s.",
+                    type
+                }
+            }
+        }
+    }
+  }
+
+  {method private {hash-table-to-array
+                      value:any,
+                      field-types:#{Array-of #SOAPObjectType},
+                      field-names:#{Array-of #XMLName},
+                      field-set?:{Array-of bool},
+                      field-types-cloned?:bool = false,
+                      field-names-cloned?:bool = false
+                  }:(
+                     array:any,
+                     field-types:#{Array-of #SOAPObjectType},
+                     field-names:#{Array-of #XMLName},
+                     field-types-cloned?:bool,
+                     field-names-cloned?:bool
+                    )
+    let constant field-types-supplied?:bool = field-types != null
+    let constant field-names-supplied?:bool = field-names != null
+    let constant parameterized-type:ParameterizedType =
+        ({type-of value} asa ParameterizedType)
+    let constant hash-element-type:Type =
+        parameterized-type.positional-type-parameters[1].parameter asa Type
+    let constant array-element-type:Type =
+        {if-non-null nv = hash-element-type.null-variant then
+            nv
+         else
+            hash-element-type
+        }
+    let constant array:any =
+        {with-compiler-directives allow-any-calls? = true do
+            let constant array-type:ClassType =
+                {Array-of.construct array-element-type} asa
+                ClassType
+            {{array-type.get-instance-maker "default"}.new
+                efficient-size = value.size
+            }
+        }
+    {with-compiler-directives allow-any-calls? = true do
+        || Loop over all of them and try to dispose of them properly
+        {for v:any key k:any in value do
+            let handled?:bool = false
+            || Note leaving things with null key till later (so all types
+            || in switch are non-null types.
+            let xml-name:#XMLName
+            let soap-type:#SOAPObjectType
+            {type-switch k
+             case xn:XMLName do
+                set xml-name = xn
+             case st:SOAPObjectType do
+                set soap-type = st
+             case field-info:SOAPNamedFieldInfo do
+                set xml-name = field-info.name
+                set soap-type = field-info.type
+            }
+            {if field-names-supplied? then
+                {if-non-null xml-name then
+                    let index:int = {field-names.find xml-name}
+                    {if index >= 0 then
+                        {if array.size <= index then
+                            {array.set-size
+                                index + 1,
+                                {uninitialized-value-for-type
+                                    array-element-type
+                                }
+                            }
+                        }
+                        set array[index] = v
+                        set field-set?[index] = true
+                        {if-non-null soap-type then
+                            {if field-types == null then
+                                set field-types-cloned? = true
+                                set field-types =
+                                    {new {Array-of #SOAPObjectType}.from-size,
+                                        field-names.size, null
+                                    }
+                             elseif not field-types-cloned? then
+                                set field-types-cloned? = true
+                                set field-types = {field-types.clone}
+                            }
+                            set field-types[index] = soap-type
+                        }
+                        set handled? = true
+                    }
+                }
+            }
+            {if not handled? and field-types-supplied? then
+                {if-non-null soap-type then
+                    let index:int = {field-types.find soap-type}
+                    {if index >= 0 then
+                        {if array.size <= index then
+                            {array.set-size
+                                index + 1,
+                                {uninitialized-value-for-type
+                                    array-element-type
+                                }
+                            }
+                        }
+                        set array[index] = v
+                        set field-set?[index] = true
+                        {if-non-null xml-name then
+                            {if field-names == null then
+                                set field-names-cloned? = true
+                                set field-names =
+                                    {new {Array-of #XMLName}.from-size,
+                                        field-types.size, null
+                                    }
+                             elseif not field-names-cloned? then
+                                set field-names-cloned? = true
+                                set field-names = {field-names.clone}
+                            }
+                            set field-names[index] = xml-name
+                        }
+                        set handled? = true
+                    }
+                }
+            }
+
+            {if not handled? then
+                {if self.include-unnamed-fields? then
+                    let array-size:int =
+                        {with-compiler-directives allow-any-calls? = true do
+                            array.size asa int
+                        }
+                    let constant new-array-size:int =
+                        {max
+                            {if-non-null field-names then
+                                field-names.size
+                             else
+                                0
+                            },
+                            {if-non-null field-types then
+                                field-types.size
+                             else
+                                0
+                            }
+                        }
+                    {if new-array-size > array-size then
+                        {with-compiler-directives allow-any-calls? = true do
+                            {array.set-size
+                                new-array-size,
+                                {uninitialized-value-for-type
+                                    array-element-type
+                                }
+                            }
+                        }
+                        set array-size = new-array-size
+                    }
+
+                    {if field-set?.size < array-size then
+                        {field-set?.set-size array-size, false}
+                    }
+                    {with-compiler-directives allow-any-calls? = true do
+                        {array.append v}
+                    }
+                    {inc array-size}
+                    {field-set?.append true}
+                    {if-non-null xml-name then
+                        {if field-names == null then
+                            set field-names-cloned? = true
+                            set field-names =
+                                {new {Array-of #XMLName}.from-size,
+                                    array-size - 1, null
+                                }
+                         elseif not field-names-cloned? then
+                            set field-names = {field-names.clone}
+                            set field-names-cloned? = true
+                        }
+                        {if field-names.size < (array-size - 1) then
+                            {field-names.set-size array-size - 1, null}
+                        }
+                        {field-names.append xml-name}
+                    }
+                    {if-non-null soap-type then
+                        {if field-types == null then
+                            set field-types-cloned? = true
+                            set field-types =
+                                {new {Array-of #SOAPObjectType}.from-size,
+                                    array-size - 1, null
+                                }
+                         elseif not field-types-cloned? then
+                            set field-types = {field-types.clone}
+                            set field-types-cloned? = true
+                        }
+                        {if field-types.size < (array-size - 1) then
+                            {field-types.set-size array-size - 1, null}
+                        }
+                        {field-types.append soap-type}
+                    }
+                }
+            }
+        }
+    }
+    {return
+        array,
+        field-types,
+        field-names,
+        field-types-cloned?,
+        field-names-cloned?
+    }
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {new {Array-of #String}, null, efficient-size = 1}}
+  }
+}

@@ -1,0 +1,309 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 applet}
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{chapter
+    index= {HeadingIndex primary-key="WSDK Standards"},
+    WSDK Technology Standards
+}
+{heading level = 2, Summary}
+
+{paragraph
+    The following table summarizes the standards
+    governing the functionality of WSDK components
+    for XML, XML Processing, XML Vocabularies 
+    and Web Services.  
+    Each entry identifies the standard,
+    describes how it applies, 
+    and references detailed discussion below.
+    
+    The {underline Status} entry describes the 
+    release status of the component:
+    {itemize
+        {item {bold Core} - core Curl API}
+        {item {bold Released} - WSDK component}
+        {item {bold Prototype} - prototype WSDK component}
+    }
+    
+    The {underline Level} entry describes the 
+    degree of conformance to the referenced standard:
+    {itemize
+        {item {bold Full} - full adherance to applicable specs}
+        {item {bold Subset} - adherance to parts of applicable specs}
+        {item {bold Partial} - incomplete adherance to applicable specs}
+    }
+
+    The {underline Focus} entry summarizes
+    the criteria that have guided 
+    decisions on scope of coverage.
+}
+
+{Table 
+    background = "beige",
+    cell-border-width = 2px,
+    cell-border-style = "sunken",
+    cell-border-color = "tan",
+    cell-margin = 4px,
+    {row-prototype
+        font-weight = "bold",
+        background = "tan",
+        {text Standard},
+        {text Version},
+        {text Status},
+        {text Level},
+        {text Focus}
+    }, 
+    {row-prototype
+        {cell-prototype colspan = 5,
+            {bold XML Core}}},
+    {row-prototype
+        {standard-ref "XML"},
+        {monospace 1.0},
+        {status Released},
+        {conformance-level Full},
+        {focus-notes
+            XML Document Model for XML Data Binding}
+    },
+    {row-prototype
+        {standard-ref "XML Inclusion"},
+        {monospace 1.0},
+        {status Released},
+        {conformance-level Subset},
+        {focus-notes}
+    },
+    {row-prototype
+        {standard-ref "XML Schema"},
+        {monospace 1.0},
+        {status Released},
+        {conformance-level Subset},
+        {focus-notes
+            Handle datatypes used in web service messages}
+    },
+    {row-prototype
+        {cell-prototype colspan = 5,
+            {bold Web Services}}},
+    {row-prototype
+        {standard-ref "WSDL"},
+        {monospace 1.1},
+        {status Released},
+        {conformance-level Subset},
+        {focus-notes
+            SOAP over HTTP: document / literal, rpc / literal, rpc / encoded}
+    },
+    {row-prototype
+        {standard-ref "SOAP"},
+        {monospace 1.1},
+        {status Released},
+        {conformance-level Subset},
+        {focus-notes
+            Handle datatypes used in web service messages}
+    },
+    {row-prototype
+        {cell-prototype colspan = 5,
+            {bold XML Processing}}},
+    {row-prototype
+        {standard-ref "SAX"},
+        {monospace 2.0},
+        {status Core},
+        {conformance-level Full},
+        {focus-notes}
+    },
+    {row-prototype
+        {standard-ref "XPath"},
+        {monospace 1.0},
+        {status Released},
+        {conformance-level Full},
+        {focus-notes
+            Support XML Data Binding}
+    }
+}
+
+{heading level = 2, Detail}
+
+{heading level = 3, XML Core Standards}
+
+{standard-heading "XML"}
+
+{conformance-table    
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/REC-xml/"},
+        Extensible Markup Language (XML) 1.0},
+    {text Specification},
+    {link href = {url "http://www.w3.org/TR/xml-infoset/"},
+        XML Information Set},    
+    {text Package}, {docref COM.CURL.WSDK.XML-DOCUMENT-MODEL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Full},    
+    {text Exceptions}
+}
+
+{conformance-table    
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/REC-xml-names/"},
+        Namespaces in XML},    
+    {text Package}, {docref COM.CURL.WSDK.XML-DOCUMENT-MODEL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Full}
+}
+
+{conformance-table     
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/xmlbase/"},
+        XML Base},   
+    {text Package}, {docref COM.CURL.WSDK.XML-DOCUMENT-MODEL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Full}
+}
+
+{standard-heading "XML Inclusion"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/xinclude/"},
+        XML Inclusions (XInclude) Version 1.0},    
+    {text Package}, {docref COM.CURL.WSDK.XML-DOCUMENT-MODEL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Subset},  
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item XPointer fragment references}
+        }}
+}
+
+{standard-heading "XML Schema"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/xmlschema-1"},
+        XML Schema Part 1: Structures},
+    {text Package}, {docref COM.CURL.WSDK.WSDL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Subset},  
+    {text Partial Support},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item complexContent}
+            {itemize
+                {item any}
+                {item anyAttribute}
+                {item union}
+                {item choice}
+                {item union}
+            }
+            {item group}
+            {item attributeGroup}
+            {item ...}
+        }},
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item key constraints}
+            {item substitution groups}
+            {item redefinition}
+            {item annotation}
+            {item notation}
+            {item ...}
+        }}
+}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/xmlschema-2"},
+        XML Schema Part 2: Datatypes},
+    {text Package}, {docref COM.CURL.WSDK.WSDL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Subset},  
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item restricted types}
+            {item ...}
+        }}
+}
+
+{heading level = 3, XML Processing Standards}
+
+{standard-heading "SAX"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.saxproject.org/"},
+        Simple API for XML (SAX) 2.0},
+    {text Package}, {docref CURL.XML.SAX.PARSER},    
+    {text Status}, {monospace Core},    
+    {text Level}, {monospace Full}
+}
+
+{standard-heading "XPath"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/xpath"},
+        XML Path Language (XPath) Version 1.0},
+    {text Package}, {docref COM.CURL.WSDK.XML-DOCUMENT-MODEL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Full},
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item Axes: namespace}
+            {item Node Test: processing-instruction('target')}
+        }}
+}
+
+{heading level = 3, Web Services Standards}
+
+{standard-heading "WSDL"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/wsdl"},
+        Web Services Description Language (WSDL) 1.1},
+    {text Package}, {docref COM.CURL.WSDK.WSDL},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Subset},
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item ...}
+        }}
+}
+
+{standard-heading "SOAP"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/2000/NOTE-SOAP-20000508/"}, 
+        Simple Object Access Protocol (SOAP) 1.1},
+    {text Package}, {docref COM.CURL.WSDK.SOAP},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Subset},
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item ...}
+        }}
+}
+
+|| ====================
+
+{curl-copyright}

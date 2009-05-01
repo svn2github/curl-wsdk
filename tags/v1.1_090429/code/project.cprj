@@ -1,0 +1,61 @@
+|| **********************************************************
+|| *** THIS FILE IS AUTOMATICALLY UPDATED BY THE CURL IDE ***
+|| ***              DO NOT MODIFY IT BY HAND              ***
+|| **********************************************************
+{project
+    version = 2,
+    manifest-location = "manifest.mcurl",
+    api-version = "7.0",
+    compiler-directives = "careful? = true",
+    use-style-sheets? = false,
+    style-package-name = "",
+    style-sheet-name = "DEFAULT-STYLE-SHEET",
+    {target
+        name = "deploy",
+        target-url-name = "file:///C:/curl/WSDK_deploy",
+        {package-transform "COM.CURL.WSDL.WSConnectionService\u0000package\u0000util/WSConnection/WSConnectionService.scurl", pcurl? = true},
+        {package-transform "COM.CURL.WSDK.WS-CONNECTED-RECORDSET\u0000package\u0000util/WSConnection/load.scurl", pcurl? = true},
+        {resource-transform "docs\u0000directory\u0000docs"},
+        {package-transform "COM.CURL.WSDK.XML-DOCUMENT-MODEL\u0000package\u0000xdm/load.scurl", pcurl? = true},
+        {package-transform "COM.CURL.WSDK.RECORDSET-FOR\u0000package\u0000util/recordset-for/load.scurl", pcurl? = true},
+        {package-transform "COM.CURL.WSDK.XML-DISPLAY\u0000package\u0000util/xdm-display/load.scurl", pcurl? = true},
+        {package-transform "COM.CURL.WSDK.SOAP\u0000package\u0000soap/load.scurl", pcurl? = true},
+        {resource-transform "project.cprj\u0000file\u0000project.cprj"},
+        {package-transform "COM.CURL.WSDK.WSDL\u0000package\u0000wsdl/load.scurl", pcurl? = true},
+        {package-transform "COM.CURL.WSDK.XML-ELABORATION\u0000package\u0000xdm-elaboration/load.scurl", pcurl? = true},
+        {resource-transform "resources\u0000directory\u0000resources", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-QUERY-FUNCTIONS\u0000package\u0000xdm-query/function-defs.scurl", pcurl? = true}
+    },
+    {target
+        name = "deploy-docs",
+        target-url-name = "file:///C:/curl/WSDK_deploy-docs",
+        {package-transform "COM.CURL.WSDL.WSConnectionService\u0000package\u0000util/WSConnection/WSConnectionService.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.WS-CONNECTED-RECORDSET\u0000package\u0000util/WSConnection/load.scurl", pcurl? = true, generate-doc? = true},
+        {resource-transform "docs\u0000directory\u0000docs", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-DOCUMENT-MODEL\u0000package\u0000xdm/load.scurl", pcurl? = true, generate-doc? = true},
+        {package-transform "COM.CURL.WSDK.RECORDSET-FOR\u0000package\u0000util/recordset-for/load.scurl", pcurl? = true, generate-doc? = true},
+        {package-transform "COM.CURL.WSDK.XML-DISPLAY\u0000package\u0000util/xdm-display/load.scurl", pcurl? = true, generate-doc? = true},
+        {package-transform "COM.CURL.WSDK.SOAP\u0000package\u0000soap/load.scurl", pcurl? = true, generate-doc? = true},
+        {resource-transform "project.cprj\u0000file\u0000project.cprj"},
+        {package-transform "COM.CURL.WSDK.WSDL\u0000package\u0000wsdl/load.scurl", pcurl? = true, generate-doc? = true},
+        {package-transform "COM.CURL.WSDK.XML-ELABORATION\u0000package\u0000xdm-elaboration/load.scurl", pcurl? = true, generate-doc? = true},
+        {resource-transform "resources\u0000directory\u0000resources", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-QUERY-FUNCTIONS\u0000package\u0000xdm-query/function-defs.scurl", pcurl? = true, generate-doc? = true}
+    },
+    {target
+        name = "deploy-source",
+        target-url-name = "file:///C:/curl/WSDK_deploy-source",
+        {package-transform "COM.CURL.WSDL.WSConnectionService\u0000package\u0000util/WSConnection/WSConnectionService.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.WS-CONNECTED-RECORDSET\u0000package\u0000util/WSConnection/load.scurl", copy? = true},
+        {resource-transform "docs\u0000directory\u0000docs", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-DOCUMENT-MODEL\u0000package\u0000xdm/load.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.RECORDSET-FOR\u0000package\u0000util/recordset-for/load.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-DISPLAY\u0000package\u0000util/xdm-display/load.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.SOAP\u0000package\u0000soap/load.scurl", copy? = true},
+        {resource-transform "project.cprj\u0000file\u0000project.cprj", copy? = true},
+        {package-transform "COM.CURL.WSDK.WSDL\u0000package\u0000wsdl/load.scurl", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-ELABORATION\u0000package\u0000xdm-elaboration/load.scurl", copy? = true},
+        {resource-transform "resources\u0000directory\u0000resources", copy? = true},
+        {package-transform "COM.CURL.WSDK.XML-QUERY-FUNCTIONS\u0000package\u0000xdm-query/function-defs.scurl", copy? = true}
+    }
+}

@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="GlobalWeather" targetNamespace="http://www.capeclear.com/GlobalWeather.wsdl" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.capeclear.com/GlobalWeather.wsdl" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsd1="http://www.capeclear.com/GlobalWeather.xsd">
+	<types>
+		<xsd:schema targetNamespace="http://www.capeclear.com/GlobalWeather.xsd" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+		    <xsd:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+			<xsd:complexType name="Direction">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="compass" nillable="true" type="xsd1:DirectionCompass"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="degrees" type="xsd:int"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="ArrayOfPrecipitation">
+				<xsd:complexContent>
+					<xsd:restriction base="SOAP-ENC:Array">
+						<xsd:sequence>
+							<xsd:element maxOccurs="unbounded" minOccurs="0" name="item" type="xsd1:Precipitation"/>
+						</xsd:sequence>
+						<xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd1:Precipitation[]"/>
+					</xsd:restriction>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="ArrayOfPhenomenon">
+				<xsd:complexContent>
+					<xsd:restriction base="SOAP-ENC:Array">
+						<xsd:sequence>
+							<xsd:element maxOccurs="unbounded" minOccurs="0" name="item" type="xsd1:Phenomenon"/>
+						</xsd:sequence>
+						<xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd1:Phenomenon[]"/>
+					</xsd:restriction>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="Temperature">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="ambient" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="dewpoint" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="relative_humidity" type="xsd:int"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Extreme">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="temperature" nillable="true" type="xsd1:Temperature"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="type" nillable="true" type="xsd1:ExtremeType"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="hours" type="xsd:int"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="ArrayOfstring">
+				<xsd:complexContent>
+					<xsd:restriction base="SOAP-ENC:Array">
+						<xsd:sequence>
+							<xsd:element maxOccurs="unbounded" minOccurs="0" name="item" type="xsd:string"/>
+						</xsd:sequence>
+						<xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd:string[]"/>
+					</xsd:restriction>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="Visibility">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="distance" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="qualifier" nillable="true" type="xsd1:VisibilityQualifier"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="ArrayOfExtreme">
+				<xsd:complexContent>
+					<xsd:restriction base="SOAP-ENC:Array">
+						<xsd:sequence>
+							<xsd:element maxOccurs="unbounded" minOccurs="0" name="item" type="xsd1:Extreme"/>
+						</xsd:sequence>
+						<xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd1:Extreme[]"/>
+					</xsd:restriction>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="Layer">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="altitude" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="extent" type="xsd:int"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="type" nillable="true" type="xsd1:PhenomenonType"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="WeatherReport">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="timestamp" nillable="true" type="xsd:dateTime"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="station" nillable="true" type="xsd1:Station"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="phenomena" nillable="true" type="xsd1:ArrayOfPhenomenon"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="precipitation" nillable="true" type="xsd1:ArrayOfPrecipitation"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="extremes" nillable="true" type="xsd1:ArrayOfExtreme"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="pressure" nillable="true" type="xsd1:Pressure"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="sky" nillable="true" type="xsd1:Sky"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="temperature" nillable="true" type="xsd1:Temperature"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="visibility" nillable="true" type="xsd1:Visibility"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="wind" nillable="true" type="xsd1:Wind"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Phenomenon">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="type" nillable="true" type="xsd1:PhenomenonType"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="intensity" nillable="true" type="xsd1:PhenomenonIntensity"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Wind">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="prevailing_speed" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="gust_speed" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="prevailing_direction" nillable="true" type="xsd1:Direction"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="varying_from_direction" nillable="true" type="xsd1:Direction"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="varying_to_direction" nillable="true" type="xsd1:Direction"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Pressure">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="altimeter" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="slp" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="delta" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="delta_hours" type="xsd:int"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="ArrayOfLayer">
+				<xsd:complexContent>
+					<xsd:restriction base="SOAP-ENC:Array">
+						<xsd:sequence>
+							<xsd:element maxOccurs="unbounded" minOccurs="0" name="item" type="xsd1:Layer"/>
+						</xsd:sequence>
+						<xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd1:Layer[]"/>
+					</xsd:restriction>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="Station">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="icao" nillable="true" type="xsd:string"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="wmo" nillable="true" type="xsd:string"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="iata" nillable="true" type="xsd:string"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="elevation" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="latitude" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="longitude" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="name" nillable="true" type="xsd:string"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="region" nillable="true" type="xsd:string"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="country" nillable="true" type="xsd:string"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="ArrayOfStation">
+				<xsd:complexContent>
+					<xsd:restriction base="SOAP-ENC:Array">
+						<xsd:sequence>
+							<xsd:element maxOccurs="unbounded" minOccurs="0" name="item" type="xsd1:Station"/>
+						</xsd:sequence>
+						<xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="xsd1:Station[]"/>
+					</xsd:restriction>
+				</xsd:complexContent>
+			</xsd:complexType>
+			<xsd:complexType name="Sky">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="ceiling_altitude" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="layers" nillable="true" type="xsd1:ArrayOfLayer"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Precipitation">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="amount" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="hours" type="xsd:int"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="string" nillable="true" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:complexType name="Range">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="from" type="xsd:double"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="to" type="xsd:double"/>
+				</xsd:sequence>
+			</xsd:complexType>
+			<xsd:simpleType name="DirectionCompass">
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="N"/>
+					<xsd:enumeration value="NNE"/>
+					<xsd:enumeration value="NE"/>
+					<xsd:enumeration value="ENE"/>
+					<xsd:enumeration value="E"/>
+					<xsd:enumeration value="ESE"/>
+					<xsd:enumeration value="SE"/>
+					<xsd:enumeration value="SSE"/>
+					<xsd:enumeration value="S"/>
+					<xsd:enumeration value="SSW"/>
+					<xsd:enumeration value="SW"/>
+					<xsd:enumeration value="WSW"/>
+					<xsd:enumeration value="W"/>
+					<xsd:enumeration value="WNW"/>
+					<xsd:enumeration value="NW"/>
+					<xsd:enumeration value="NNW"/>
+				</xsd:restriction>
+			</xsd:simpleType>
+			<xsd:simpleType name="ExtremeType">
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="HIGH"/>
+					<xsd:enumeration value="LOW"/>
+				</xsd:restriction>
+			</xsd:simpleType>
+			<xsd:simpleType name="PhenomenonIntensity">
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="DISTANT"/>
+					<xsd:enumeration value="NEARBY"/>
+					<xsd:enumeration value="LIGHT"/>
+					<xsd:enumeration value="MODERATE"/>
+					<xsd:enumeration value="HEAVY"/>
+				</xsd:restriction>
+			</xsd:simpleType>
+			<xsd:simpleType name="PhenomenonType">
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="MIST"/>
+					<xsd:enumeration value="FOG"/>
+					<xsd:enumeration value="CLOUD"/>
+					<xsd:enumeration value="TOWERING_CUMULUS"/>
+					<xsd:enumeration value="CUMULONIMBUS"/>
+					<xsd:enumeration value="PRECIPITATION"/>
+					<xsd:enumeration value="SHOWERS"/>
+					<xsd:enumeration value="DRIZZLE"/>
+					<xsd:enumeration value="RAIN"/>
+					<xsd:enumeration value="SPRAY"/>
+					<xsd:enumeration value="DIAMOND_DUST"/>
+					<xsd:enumeration value="SNOW"/>
+					<xsd:enumeration value="SNOW_GRAINS"/>
+					<xsd:enumeration value="ICE_PELLETS"/>
+					<xsd:enumeration value="SMALL_HAIL"/>
+					<xsd:enumeration value="LARGE_HAIL"/>
+					<xsd:enumeration value="HAZE"/>
+					<xsd:enumeration value="SMOKE"/>
+					<xsd:enumeration value="DUST"/>
+					<xsd:enumeration value="SAND"/>
+					<xsd:enumeration value="VOLCANIC_ASH"/>
+					<xsd:enumeration value="WHIRLS"/>
+					<xsd:enumeration value="SQUALLS"/>
+					<xsd:enumeration value="LIGHTNING"/>
+					<xsd:enumeration value="DUSTSTORM"/>
+					<xsd:enumeration value="SANDSTORM"/>
+					<xsd:enumeration value="THUNDERSTORM"/>
+					<xsd:enumeration value="TORNADIC"/>
+					<xsd:enumeration value="UNKNOWN"/>
+				</xsd:restriction>
+			</xsd:simpleType>
+			<xsd:simpleType name="VisibilityQualifier">
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="AT"/>
+					<xsd:enumeration value="BEYOND"/>
+					<xsd:enumeration value="BELOW"/>
+				</xsd:restriction>
+			</xsd:simpleType>
+		</xsd:schema>
+	</types>
+	<message name="listCountriesResponse">
+		<part name="return" type="xsd1:ArrayOfstring"/>
+	</message>
+	<message name="getStation">
+		<part name="code" type="xsd:string"/>
+	</message>
+	<message name="searchByCodeResponse">
+		<part name="return" type="xsd1:ArrayOfStation"/>
+	</message>
+	<message name="searchByRegionResponse">
+		<part name="return" type="xsd1:ArrayOfStation"/>
+	</message>
+	<message name="isValidCodeResponse">
+		<part name="return" type="xsd:boolean"/>
+	</message>
+	<message name="getWeatherReport">
+		<part name="code" type="xsd:string"/>
+	</message>
+	<message name="listCountries"/>
+	<message name="searchByName">
+		<part name="name" type="xsd:string"/>
+	</message>
+	<message name="searchByCountryResponse">
+		<part name="return" type="xsd1:ArrayOfStation"/>
+	</message>
+	<message name="searchByCountry">
+		<part name="country" type="xsd:string"/>
+	</message>
+	<message name="isValidCode">
+		<part name="code" type="xsd:string"/>
+	</message>
+	<message name="searchByNameResponse">
+		<part name="return" type="xsd1:ArrayOfStation"/>
+	</message>
+	<message name="getStationResponse">
+		<part name="return" type="xsd1:Station"/>
+	</message>
+	<message name="searchByRegion">
+		<part name="region" type="xsd:string"/>
+	</message>
+	<message name="getWeatherReportResponse">
+		<part name="return" type="xsd1:WeatherReport"/>
+	</message>
+	<message name="searchByCode">
+		<part name="code" type="xsd:string"/>
+	</message>
+	<portType name="GlobalWeather">
+		<operation name="getWeatherReport">
+			<input message="tns:getWeatherReport"/>
+			<output message="tns:getWeatherReportResponse"/>
+		</operation>
+	</portType>
+	<portType name="StationInfo">
+		<operation name="getStation">
+			<input message="tns:getStation"/>
+			<output message="tns:getStationResponse"/>
+		</operation>
+		<operation name="isValidCode">
+			<input message="tns:isValidCode"/>
+			<output message="tns:isValidCodeResponse"/>
+		</operation>
+		<operation name="listCountries">
+			<input message="tns:listCountries"/>
+			<output message="tns:listCountriesResponse"/>
+		</operation>
+		<operation name="searchByCode">
+			<input message="tns:searchByCode"/>
+			<output message="tns:searchByCodeResponse"/>
+		</operation>
+		<operation name="searchByCountry">
+			<input message="tns:searchByCountry"/>
+			<output message="tns:searchByCountryResponse"/>
+		</operation>
+		<operation name="searchByName">
+			<input message="tns:searchByName"/>
+			<output message="tns:searchByNameResponse"/>
+		</operation>
+		<operation name="searchByRegion">
+			<input message="tns:searchByRegion"/>
+			<output message="tns:searchByRegionResponse"/>
+		</operation>
+	</portType>
+	<binding name="StationInfo" type="tns:StationInfo">
+		<soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="getStation">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#getStation"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+		<operation name="isValidCode">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#isValidCode"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+		<operation name="listCountries">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#listCountries"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+		<operation name="searchByCode">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#searchByCode"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+		<operation name="searchByCountry">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#searchByCountry"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+		
+		<operation name="searchByName">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#searchByName"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+		<operation name="searchByRegion">
+			<soap:operation soapAction="capeconnect:GlobalWeather:StationInfo#searchByRegion"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:StationInfo" use="encoded"/>
+			</output>
+		</operation>
+	</binding>
+	<binding name="GlobalWeather" type="tns:GlobalWeather">
+		<soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="getWeatherReport">
+			<soap:operation soapAction="capeconnect:GlobalWeather:GlobalWeather#getWeatherReport"/>
+			<input>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:GlobalWeather" use="encoded"/>
+			</input>
+			<output>
+				<soap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="capeconnect:GlobalWeather:GlobalWeather" use="encoded"/>
+			</output>
+		</operation>
+	</binding>
+	<service name="GlobalWeather">
+		<documentation>GlobalWeather</documentation>
+		<port binding="tns:StationInfo" name="StationInfo">
+			<soap:address location="http://live.capescience.com:80/ccx/GlobalWeather"/>
+		</port>
+		<port binding="tns:GlobalWeather" name="GlobalWeather">
+			<soap:address location="http://live.capescience.com:80/ccx/GlobalWeather"/>
+		</port>
+	</service>
+</definitions>

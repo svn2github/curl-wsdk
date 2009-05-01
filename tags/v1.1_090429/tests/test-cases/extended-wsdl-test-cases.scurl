@@ -1,0 +1,242 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+
+{TestSuite {lmessage WSDL Tests},
+
+    {TestSuite.import
+        {url "xs-patterns-cases.scurl"}},
+    
+    {TestSuite {lmessage WS-I interop sample},
+        || precondition
+        {test-host-accessible-guard "soap.systinet.net:6060"},
+        {WSDLGenerationTestSuite
+            {url "wsdl-services/WS-I/services.csv"}},
+        {WSDLServiceMethodTestCase
+            service-location = 
+                {url "http://soap.systinet.net:6060/WSI/RetailerService"},
+            || package-name
+            "COM.CURL.WSDL.Retailer",
+            || class-name
+            "RetailerService",
+            || method-name
+            "get-catalog",
+            || manifest-loc
+            {url "wsdl-services/WS-I/manifest.mcurl"}
+        },        
+        {WSDLServiceMethodTestCase
+            service-location = 
+                {url "http://soap.systinet.net:6060/WSI/RetailerService"},
+            || package-name
+            "COM.CURL.WSDL.Retailer",
+            || class-name
+            "RetailerService",
+            || method-name
+            "submit-order",
+            || manifest-loc
+            {url "wsdl-services/WS-I/manifest.mcurl"},            
+            input = 
+                {stringify
+                    {Arguments
+                        {PartsOrderType
+                            {PartsOrderItem.from-keywords
+                                product-number = 605001,
+                                quantity = 10,
+                                price = 100.0}
+                        },
+                        {CustomerDetailsType.from-keywords
+                            custnbr = "foo",
+                            name = "Foo",
+                            street1 = "anywhere",
+                            city = "Here",
+                            state = "AK",
+                            zip = "12345",
+                            country = "USA"
+                        },
+                        {ConfigurationType.from-keywords
+                            user-id = "me",
+                            service-url =
+                                {{Array-of ConfigurationEndpointType}
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "retailer",
+                                        content = {url "http://soap.systinet.net:6060/WSI/RetailerService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "logging-facility",
+                                        content = {url "http://soap.systinet.net:6060/WSI/LoggingFacilityService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "manufacturer-a",
+                                        content = {url "http://soap.systinet.net:6060/WSI/ManufacturerAService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "manufacturer-b",
+                                        content = {url "http://soap.systinet.net:6060/WSI/ManufacturerBService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "manufacturer-c",
+                                        content = {url "http://soap.systinet.net:6060/WSI/ManufacturerCService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "warehouse-a",
+                                        content = {url "http://soap.systinet.net:6060/WSI/WarehouseAService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "warehouse-b",
+                                        content = {url "http://soap.systinet.net:6060/WSI/WarehouseBService"}},
+                                    {ConfigurationEndpointType.from-keywords
+                                        role = "warehouse-c",
+                                        content = {url "http://soap.systinet.net:6060/WSI/WarehouseCService"}}
+                                },
+                            must-understand = true}
+                    }}
+        },        
+        {WSDLServiceMethodTestCase
+            service-location = 
+                {url "http://soap.systinet.net:6060/WSI/WarehouseAService"},
+            || package-name
+            "COM.CURL.WSDL.WarehouseA",
+            || class-name
+            "WarehouseServiceA",
+            || method-name
+            "ship-goods",
+            || manifest-loc
+            {url "wsdl-services/WS-I/manifest.mcurl"},            
+            input = 
+                {stringify
+                    {Arguments
+                        {ItemList
+                            {Item.from-keywords
+                                product-number = 605001,
+                                quantity = 10
+                            }
+                        },
+                        "ABCD" asa CustomerReferenceType, 
+                        configuration = 
+                            {ConfigurationType.from-keywords
+                                user-id = "me",
+                                service-url =
+                                    {{Array-of ConfigurationEndpointType}
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "retailer",
+                                            content = {url "http://soap.systinet.net:6060/WSI/RetailerService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "logging-facility",
+                                            content = {url "http://soap.systinet.net:6060/WSI/LoggingFacilityService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "manufacturer-a",
+                                            content = {url "http://soap.systinet.net:6060/WSI/ManufacturerAService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "manufacturer-b",
+                                            content = {url "http://soap.systinet.net:6060/WSI/ManufacturerBService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "manufacturer-c",
+                                            content = {url "http://soap.systinet.net:6060/WSI/ManufacturerCService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "warehouse-a",
+                                            content = {url "http://soap.systinet.net:6060/WSI/WarehouseAService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "warehouse-b",
+                                            content = {url "http://soap.systinet.net:6060/WSI/WarehouseBService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "warehouse-c",
+                                            content = {url "http://soap.systinet.net:6060/WSI/WarehouseCService"}}
+                                    },
+                                must-understand = true}
+                    }}
+        },
+        {WSDLServiceMethodTestCase
+            service-location = 
+                {url "http://soap.systinet.net:6060/WSI/ManufacturerAService"},
+            || package-name
+            "COM.CURL.WSDL.ManufacturerA",
+            || class-name
+            "ManufacturerServiceA",
+            || method-name
+            "submit-po",
+            || manifest-loc
+            {url "wsdl-services/WS-I/manifest.mcurl"},            
+            input = 
+                {stringify
+                    {Arguments 
+                        {PurchOrdType.from-keywords
+                            order-num = "12345",
+                            customer-ref = "ABCD" asa CustomerReferenceType,
+                            items = 
+                                {ItemList
+                                    {Item.from-keywords
+                                        id = 605001,
+                                        qty = 10,
+                                        price = 100.0f
+                                    }
+                                }
+                        }, 
+                        start-header = null, 
+                        configuration = 
+                            {ConfigurationType.from-keywords
+                                user-id = "me",
+                                service-url =
+                                    {{Array-of ConfigurationEndpointType}
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "retailer",
+                                            content = {url "http://soap.systinet.net:6060/WSI/RetailerService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "logging-facility",
+                                            content = {url "http://soap.systinet.net:6060/WSI/LoggingFacilityService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "manufacturer-a",
+                                            content = {url "http://soap.systinet.net:6060/WSI/ManufacturerAService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "manufacturer-b",
+                                            content = {url "http://soap.systinet.net:6060/WSI/ManufacturerBService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "manufacturer-c",
+                                            content = {url "http://soap.systinet.net:6060/WSI/ManufacturerCService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "warehouse-a",
+                                            content = {url "http://soap.systinet.net:6060/WSI/WarehouseAService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "warehouse-b",
+                                            content = {url "http://soap.systinet.net:6060/WSI/WarehouseBService"}},
+                                        {ConfigurationEndpointType.from-keywords
+                                            role = "warehouse-c",
+                                            content = {url "http://soap.systinet.net:6060/WSI/WarehouseCService"}}
+                                    },
+                                must-understand = true}
+                    }}
+        },
+        {WSDLServiceMethodTestCase
+            service-location = 
+                {url "http://soap.systinet.net:6060/WSI/LoggingFacilityService"},
+            || package-name
+            "COM.CURL.WSDL.LoggingFacility",
+            || class-name
+            "LoggingFacilityService",
+            || method-name
+            "get-events",
+            || manifest-loc
+            {url "wsdl-services/WS-I/manifest.mcurl"},            
+            input = 
+                {stringify 
+                    {Arguments 
+                        "me"
+                    }}
+        }
+    },
+    
+    {WSDLGenerationTestSuite
+        {url "wsdl-services/x-services.csv"}},
+
+    {TestSuite "WSDL methods",
+        {WSDLServicesTestSuite
+            {url "wsdl-services/x-methods.csv"}}
+    }
+}

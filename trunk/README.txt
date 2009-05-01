@@ -15,10 +15,10 @@
 ||| limitations under the License.
 
 ====================
-WSDK Preview Release 1.1 for Curl API Version 7.0 Beta 3. 
+WSDK Release 1.1 for Curl API Versions 7.0 and 6.0. 
 ====================
 
-This directory contains the 1.1 preview of the Curl
+This directory contains the 1.1 release of the Curl
 Web Services Software Development Kit (WSDK)
 
 The Curl Web Services SDK (WSDK) provides the technologies necessary
@@ -107,6 +107,8 @@ WSDK 1.1 CHANGES
 This WSDK Release is a maintenance release,
 for use with Curl API Version 7.0.
 
+- WSDK 1.1 is supported for both Curl API Version 7.0 and 6.0
+-- get the appropriate distribution for your Curl API Version
 - WSDL service classes contain methods for improved testability 
 -- format-request, parse-response
 - WSDL service classes avoid name conflicts caused by nested elements

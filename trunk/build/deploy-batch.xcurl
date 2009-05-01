@@ -14,11 +14,11 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 6.0 applet}
-{applet manifest = "../tesst/manifest.mcurl"}
+{curl 7.0, 6.0 script}
+{script manifest = "../tests/manifest.mcurl"}
 {import * from COM.CURL.CDU.DEPLOY-SUPPORT}
 
-{value
+{do
     || specs
     let specs:DeploySpecs =  
         {evaluate {url "deploy-specs.scurl"}}
@@ -27,20 +27,10 @@
             source-root = {url "../"},
             target-root = {url "DEPLOYED/"}}
     || progress messages
-    let display:VBox = 
-        {VBox 
-            font-size = 9pt}
     {specs.add-event-handler
         {on e:DeployProgress do
-            {display.add 
-                {if e.message == "--" 
-                 then {hrule}
-                 else e.message}}
-            {if-non-null v = {display.get-view} then
-                {v.update}}}}
+            {output e.message}
+        }}
     || execution
-    {after 0s do
-        {with-busy-cursor
-            {specs.deploy context = context}}}
-    display
+    {specs.deploy context = context}
 }

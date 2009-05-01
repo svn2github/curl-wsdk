@@ -14,18 +14,11 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 6.0 applet}
-{applet manifest = "../tests/manifest.mcurl"}
+{curl 6.0 script}
+{script manifest = "../tests/manifest.mcurl"}
 {import * from COM.CURL.CDU.DEPLOY-SUPPORT}
 
-{document-style PlainDocument}
-{set-document-properties
-    hstretch? = true,
-    vstretch? = true, 
-    font-size = 9pt
-}
-{DeployUI
-    {evaluate {url "deploy-specs.scurl"}},
-    source-root = {url "../"},
-    target-root = {url "DEPLOYED/"}        
+{do
+    def wsdk-root = {url ".."}
+    {replace-version-heralds wsdk-root}
 }

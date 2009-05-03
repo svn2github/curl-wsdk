@@ -2474,17 +2474,17 @@
     {bootstrap-schema-type "hexBinary", |"{Array-of byte}"|, true, SOAPTypeMultipleReference.unknown}
     {bootstrap-schema-type "string", "String", true, SOAPTypeMultipleReference.unknown}
     {bootstrap-schema-type "long", "int64", false, SOAPTypeMultipleReference.single}
-    || we put down alot of things as int64 that aren't really fully
+    || we put down alot of things as int64 or uint64 that aren't really fully
     || representable with int64, and int64 can hold values that aren't
     || legal for them...
     {bootstrap-schema-type "integer", "int64", false, SOAPTypeMultipleReference.single}
-    {bootstrap-schema-type "nonNegativeInteger", "int64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "nonNegativeInteger", "uint64", false, SOAPTypeMultipleReference.single}
     {bootstrap-schema-type "nonPositiveInteger", "int64", false, SOAPTypeMultipleReference.single}
     {bootstrap-schema-type "negativeInteger", "int64", false, SOAPTypeMultipleReference.single}
-    {bootstrap-schema-type "positiveInteger", "int64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "positiveInteger", "uint64", false, SOAPTypeMultipleReference.single}
 
-    {bootstrap-schema-type "unsignedInt", "int64", false, SOAPTypeMultipleReference.single}
-    {bootstrap-schema-type "unsignedLong", "int64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "unsignedInt", "uint32", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "unsignedLong", "uint64", false, SOAPTypeMultipleReference.single}
 
     {bootstrap-schema-type "int", "int", false, SOAPTypeMultipleReference.single}
     {bootstrap-schema-type "short", "int16", false, SOAPTypeMultipleReference.single}

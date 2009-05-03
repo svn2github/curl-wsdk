@@ -99,27 +99,35 @@
             SOAPTypeMapper.xml-schema-integer-type,
             SOAPTypeMapper.xml-schema-long-type,
             SOAPTypeMapper.xml-schema-int-type,
-            SOAPTypeMapper.xml-schema-non-negative-integer-type,
             SOAPTypeMapper.xml-schema-non-positive-integer-type,
             SOAPTypeMapper.xml-schema-negative-integer-type,
+
             SOAPTypeMapper.xml-schema-positive-integer-type,
+            SOAPTypeMapper.xml-schema-non-negative-integer-type,
+
             SOAPTypeMapper.xml-schema-unsigned-int-type,
             SOAPTypeMapper.xml-schema-unsigned-long-type,
-
             SOAPTypeMapper.xml-schema-short-type,
             SOAPTypeMapper.xml-schema-byte-type,
             SOAPTypeMapper.xml-schema-unsigned-short-type,
             SOAPTypeMapper.xml-schema-unsigned-byte-type
         }
+    || Note: all of the "integer" types should also support BigDecimal
+    || since they can be any size.
     || offset of items in integral-curl-types verses their match in
     || integral-xml-type
-    let constant specific-integral-curl-types-offset:int = 9
+    let constant specific-integral-curl-types-offset:int = 5
     let constant specific-integral-curl-types:{FastArray-of Type} =
         {new {FastArray-of Type},
-            (int16 asa Type),
-            (int8 asa Type),
-            (uint16 asa Type),
-            (uint8 asa Type)
+            uint64,
+            uint64,
+
+            uint32,
+            uint64,
+            int16,
+            int8,
+            uint16,
+            uint8
         }
     let constant general-integral-curl-types:{FastArray-of Type} =
         {new {FastArray-of Type},
@@ -151,7 +159,7 @@
         }
     }
 
-    || now add mappings for the smaller int types
+    || now add mappings for the specific int types
     {for curl-type key i:int in specific-integral-curl-types do
         let constant xml-type:XMLName =
             integral-xml-types[i + specific-integral-curl-types-offset]
@@ -274,10 +282,13 @@
         {new {FastArray-of Type},
             bool,
             int64,
+            uint64,
+            uint32,
             int,
             uint16,
             int16,
             byte,
+            int8,
             String
         }
 
@@ -1111,13 +1122,15 @@
                 {return obj}
             },
             {proc {
-                           characters:#XMLCharacters,
-                           type:Type
-                       }:(any, any)
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(any, any)
                 {if-non-null characters then
                     let constant string:String = characters.characters
+                    || If we allow overflows then uint64 values can be parsed correctly
+                    || and later cast to uint64.  But we do lose some error checking.
                     let constant (value:int64, nchars:int, flow?:bool) =
-                        {string.to-int64}
+                        {string.to-int64 error-if-overflow? = (type != uint64)}
                     || check character not consumed by to-int are whitespace
                     {for i = nchars below string.size do
                         {if not {CharClass.whitespace-chars.member? string[i]}
@@ -3493,8 +3506,20 @@
         true
     }
     {table.set-curl-type-to-xml-type
+        uint32,
+        SOAPTypeMapper.xml-schema-unsigned-int-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
         (int64 asa Type),
         SOAPTypeMapper.xml-schema-long-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        uint64,
+        SOAPTypeMapper.xml-schema-unsigned-long-type,
         SOAPTypeMultipleReference.single,
         true
     }
@@ -3513,6 +3538,18 @@
     {table.set-curl-type-to-xml-type
         uint16,
         SOAPTypeMapper.xml-schema-unsigned-short-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        int8,
+        SOAPTypeMapper.xml-schema-byte-type,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-curl-type-to-xml-type
+        uint8,
+        SOAPTypeMapper.xml-schema-unsigned-byte-type,
         SOAPTypeMultipleReference.single,
         true
     }
@@ -3674,25 +3711,37 @@
     || add default mappings.
     {table.set-xml-type-to-curl-type
         SOAPTypeMapper.xml-schema-float-type,
-        (float asa Type),
+        float,
         SOAPTypeMultipleReference.single,
         true
     }
     {table.set-xml-type-to-curl-type
         SOAPTypeMapper.xml-schema-double-type,
-        (double asa Type),
+        double,
         SOAPTypeMultipleReference.single,
         true
     }
     {table.set-xml-type-to-curl-type
         SOAPTypeMapper.xml-schema-int-type,
-        (int asa Type),
+        int,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-unsigned-int-type,
+        uint32,
         SOAPTypeMultipleReference.single,
         true
     }
     {table.set-xml-type-to-curl-type
         SOAPTypeMapper.xml-schema-long-type,
-        (int64 asa Type),
+        int64,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-unsigned-long-type,
+        uint64,
         SOAPTypeMultipleReference.single,
         true
     }
@@ -3711,6 +3760,18 @@
     {table.set-xml-type-to-curl-type
         SOAPTypeMapper.xml-schema-unsigned-short-type,
         uint16,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-byte-type,
+        byte,
+        SOAPTypeMultipleReference.single,
+        true
+    }
+    {table.set-xml-type-to-curl-type
+        SOAPTypeMapper.xml-schema-unsigned-byte-type,
+        uint8,
         SOAPTypeMultipleReference.single,
         true
     }
@@ -3739,6 +3800,7 @@
         SOAPTypeMultipleReference.unknown,
         true
     }
+    || FIXME: this mapping will often be ok...
 ||--    {table.set-xml-type-to-curl-type
 ||--        SOAPTypeMapper.xml-schema-any-type,
 ||--        any,

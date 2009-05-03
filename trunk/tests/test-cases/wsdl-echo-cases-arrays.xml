@@ -190,7 +190,7 @@
         </xs:complexType>
       </XSD>
       <CURL>
-        {Test.from-keywords x = {ArrayOfArrayOfstring {ArrayOfstring "a", "b"}, {ArrayOfstring "c", "d"}}}
+        {Test.from-keywords x = {{Array-of StringArray} {StringArray "a", "b"}, {StringArray "c", "d"}}}
       </CURL>
     </CASE>
     <CASE name='ArrayOfArrayOfString2'>
@@ -211,8 +211,7 @@
         </xs:complexType>
       </XSD>
       <CURL>
-        {Test.from-keywords x = {ArrayOfArrayOfstring {StringArray "a", "b"}, {StringArray "c", "d"}}}
-
+        {Test.from-keywords x = {{Array-of StringArray} {StringArray "a", "b"}, {StringArray "c", "d"}}}
       </CURL>
     </CASE>
     <CASE name='ArrayElement'>
@@ -230,7 +229,7 @@
         </xs:complexType>
       </XSD>
       <CURL>
-        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}
+        {Test.from-keywords q = 1, x = {{Array-of String} "a", "b"}}
       </CURL>
     </CASE>
     <CASE name='AnonymousArrayElement'>
@@ -280,7 +279,7 @@
         </xs:complexType>
       </XSD>
       <CURL>
-        {Test.from-keywords q = 1, x = {ArrayOfX "a", "b"}}
+        {Test.from-keywords q = 1, x = {{Array-of #String} "a", "b"}}
       </CURL>
     </CASE>
     <CASE name='AnonymousArrayElementNullable'>
@@ -377,7 +376,7 @@
           </xs:complexType>
       </XSD>
       <CURL>
-        {Test.from-keywords q = 1, x = {ArrayOfInt 1, null}}
+        {Test.from-keywords q = 1, x = {{Array-of {Nullable int}} 1, null}}
       </CURL>
     </CASE>
     <CASE name='AnonymousArrayElementNullable'>

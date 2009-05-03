@@ -33,6 +33,22 @@
   }
 
 
+  {method public {async-echo-double input-double:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-double
+            },
+            {splice self.operations["echo-double"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
   {method public {define-echo-double}:void
     set self.operations["echo-double"] = 
          {Arguments
@@ -81,6 +97,22 @@
         }
     {return
         responses[0] asa #DateTime
+    }
+  }
+
+
+  {method public {async-echo-date-time input-date-time:#DateTime, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-date-time
+            },
+            {splice self.operations["echo-date-time"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 
@@ -139,6 +171,22 @@
   }
 
 
+  {method public {async-echo-time input-time:#XMLTimeString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-time
+            },
+            {splice self.operations["echo-time"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
   {method public {define-echo-time}:void
     set self.operations["echo-time"] = 
          {Arguments
@@ -193,6 +241,22 @@
   }
 
 
+  {method public {async-echo-any-uri input-any-uri:#Url, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-any-uri
+            },
+            {splice self.operations["echo-any-uri"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
   {method public {define-echo-any-uri}:void
     set self.operations["echo-any-uri"] = 
          {Arguments
@@ -240,10 +304,25 @@
                 input-long
             },
             {splice self.operations["echo-long"]}
-,trace-stream={get-stdout}
         }
     {return
         responses[0] asa int64
+    }
+  }
+
+
+  {method public {async-echo-long input-long:int64, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-long
+            },
+            {splice self.operations["echo-long"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 
@@ -300,6 +379,22 @@
   }
 
 
+  {method public {async-echo-int input-int:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-int
+            },
+            {splice self.operations["echo-int"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
   {method public {define-echo-int}:void
     set self.operations["echo-int"] = 
          {Arguments
@@ -348,6 +443,22 @@
         }
     {return
         responses[0] asa int16
+    }
+  }
+
+
+  {method public {async-echo-short input-short:int16, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-short
+            },
+            {splice self.operations["echo-short"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 
@@ -404,6 +515,22 @@
   }
 
 
+  {method public {async-echo-byte input-byte:int8, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-byte
+            },
+            {splice self.operations["echo-byte"]},
+            event-handler,
+            ...
+
+        }
+    }
+  }
+
+
   {method public {define-echo-byte}:void
     set self.operations["echo-byte"] = 
          {Arguments
@@ -437,7 +564,7 @@
   }
 
 
-  {method public {echo-unsigned-long input-unsigned-long:int64}:(_return:int64)
+  {method public {echo-unsigned-long input-unsigned-long:uint64}:(_return:uint64)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -451,7 +578,23 @@
             {splice self.operations["echo-unsigned-long"]}
         }
     {return
-        responses[0] asa int64
+        responses[0] asa uint64
+    }
+  }
+
+
+  {method public {async-echo-unsigned-long input-unsigned-long:uint64, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-unsigned-long
+            },
+            {splice self.operations["echo-unsigned-long"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 
@@ -465,7 +608,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedLong"},
-                    curl-type = int64
+                    curl-type = uint64
                 }
             },
             {{Array-of #XMLName}
@@ -474,7 +617,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedLong"},
-                    curl-type = int64
+                    curl-type = uint64
                 }
             },
             "http://www.w3.org/2003/05/soap-encoding",
@@ -489,7 +632,7 @@
   }
 
 
-  {method public {echo-unsigned-int input-unsigned-int:int64}:(_return:int64)
+  {method public {echo-unsigned-int input-unsigned-int:uint32}:(_return:uint32)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -503,7 +646,23 @@
             {splice self.operations["echo-unsigned-int"]}
         }
     {return
-        responses[0] asa int64
+        responses[0] asa uint32
+    }
+  }
+
+
+  {method public {async-echo-unsigned-int input-unsigned-int:uint32, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-unsigned-int
+            },
+            {splice self.operations["echo-unsigned-int"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 
@@ -517,7 +676,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedInt"},
-                    curl-type = int64
+                    curl-type = uint32
                 }
             },
             {{Array-of #XMLName}
@@ -526,7 +685,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedInt"},
-                    curl-type = int64
+                    curl-type = uint32
                 }
             },
             "http://www.w3.org/2003/05/soap-encoding",
@@ -556,6 +715,22 @@
         }
     {return
         responses[0] asa uint16
+    }
+  }
+
+
+  {method public {async-echo-unsigned-short input-unsigned-short:uint16, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-unsigned-short
+            },
+            {splice self.operations["echo-unsigned-short"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 
@@ -608,6 +783,22 @@
         }
     {return
         responses[0] asa uint8
+    }
+  }
+
+
+  {method public {async-echo-unsigned-byte input-unsigned-byte:uint8, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            {{Array-of any}
+                input-unsigned-byte
+            },
+            {splice self.operations["echo-unsigned-byte"]},
+            event-handler,
+            ...
+
+        }
     }
   }
 

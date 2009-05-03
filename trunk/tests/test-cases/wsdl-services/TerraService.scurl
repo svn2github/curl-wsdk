@@ -505,7 +505,7 @@
   }
 
 
-  {method public {get-lat-lon-metrics point:LonLatPt}:(get-lat-lon-metrics-result:#ArrayOfThemeBoundingBox)
+  {method public {get-lat-lon-metrics point:LonLatPt}:(get-lat-lon-metrics-result:#{Array-of ThemeBoundingBox})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -519,7 +519,7 @@
             {splice self.operations["get-lat-lon-metrics"]}
         }
     {return
-        responses[0] asa #ArrayOfThemeBoundingBox
+        responses[0] asa #{Array-of ThemeBoundingBox}
     }
   }
 
@@ -543,7 +543,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfThemeBoundingBox"},
-                    curl-type = ArrayOfThemeBoundingBox,
+                    curl-type = {Array-of ThemeBoundingBox},
                     nillable? = true
                 }
             },
@@ -611,7 +611,7 @@
   }
 
 
-  {method public {get-place-list place-name:String, max-items:int, image-presence:bool}:(get-place-list-result:#ArrayOfPlaceFacts)
+  {method public {get-place-list place-name:String, max-items:int, image-presence:bool}:(get-place-list-result:#{Array-of PlaceFacts})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -627,7 +627,7 @@
             {splice self.operations["get-place-list"]}
         }
     {return
-        responses[0] asa #ArrayOfPlaceFacts
+        responses[0] asa #{Array-of PlaceFacts}
     }
   }
 
@@ -661,7 +661,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
-                    curl-type = ArrayOfPlaceFacts,
+                    curl-type = {Array-of PlaceFacts},
                     nillable? = true
                 }
             },
@@ -676,7 +676,7 @@
   }
 
 
-  {method public {get-place-list-in-rect upperleft:LonLatPt, lowerright:LonLatPt, ptype:PlaceType, max-items:int}:(get-place-list-in-rect-result:#ArrayOfPlaceFacts)
+  {method public {get-place-list-in-rect upperleft:LonLatPt, lowerright:LonLatPt, ptype:PlaceType, max-items:int}:(get-place-list-in-rect-result:#{Array-of PlaceFacts})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -693,7 +693,7 @@
             {splice self.operations["get-place-list-in-rect"]}
         }
     {return
-        responses[0] asa #ArrayOfPlaceFacts
+        responses[0] asa #{Array-of PlaceFacts}
     }
   }
 
@@ -733,7 +733,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
-                    curl-type = ArrayOfPlaceFacts,
+                    curl-type = {Array-of PlaceFacts},
                     nillable? = true
                 }
             },
@@ -1057,7 +1057,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"},
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfOverlappingThemeInfo"},
-                    curl-type = ArrayOfOverlappingThemeInfo,
+                    curl-type = {Array-of OverlappingThemeInfo},
                     nillable? = true
                 }
             },
@@ -1131,104 +1131,10 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
-                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
-                        curl-type = OverlappingThemeInfo
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"},
-                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfOverlappingThemeInfo"},
-                        curl-type = ArrayOfOverlappingThemeInfo,
-                        nillable? = true
-                    }
-                },
-                element-names =
-                    {{Array-of #XMLName}
-                        {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
-                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
-                        curl-type = PlaceFacts
-                    },
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
-                        curl-type = ArrayOfPlaceFacts,
-                        nillable? = true
-                    }
-                },
-                element-names =
-                    {{Array-of #XMLName}
-                        {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
-                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
-                        curl-type = ThemeBoundingBox
-                    },
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfThemeBoundingBox"},
-                        curl-type = ArrayOfThemeBoundingBox,
-                        nillable? = true
-                    }
-                },
-                element-names =
-                    {{Array-of #XMLName}
-                        {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
-                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
                 xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
                 curl-type = LonLatPt,
                 nillable? = true
@@ -2007,6 +1913,100 @@
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"},
+                        curl-type = OverlappingThemeInfo
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfos"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfOverlappingThemeInfo"},
+                        curl-type = {Array-of OverlappingThemeInfo},
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://terraserver-usa.com/terraserver/", "OverlappingThemeInfo"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"},
+                        curl-type = PlaceFacts
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfPlaceFacts"},
+                        curl-type = {Array-of PlaceFacts},
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://terraserver-usa.com/terraserver/", "PlaceFacts"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"},
+                        curl-type = ThemeBoundingBox
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "ArrayOfThemeBoundingBox"},
+                        curl-type = {Array-of ThemeBoundingBox},
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://terraserver-usa.com/terraserver/", "ThemeBoundingBox"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
     {return
         type-mapper,
         element-name-to-xml-type,
@@ -2035,7 +2035,7 @@
   field public south-east:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
   field public center:AreaCoordinate = {uninitialized-value-for-type AreaCoordinate}
   field public nearest-place:#String
-  field public overlapping-theme-infos:#ArrayOfOverlappingThemeInfo
+  field public overlapping-theme-infos:#{Array-of OverlappingThemeInfo}
   {constructor public {default}
   }
   {constructor public 
@@ -2046,7 +2046,7 @@
       south-east:AreaCoordinate = {required-keyword "AreaBoundingBox.south-east"} asa AreaCoordinate,
       center:AreaCoordinate = {required-keyword "AreaBoundingBox.center"} asa AreaCoordinate,
       nearest-place:#String = {uninitialized-value-for-type #String},
-      overlapping-theme-infos:#ArrayOfOverlappingThemeInfo = {uninitialized-value-for-type #ArrayOfOverlappingThemeInfo}
+      overlapping-theme-infos:#{Array-of OverlappingThemeInfo} = {uninitialized-value-for-type #{Array-of OverlappingThemeInfo}}
     }
     {if {keyword-supplied? north-west} then
         set self.north-west = north-west}
@@ -2084,12 +2084,6 @@
   }
 
 }
-
-{let public constant ArrayOfOverlappingThemeInfo:ClassType = {Array-of OverlappingThemeInfo}}
-
-{let public constant ArrayOfPlaceFacts:ClassType = {Array-of PlaceFacts}}
-
-{let public constant ArrayOfThemeBoundingBox:ClassType = {Array-of ThemeBoundingBox}}
 
 {define-class public open LonLatPt
 

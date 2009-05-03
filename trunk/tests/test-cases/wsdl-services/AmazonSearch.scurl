@@ -274,7 +274,7 @@
   }
 
 
-  {method public {blended-search-request blended-search-request:#BlendedRequest}:(_return:#ProductLineArray)
+  {method public {blended-search-request blended-search-request:#BlendedRequest}:(_return:#{Array-of ProductLine})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -288,7 +288,7 @@
             {splice self.operations["blended-search-request"]}
         }
     {return
-        responses[0] asa #ProductLineArray
+        responses[0] asa #{Array-of ProductLine}
     }
   }
 
@@ -312,7 +312,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "ProductLine[]"},
-                    curl-type = ProductLineArray,
+                    curl-type = {Array-of ProductLine},
                     nillable? = true
                 }
             },
@@ -1433,37 +1433,6 @@
     let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
         {DefaultSOAPXMLTypeToElementNameMapper}
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Accessories"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = AccessoryArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -1630,37 +1599,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "AddItem"},
-                        curl-type = AddItem
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Items"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "AddItem[]"},
-                        curl-type = AddItemArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "AddItem[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -1700,7 +1638,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Items"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "AddItem[]"},
-                    curl-type = AddItemArray
+                    curl-type = {Array-of AddItem}
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -1742,37 +1680,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Artists"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = ArtistArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -1957,37 +1864,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Authors"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = AuthorArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -2194,37 +2070,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "BrowseNode"},
-                        curl-type = BrowseNode
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "BrowseList"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "BrowseNode[]"},
-                        curl-type = BrowseNodeArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "BrowseNode[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -2463,37 +2308,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "CustomerReview"},
-                        curl-type = CustomerReview
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "CustomerReviews"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "CustomerReview[]"},
-                        curl-type = CustomerReviewArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "CustomerReview[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -2593,19 +2407,19 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "KeyPhrases"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "KeyPhrase[]"},
-                    curl-type = KeyPhraseArray,
+                    curl-type = {Array-of KeyPhrase},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "Artists"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArtistArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "Authors"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = AuthorArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -2616,13 +2430,13 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Starring"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = StarringArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "Directors"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = DirectorArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -2764,7 +2578,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "BrowseList"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "BrowseNode[]"},
-                    curl-type = BrowseNodeArray,
+                    curl-type = {Array-of BrowseNode},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -2825,7 +2639,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Features"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = FeaturesArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -2856,19 +2670,19 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Tracks"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "Track[]"},
-                    curl-type = TrackArray,
+                    curl-type = {Array-of Track},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "Accessories"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = AccessoryArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "Platforms"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = PlatformArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -2890,19 +2704,19 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "SimilarProducts"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = SimilarProductsArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "FeaturedProducts"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "FeaturedProduct[]"},
-                    curl-type = FeaturedProductsArray,
+                    curl-type = {Array-of FeaturedProduct},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "Lists"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ListArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -2913,7 +2727,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Variations"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "Variation[]"},
-                    curl-type = VariationArray,
+                    curl-type = {Array-of Variation},
                     nillable? = true
                 }
             },
@@ -3060,68 +2874,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "Details"},
-                        curl-type = Details
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Details"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Details[]"},
-                        curl-type = DetailsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "Details[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Directors"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = DirectorArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -3336,68 +3088,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "FeaturedProduct"},
-                        curl-type = FeaturedProduct
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "FeaturedProducts"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "FeaturedProduct[]"},
-                        curl-type = FeaturedProductsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "FeaturedProduct[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Features"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = FeaturesArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -3452,37 +3142,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "Feedback"},
-                        curl-type = Feedback
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Feedback"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Feedback[]"},
-                        curl-type = FeedbackArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "Feedback[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -3599,7 +3258,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "OrderIds"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = OrderIdArray
+                    curl-type = {Array-of String}
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -3646,7 +3305,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "ShortSummaries"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "ShortSummary[]"},
-                    curl-type = ShortSummaryArray
+                    curl-type = {Array-of ShortSummary}
                 }
             },
             {{Array-of String}
@@ -3758,68 +3417,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "Item"},
-                        curl-type = Item
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Items"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Item[]"},
-                        curl-type = ItemArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "Item[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Items"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = ItemIdArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -3851,37 +3448,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "ItemQuantity"},
-                        curl-type = ItemQuantity
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Items"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ItemQuantity[]"},
-                        curl-type = ItemQuantityArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "ItemQuantity[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -3928,37 +3494,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "KeyPhrase"},
-                        curl-type = KeyPhrase
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "KeyPhrases"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "KeyPhrase[]"},
-                        curl-type = KeyPhraseArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "KeyPhrase[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -4049,37 +3584,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Lists"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = ListArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -4362,37 +3866,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "ListingProductDetails"},
-                        curl-type = ListingProductDetails
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "ListingProductDetails"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ListingProductDetails[]"},
-                        curl-type = ListingProductDetailsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "ListingProductDetails[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -4408,7 +3881,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "ListingProductDetails"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "ListingProductDetails[]"},
-                    curl-type = ListingProductDetailsArray
+                    curl-type = {Array-of ListingProductDetails}
                 }
             },
             {{Array-of String}
@@ -4688,7 +4161,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "MarketplaceSearchDetails"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "MarketplaceSearchDetails[]"},
-                    curl-type = MarketplaceSearchDetailsArray
+                    curl-type = {Array-of MarketplaceSearchDetails}
                 }
             },
             {{Array-of String}
@@ -4755,37 +4228,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "MarketplaceSearchDetails"},
-                        curl-type = MarketplaceSearchDetails
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "MarketplaceSearchDetails"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "MarketplaceSearchDetails[]"},
-                        curl-type = MarketplaceSearchDetailsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "MarketplaceSearchDetails[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -4823,7 +4265,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Items"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "ItemQuantity[]"},
-                    curl-type = ItemQuantityArray
+                    curl-type = {Array-of ItemQuantity}
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -4863,37 +4305,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "OrderIds"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = OrderIdArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -4974,37 +4385,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "OrderItem"},
-                        curl-type = OrderItem
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "OrderItems"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "OrderItem[]"},
-                        curl-type = OrderItemArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "OrderItem[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -5036,68 +4416,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "Package"},
-                        curl-type = Package
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Packages"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Package[]"},
-                        curl-type = PackageArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "Package[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Platforms"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = PlatformArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -5261,7 +4579,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Details"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "Details[]"},
-                    curl-type = DetailsArray,
+                    curl-type = {Array-of Details},
                     nillable? = true
                 }
             },
@@ -5347,36 +4665,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "ProductLine"},
-                        curl-type = ProductLine
-                    },
-                    {SOAPObjectType
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ProductLine[]"},
-                        curl-type = ProductLineArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "ProductLine[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -5414,7 +4702,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Items"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ItemIdArray
+                    curl-type = {Array-of String}
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -5489,7 +4777,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "CustomerReviews"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "CustomerReview[]"},
-                    curl-type = CustomerReviewArray,
+                    curl-type = {Array-of CustomerReview},
                     nillable? = true
                 }
             },
@@ -5533,7 +4821,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Feedback"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "Feedback[]"},
-                    curl-type = FeedbackArray
+                    curl-type = {Array-of Feedback}
                 }
             },
             {{Array-of String}
@@ -5567,7 +4855,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "SellerProfileDetails"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "SellerProfileDetails[]"},
-                    curl-type = SellerProfileDetailsArray
+                    curl-type = {Array-of SellerProfileDetails}
                 }
             },
             {{Array-of String}
@@ -5674,37 +4962,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "SellerProfileDetails"},
-                        curl-type = SellerProfileDetails
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "SellerProfileDetails"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "SellerProfileDetails[]"},
-                        curl-type = SellerProfileDetailsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "SellerProfileDetails[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -5909,7 +5166,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "SellerSearchDetails"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "SellerSearchDetails[]"},
-                    curl-type = SellerSearchDetailsArray
+                    curl-type = {Array-of SellerSearchDetails}
                 }
             },
             {{Array-of String}
@@ -6000,37 +5257,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "SellerSearchDetails"},
-                        curl-type = SellerSearchDetails
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "SellerSearchDetails"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "SellerSearchDetails[]"},
-                        curl-type = SellerSearchDetailsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "SellerSearchDetails[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -6061,13 +5287,13 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Items"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "Item[]"},
-                    curl-type = ItemArray,
+                    curl-type = {Array-of Item},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "SimilarProducts"},
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = SimilarProductsArray,
+                    curl-type = {Array-of String},
                     nillable? = true
                 }
             },
@@ -6174,13 +5400,13 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "Packages"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "Package[]"},
-                    curl-type = PackageArray,
+                    curl-type = {Array-of Package},
                     nillable? = true
                 },
                 {SOAPObjectType
                     element-name = {XMLName "", "OrderItems"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "OrderItem[]"},
-                    curl-type = OrderItemArray,
+                    curl-type = {Array-of OrderItem},
                     nillable? = true
                 },
                 {SOAPObjectType
@@ -6224,68 +5450,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "ShortSummary"},
-                        curl-type = ShortSummary
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "ShortSummaries"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ShortSummary[]"},
-                        curl-type = ShortSummaryArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "ShortSummary[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "SimilarProducts"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = SimilarProductsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -6440,37 +5604,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Starring"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = StarringArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -6695,37 +5828,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "ThirdPartyProductDetails"},
-                        curl-type = ThirdPartyProductDetails
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "ThirdPartyProductDetails"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ThirdPartyProductDetails[]"},
-                        curl-type = ThirdPartyProductDetailsArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "ThirdPartyProductDetails[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -6741,7 +5843,7 @@
                 {SOAPObjectType
                     element-name = {XMLName "", "ThirdPartyProductDetails"},
                     xml-type = {XMLName.unchecked "http://soap.amazon.com", "ThirdPartyProductDetails[]"},
-                    curl-type = ThirdPartyProductDetailsArray
+                    curl-type = {Array-of ThirdPartyProductDetails}
                 }
             },
             {{Array-of String}
@@ -6799,37 +5901,6 @@
             xml-type-to-element-name = xml-type-to-element-name
         }
         {soap-struct-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "Track"},
-                        curl-type = Track
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Tracks"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Track[]"},
-                        curl-type = TrackArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "Track[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
@@ -7008,37 +6079,6 @@
         }
     }
     {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://soap.amazon.com", "Variation"},
-                        curl-type = Variation
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Variations"},
-                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Variation[]"},
-                        curl-type = VariationArray,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://soap.amazon.com", "Variation[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
@@ -7106,6 +6146,966 @@
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "AddItem"},
+                        curl-type = AddItem
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Items"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "AddItem[]"},
+                        curl-type = {Array-of AddItem},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "AddItem[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "BrowseNode"},
+                        curl-type = BrowseNode
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "BrowseList"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "BrowseNode[]"},
+                        curl-type = {Array-of BrowseNode},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "BrowseNode[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "CustomerReview"},
+                        curl-type = CustomerReview
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "CustomerReviews"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "CustomerReview[]"},
+                        curl-type = {Array-of CustomerReview},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "CustomerReview[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "Details"},
+                        curl-type = Details
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Details"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Details[]"},
+                        curl-type = {Array-of Details},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "Details[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "FeaturedProduct"},
+                        curl-type = FeaturedProduct
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "FeaturedProducts"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "FeaturedProduct[]"},
+                        curl-type = {Array-of FeaturedProduct},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "FeaturedProduct[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "Feedback"},
+                        curl-type = Feedback
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Feedback"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Feedback[]"},
+                        curl-type = {Array-of Feedback},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "Feedback[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "ItemQuantity"},
+                        curl-type = ItemQuantity
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Items"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ItemQuantity[]"},
+                        curl-type = {Array-of ItemQuantity},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "ItemQuantity[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "Item"},
+                        curl-type = Item
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Items"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Item[]"},
+                        curl-type = {Array-of Item},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "Item[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "KeyPhrase"},
+                        curl-type = KeyPhrase
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "KeyPhrases"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "KeyPhrase[]"},
+                        curl-type = {Array-of KeyPhrase},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "KeyPhrase[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "ListingProductDetails"},
+                        curl-type = ListingProductDetails
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "ListingProductDetails"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ListingProductDetails[]"},
+                        curl-type = {Array-of ListingProductDetails},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "ListingProductDetails[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "MarketplaceSearchDetails"},
+                        curl-type = MarketplaceSearchDetails
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "MarketplaceSearchDetails"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "MarketplaceSearchDetails[]"},
+                        curl-type = {Array-of MarketplaceSearchDetails},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "MarketplaceSearchDetails[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "OrderItem"},
+                        curl-type = OrderItem
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "OrderItems"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "OrderItem[]"},
+                        curl-type = {Array-of OrderItem},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "OrderItem[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "Package"},
+                        curl-type = Package
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Packages"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Package[]"},
+                        curl-type = {Array-of Package},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "Package[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "ProductLine"},
+                        curl-type = ProductLine
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ProductLine[]"},
+                        curl-type = {Array-of ProductLine},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "ProductLine[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "SellerProfileDetails"},
+                        curl-type = SellerProfileDetails
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "SellerProfileDetails"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "SellerProfileDetails[]"},
+                        curl-type = {Array-of SellerProfileDetails},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "SellerProfileDetails[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "SellerSearchDetails"},
+                        curl-type = SellerSearchDetails
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "SellerSearchDetails"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "SellerSearchDetails[]"},
+                        curl-type = {Array-of SellerSearchDetails},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "SellerSearchDetails[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "ShortSummary"},
+                        curl-type = ShortSummary
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "ShortSummaries"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ShortSummary[]"},
+                        curl-type = {Array-of ShortSummary},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "ShortSummary[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Items"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Artists"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Features"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Starring"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Directors"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Accessories"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Authors"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "OrderIds"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Platforms"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "SimilarProducts"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Lists"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "ThirdPartyProductDetails"},
+                        curl-type = ThirdPartyProductDetails
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "ThirdPartyProductDetails"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "ThirdPartyProductDetails[]"},
+                        curl-type = {Array-of ThirdPartyProductDetails},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "ThirdPartyProductDetails[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "Track"},
+                        curl-type = Track
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Tracks"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Track[]"},
+                        curl-type = {Array-of Track},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "Track[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://soap.amazon.com", "Variation"},
+                        curl-type = Variation
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Variations"},
+                        xml-type = {XMLName.unchecked "http://soap.amazon.com", "Variation[]"},
+                        curl-type = {Array-of Variation},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://soap.amazon.com", "Variation[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
     {return
         type-mapper,
         element-name-to-xml-type,
@@ -7125,8 +7125,6 @@
     }
   }
 }
-
-{let public constant AccessoryArray:ClassType = {Array-of String}}
 
 {define-class public open ActorRequest
 
@@ -7210,15 +7208,13 @@
 
 }
 
-{let public constant AddItemArray:ClassType = {Array-of AddItem}}
-
 {define-class public open AddShoppingCartItemsRequest
 
   field public tag:String = ""
   field public devtag:String = ""
   field public cart-id:#String
   field public hmac:#String
-  field public items:AddItemArray = {uninitialized-value-for-type AddItemArray}
+  field public items:{Array-of AddItem} = {uninitialized-value-for-type {Array-of AddItem}}
   field public locale:#String
   field public sims:#String
   field public merge-cart:#String
@@ -7230,7 +7226,7 @@
       devtag:String = {required-keyword "AddShoppingCartItemsRequest.devtag"} asa String,
       cart-id:#String = {uninitialized-value-for-type #String},
       hmac:#String = {uninitialized-value-for-type #String},
-      items:AddItemArray = {required-keyword "AddShoppingCartItemsRequest.items"} asa AddItemArray,
+      items:{Array-of AddItem} = {required-keyword "AddShoppingCartItemsRequest.items"} asa {Array-of AddItem},
       locale:#String = {uninitialized-value-for-type #String},
       sims:#String = {uninitialized-value-for-type #String},
       merge-cart:#String = {uninitialized-value-for-type #String}
@@ -7254,8 +7250,6 @@
   }
 
 }
-
-{let public constant ArtistArray:ClassType = {Array-of String}}
 
 {define-class public open ArtistRequest
 
@@ -7350,8 +7344,6 @@
   }
 
 }
-
-{let public constant AuthorArray:ClassType = {Array-of String}}
 
 {define-class public open AuthorRequest
 
@@ -7453,8 +7445,6 @@
   }
 
 }
-
-{let public constant BrowseNodeArray:ClassType = {Array-of BrowseNode}}
 
 {define-class public open BrowseNodeRequest
 
@@ -7569,20 +7559,18 @@
 
 }
 
-{let public constant CustomerReviewArray:ClassType = {Array-of CustomerReview}}
-
 {define-class public open Details
 
   field public url:#String
   field public asin:#String
   field public product-name:#String
   field public catalog:#String
-  field public key-phrases:#KeyPhraseArray
-  field public artists:#ArtistArray
-  field public authors:#AuthorArray
+  field public key-phrases:#{Array-of KeyPhrase}
+  field public artists:#{Array-of String}
+  field public authors:#{Array-of String}
   field public mpn:#String
-  field public starring:#StarringArray
-  field public directors:#DirectorArray
+  field public starring:#{Array-of String}
+  field public directors:#{Array-of String}
   field public theatrical-release-date:#String
   field public release-date:#String
   field public manufacturer:#String
@@ -7610,7 +7598,7 @@
   field public refurbished-count:#String
   field public third-party-product-info:#ThirdPartyProductInfo
   field public sales-rank:#String
-  field public browse-list:#BrowseNodeArray
+  field public browse-list:#{Array-of BrowseNode}
   field public media:#String
   field public reading-level:#String
   field public number-of-pages:#String
@@ -7622,23 +7610,23 @@
   field public publisher:#String
   field public num-media:#String
   field public isbn:#String
-  field public features:#FeaturesArray
+  field public features:#{Array-of String}
   field public mpaa-rating:#String
   field public esrb-rating:#String
   field public age-group:#String
   field public availability:#String
   field public upc:#String
-  field public tracks:#TrackArray
-  field public accessories:#AccessoryArray
-  field public platforms:#PlatformArray
+  field public tracks:#{Array-of Track}
+  field public accessories:#{Array-of String}
+  field public platforms:#{Array-of String}
   field public encoding:#String
   field public product-description:#String
   field public reviews:#Reviews
-  field public similar-products:#SimilarProductsArray
-  field public featured-products:#FeaturedProductsArray
-  field public lists:#ListArray
+  field public similar-products:#{Array-of String}
+  field public featured-products:#{Array-of FeaturedProduct}
+  field public lists:#{Array-of String}
   field public status:#String
-  field public variations:#VariationArray
+  field public variations:#{Array-of Variation}
   {constructor public {default}
   }
   {constructor public 
@@ -7647,12 +7635,12 @@
       asin:#String = {uninitialized-value-for-type #String},
       product-name:#String = {uninitialized-value-for-type #String},
       catalog:#String = {uninitialized-value-for-type #String},
-      key-phrases:#KeyPhraseArray = {uninitialized-value-for-type #KeyPhraseArray},
-      artists:#ArtistArray = {uninitialized-value-for-type #ArtistArray},
-      authors:#AuthorArray = {uninitialized-value-for-type #AuthorArray},
+      key-phrases:#{Array-of KeyPhrase} = {uninitialized-value-for-type #{Array-of KeyPhrase}},
+      artists:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
+      authors:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
       mpn:#String = {uninitialized-value-for-type #String},
-      starring:#StarringArray = {uninitialized-value-for-type #StarringArray},
-      directors:#DirectorArray = {uninitialized-value-for-type #DirectorArray},
+      starring:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
+      directors:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
       theatrical-release-date:#String = {uninitialized-value-for-type #String},
       release-date:#String = {uninitialized-value-for-type #String},
       manufacturer:#String = {uninitialized-value-for-type #String},
@@ -7680,7 +7668,7 @@
       refurbished-count:#String = {uninitialized-value-for-type #String},
       third-party-product-info:#ThirdPartyProductInfo = {uninitialized-value-for-type #ThirdPartyProductInfo},
       sales-rank:#String = {uninitialized-value-for-type #String},
-      browse-list:#BrowseNodeArray = {uninitialized-value-for-type #BrowseNodeArray},
+      browse-list:#{Array-of BrowseNode} = {uninitialized-value-for-type #{Array-of BrowseNode}},
       media:#String = {uninitialized-value-for-type #String},
       reading-level:#String = {uninitialized-value-for-type #String},
       number-of-pages:#String = {uninitialized-value-for-type #String},
@@ -7692,23 +7680,23 @@
       publisher:#String = {uninitialized-value-for-type #String},
       num-media:#String = {uninitialized-value-for-type #String},
       isbn:#String = {uninitialized-value-for-type #String},
-      features:#FeaturesArray = {uninitialized-value-for-type #FeaturesArray},
+      features:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
       mpaa-rating:#String = {uninitialized-value-for-type #String},
       esrb-rating:#String = {uninitialized-value-for-type #String},
       age-group:#String = {uninitialized-value-for-type #String},
       availability:#String = {uninitialized-value-for-type #String},
       upc:#String = {uninitialized-value-for-type #String},
-      tracks:#TrackArray = {uninitialized-value-for-type #TrackArray},
-      accessories:#AccessoryArray = {uninitialized-value-for-type #AccessoryArray},
-      platforms:#PlatformArray = {uninitialized-value-for-type #PlatformArray},
+      tracks:#{Array-of Track} = {uninitialized-value-for-type #{Array-of Track}},
+      accessories:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
+      platforms:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
       encoding:#String = {uninitialized-value-for-type #String},
       product-description:#String = {uninitialized-value-for-type #String},
       reviews:#Reviews = {uninitialized-value-for-type #Reviews},
-      similar-products:#SimilarProductsArray = {uninitialized-value-for-type #SimilarProductsArray},
-      featured-products:#FeaturedProductsArray = {uninitialized-value-for-type #FeaturedProductsArray},
-      lists:#ListArray = {uninitialized-value-for-type #ListArray},
+      similar-products:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
+      featured-products:#{Array-of FeaturedProduct} = {uninitialized-value-for-type #{Array-of FeaturedProduct}},
+      lists:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}},
       status:#String = {uninitialized-value-for-type #String},
-      variations:#VariationArray = {uninitialized-value-for-type #VariationArray}
+      variations:#{Array-of Variation} = {uninitialized-value-for-type #{Array-of Variation}}
     }
     {if {keyword-supplied? url} then
         set self.url = url}
@@ -7846,10 +7834,6 @@
 
 }
 
-{let public constant DetailsArray:ClassType = {Array-of Details}}
-
-{let public constant DirectorArray:ClassType = {Array-of String}}
-
 {define-class public open DirectorRequest
 
   field public director:String = ""
@@ -7951,10 +7935,6 @@
 
 }
 
-{let public constant FeaturedProductsArray:ClassType = {Array-of FeaturedProduct}}
-
-{let public constant FeaturesArray:ClassType = {Array-of String}}
-
 {define-class public open Feedback
 
   field public feedback-rating:#String
@@ -7981,8 +7961,6 @@
   }
 
 }
-
-{let public constant FeedbackArray:ClassType = {Array-of Feedback}}
 
 {define-class public open GetShoppingCartRequest
 
@@ -8028,7 +8006,7 @@
   field public tag:String = ""
   field public devtag:String = ""
   field public key:String = ""
-  field public order-ids:OrderIdArray = {uninitialized-value-for-type OrderIdArray}
+  field public order-ids:{Array-of String} = {uninitialized-value-for-type {Array-of String}}
   field public locale:#String
   {constructor public {default}
   }
@@ -8037,7 +8015,7 @@
       tag:String = {required-keyword "GetTransactionDetailsRequest.tag"} asa String,
       devtag:String = {required-keyword "GetTransactionDetailsRequest.devtag"} asa String,
       key:String = {required-keyword "GetTransactionDetailsRequest.key"} asa String,
-      order-ids:OrderIdArray = {required-keyword "GetTransactionDetailsRequest.order-ids"} asa OrderIdArray,
+      order-ids:{Array-of String} = {required-keyword "GetTransactionDetailsRequest.order-ids"} asa {Array-of String},
       locale:#String = {uninitialized-value-for-type #String}
     }
     {if {keyword-supplied? tag} then
@@ -8056,12 +8034,12 @@
 
 {define-class public open GetTransactionDetailsResponse
 
-  field public short-summaries:ShortSummaryArray = {uninitialized-value-for-type ShortSummaryArray}
+  field public short-summaries:{Array-of ShortSummary} = {uninitialized-value-for-type {Array-of ShortSummary}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      short-summaries:ShortSummaryArray = {required-keyword "GetTransactionDetailsResponse.short-summaries"} asa ShortSummaryArray
+      short-summaries:{Array-of ShortSummary} = {required-keyword "GetTransactionDetailsResponse.short-summaries"} asa {Array-of ShortSummary}
     }
     {if {keyword-supplied? short-summaries} then
         set self.short-summaries = short-summaries}
@@ -8116,10 +8094,6 @@
 
 }
 
-{let public constant ItemArray:ClassType = {Array-of Item}}
-
-{let public constant ItemIdArray:ClassType = {Array-of String}}
-
 {define-class public open ItemQuantity
 
   field public item-id:String = ""
@@ -8139,8 +8113,6 @@
 
 }
 
-{let public constant ItemQuantityArray:ClassType = {Array-of ItemQuantity}}
-
 {define-class public open KeyPhrase
 
   field public key-phrase:#String
@@ -8159,8 +8131,6 @@
   }
 
 }
-
-{let public constant KeyPhraseArray:ClassType = {Array-of KeyPhrase}}
 
 {define-class public open KeywordRequest
 
@@ -8208,8 +8178,6 @@
   }
 
 }
-
-{let public constant ListArray:ClassType = {Array-of String}}
 
 {define-class public open ListManiaRequest
 
@@ -8345,16 +8313,14 @@
 
 }
 
-{let public constant ListingProductDetailsArray:ClassType = {Array-of ListingProductDetails}}
-
 {define-class public open ListingProductInfo
 
-  field public listing-product-details:ListingProductDetailsArray = {uninitialized-value-for-type ListingProductDetailsArray}
+  field public listing-product-details:{Array-of ListingProductDetails} = {uninitialized-value-for-type {Array-of ListingProductDetails}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      listing-product-details:ListingProductDetailsArray = {required-keyword "ListingProductInfo.listing-product-details"} asa ListingProductDetailsArray
+      listing-product-details:{Array-of ListingProductDetails} = {required-keyword "ListingProductInfo.listing-product-details"} asa {Array-of ListingProductDetails}
     }
     {if {keyword-supplied? listing-product-details} then
         set self.listing-product-details = listing-product-details}
@@ -8490,12 +8456,12 @@
 
 {define-class public open MarketplaceSearch
 
-  field public marketplace-search-details:MarketplaceSearchDetailsArray = {uninitialized-value-for-type MarketplaceSearchDetailsArray}
+  field public marketplace-search-details:{Array-of MarketplaceSearchDetails} = {uninitialized-value-for-type {Array-of MarketplaceSearchDetails}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      marketplace-search-details:MarketplaceSearchDetailsArray = {required-keyword "MarketplaceSearch.marketplace-search-details"} asa MarketplaceSearchDetailsArray
+      marketplace-search-details:{Array-of MarketplaceSearchDetails} = {required-keyword "MarketplaceSearch.marketplace-search-details"} asa {Array-of MarketplaceSearchDetails}
     }
     {if {keyword-supplied? marketplace-search-details} then
         set self.marketplace-search-details = marketplace-search-details}
@@ -8522,15 +8488,13 @@
 
 }
 
-{let public constant MarketplaceSearchDetailsArray:ClassType = {Array-of MarketplaceSearchDetails}}
-
 {define-class public open ModifyShoppingCartItemsRequest
 
   field public tag:String = ""
   field public devtag:String = ""
   field public cart-id:String = ""
   field public hmac:String = ""
-  field public items:ItemQuantityArray = {uninitialized-value-for-type ItemQuantityArray}
+  field public items:{Array-of ItemQuantity} = {uninitialized-value-for-type {Array-of ItemQuantity}}
   field public locale:#String
   field public sims:#String
   field public merge-cart:#String
@@ -8542,7 +8506,7 @@
       devtag:String = {required-keyword "ModifyShoppingCartItemsRequest.devtag"} asa String,
       cart-id:String = {required-keyword "ModifyShoppingCartItemsRequest.cart-id"} asa String,
       hmac:String = {required-keyword "ModifyShoppingCartItemsRequest.hmac"} asa String,
-      items:ItemQuantityArray = {required-keyword "ModifyShoppingCartItemsRequest.items"} asa ItemQuantityArray,
+      items:{Array-of ItemQuantity} = {required-keyword "ModifyShoppingCartItemsRequest.items"} asa {Array-of ItemQuantity},
       locale:#String = {uninitialized-value-for-type #String},
       sims:#String = {uninitialized-value-for-type #String},
       merge-cart:#String = {uninitialized-value-for-type #String}
@@ -8566,8 +8530,6 @@
   }
 
 }
-
-{let public constant OrderIdArray:ClassType = {Array-of String}}
 
 {define-class public open OrderItem
 
@@ -8604,8 +8566,6 @@
 
 }
 
-{let public constant OrderItemArray:ClassType = {Array-of OrderItem}}
-
 {define-class public open Package
 
   field public tracking-number:String = ""
@@ -8624,10 +8584,6 @@
   }
 
 }
-
-{let public constant PackageArray:ClassType = {Array-of Package}}
-
-{let public constant PlatformArray:ClassType = {Array-of String}}
 
 {define-class public open PowerRequest
 
@@ -8696,7 +8652,7 @@
   field public total-results:#String
   field public total-pages:#String
   field public list-name:#String
-  field public details:#DetailsArray
+  field public details:#{Array-of Details}
   {constructor public {default}
   }
   {constructor public 
@@ -8704,7 +8660,7 @@
       total-results:#String = {uninitialized-value-for-type #String},
       total-pages:#String = {uninitialized-value-for-type #String},
       list-name:#String = {uninitialized-value-for-type #String},
-      details:#DetailsArray = {uninitialized-value-for-type #DetailsArray}
+      details:#{Array-of Details} = {uninitialized-value-for-type #{Array-of Details}}
     }
     {if {keyword-supplied? total-results} then
         set self.total-results = total-results}
@@ -8741,15 +8697,13 @@
 
 }
 
-{let public constant ProductLineArray:ClassType = {Array-of ProductLine}}
-
 {define-class public open RemoveShoppingCartItemsRequest
 
   field public tag:String = ""
   field public devtag:String = ""
   field public cart-id:String = ""
   field public hmac:String = ""
-  field public items:ItemIdArray = {uninitialized-value-for-type ItemIdArray}
+  field public items:{Array-of String} = {uninitialized-value-for-type {Array-of String}}
   field public locale:#String
   field public sims:#String
   field public merge-cart:#String
@@ -8761,7 +8715,7 @@
       devtag:String = {required-keyword "RemoveShoppingCartItemsRequest.devtag"} asa String,
       cart-id:String = {required-keyword "RemoveShoppingCartItemsRequest.cart-id"} asa String,
       hmac:String = {required-keyword "RemoveShoppingCartItemsRequest.hmac"} asa String,
-      items:ItemIdArray = {required-keyword "RemoveShoppingCartItemsRequest.items"} asa ItemIdArray,
+      items:{Array-of String} = {required-keyword "RemoveShoppingCartItemsRequest.items"} asa {Array-of String},
       locale:#String = {uninitialized-value-for-type #String},
       sims:#String = {uninitialized-value-for-type #String},
       merge-cart:#String = {uninitialized-value-for-type #String}
@@ -8790,14 +8744,14 @@
 
   field public avg-customer-rating:#String
   field public total-customer-reviews:#String
-  field public customer-reviews:#CustomerReviewArray
+  field public customer-reviews:#{Array-of CustomerReview}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
       avg-customer-rating:#String = {uninitialized-value-for-type #String},
       total-customer-reviews:#String = {uninitialized-value-for-type #String},
-      customer-reviews:#CustomerReviewArray = {uninitialized-value-for-type #CustomerReviewArray}
+      customer-reviews:#{Array-of CustomerReview} = {uninitialized-value-for-type #{Array-of CustomerReview}}
     }
     {if {keyword-supplied? avg-customer-rating} then
         set self.avg-customer-rating = avg-customer-rating}
@@ -8811,12 +8765,12 @@
 
 {define-class public open SellerFeedback
 
-  field public feedback:FeedbackArray = {uninitialized-value-for-type FeedbackArray}
+  field public feedback:{Array-of Feedback} = {uninitialized-value-for-type {Array-of Feedback}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      feedback:FeedbackArray = {required-keyword "SellerFeedback.feedback"} asa FeedbackArray
+      feedback:{Array-of Feedback} = {required-keyword "SellerFeedback.feedback"} asa {Array-of Feedback}
     }
     {if {keyword-supplied? feedback} then
         set self.feedback = feedback}
@@ -8826,12 +8780,12 @@
 
 {define-class public open SellerProfile
 
-  field public seller-profile-details:SellerProfileDetailsArray = {uninitialized-value-for-type SellerProfileDetailsArray}
+  field public seller-profile-details:{Array-of SellerProfileDetails} = {uninitialized-value-for-type {Array-of SellerProfileDetails}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      seller-profile-details:SellerProfileDetailsArray = {required-keyword "SellerProfile.seller-profile-details"} asa SellerProfileDetailsArray
+      seller-profile-details:{Array-of SellerProfileDetails} = {required-keyword "SellerProfile.seller-profile-details"} asa {Array-of SellerProfileDetails}
     }
     {if {keyword-supplied? seller-profile-details} then
         set self.seller-profile-details = seller-profile-details}
@@ -8881,8 +8835,6 @@
   }
 
 }
-
-{let public constant SellerProfileDetailsArray:ClassType = {Array-of SellerProfileDetails}}
 
 {define-class public open SellerProfileRequest
 
@@ -8980,12 +8932,12 @@
 
 {define-class public open SellerSearch
 
-  field public seller-search-details:SellerSearchDetailsArray = {uninitialized-value-for-type SellerSearchDetailsArray}
+  field public seller-search-details:{Array-of SellerSearchDetails} = {uninitialized-value-for-type {Array-of SellerSearchDetails}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      seller-search-details:SellerSearchDetailsArray = {required-keyword "SellerSearch.seller-search-details"} asa SellerSearchDetailsArray
+      seller-search-details:{Array-of SellerSearchDetails} = {required-keyword "SellerSearch.seller-search-details"} asa {Array-of SellerSearchDetails}
     }
     {if {keyword-supplied? seller-search-details} then
         set self.seller-search-details = seller-search-details}
@@ -9024,15 +8976,13 @@
 
 }
 
-{let public constant SellerSearchDetailsArray:ClassType = {Array-of SellerSearchDetails}}
-
 {define-class public open ShoppingCart
 
   field public cart-id:String = ""
   field public hmac:String = ""
   field public purchase-url:String = ""
-  field public items:#ItemArray
-  field public similar-products:#SimilarProductsArray
+  field public items:#{Array-of Item}
+  field public similar-products:#{Array-of String}
   {constructor public {default}
   }
   {constructor public 
@@ -9040,8 +8990,8 @@
       cart-id:String = {required-keyword "ShoppingCart.cart-id"} asa String,
       hmac:String = {required-keyword "ShoppingCart.hmac"} asa String,
       purchase-url:String = {required-keyword "ShoppingCart.purchase-url"} asa String,
-      items:#ItemArray = {uninitialized-value-for-type #ItemArray},
-      similar-products:#SimilarProductsArray = {uninitialized-value-for-type #SimilarProductsArray}
+      items:#{Array-of Item} = {uninitialized-value-for-type #{Array-of Item}},
+      similar-products:#{Array-of String} = {uninitialized-value-for-type #{Array-of String}}
     }
     {if {keyword-supplied? cart-id} then
         set self.cart-id = cart-id}
@@ -9070,8 +9020,8 @@
   field public tax:Price = {uninitialized-value-for-type Price}
   field public promotion:Price = {uninitialized-value-for-type Price}
   field public store-name:String = ""
-  field public packages:#PackageArray
-  field public order-items:#OrderItemArray
+  field public packages:#{Array-of Package}
+  field public order-items:#{Array-of OrderItem}
   field public error-code:#String
   field public error-string:#String
   {constructor public {default}
@@ -9089,8 +9039,8 @@
       tax:Price = {required-keyword "ShortSummary.tax"} asa Price,
       promotion:Price = {required-keyword "ShortSummary.promotion"} asa Price,
       store-name:String = {required-keyword "ShortSummary.store-name"} asa String,
-      packages:#PackageArray = {uninitialized-value-for-type #PackageArray},
-      order-items:#OrderItemArray = {uninitialized-value-for-type #OrderItemArray},
+      packages:#{Array-of Package} = {uninitialized-value-for-type #{Array-of Package}},
+      order-items:#{Array-of OrderItem} = {uninitialized-value-for-type #{Array-of OrderItem}},
       error-code:#String = {uninitialized-value-for-type #String},
       error-string:#String = {uninitialized-value-for-type #String}
     }
@@ -9127,10 +9077,6 @@
   }
 
 }
-
-{let public constant ShortSummaryArray:ClassType = {Array-of ShortSummary}}
-
-{let public constant SimilarProductsArray:ClassType = {Array-of String}}
 
 {define-class public open SimilarityRequest
 
@@ -9209,8 +9155,6 @@
   }
 
 }
-
-{let public constant StarringArray:ClassType = {Array-of String}}
 
 {define-class public open TextStreamRequest
 
@@ -9318,16 +9262,14 @@
 
 }
 
-{let public constant ThirdPartyProductDetailsArray:ClassType = {Array-of ThirdPartyProductDetails}}
-
 {define-class public open ThirdPartyProductInfo
 
-  field public third-party-product-details:ThirdPartyProductDetailsArray = {uninitialized-value-for-type ThirdPartyProductDetailsArray}
+  field public third-party-product-details:{Array-of ThirdPartyProductDetails} = {uninitialized-value-for-type {Array-of ThirdPartyProductDetails}}
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      third-party-product-details:ThirdPartyProductDetailsArray = {required-keyword "ThirdPartyProductInfo.third-party-product-details"} asa ThirdPartyProductDetailsArray
+      third-party-product-details:{Array-of ThirdPartyProductDetails} = {required-keyword "ThirdPartyProductInfo.third-party-product-details"} asa {Array-of ThirdPartyProductDetails}
     }
     {if {keyword-supplied? third-party-product-details} then
         set self.third-party-product-details = third-party-product-details}
@@ -9353,8 +9295,6 @@
   }
 
 }
-
-{let public constant TrackArray:ClassType = {Array-of Track}}
 
 {define-class public open UpcRequest
 
@@ -9437,8 +9377,6 @@
   }
 
 }
-
-{let public constant VariationArray:ClassType = {Array-of Variation}}
 
 {define-class public open WishlistRequest
 

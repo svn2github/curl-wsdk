@@ -1,15 +1,15 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.WSConnectionService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/code/docs/en/dguide/examples/WSConnection/s-wsconnection.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/docs/en/dguide/examples/WSConnection/s-wsconnection.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/code/docs/en/dguide/examples/WSConnection/s-wsconnection.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/code/docs/en/dguide/examples/WSConnection/s-wsconnection.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WSConnectionService {inherits WSDLHTTPRPCPostClient}
 
-  {method public {get-database-names}:(_return:#ArrayOfString)
+  {method public {get-database-names}:(_return:#{Array-of String})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -22,7 +22,7 @@
             {splice self.operations["get-database-names"]}
         }
     {return
-        responses[0] asa #ArrayOfString
+        responses[0] asa #{Array-of String}
     }
   }
 
@@ -55,7 +55,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArrayOfString,
+                    curl-type = {Array-of String},
                     nillable? = true
                 }
             },
@@ -70,7 +70,7 @@
   }
 
 
-  {method public {get-database-tables database:#String}:(_return:#ArrayOfString)
+  {method public {get-database-tables database:#String}:(_return:#{Array-of String})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -84,7 +84,7 @@
             {splice self.operations["get-database-tables"]}
         }
     {return
-        responses[0] asa #ArrayOfString
+        responses[0] asa #{Array-of String}
     }
   }
 
@@ -124,7 +124,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArrayOfString,
+                    curl-type = {Array-of String},
                     nillable? = true
                 }
             },
@@ -139,7 +139,7 @@
   }
 
 
-  {method public {get-fields database:#String, table:#String}:(_return:#RecordFieldSpecs)
+  {method public {get-fields database:#String, table:#String}:(_return:#{Array-of RecordFieldSpec})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -154,7 +154,7 @@
             {splice self.operations["get-fields"]}
         }
     {return
-        responses[0] asa #RecordFieldSpecs
+        responses[0] asa #{Array-of RecordFieldSpec}
     }
   }
 
@@ -201,7 +201,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"},
-                    curl-type = RecordFieldSpecs,
+                    curl-type = {Array-of RecordFieldSpec},
                     nillable? = true
                 }
             },
@@ -300,7 +300,7 @@
   }
 
 
-  {method public {execute database:#String, sql:#ArrayOfString}:(_return:int)
+  {method public {execute database:#String, sql:#{Array-of String}}:(_return:int)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
@@ -320,7 +320,7 @@
   }
 
 
-  {method public {async-execute database:#String, sql:#ArrayOfString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-execute database:#String, sql:#{Array-of String}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
         {self.soap-caller.async-call
             self.service-location,
@@ -352,7 +352,7 @@
                 },
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                    curl-type = ArrayOfString,
+                    curl-type = {Array-of String},
                     nillable? = true
                 }
             },
@@ -400,36 +400,6 @@
         {DefaultSOAPCurlTypeToXMLTypeMapper}
     let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
         {DefaultSOAPXMLTypeToElementNameMapper}
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = ArrayOfString,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
     {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
@@ -503,13 +473,43 @@
                     },
                     {SOAPObjectType
                         xml-type = {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"},
-                        curl-type = RecordFieldSpecs,
+                        curl-type = {Array-of RecordFieldSpec},
                         nillable? = true
                     }
                 },
                 array-types =
                     {{Array-of #XMLName}
                         {XMLName.unchecked "http://www.curl.com/data", "RecordFieldSpec[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
                     },
                 xml-type-to-curl-type = xml-type-to-curl-type,
                 curl-type-to-xml-type = curl-type-to-xml-type,
@@ -542,8 +542,6 @@
     }
   }
 }
-
-{let public constant ArrayOfString:ClassType = {Array-of String}}
 
 {define-class public open RecordFieldSpec
 
@@ -579,6 +577,4 @@
   }
 
 }
-
-{let public constant RecordFieldSpecs:ClassType = {Array-of RecordFieldSpec}}
 

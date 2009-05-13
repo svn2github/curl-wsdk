@@ -875,44 +875,39 @@
                                 binding.soap-version.name
                             }
                         }
-                        def support-req? =
-                            {if-non-null input-m = binding-op.input then
-                                (input-m.mtom-availability.value > 0)
-                             else
-                                false
-                            }
-                        def support-res? =
-                            {if-non-null output-m = binding-op.input then
-                                (output-m.mtom-availability.value > 0)
-                             else
-                                false
-                            }
-                        def range =
-                            {if support-req? and support-res? then
-                                SOAPMTOMSupportRange.both
-                             elseif support-req? then
-                                SOAPMTOMSupportRange.request
-                             elseif support-res? then
-                                SOAPMTOMSupportRange.response
-                             else
-                                SOAPMTOMSupportRange.none
-                            }
-                        {if range != SOAPMTOMSupportRange.none then
-                            {format out = out,
-                                ",\n            mtom-support-range = %s",
-                                range
-                            }
-                        }
-||--                        {if-non-null input-m = binding-op.input then
-||--                            {format out = out,
-||--                                ",\n            request-supports-mtom? = %s",
+
+                        || there isn't a way to configure MTOM settings
+                        || in the WSDL yet (we may be able to do this by using
+                        || the 'feature' element in WSDL2.0)
+                        || So now, commented out below until wsdk supports WSDL2.0.
+                        {out.write-one-string
+                            ",\n            mtom-support-range = self.mtom-support-range"}
+||--                        def support-req? =
+||--                            {if-non-null input-m = binding-op.input then
 ||--                                (input-m.mtom-availability.value > 0)
+||--                             else
+||--                                false
 ||--                            }
-||--                        }
-||--                        {if-non-null output-m = binding-op.input then
-||--                            {format out = out,
-||--                                ",\n            response-supports-mtom? = %s",
+||--                        def support-res? =
+||--                            {if-non-null output-m = binding-op.input then
 ||--                                (output-m.mtom-availability.value > 0)
+||--                             else
+||--                                false
+||--                            }
+||--                        def range =
+||--                            {if support-req? and support-res? then
+||--                                SOAPMTOMSupportRange.both
+||--                             elseif support-req? then
+||--                                SOAPMTOMSupportRange.request
+||--                             elseif support-res? then
+||--                                SOAPMTOMSupportRange.response
+||--                             else
+||--                                SOAPMTOMSupportRange.none
+||--                            }
+||--                        {if range != SOAPMTOMSupportRange.none then
+||--                            {format out = out,
+||--                                ",\n            mtom-support-range = %s",
+||--                                range
 ||--                            }
 ||--                        }
                     }
@@ -1157,8 +1152,15 @@
                 "  \{constructor public\n" &
                 "    \{default\n" & 
                 "        service-location:Url =\n" &
-                "            " & service-location & "\n" &
+||--                "            " & service-location & "\n" &
+||--                "    \}\n" &
+                || MTOM support -------------------------------------
+                "            " & service-location & ",\n" &
+                "        mtom-support-range:SOAPMTOMSupportRange =\n" &
+                "            SOAPMTOMSupportRange.none\n" &
                 "    \}\n" &
+                "    set self.mtom-support-range = mtom-support-range\n" &
+                || --------------------------------------------------
                 "    \{construct-super service-location,\n" &
                 "        generated-using-version = \"" & 
                 wsdl-service-class-version & "\"\n" &
@@ -1166,6 +1168,9 @@
                 "  \}\n"
             }
 
+            || temporarily
+            {out.write-one-string
+                "  field public constant mtom-support-range:SOAPMTOMSupportRange\n"}
 
             || close class
             {out.write-one-string "\}\n\n"}

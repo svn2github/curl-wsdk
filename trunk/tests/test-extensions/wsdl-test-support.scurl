@@ -768,6 +768,7 @@
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
   field public-get constant soap12?:bool = false
+  field public-get constant mtom?:bool = false
   || parameters
   field public-get constant include-async-methods?:bool = false
   
@@ -778,6 +779,7 @@
                           literal?:bool = true,
                           document?:bool = true,
                           soap12?:bool = false,
+                          mtom?:bool = false,
                           || parameters
                           include-async-methods?:bool = false
                       }
@@ -785,6 +787,7 @@
     set self.literal? = literal?
     set self.document? = document?
     set self.soap12? = soap12?
+    set self.mtom? = mtom?
     set self.include-async-methods? = include-async-methods?
     {construct-super name}
   }
@@ -822,6 +825,7 @@
                         document? = self.document?,
                         literal? = self.literal?,
                         soap12? = self.soap12?,
+                        mtom? = self.mtom?,
                         include-async-methods? = self.include-async-methods?}}
             }
         }
@@ -848,6 +852,7 @@
   field public-get constant literal?:bool = true
   field public-get constant document?:bool = true
   field public-get constant soap12?:bool = false
+  field public-get constant mtom?:bool = false
   || parameters
   field public-get constant include-async-methods?:bool = false
   
@@ -859,6 +864,7 @@
                           literal?:bool = true,
                           document?:bool = true,
                           soap12?:bool = false,
+                          mtom?:bool = false,
                           || parameters
                           include-async-methods?:bool = false}
     set self.xsd-type-source = xsd-type-source
@@ -866,6 +872,7 @@
     set self.literal? = literal?
     set self.document? = document?
     set self.soap12? = soap12?
+    set self.mtom? = mtom?
     set self.include-async-methods? = include-async-methods?
     {construct-super name}
   } 
@@ -875,7 +882,7 @@
   field public-get service-package-source:StringBuf = {StringBuf}
   field public-get service-package:OpenPackage = {uninitialized-value-for-type OpenPackage}
   field public-get response-value:any
-  field public-get message-xml:XDMDocument = {uninitialized-value-for-type XDMDocument}
+  field public-get message-string:any
   field public-get match?:bool
   def xsd-template = |"<xs:schema
  xmlns:xs='http://www.w3.org/2001/XMLSchema'>
@@ -902,6 +909,7 @@
             literal? = self.literal?,
             document? = self.document?,
             soap12? = self.soap12?,
+            mtom? = self.mtom?,
             {splice xsd-types}}
     def wbuf = {StringBuf}
     {with-open-streams out = wbuf do
@@ -922,9 +930,14 @@
 
     || reflect service
     def service-class = {self.service-package.lookup service-name} asa ClassType
-    def service = 
-        {with-compiler-directives allow-any-calls? = true do
-            {service-class} asa WSDLHTTPRPCPostClient}
+    def service =
+        {if self.mtom? then
+            def c = {service-class.get-constructor "default"}
+            {c.new mtom-support-range = SOAPMTOMSupportRange.both}
+         else
+            {with-compiler-directives allow-any-calls? = true do
+                {service-class} asa WSDLHTTPRPCPostClient}
+        }
     def format-request = {non-null {service-class.get-method "format-request"}}
     def parse-response = {non-null {service-class.get-method "parse-response"}}
 
@@ -933,7 +946,16 @@
     def req-rets = {format-request.invoke-n service, method-name, {Array self.request-value}}
     def req-data = req-rets[0] asa HttpRequestData
     def bytes = {req-data.request-data}
-    set self.message-xml = {build-xml {ByteArrayInputStream bytes}}
+    set self.message-string = {if self.mtom? then
+                                  def (nbd, str) =
+                                      {decode-characters
+                                          bytes.underlying-FastArray,
+                                          CharEncoding.utf8
+                                      }
+                                  str
+                               else
+                                  {build-xml {ByteArrayInputStream bytes}}
+                              }
     || - response
     def rets = {parse-response.invoke-n service, method-name, {ByteArrayInputStream bytes}}
     || - result
@@ -968,7 +990,16 @@
     {output "=========="}
     {output self.request-value-source}
     {output "=========="}
-    {output {self.message-xml.to-XML}}
+    {output
+        {type-switch self.message-string
+         case str:String do
+            str
+         case xd:XDMDocument do
+            {xd.to-XML}
+         else
+            "<can't output request data>"
+        }
+    }
     {output |"========== //"|}
   }
 }
@@ -1005,6 +1036,7 @@
                         literal?:bool = true,
                         document?:bool = true,
                         soap12?:bool = false,
+                        mtom?:bool = false,
                         || types
                         test-type:XDMElement,
                         ...:XDMElement

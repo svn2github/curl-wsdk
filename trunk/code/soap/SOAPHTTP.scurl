@@ -71,7 +71,23 @@
   }
   field public trace-stream:#TextOutputStream
 
-{doc-next
+  {doc-next
+    {purpose
+        proc to handle any additional response headers.
+    }
+    {details
+        This will be call for every call with the additional headers
+        from the current response.  If there are no additional headers
+        it will be called with {ctext null}.
+    }
+    {notes
+        This is only passed the headers that did not have any corresponding
+        name and type information provided in the call.
+    }
+  }
+  field public additional-headers-callback:#{proc-type {#{Array-of XDMElement}}:void}
+
+  {doc-next
     {purpose
         Construct a {docref SOAPHTTPRPCPostCaller} which can be used
         for multiple request/response calls if they are all the same
@@ -108,7 +124,9 @@
                           || reader/writer
                           message-writer:#SOAPRPCMessageWriter = null,
                           message-reader:#SOAPRPCMessageReader = null,
-                          trace-stream:#TextOutputStream = null
+                          trace-stream:#TextOutputStream = null,
+                          additional-headers-callback:#{proc-type {#{Array-of XDMElement}}:void} =
+                              null
                       }
     set self.request-http-headers = request-http-headers
     set self.message-writer =
@@ -124,7 +142,9 @@
             {new SOAPRPCMessageReader}
         }
     set self.trace-stream = trace-stream
+    set self.additional-headers-callback = additional-headers-callback
   }
+
   {define-proc public {soap-version-to-content-type
                           soap-version:SOAPVersion
                       }:String
@@ -190,10 +210,14 @@
                           soap-action:#String = null,
                           trace-stream:#TextOutputStream = self.trace-stream,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
+                          http-request-method:HttpRequestMethod =
+                              HttpRequestMethod.post,
                           content-type:String =
                               {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version},
-                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
+                          mtom-support-range:SOAPMTOMSupportRange =
+                              SOAPMTOMSupportRange.none,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null
                       }:(request-data:HttpRequestData,
                          request-http-headers:#HttpRequestHeaders)
     || could just save the arguments and do this when demanded by
@@ -239,7 +263,8 @@
             header-must-understands = header-must-understands,
             rpc-style? = rpc-style?,
             root-element-attributes = root-element-attributes,
-            soap-version = soap-version
+            soap-version = soap-version,
+            additional-request-headers = additional-request-headers
         }
         {type-switch request-data
          case m:SOAPMTOMRequestData do
@@ -689,7 +714,9 @@
                           http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           mtom-support-range:SOAPMTOMSupportRange =
-                              SOAPMTOMSupportRange.none
+                              SOAPMTOMSupportRange.none,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
                          header-roles:#{Array-of #String},
@@ -723,7 +750,8 @@
             trace-stream = trace-stream,
             http-request-method = http-request-method,
             soap-version = soap-version,
-            mtom-support-range = mtom-support-range
+            mtom-support-range = mtom-support-range,
+            additional-request-headers = additional-request-headers
         }
     let constant file:HttpFile =
         {binding-url.instantiate-File} asa HttpFile
@@ -816,6 +844,8 @@
                           http-request-method:HttpRequestMethod = HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null,
                           ...:EventHandler
                       }:SOAPHTTPRPCPostAsyncWorker
     || .. code in here to do this in terms of get-request-data-stream,
@@ -846,7 +876,8 @@
             trace-stream = trace-stream,
             http-request-method = http-request-method,
             soap-version = soap-version,
-            mtom-support-range = mtom-support-range
+            mtom-support-range = mtom-support-range,
+            additional-request-headers = additional-request-headers
         }
     let constant file:HttpFile =
         {binding-url.instantiate-File} asa HttpFile
@@ -928,7 +959,8 @@
                              character-encoding:CharEncoding = CharEncoding.utf8,
                              trace-stream:#TextOutputStream = self.trace-stream,
                              soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                             mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
+                             mtom-support-range:SOAPMTOMSupportRange =
+                                 SOAPMTOMSupportRange.none
                          }:void
     {if {aw.async-open-finished bis} then
         || now start reading...
@@ -943,7 +975,7 @@
                                 headers:#{Array-of any},
                                 header-roles:#{Array-of #String},
                                 header-must-understands:#{Array-of bool},
-                            root-element-attributes:#{Array-of XMLAttribute}
+                                root-element-attributes:#{Array-of XMLAttribute}
                             || read responses
                             {try
                                 set (responses,
@@ -1055,7 +1087,7 @@
         {trace-stream.write-one-string s}
         {trace-stream.write-one '\n'}
     }
-    
+
     {type-switch bis
      case bis:HttpByteInputStream do
         || check HTTP status
@@ -1064,13 +1096,13 @@
         || check HTTP content-type
         {self.verify-mime-type bis}
     }
-    
+
     || accept compressed data
     {type-switch bis
      case _bis:HttpByteInputStream do
         set bis = {zstream-for _bis}
     }
-    
+
     || FIXME: allow for some sort of monitoring of data received...
     let (xml-input-stream:XMLInputStream,
          new-response-names:{Array-of #XMLName},
@@ -1122,6 +1154,29 @@
                 binding-url, response-headers.status
             }
         }
+    }
+    {if-non-null c = self.additional-headers-callback then
+        let ah:#{Array-of XDMElement}
+        {if-non-null headers then
+            def header-names-size =
+                {if-non-null header-names then header-names.size else 0}
+            {if headers.size > header-names-size then
+                let i:int = header-names-size
+                {while i < headers.size do
+                    {type-switch headers[i]
+                     case x:XDMElement do
+                        {if ah == null then
+                            set ah = {new {Array-of XDMElement}}
+                        }
+                        {ah.append x}
+                     else
+                        || Just ignore these illegal headers?
+                    }
+                    {inc i}
+                }
+            }
+        }
+        {c ah}
     }
     {return
         responses,

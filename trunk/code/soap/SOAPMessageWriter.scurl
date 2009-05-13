@@ -190,7 +190,9 @@
                                    header-types:#{Array-of SOAPObjectType} = null,
                                    header-roles:#{Array-of #String} = null,
                                    header-must-understands:#{Array-of bool} = null,
-                                   soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                                   soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                                   additional-request-headers:#{Array-of XDMElement} =
+                                       null
                                }:void
   }
 }
@@ -292,7 +294,9 @@
                               header-types:#{Array-of SOAPObjectType} = null,
                               header-roles:#{Array-of #String} = null,
                               header-must-understands:#{Array-of bool} = null,
-                              soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                              soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                              additional-request-headers:#{Array-of XDMElement} =
+                                  null
                     }:void
     {self.write-rpc-request
         stream,
@@ -309,7 +313,8 @@
         header-types = header-types,
         header-roles = header-roles,
         header-must-understands = header-must-understands,
-        soap-version = soap-version
+        soap-version = soap-version,
+        additional-request-headers = additional-request-headers
     }
   }
 
@@ -365,7 +370,9 @@
                           rpc-style?:bool = true,
                           root-element-attributes:#{Array-of XMLToken} =
                               null,
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null
                  }:void
     {if argument-names == null then
         set argument-names =
@@ -418,6 +425,17 @@
     {stream.write canned-namespace-attributes}
 
     let started-headers?:bool = false
+    {if-non-null additional-request-headers then
+        set started-headers? = true
+        {stream.write-one
+            {XMLStartElement
+                {self.header-xml-name envelope-namespace}
+            }
+        }
+        {for e in additional-request-headers do
+            {stream.write {XDMElement-to-tokens e}}
+        }
+    }
     || do headers
     {if-non-null headers then
         {if-non-null header-names then
@@ -426,10 +444,12 @@
                     {localize "'headers' and 'header-names' not same size."}
                 }
             }
-            set started-headers? = true
-            {stream.write-one
-                {new XMLStartElement,
-                    {self.header-xml-name envelope-namespace}
+            {if not started-headers? then
+                set started-headers? = true
+                {stream.write-one
+                    {XMLStartElement
+                        {self.header-xml-name envelope-namespace}
+                    }
                 }
             }
             {self.write-headers

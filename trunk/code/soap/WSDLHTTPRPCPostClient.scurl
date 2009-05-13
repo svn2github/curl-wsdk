@@ -14,16 +14,28 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
+{doc-next
+    {purpose
+        proc that throws an exception if called, used as the value
+        for a keyword argument that must be supplied.
+    }
+}
 {define-proc public {required-keyword what:String}:any
     {error {lmessage Required keyword argument {value what}}}
 }
 
+{doc-next
+    {purpose
+        Base class used to implement a class that can call SOAP
+        services via HTTP POST requests.
+    }
+}
 {define-class public abstract open WSDLHTTPRPCPostClient
 
   field public constant soap-caller:SOAPHTTPRPCPostCaller
 
   field public constant service-location:Url
-  
+
   {doc-next ||== WSDLHTTPRPCPostClient.generated-using-version
     {purpose 
         The {docref wsdl-service-class-version} 
@@ -36,6 +48,30 @@
         Characteristics of the operations defined by this web service.
     }}
   field public-get constant operations:{HashTable-of String, Arguments}
+
+  {doc-next
+    {purpose
+        proc to handle any additional response headers.
+    }
+    {details
+        This will be call for every call with the additional headers
+        from the current response.  If there are no additional headers
+        it will be called with {ctext null}.
+    }
+    {notes
+        This is only passed the headers that did not have any corresponding
+        name and type information provided in the call.
+    }
+  }
+  {getter public open {additional-headers-callback
+                      }:#{proc-type {#{Array-of XDMElement}}:void}
+    {return self.soap-caller.additional-headers-callback}
+  }
+  {setter public open {additional-headers-callback
+                          p:#{proc-type {#{Array-of XDMElement}}:void}
+                      }:void
+    set self.soap-caller.additional-headers-callback = p
+  }
 
   {constructor public {default 
                           service-location:Url,

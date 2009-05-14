@@ -176,7 +176,8 @@
             {XMLStartElement SOAPMTOMRequestData.xop-include-name}}
         {stream.write-one
             {XMLAttribute
-                marshal-context.reference-attribute-name,
+||--                marshal-context.reference-attribute-name,
+                {XMLName "", "href"},
                 {format "cid:%s", id}
             }
         }

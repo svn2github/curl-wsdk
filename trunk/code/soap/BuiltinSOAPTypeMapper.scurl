@@ -1816,7 +1816,7 @@
                        SOAPTypeMultipleReference.unknown
                }:(worked?:bool)
     {marshal-type-check type}
-    {if marshal-context.supports-mtom? then
+    {if marshal-context.supports-mtom? and value != null then
         def worked? = {SOAPMTOMMessageWriter.write-xop-element
                           stream,
                           value asa ByteArray,
@@ -1880,8 +1880,10 @@
                                 stream,
                                 unmarshal-context
                             }
-        {if found? then
+        {if found? and val != null then
             {return val, found?}
+         elseif found? then
+            || do nothing
          else
             {error {lmessage Content-ID not found}}
         }

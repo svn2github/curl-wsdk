@@ -115,69 +115,97 @@
   }
   
   {define-proc package {parse-xop-element
-                           xis:XMLInputStream,
+                           stream:XMLInputStream,
                            unmarshal-context:SOAPUnmarshalContext
                        }:(val:any, found?:bool)
-    def (xt, eof?) = {xis.read-one}
-    {if eof? then {return null, false}}
-    
-    {if not (xt isa XMLStartElement) or
-        (xt asa XMLStartElement).element != SOAPMTOMRequestData.xop-include-name
-     then
-        {xis.unread-one xt}
-        {return null, false}
-    }
-    
-    let ret:any = null
-    let found?:bool = false
-    let handled?:bool = false
-    {while true do
-        def (val, eof?) = {xis.read-one}
-        {if eof? then
-            {return null, false}
+    let (current-token:XMLToken, eof?:bool) = {stream.read-one}
+    def read-tokens = {{Array-of XMLToken}}
+    {if eof? then
+        {throw-unmarshal-exception
+            {localize "Got EOF early while unmarshaling."}
         }
-        {type-switch val
-         case at:XMLAttribute do
-            {if handled? then
-                {error {lmessage Invalid XOP format}}
+    }
+    {read-tokens.append current-token}
+
+    let return-val:any = null
+    let found?:bool = false
+    {type-switch current-token
+     case se:XMLStartElement do
+        {if se.element != SOAPMTOMRequestData.xop-include-name then
+            {throw-unmarshal-exception
+                {lformat "Got unexpected element : %s", se.element}
             }
-            {if at.name == unmarshal-context.reference-attribute-name and
-                at.value isa String and
-                {(at.value asa String).prefix? "cid:"}
-             then
-                set handled? = true
-                def val = {unmarshal-context.get-binary-data
-                              at.value asa String
-                          }
-                {if-non-null ct = val.content-type then
-                    def charset = {HttpHeaders.get-parameter
-                                      ct,
-                                      "charset",
-                                      default = ""
-                                  }
-                    {if not charset.empty? then
-                        def (num, str) =
-                            {decode-characters
-                                val.content.underlying-FastArray,
-                                {http-charset-to-char-encoding
-                                    {non-null charset}}
-                            }
-                        set ret = str
-                        set found? = true
-                        {continue}
+        }
+
+        {while true do
+            set (current-token, eof?) = {stream.read-one}
+            {if eof? then
+                {throw-unmarshal-exception
+                    {localize "Got EOF early while unmarshaling."}
+                }
+            }
+            {read-tokens.append current-token}
+            
+            {type-switch current-token
+             case at:XMLAttribute do
+                {if-non-null return-val then
+                    {throw-unmarshal-exception
+                        {lmessage Only one href element is allowed in XOP}
                     }
                 }
-                set ret = val.content
-                set found? = true
-            }
-         case ee:XMLEndElement do
-            {break}
-         else
-            {throw-unmarshal-exception
-                {lmessage "Final token was not an expected type."}
+||--                {if at.name == unmarshal-context.reference-attribute-name and
+                {if at.name == {XMLName "", "href"} and
+                    at.value isa String and
+                    {(at.value asa String).prefix? "cid:"}
+                 then
+                    def attachment = {unmarshal-context.get-binary-data
+                                         at.value asa String
+                                     }
+
+                    {if-non-null ct = attachment.content-type then
+                        def charset = {HttpHeaders.get-parameter
+                                          ct,
+                                          "charset",
+                                          default = ""
+                                      }
+                        {if not charset.empty? then
+                            def (num, decode-str) =
+                                {decode-characters
+                                    attachment.content.underlying-FastArray,
+                                    {http-charset-to-char-encoding
+                                        {non-null charset}}
+                                }
+                            set return-val = decode-str
+                            set found? = true
+                            {continue}
+                        }
+                    }
+                    set return-val = attachment.content
+                    set found? = true
+                }
+             case ee:XMLEndElement do
+                {if ee.element != null and ee.element != se.element then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Mismatched end element for value %s.",
+                            se.element
+                        }
+                    }
+                }
+                {break}
+             else
+                {throw-unmarshal-exception
+                    {lmessage "Final token was not an expected type."}
+                }
             }
         }
+     case ee:XMLEndElement do
+        set found? = true
     }
-    {return ret, found?}
+
+    {for i:int = read-tokens.size - 1 to 0 do
+        {stream.unread-one read-tokens[i]}
+    }
+    {return return-val, found?}
   }
 }

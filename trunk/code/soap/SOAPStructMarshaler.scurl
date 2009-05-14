@@ -531,7 +531,7 @@
                 {stream.write-one
                     {XMLAttribute element-name, s}
                 }
-             elseif self.simple-content? then
+             elseif self.simple-content? and not context.supports-mtom? then
                 || as characters
                 let s:String = 
                     {marshal-to-string 
@@ -795,7 +795,7 @@
                     }
                 }
             }
-            {if self.simple-content? then
+            {if self.simple-content? and not context.supports-mtom? then
                 || unmarshal characters
                 || NOTE: constructor verified exactly one of these
                 let k:int = self.field-names.size - 1

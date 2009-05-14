@@ -53,6 +53,25 @@
         document? = false, literal? = false,
         soap12? = true,
         {url "wsdl-echo-cases-basic.xml"}
-    }
+    },
 
+    || MTOM
+    {WSDLEchoTestCases name = "MTOM: Basic DOC/LIT",
+        mtom? = true,
+        {url "wsdl-echo-cases-bytes.xml"}
+    },
+    {WSDLEchoTestCases name = "MTOM: Basic RPC/ENC",
+        document? = false, literal? = false,
+        mtom? = true,
+        {url "wsdl-echo-cases-bytes.xml"}
+    },
+    {WSDLEchoTestCases name = "MTOM(SOAP12): Basic DOC/LIT",
+        soap12? = true, mtom? = true,
+        {url "wsdl-echo-cases-bytes.xml"}
+    },
+    {WSDLEchoTestCases name = "MTOM(SOAP12): Basic RPC/ENC",
+        document? = false, literal? = false,
+        soap12? = true, mtom? = true,
+        {url "wsdl-echo-cases-bytes.xml"}
+    }
 }

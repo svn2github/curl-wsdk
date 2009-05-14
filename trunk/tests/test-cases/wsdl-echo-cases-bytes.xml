@@ -1,0 +1,265 @@
+<ROOT xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+
+  <GROUP name='primitives'>
+    <CASE name="base64Binary">
+      <XSD>
+        <xs:simpleType name='test'>
+          <xs:restriction base='xs:base64Binary'/>
+        </xs:simpleType>
+      </XSD>
+      <CURL>{read-bytes-from {string-url {String.repeat-char 'a', 100}}}</CURL>
+    </CASE>            
+  </GROUP>
+
+  <GROUP name='structs'>
+    <CASE name='Struct'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+    </CASE>            
+    <CASE name='StructN'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+      <CURL>
+        {Test.from-keywords bytes = null}
+      </CURL>
+    </CASE>              
+    <CASE name='Struct01'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' minOccurs='0' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+    </CASE>            
+    <CASE name='Struct11'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' minOccurs='1' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+    </CASE>            
+    <CASE name='Struct01N'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' minOccurs='0' maxOccurs='1' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+    </CASE>            
+    <CASE name='Struct11N'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' minOccurs='1' maxOccurs='1' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+    </CASE>            
+    <CASE name='AnonymousType'>
+      <XSD>
+        <xs:element name='Foo'>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name='Bytes' type='xs:base64Binary'/> 
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='Foo'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords foo = {Foo.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  
+  <GROUP name='nullable primitives'>
+    <CASE name='Struct01_'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' minOccurs='0' maxOccurs='1'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+    </CASE> 
+    <CASE name='Struct11N_'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='Bytes' type='xs:base64Binary' minOccurs='1' maxOccurs='1' nillable='true'/> 
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords bytes = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+    </CASE> 
+  </GROUP>
+
+  <GROUP name='optional element'>
+    <CASE name='optional element'>
+      <XSD>
+        <xs:element name='q' type='xs:base64Binary'/>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='q' minOccurs='0'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords q = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+      <CURL name='missing'>
+        {Test.from-keywords}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords q = null}
+      </CURL>
+    </CASE>
+    <CASE name='nillable element'>
+      <XSD>
+        <xs:element name='q' type='xs:base64Binary'/>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='q' nillable='true'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords}
+      </CURL>
+    </CASE>
+    <CASE name='nillable toplevel element missing'>
+      <XSD>
+        <xs:element name='q' type='xs:base64Binary' nillable='true'/>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element ref='q'/>
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>
+      <CURL name='null'>
+        {Test.from-keywords q = {read-bytes-from {string-url {String.repeat-char 'a', 100}}}}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords}
+      </CURL>
+      <CURL name='null'>
+        {Test.from-keywords q = null}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='nested elements'>
+    <CASE name='nested elements'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='ID' type='xs:int'/>
+
+            <xs:element name='AddressInfo'>
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name='ID' type='xs:int'/>
+                  <xs:element name='Address'>
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name='Address' type='xs:base64Binary'/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+
+            <xs:element name='ContactInfo'>
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name='ID' type='xs:int'/>
+                  <xs:element name='Address'>
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name='Address' type='xs:anyURI'/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+
+          </xs:sequence>
+        </xs:complexType>
+      </XSD>        
+      <CURL>
+        {Test.from-keywords id = 1, address-info = 
+        {AddressInfo.from-keywords address = 
+        {Address.from-keywords address = {ByteArray 11}}}, contact-info = 
+        {ContactInfo.from-keywords address =
+        {Address01.from-keywords address = {url "http://example.com"}}}}
+      </CURL>
+    </CASE>
+  </GROUP>
+
+  <GROUP name='simpleContent'>
+    <CASE name='simpleContent'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:simpleContent>
+            <xs:extension base='xs:base64Binary'/> 
+          </xs:simpleContent>
+          <xs:attribute name='ID' type='xs:string'/> 
+        </xs:complexType>
+      </XSD>
+      <CURL>
+        {Test.from-keywords id = "1", content = {ByteArray 11}}
+      </CURL>
+    </CASE>            
+  </GROUP>
+  
+</ROOT>

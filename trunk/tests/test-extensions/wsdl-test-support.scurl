@@ -882,7 +882,7 @@
   field public-get service-package-source:StringBuf = {StringBuf}
   field public-get service-package:OpenPackage = {uninitialized-value-for-type OpenPackage}
   field public-get response-value:any
-  field public-get message-string:any
+  field public-get message-content:any
   field public-get match?:bool
   def xsd-template = |"<xs:schema
  xmlns:xs='http://www.w3.org/2001/XMLSchema'>
@@ -946,16 +946,11 @@
     def req-rets = {format-request.invoke-n service, method-name, {Array self.request-value}}
     def req-data = req-rets[0] asa HttpRequestData
     def bytes = {req-data.request-data}
-    set self.message-string = {if self.mtom? then
-                                  def (nbd, str) =
-                                      {decode-characters
-                                          bytes.underlying-FastArray,
-                                          CharEncoding.utf8
-                                      }
-                                  str
-                               else
-                                  {build-xml {ByteArrayInputStream bytes}}
-                              }
+    set self.message-content = {if self.mtom? then
+                                   bytes
+                                else
+                                   {build-xml {ByteArrayInputStream bytes}}
+                               }
     || - response
     def rets = {parse-response.invoke-n service, method-name, {ByteArrayInputStream bytes}}
     || - result
@@ -991,9 +986,9 @@
     {output self.request-value-source}
     {output "=========="}
     {output
-        {type-switch self.message-string
-         case str:String do
-            str
+        {type-switch self.message-content
+         case ba:{Array-of byte} do
+            "<processed by MTOM>"
          case xd:XDMDocument do
             {xd.to-XML}
          else

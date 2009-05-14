@@ -543,6 +543,8 @@
                 }
             }
         }
+    }
+    {if started-headers? then
         {stream.write-one
             {new XMLEndElement,
                 element = {self.header-xml-name envelope-namespace}

@@ -587,7 +587,7 @@
                     {if async-pass? then
                         {out.write-one-string
                             "    \{return\n" &
-                            "        \{self.soap-caller.async-call\n"
+                            "        \{self.async-call\n"
                         }
                      elseif def-pass? then
                         {out.write-one-string
@@ -600,15 +600,15 @@
                             "         headers:#\{Array-of any\},\n" &
                             "         header-roles:#\{Array-of #String\},\n" &
                             "         header-must-understands:#\{Array-of bool\},\n" &
-                            "         root-attributes:#\{Array-of XMLAttribute\})=\n" &
-                            "        \{self.soap-caller.call\n"
+                            "         root-attributes:#\{Array-of XMLAttribute\}) =\n" &
+                            "        \{self.call\n"
                         }
                     }
                     || %%% METHOD BODY CALL INPUT ARGS
                     || ~~~~~~~~~~~~~~~~~~~~
                     {if not def-pass? then
                         {out.write-one-string
-                            "            self.service-location,\n" &
+                            "            \"" & name & "\",\n" &
                             "            \{\{Array-of any\}"
                         }
                         || write out argument values
@@ -917,7 +917,7 @@
                         {out.write-one-string
                             ",\n" &
                             "            event-handler,\n" &
-                            "            ...\n"
+                            "            ..."
                         }
                     }
                     {out.write-one '\n'}
@@ -978,7 +978,7 @@
                             {out.write-one-string
                                 "        headers,\n" &
                                 "        header-roles,\n" &
-                                "        header-must-understands\n"
+                                "        header-must-understands"
                             }
                         }
 
@@ -1224,14 +1224,14 @@
                 {if n-doc <= 0 then
                     || prelude
                     {out.write-one-string 
-                        "  \{doc-next \n" & 
+                        "\{doc-next \n" & 
                         "    \{details \n"}
                     {inc n-doc}
                 }
                 {if n-doc > 1 then
                     {out.write-one '\n'}}
                 {format out = out,
-                    "      %s\n",
+                    "        %s\n",
                     {escapify-string d.documentation}}
             }
         }
@@ -1240,7 +1240,7 @@
         || postlude
         {out.write-one-string
             "    \}\n" & 
-            "  \}\n"}
+            "\}\n"}
     }
   }
 

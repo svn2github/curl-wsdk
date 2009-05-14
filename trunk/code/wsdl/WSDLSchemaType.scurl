@@ -2054,10 +2054,12 @@
 
   {method package {dump out:TextOutputStream}:void
     {if-non-null xml-name = self.xml-name then
-        {format out = out,
-            "\{let public constant %s:Type = %s\}\n\n",
-            self.ref-name,
-            self.curl-type-name
+        {if self.ref-name != self.curl-type-name then
+            {format out = out,
+                "\{let public constant %s:Type = %s\}\n\n",
+                self.ref-name,
+                self.curl-type-name
+            }
         }
     }
   }

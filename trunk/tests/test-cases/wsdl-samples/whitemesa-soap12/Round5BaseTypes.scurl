@@ -7,11 +7,11 @@
 || WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
-  {doc-next 
+{doc-next 
     {details 
-      BaseTypes SOAP services
+        BaseTypes SOAP services
     }
-  }
+}
 {define-class public BaseTypesInteropTests {inherits WSDLHTTPRPCPostClient}
 
   {method public {echo-double input-double:double}:(_return:double)
@@ -19,9 +19,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-double",
             {{Array-of any}
                 input-double
             },
@@ -35,15 +35,14 @@
 
   {method public {async-echo-double input-double:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-double",
             {{Array-of any}
                 input-double
             },
             {splice self.operations["echo-double"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -77,7 +76,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -87,9 +87,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-date-time",
             {{Array-of any}
                 input-date-time
             },
@@ -103,15 +103,14 @@
 
   {method public {async-echo-date-time input-date-time:#DateTime, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-date-time",
             {{Array-of any}
                 input-date-time
             },
             {splice self.operations["echo-date-time"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -147,7 +146,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -157,9 +157,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-time",
             {{Array-of any}
                 input-time
             },
@@ -173,15 +173,14 @@
 
   {method public {async-echo-time input-time:#XMLTimeString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-time",
             {{Array-of any}
                 input-time
             },
             {splice self.operations["echo-time"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -217,7 +216,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -227,9 +227,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-any-uri",
             {{Array-of any}
                 input-any-uri
             },
@@ -243,15 +243,14 @@
 
   {method public {async-echo-any-uri input-any-uri:#Url, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-any-uri",
             {{Array-of any}
                 input-any-uri
             },
             {splice self.operations["echo-any-uri"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -287,7 +286,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -297,9 +297,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-long",
             {{Array-of any}
                 input-long
             },
@@ -313,15 +313,14 @@
 
   {method public {async-echo-long input-long:int64, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-long",
             {{Array-of any}
                 input-long
             },
             {splice self.operations["echo-long"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -355,7 +354,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -365,9 +365,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-int",
             {{Array-of any}
                 input-int
             },
@@ -381,15 +381,14 @@
 
   {method public {async-echo-int input-int:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-int",
             {{Array-of any}
                 input-int
             },
             {splice self.operations["echo-int"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -423,7 +422,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -433,9 +433,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-short",
             {{Array-of any}
                 input-short
             },
@@ -449,15 +449,14 @@
 
   {method public {async-echo-short input-short:int16, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-short",
             {{Array-of any}
                 input-short
             },
             {splice self.operations["echo-short"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -491,7 +490,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -501,9 +501,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-byte",
             {{Array-of any}
                 input-byte
             },
@@ -517,15 +517,14 @@
 
   {method public {async-echo-byte input-byte:int8, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-byte",
             {{Array-of any}
                 input-byte
             },
             {splice self.operations["echo-byte"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -559,7 +558,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -569,9 +569,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-long",
             {{Array-of any}
                 input-unsigned-long
             },
@@ -585,15 +585,14 @@
 
   {method public {async-echo-unsigned-long input-unsigned-long:uint64, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-unsigned-long",
             {{Array-of any}
                 input-unsigned-long
             },
             {splice self.operations["echo-unsigned-long"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -627,7 +626,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -637,9 +637,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-int",
             {{Array-of any}
                 input-unsigned-int
             },
@@ -653,15 +653,14 @@
 
   {method public {async-echo-unsigned-int input-unsigned-int:uint32, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-unsigned-int",
             {{Array-of any}
                 input-unsigned-int
             },
             {splice self.operations["echo-unsigned-int"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -695,7 +694,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -705,9 +705,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-short",
             {{Array-of any}
                 input-unsigned-short
             },
@@ -721,15 +721,14 @@
 
   {method public {async-echo-unsigned-short input-unsigned-short:uint16, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-unsigned-short",
             {{Array-of any}
                 input-unsigned-short
             },
             {splice self.operations["echo-unsigned-short"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -763,7 +762,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -773,9 +773,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-byte",
             {{Array-of any}
                 input-unsigned-byte
             },
@@ -789,15 +789,14 @@
 
   {method public {async-echo-unsigned-byte input-unsigned-byte:uint8, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "echo-unsigned-byte",
             {{Array-of any}
                 input-unsigned-byte
             },
             {splice self.operations["echo-unsigned-byte"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -831,7 +830,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -868,11 +868,15 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/baseTypes"}
+            {abs-url "http://www.whitemesa.net/soap12/baseTypes"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
+    set self.mtom-support-range = mtom-support-range
     {construct-super service-location,
         generated-using-version = "5"
     }
   }
+  field public constant mtom-support-range:SOAPMTOMSupportRange
 }
 

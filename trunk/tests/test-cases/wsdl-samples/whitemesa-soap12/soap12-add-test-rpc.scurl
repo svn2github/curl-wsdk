@@ -14,15 +14,29 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-time",
             {{Array-of any}
             },
             {splice self.operations["get-time"]}
         }
     {return
         responses[0] asa #XMLTimeString
+    }
+  }
+
+
+  {method public {async-get-time event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "get-time",
+            {{Array-of any}
+            },
+            {splice self.operations["get-time"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -50,7 +64,8 @@
             rpc-style? = true,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -60,9 +75,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-simple-types-as-struct",
             {{Array-of any}
                 input-string,
                 input-integer,
@@ -72,6 +87,23 @@
         }
     {return
         responses[0] asa #SOAPStruct
+    }
+  }
+
+
+  {method public {async-echo-simple-types-as-struct input-string:#String, input-integer:int, input-float:float, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "echo-simple-types-as-struct",
+            {{Array-of any}
+                input-string,
+                input-integer,
+                input-float
+            },
+            {splice self.operations["echo-simple-types-as-struct"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -115,7 +147,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -144,9 +177,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-void",
             {{Array-of any}
             },
             request-header-names = request-header-names,
@@ -156,6 +189,42 @@
         }
     {return
 
+    }
+  }
+
+
+  {method public {async-echo-void unknown:#Unknown = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    let constant request-header-names:{Array-of #XMLName} =
+        {{Array-of #XMLName}}
+    let constant request-header-types:{Array-of SOAPObjectType} =
+        {{Array-of SOAPObjectType}}
+    let constant request-headers:{Array-of any} =
+        {{Array-of any}}
+    {if {keyword-supplied? unknown} then
+        {request-header-types.append
+            {SOAPObjectType
+                xml-type = {XMLName "http://example.org/ts-tests/xsd", "Unknown"},
+                curl-type = Unknown,
+                nillable? = true
+            }
+        }
+        {request-header-names.append
+           {XMLName "http://example.org/ts-tests/xsd", "Unknown"}
+        }
+        {request-headers.append unknown}
+    }
+    {return
+        {self.async-call
+            "echo-void",
+            {{Array-of any}
+            },
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-headers = request-headers,
+            {splice self.operations["echo-void"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -177,7 +246,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -187,9 +257,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-string",
             {{Array-of any}
                 input-string
             },
@@ -197,6 +267,21 @@
         }
     {return
         responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-echo-string input-string:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "echo-string",
+            {{Array-of any}
+                input-string
+            },
+            {splice self.operations["echo-string"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -230,7 +315,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -240,9 +326,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-simple-types-as-struct-of-schema-types",
             {{Array-of any}
                 input1,
                 input2,
@@ -253,6 +339,24 @@
         }
     {return
         responses[0] asa #SOAPStructTypes
+    }
+  }
+
+
+  {method public {async-echo-simple-types-as-struct-of-schema-types input1:any, input2:any, input3:any, input4:any, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "echo-simple-types-as-struct-of-schema-types",
+            {{Array-of any}
+                input1,
+                input2,
+                input3,
+                input4
+            },
+            {splice self.operations["echo-simple-types-as-struct-of-schema-types"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -268,19 +372,19 @@
             },
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anySimpleType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
                     curl-type = any
                 },
                 {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anySimpleType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
                     curl-type = any
                 },
                 {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anySimpleType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
                     curl-type = any
                 },
                 {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anySimpleType"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
                     curl-type = any
                 }
             },
@@ -300,7 +404,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -310,9 +415,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-integer",
             {{Array-of any}
                 input-integer
             },
@@ -320,6 +425,21 @@
         }
     {return
         responses[0] asa int
+    }
+  }
+
+
+  {method public {async-echo-integer input-integer:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "echo-integer",
+            {{Array-of any}
+                input-integer
+            },
+            {splice self.operations["echo-integer"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -351,7 +471,8 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -528,12 +649,16 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/add-test-rpc"}
+            {abs-url "http://www.whitemesa.net/soap12/add-test-rpc"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
+    set self.mtom-support-range = mtom-support-range
     {construct-super service-location,
         generated-using-version = "5"
     }
   }
+  field public constant mtom-support-range:SOAPMTOMSupportRange
 }
 
 {define-class public open SOAPStruct

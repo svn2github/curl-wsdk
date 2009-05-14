@@ -73,22 +73,6 @@
 
   {doc-next
     {purpose
-        proc to handle any additional response headers.
-    }
-    {details
-        This will be call for every call with the additional headers
-        from the current response.  If there are no additional headers
-        it will be called with {ctext null}.
-    }
-    {notes
-        This is only passed the headers that did not have any corresponding
-        name and type information provided in the call.
-    }
-  }
-  field public additional-headers-callback:#{proc-type {#{Array-of XDMElement}}:void}
-
-  {doc-next
-    {purpose
         Construct a {docref SOAPHTTPRPCPostCaller} which can be used
         for multiple request/response calls if they are all the same
         version of SOAP and can share type mappers and message readers
@@ -124,9 +108,7 @@
                           || reader/writer
                           message-writer:#SOAPRPCMessageWriter = null,
                           message-reader:#SOAPRPCMessageReader = null,
-                          trace-stream:#TextOutputStream = null,
-                          additional-headers-callback:#{proc-type {#{Array-of XDMElement}}:void} =
-                              null
+                          trace-stream:#TextOutputStream = null
                       }
     set self.request-http-headers = request-http-headers
     set self.message-writer =
@@ -142,7 +124,6 @@
             {new SOAPRPCMessageReader}
         }
     set self.trace-stream = trace-stream
-    set self.additional-headers-callback = additional-headers-callback
   }
 
   {define-proc public {soap-version-to-content-type
@@ -696,8 +677,6 @@
                           ||scheme-instance-namespace:#String = null,
                           default-namespace:#String = null,
                           write-encoding-attribute?:bool = true,
-                          envelope-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           request-headers:#{Array-of any} = null,
                           request-header-names:#{Array-of #XMLName} = null,
                           request-header-types:#{Array-of SOAPObjectType} = null,
@@ -705,8 +684,6 @@
                           request-header-must-understands:#{Array-of bool} = null,
                           response-header-names:#{Array-of #XMLName} = null,
                           response-header-types:#{Array-of SOAPObjectType} = null,
-                          header-attribute-namespace:String =
-                              SOAPMessageWriter.soap-1-1-envelope-uri,
                           rpc-style?:bool = true,
                           root-element-attributes:#{Array-of XMLToken} = null,
                           character-encoding:CharEncoding = CharEncoding.utf8,
@@ -1041,7 +1018,6 @@
                             header-names:#{Array-of #XMLName} = null,
                             header-types:#{Array-of SOAPObjectType} = null,
                             rpc-style?:bool = true,
-                            root-element-attributes:#{Array-of XMLToken} = null,
                             character-encoding:CharEncoding = CharEncoding.utf8,
                             trace-stream:#TextOutputStream = null,
                             soap-version:SOAPVersion = SOAPVersion.soap-1-1,
@@ -1155,29 +1131,6 @@
                 binding-url, response-headers.status
             }
         }
-    }
-    {if-non-null c = self.additional-headers-callback then
-        let ah:#{Array-of XDMElement}
-        {if-non-null headers then
-            def header-names-size =
-                {if-non-null header-names then header-names.size else 0}
-            {if headers.size > header-names-size then
-                let i:int = header-names-size
-                {while i < headers.size do
-                    {type-switch headers[i]
-                     case x:XDMElement do
-                        {if ah == null then
-                            set ah = {new {Array-of XDMElement}}
-                        }
-                        {ah.append x}
-                     else
-                        || Just ignore these illegal headers?
-                    }
-                    {inc i}
-                }
-            }
-        }
-        {c ah}
     }
     {return
         responses,

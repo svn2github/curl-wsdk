@@ -1,9 +1,7 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-add-test-int,
     {compiler-directives careful? = true},
-    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-int.wsdl",
-    manifest="../../../manifest.mcurl"
-}
+    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-int.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
 || WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-int.wsdl
@@ -16,15 +14,29 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-time",
             {{Array-of any}
             },
             {splice self.operations["get-time"]}
         }
     {return
         responses[0] asa XMLTimeString
+    }
+  }
+
+
+  {method public {async-get-time event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "get-time",
+            {{Array-of any}
+            },
+            {splice self.operations["get-time"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -50,7 +62,8 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -79,9 +92,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-string",
             {{Array-of any}
                 input-string
             },
@@ -92,6 +105,43 @@
         }
     {return
         responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-echo-string input-string:String, unknown:#Unknown = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    let constant request-header-names:{Array-of #XMLName} =
+        {{Array-of #XMLName}}
+    let constant request-header-types:{Array-of SOAPObjectType} =
+        {{Array-of SOAPObjectType}}
+    let constant request-headers:{Array-of any} =
+        {{Array-of any}}
+    {if {keyword-supplied? unknown} then
+        {request-header-types.append
+            {SOAPObjectType
+                xml-type = {XMLName "http://soapinterop.org/", "_Unknown"},
+                curl-type = Unknown,
+                nillable? = true
+            }
+        }
+        {request-header-names.append
+           {XMLName "http://soapinterop.org/", "Unknown"}
+        }
+        {request-headers.append unknown}
+    }
+    {return
+        {self.async-call
+            "echo-string",
+            {{Array-of any}
+                input-string
+            },
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-headers = request-headers,
+            {splice self.operations["echo-string"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -125,19 +175,20 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {method public {echo-sender-fault in-element:AnyType}:void
+  {method public {echo-sender-fault in-element:any}:void
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-sender-fault",
             {{Array-of any}
                 in-element
             },
@@ -145,6 +196,21 @@
         }
     {return
 
+    }
+  }
+
+
+  {method public {async-echo-sender-fault in-element:any, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "echo-sender-fault",
+            {{Array-of any}
+                in-element
+            },
+            {splice self.operations["echo-sender-fault"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -158,7 +224,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = AnyType,
+                    curl-type = any,
                     nillable? = true
                 }
             },
@@ -170,19 +236,20 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {method public {echo-receiver-fault in-element:AnyType}:void
+  {method public {echo-receiver-fault in-element:any}:void
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-receiver-fault",
             {{Array-of any}
                 in-element
             },
@@ -190,6 +257,21 @@
         }
     {return
 
+    }
+  }
+
+
+  {method public {async-echo-receiver-fault in-element:any, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "echo-receiver-fault",
+            {{Array-of any}
+                in-element
+            },
+            {splice self.operations["echo-receiver-fault"]},
+            event-handler,
+            ...
+        }
     }
   }
 
@@ -203,7 +285,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = AnyType,
+                    curl-type = any,
                     nillable? = true
                 }
             },
@@ -215,7 +297,8 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2
+            soap-version = SOAPVersion.soap-1-2,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -243,25 +326,6 @@
         {DefaultSOAPCurlTypeToXMLTypeMapper}
     let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
         {DefaultSOAPXMLTypeToElementNameMapper}
-    {do
-        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
-            {SOAPXMLDocumentMarshaler
-                {SOAPObjectType
-                    element-name = {XMLName "http://soapinterop.org/", "echoReceiverFault"},
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = AnyType,
-                    nillable? = true
-                },
-                data-has-root-element? = true
-            }
-        {doc-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
     {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
@@ -301,6 +365,25 @@
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://soapinterop.org/", "echoReceiverFault"},
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
+                    curl-type = any,
+                    nillable? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
     {return
         type-mapper,
         element-name-to-xml-type,
@@ -313,15 +396,17 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/add-test-doc-int"}
+            {abs-url "http://www.whitemesa.net/soap12/add-test-doc-int"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
+    set self.mtom-support-range = mtom-support-range
     {construct-super service-location,
         generated-using-version = "5"
     }
   }
+  field public constant mtom-support-range:SOAPMTOMSupportRange
 }
-
-{let public constant AnyType:Type = any}
 
 {define-class public open Unknown
 

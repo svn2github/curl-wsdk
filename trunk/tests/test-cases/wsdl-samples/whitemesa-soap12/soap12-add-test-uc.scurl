@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-add-test-uc,
     {compiler-directives careful? = true},
-    wsdl = "file:///e:/project/WSDK/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-uc.wsdl"}
+    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-uc.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///e:/project/WSDK/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-uc.wsdl
+|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-uc.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WhiteMesaSoap12AddTestSvc {inherits WSDLHTTPRPCPostClient}
@@ -43,7 +43,7 @@
 
   {method public {define-get-time}:void
     set self.operations["get-time"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -62,8 +62,7 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2,
-            mtom-support-range = self.mtom-support-range
+            soap-version = SOAPVersion.soap-1-2
     }
   }
 
@@ -148,7 +147,7 @@
 
   {method public {define-echo-string}:void
     set self.operations["echo-string"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://soapinterop.org/", "inputString"}
             },
@@ -175,8 +174,7 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2,
-            mtom-support-range = self.mtom-support-range
+            soap-version = SOAPVersion.soap-1-2
     }
   }
 
@@ -217,7 +215,7 @@
 
   {method public {define-echo-sender-fault}:void
     set self.operations["echo-sender-fault"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://soapinterop.org/", "echoSenderFault"}
             },
@@ -236,8 +234,7 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2,
-            mtom-support-range = self.mtom-support-range
+            soap-version = SOAPVersion.soap-1-2
     }
   }
 
@@ -278,7 +275,7 @@
 
   {method public {define-echo-receiver-fault}:void
     set self.operations["echo-receiver-fault"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://soapinterop.org/", "echoReceiverFault"}
             },
@@ -297,8 +294,7 @@
             rpc-style? = false,
             write-type-attribute? = false,
             write-encoding-attribute? = false,
-            soap-version = SOAPVersion.soap-1-2,
-            mtom-support-range = self.mtom-support-range
+            soap-version = SOAPVersion.soap-1-2
     }
   }
 

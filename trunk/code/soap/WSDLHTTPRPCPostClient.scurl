@@ -279,8 +279,6 @@
                       character-encoding:CharEncoding = CharEncoding.utf8,
                       add-content-type-charset?:bool = true,
                       soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                      mtom-support-range:SOAPMTOMSupportRange =
-                          SOAPMTOMSupportRange.none
                   }:(responses:{Array-of any},
                      headers:#{Array-of any},
                      header-roles:#{Array-of #String},
@@ -302,7 +300,7 @@
             rpc-style? = rpc-style?,
             character-encoding = character-encoding,
             soap-version = soap-version,
-            mtom-support-range = mtom-support-range
+            mtom-support-range = self.mtom-support-range
         }
     }
   }
@@ -335,8 +333,7 @@
                       root-element-attributes:#{Array-of XMLToken} = null,
                       character-encoding:CharEncoding = CharEncoding.utf8,
                       add-content-type-charset?:bool = true,
-                      soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                      mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
+                      soap-version:SOAPVersion = SOAPVersion.soap-1-1
                   }:(request-data:HttpRequestData,
                      request-http-headers:#HttpRequestHeaders)
     {return
@@ -363,7 +360,7 @@
             soap-action = soap-action,
             trace-stream = self.trace-stream,
             soap-version = soap-version,
-            mtom-support-range = mtom-support-range,
+            mtom-support-range = self.mtom-support-range,
             additional-request-headers = self.additional-request-headers 
         }
     }
@@ -399,9 +396,7 @@
                           add-content-type-charset?:bool = true,
                           trace-stream:#TextOutputStream = self.trace-stream,
                           http-request-method:HttpRequestMethod = HttpRequestMethod.post,
-                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          mtom-support-range:SOAPMTOMSupportRange =
-                              SOAPMTOMSupportRange.none
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
                       }:(responses:{Array-of any},
                          headers:#{Array-of any},
                          header-roles:#{Array-of #String},
@@ -439,7 +434,7 @@
             trace-stream = trace-stream,
             http-request-method = http-request-method,
             soap-version = soap-version,
-            mtom-support-range = mtom-support-range,
+            mtom-support-range = self.mtom-support-range,
             additional-request-headers = self.additional-request-headers 
         }
     {if-non-null rhc = self.response-headers-callback then
@@ -494,8 +489,6 @@
                           http-request-method:HttpRequestMethod =
                               HttpRequestMethod.post,
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
-                          mtom-support-range:SOAPMTOMSupportRange =
-                              SOAPMTOMSupportRange.none,
                           ...:EventHandler
                       }:SOAPHTTPRPCPostAsyncWorker
     {return
@@ -529,7 +522,7 @@
             trace-stream = trace-stream,
             http-request-method = http-request-method,
             soap-version = soap-version,
-            mtom-support-range = mtom-support-range,
+            mtom-support-range = self.mtom-support-range,
             additional-request-headers = self.additional-request-headers,
             {on e:SOAPHTTPRPCPostAsyncEvent do
                 {if e.exception != null or e.canceled? then

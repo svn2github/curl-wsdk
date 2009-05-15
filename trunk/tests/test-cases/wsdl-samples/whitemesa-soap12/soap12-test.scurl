@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-test,
     {compiler-directives careful? = true},
-    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-test.wsdl"}
+    wsdl = "file:///e:/project/WSDK/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-test.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-test.wsdl
+|| WSDL file: file:///e:/project/WSDK/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-test.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public Soap12TestDocPort {inherits WSDLHTTPRPCPostClient}
@@ -158,14 +158,14 @@
   }
 
 
-  {method public {echo-ok echo-ok:String, echo-ok2:#String = null, unknown:#UnknownType = null}:(response-ok:String, headers:#{Array-of any}, header-roles:#{Array-of #String}, header-must-understands:#{Array-of bool})
+  {method public {echo-ok echo-ok:String, echo-ok:#String = null, unknown:#UnknownType = null}:(response-ok:String, headers:#{Array-of any}, header-roles:#{Array-of #String}, header-must-understands:#{Array-of bool})
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
         {{Array-of SOAPObjectType}}
     let constant request-headers:{Array-of any} =
         {{Array-of any}}
-    {if {keyword-supplied? echo-ok2} then
+    {if {keyword-supplied? echo-ok} then
         {request-header-types.append
             {SOAPObjectType
                 xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -176,7 +176,7 @@
         {request-header-names.append
            {XMLName "http://example.org/ts-tests", "echoOk"}
         }
-        {request-headers.append echo-ok2}
+        {request-headers.append echo-ok}
     }
     {if {keyword-supplied? unknown} then
         {request-header-types.append
@@ -227,14 +227,14 @@
   }
 
 
-  {method public {async-echo-ok echo-ok:String, echo-ok2:#String = null, unknown:#UnknownType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-echo-ok echo-ok:String, echo-ok:#String = null, unknown:#UnknownType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
         {{Array-of SOAPObjectType}}
     let constant request-headers:{Array-of any} =
         {{Array-of any}}
-    {if {keyword-supplied? echo-ok2} then
+    {if {keyword-supplied? echo-ok} then
         {request-header-types.append
             {SOAPObjectType
                 xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -245,7 +245,7 @@
         {request-header-names.append
            {XMLName "http://example.org/ts-tests", "echoOk"}
         }
-        {request-headers.append echo-ok2}
+        {request-headers.append echo-ok}
     }
     {if {keyword-supplied? unknown} then
         {request-header-types.append
@@ -771,12 +771,11 @@
         mtom-support-range:SOAPMTOMSupportRange =
             SOAPMTOMSupportRange.none
     }
-    set self.mtom-support-range = mtom-support-range
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
-  field public constant mtom-support-range:SOAPMTOMSupportRange
 }
 
 {define-class public Soap12TestRpcPort {inherits WSDLHTTPRPCPostClient}
@@ -2563,12 +2562,11 @@
         mtom-support-range:SOAPMTOMSupportRange =
             SOAPMTOMSupportRange.none
     }
-    set self.mtom-support-range = mtom-support-range
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
-  field public constant mtom-support-range:SOAPMTOMSupportRange
 }
 
 {define-class public open EchoResolvedRef-t

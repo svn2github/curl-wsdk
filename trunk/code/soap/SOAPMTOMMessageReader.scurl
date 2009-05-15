@@ -137,6 +137,7 @@
             }
         }
 
+        let href-handled?:bool = false
         {while true do
             set (current-token, eof?) = {stream.read-one}
             {if eof? then
@@ -148,40 +149,42 @@
             
             {type-switch current-token
              case at:XMLAttribute do
-                {if-non-null return-val then
-                    {throw-unmarshal-exception
-                        {lmessage Only one href element is allowed in XOP}
-                    }
-                }
-||--                {if at.name == unmarshal-context.reference-attribute-name and
-                {if at.name == {XMLName "", "href"} and
-                    at.value isa String and
-                    {(at.value asa String).prefix? "cid:"}
-                 then
-                    def attachment = {unmarshal-context.get-binary-data
-                                         at.value asa String
-                                     }
-
-                    {if-non-null ct = attachment.content-type then
-                        def charset = {HttpHeaders.get-parameter
-                                          ct,
-                                          "charset",
-                                          default = ""
-                                      }
-                        {if not charset.empty? then
-                            def (num, decode-str) =
-                                {decode-characters
-                                    attachment.content.underlying-FastArray,
-                                    {http-charset-to-char-encoding
-                                        {non-null charset}}
-                                }
-                            set return-val = decode-str
-                            set found? = true
-                            {continue}
+                {if at.name == {XMLName "", "href"} then
+                    {if href-handled? then
+                        {throw-unmarshal-exception
+                            {lmessage href has already specified.}
                         }
+                     else
+                        set href-handled? = true
                     }
-                    set return-val = attachment.content
-                    set found? = true
+                    {if at.value isa String and
+                        {(at.value asa String).prefix? "cid:"}
+                     then
+                        def attachment = {unmarshal-context.get-binary-data
+                                             at.value asa String
+                                         }
+
+                        {if-non-null ct = attachment.content-type then
+                            def charset = {HttpHeaders.get-parameter
+                                              ct,
+                                              "charset",
+                                              default = ""
+                                          }
+                            {if not charset.empty? then
+                                def (num, decode-str) =
+                                    {decode-characters
+                                        attachment.content.underlying-FastArray,
+                                        {http-charset-to-char-encoding
+                                            {non-null charset}}
+                                    }
+                                set return-val = decode-str
+                                set found? = true
+                                {continue}
+                            }
+                        }
+                        set return-val = attachment.content
+                        set found? = true
+                    }
                 }
              case ee:XMLEndElement do
                 {if ee.element != null and ee.element != se.element then

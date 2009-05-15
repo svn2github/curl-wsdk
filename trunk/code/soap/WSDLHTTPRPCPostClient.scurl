@@ -79,9 +79,19 @@
   }
   field public additional-request-headers:#{Array-of XDMElement}
 
+  || TODO: write doc
+  {doc-next
+    {purpose
+        not yet
+    }
+  }
+  field public constant mtom-support-range:SOAPMTOMSupportRange
+
   {constructor public {default 
                           service-location:Url,
-                          generated-using-version:String = "1"
+                          generated-using-version:String = "1",
+                          mtom-support-range:SOAPMTOMSupportRange =
+                              SOAPMTOMSupportRange.none
                       }
     
     set self.generated-using-version = generated-using-version
@@ -90,6 +100,8 @@
     set self.service-location = service-location
 
     set self.operations = {{HashTable-of String, Arguments}}
+
+    set self.mtom-support-range = mtom-support-range
 
     def (type-mapper:SOAPTypeMapper,
          element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,

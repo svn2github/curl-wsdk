@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-add-test-rpc,
     {compiler-directives careful? = true},
-    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-rpc.wsdl"}
+    wsdl = "file:///e:/project/WSDK/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-rpc.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-rpc.wsdl
+|| WSDL file: file:///e:/project/WSDK/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-rpc.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WhiteMesaSoap12AddTestSvc {inherits WSDLHTTPRPCPostClient}
@@ -653,12 +653,11 @@
         mtom-support-range:SOAPMTOMSupportRange =
             SOAPMTOMSupportRange.none
     }
-    set self.mtom-support-range = mtom-support-range
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
-  field public constant mtom-support-range:SOAPMTOMSupportRange
 }
 
 {define-class public open SOAPStruct

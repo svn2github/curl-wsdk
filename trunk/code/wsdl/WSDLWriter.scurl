@@ -1152,25 +1152,19 @@
                 "  \{constructor public\n" &
                 "    \{default\n" & 
                 "        service-location:Url =\n" &
-||--                "            " & service-location & "\n" &
-||--                "    \}\n" &
                 || MTOM support -------------------------------------
                 "            " & service-location & ",\n" &
                 "        mtom-support-range:SOAPMTOMSupportRange =\n" &
                 "            SOAPMTOMSupportRange.none\n" &
                 "    \}\n" &
-                "    set self.mtom-support-range = mtom-support-range\n" &
                 || --------------------------------------------------
                 "    \{construct-super service-location,\n" &
                 "        generated-using-version = \"" & 
-                wsdl-service-class-version & "\"\n" &
+                wsdl-service-class-version & "\",\n" &
+                "        mtom-support-range = mtom-support-range\n" &
                 "    \}\n" &
                 "  \}\n"
             }
-
-            || temporarily
-            {out.write-one-string
-                "  field public constant mtom-support-range:SOAPMTOMSupportRange\n"}
 
             || close class
             {out.write-one-string "\}\n\n"}

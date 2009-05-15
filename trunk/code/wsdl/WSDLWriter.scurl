@@ -592,7 +592,7 @@
                      elseif def-pass? then
                         {out.write-one-string
                             "    set self.operations[\"" & name & "\"] = \n" &
-                            "         \{Arguments\n"
+                            "        \{Arguments\n"
                         }
                      else
                         {out.write-one-string
@@ -930,7 +930,7 @@
                     || ~~~~~~~~~~~~~~~~~~~~
                     {if async-pass? or def-pass? then
                         {out.write-one-string
-                            "    \}\n"
+                            "        \}\n"
                         }
                      else
                         {out.write-one-string

@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.WarehouseB,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/WS-I/WarehouseB.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/WarehouseB.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/WS-I/WarehouseB.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/WarehouseB.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WarehouseServiceB {inherits WSDLHTTPRPCPostClient}
@@ -498,7 +498,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"},
-                    curl-type = int64
+                    curl-type = uint64
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedShort"},
@@ -538,7 +538,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"},
-                    curl-type = int64
+                    curl-type = uint64
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
@@ -827,13 +827,13 @@
 
 {define-class public open Item
 
-  field public product-number:int64
+  field public product-number:uint64
   field public quantity:uint16
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      product-number:int64 = {uninitialized-value-for-type int64},
+      product-number:uint64 = {uninitialized-value-for-type uint64},
       quantity:uint16 = {uninitialized-value-for-type uint16}
     }
     {if {keyword-supplied? product-number} then
@@ -846,13 +846,13 @@
 
 {define-class public open ItemShippingStatus
 
-  field public product-number:int64
+  field public product-number:uint64
   field public status:bool
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      product-number:int64 = {uninitialized-value-for-type int64},
+      product-number:uint64 = {uninitialized-value-for-type uint64},
       status:bool = {uninitialized-value-for-type bool}
     }
     {if {keyword-supplied? product-number} then

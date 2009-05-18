@@ -1,27 +1,27 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/PowerQuote.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+       This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {get-quote stock-symbol:String, license-key:String}:(get-quote-result:QuoteData)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-quote",
             {{Array-of any}
                 stock-symbol,
                 license-key
@@ -34,11 +34,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+       This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {define-get-quote}:void
     set self.operations["get-quote"] = 
          {Arguments
@@ -74,24 +74,25 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
+       This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {get-quick-quote stock-symbol:String, license-key:String}:(get-quick-quote-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-quick-quote",
             {{Array-of any}
                 stock-symbol,
                 license-key
@@ -104,11 +105,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
+       This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {define-get-quick-quote}:void
     set self.operations["get-quick-quote"] = 
          {Arguments
@@ -143,24 +144,25 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuickQuoteResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+       This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {get-quote-data-set stock-symbols:String, license-key:String}:(get-quote-data-set-result:#GetQuoteDataSetResult)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-quote-data-set",
             {{Array-of any}
                 stock-symbols,
                 license-key
@@ -173,11 +175,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+       This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {define-get-quote-data-set}:void
     set self.operations["get-quote-data-set"] = 
          {Arguments
@@ -213,7 +215,8 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -224,8 +227,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "important-message",
             {{Array-of any}
             },
             {splice self.operations["important-message"]}
@@ -259,7 +262,8 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "ImportantMessageResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -473,10 +477,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
+            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

@@ -1,32 +1,32 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.StockQuotesWebService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/StockQuotesWebService.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/StockQuotesWebService.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/StockQuotesWebService.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/StockQuotesWebService.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
-  {doc-next 
+{doc-next 
     {details 
-      WebService provides stock exchange information.
+       WebService provides stock exchange information.
     }
-  }
+}
 {define-class public StockQuotes {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns XML schema (XSD) in which all XML formatted stock information is in.
+       Method returns XML schema (XSD) in which all XML formatted stock information is in.
     }
-  }
+}
   {method public {get-stocks-xmlschema}:(get-stocks-xmlschema-result:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stocks-xmlschema",
             {{Array-of any}
             },
             {splice self.operations["get-stocks-xmlschema"]}
@@ -37,11 +37,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns XML schema (XSD) in which all XML formatted stock information is in.
+       Method returns XML schema (XSD) in which all XML formatted stock information is in.
     }
-  }
+}
   {method public {define-get-stocks-xmlschema}:void
     set self.operations["get-stocks-xmlschema"] = 
          {Arguments
@@ -65,24 +65,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStocksXMLSchemaResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified stock that are in the given value interval as XML string.
+       Method returns all values for the specified stock that are in the given value interval as XML string.
     }
-  }
+}
   {method public {get-stock-daily-values-by-value-xml str-stock-exchange:String, str-stock:String, dcm-low:double, dcm-high:double}:(get-stock-daily-values-by-value-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stock-daily-values-by-value-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock,
@@ -97,11 +98,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified stock that are in the given value interval as XML string.
+       Method returns all values for the specified stock that are in the given value interval as XML string.
     }
-  }
+}
   {method public {define-get-stock-daily-values-by-value-xml}:void
     set self.operations["get-stock-daily-values-by-value-xml"] = 
          {Arguments
@@ -147,24 +148,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByValueXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified stock in the given time interval as XML string.
+       Method returns all values for the specified stock in the given time interval as XML string.
     }
-  }
+}
   {method public {get-stock-daily-values-by-date-xml str-stock-exchange:String, str-stock:String, str-date-low:String, str-date-high:String}:(get-stock-daily-values-by-date-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stock-daily-values-by-date-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock,
@@ -179,11 +181,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified stock in the given time interval as XML string.
+       Method returns all values for the specified stock in the given time interval as XML string.
     }
-  }
+}
   {method public {define-get-stock-daily-values-by-date-xml}:void
     set self.operations["get-stock-daily-values-by-date-xml"] = 
          {Arguments
@@ -231,24 +233,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByDateXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all stock values for given date as XML string.
+       Method returns all stock values for given date as XML string.
     }
-  }
+}
   {method public {get-stock-daily-values-xml str-stock-exchange:String, str-segment:String, str-date:String}:(get-stock-daily-values-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stock-daily-values-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-segment,
@@ -262,11 +265,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all stock values for given date as XML string.
+       Method returns all stock values for given date as XML string.
     }
-  }
+}
   {method public {define-get-stock-daily-values-xml}:void
     set self.operations["get-stock-daily-values-xml"] = 
          {Arguments
@@ -308,24 +311,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns latest published stock values as XML string.
+       Method returns latest published stock values as XML string.
     }
-  }
+}
   {method public {get-latest-stock-daily-values-xml str-stock-exchange:String, str-segment:String}:(get-latest-stock-daily-values-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-latest-stock-daily-values-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-segment
@@ -338,11 +342,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns latest published stock values as XML string.
+       Method returns latest published stock values as XML string.
     }
-  }
+}
   {method public {define-get-latest-stock-daily-values-xml}:void
     set self.operations["get-latest-stock-daily-values-xml"] = 
          {Arguments
@@ -378,24 +382,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified stock on the given date.
+       Method returns the value for the specified stock on the given date.
     }
-  }
+}
   {method public {get-stock-daily-value str-stock-exchange:String, str-stock:String, str-date:String}:(get-stock-daily-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stock-daily-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock,
@@ -409,11 +414,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified stock on the given date.
+       Method returns the value for the specified stock on the given date.
     }
-  }
+}
   {method public {define-get-stock-daily-value}:void
     set self.operations["get-stock-daily-value"] = 
          {Arguments
@@ -454,24 +459,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the latest published value for the specified stock.
+       Method returns the latest published value for the specified stock.
     }
-  }
+}
   {method public {get-latest-stock-daily-value str-stock-exchange:String, str-stock:String}:(get-latest-stock-daily-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-latest-stock-daily-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock
@@ -484,11 +490,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the latest published value for the specified stock.
+       Method returns the latest published value for the specified stock.
     }
-  }
+}
   {method public {define-get-latest-stock-daily-value}:void
     set self.operations["get-latest-stock-daily-value"] = 
          {Arguments
@@ -523,24 +529,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the current value for the specified stock.
+       Method returns the current value for the specified stock.
     }
-  }
+}
   {method public {get-latest-stock-value str-stock-exchange:String, str-stock:String}:(get-latest-stock-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-latest-stock-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock
@@ -553,11 +560,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the current value for the specified stock.
+       Method returns the current value for the specified stock.
     }
-  }
+}
   {method public {define-get-latest-stock-value}:void
     set self.operations["get-latest-stock-value"] = 
          {Arguments
@@ -592,24 +599,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified stock at the given time.
+       Method returns the value for the specified stock at the given time.
     }
-  }
+}
   {method public {get-stock-value str-stock-exchange:String, str-stock:String, str-date-time:String}:(get-stock-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stock-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock,
@@ -623,11 +631,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified stock at the given time.
+       Method returns the value for the specified stock at the given time.
     }
-  }
+}
   {method public {define-get-stock-value}:void
     set self.operations["get-stock-value"] = 
          {Arguments
@@ -668,24 +676,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified stock in the given time interval as XML string.
+       Method returns all values for the specified stock in the given time interval as XML string.
     }
-  }
+}
   {method public {get-stock-values-by-date-time-xml str-stock-exchange:String, str-stock:String, str-date-time-low:String, str-date-time-high:String}:(get-stock-values-by-date-time-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-stock-values-by-date-time-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-stock,
@@ -700,11 +709,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified stock in the given time interval as XML string.
+       Method returns all values for the specified stock in the given time interval as XML string.
     }
-  }
+}
   {method public {define-get-stock-values-by-date-time-xml}:void
     set self.operations["get-stock-values-by-date-time-xml"] = 
          {Arguments
@@ -752,24 +761,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValuesByDateTimeXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns XML schema (XSD) in which all XML formatted index information is in.
+       Method returns XML schema (XSD) in which all XML formatted index information is in.
     }
-  }
+}
   {method public {get-indices-xmlschema}:(get-indices-xmlschema-result:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-indices-xmlschema",
             {{Array-of any}
             },
             {splice self.operations["get-indices-xmlschema"]}
@@ -780,11 +790,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns XML schema (XSD) in which all XML formatted index information is in.
+       Method returns XML schema (XSD) in which all XML formatted index information is in.
     }
-  }
+}
   {method public {define-get-indices-xmlschema}:void
     set self.operations["get-indices-xmlschema"] = 
          {Arguments
@@ -808,24 +818,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndicesXMLSchemaResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified index that are in the given value interval as XML string.
+       Method returns all values for the specified index that are in the given value interval as XML string.
     }
-  }
+}
   {method public {get-index-daily-values-by-value-xml str-stock-exchange:String, str-index:String, dcm-low:double, dcm-high:double}:(get-index-daily-values-by-value-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-index-daily-values-by-value-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-index,
@@ -840,11 +851,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified index that are in the given value interval as XML string.
+       Method returns all values for the specified index that are in the given value interval as XML string.
     }
-  }
+}
   {method public {define-get-index-daily-values-by-value-xml}:void
     set self.operations["get-index-daily-values-by-value-xml"] = 
          {Arguments
@@ -890,24 +901,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByValueXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified index in the given time interval as XML string.
+       Method returns all values for the specified index in the given time interval as XML string.
     }
-  }
+}
   {method public {get-index-daily-values-by-date-xml str-stock-exchange:String, str-index:String, str-date-low:String, str-date-high:String}:(get-index-daily-values-by-date-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-index-daily-values-by-date-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-index,
@@ -922,11 +934,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified index in the given time interval as XML string.
+       Method returns all values for the specified index in the given time interval as XML string.
     }
-  }
+}
   {method public {define-get-index-daily-values-by-date-xml}:void
     set self.operations["get-index-daily-values-by-date-xml"] = 
          {Arguments
@@ -974,24 +986,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByDateXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all index values for given date as XML string.
+       Method returns all index values for given date as XML string.
     }
-  }
+}
   {method public {get-index-daily-values-xml str-stock-exchange:String, str-date:String}:(get-index-daily-values-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-index-daily-values-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-date
@@ -1004,11 +1017,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all index values for given date as XML string.
+       Method returns all index values for given date as XML string.
     }
-  }
+}
   {method public {define-get-index-daily-values-xml}:void
     set self.operations["get-index-daily-values-xml"] = 
          {Arguments
@@ -1044,24 +1057,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns latest published index values as XML string.
+       Method returns latest published index values as XML string.
     }
-  }
+}
   {method public {get-latest-index-daily-values-xml str-stock-exchange:String}:(get-latest-index-daily-values-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-latest-index-daily-values-xml",
             {{Array-of any}
                 str-stock-exchange
             },
@@ -1073,11 +1087,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns latest published index values as XML string.
+       Method returns latest published index values as XML string.
     }
-  }
+}
   {method public {define-get-latest-index-daily-values-xml}:void
     set self.operations["get-latest-index-daily-values-xml"] = 
          {Arguments
@@ -1107,24 +1121,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified index on the given date.
+       Method returns the value for the specified index on the given date.
     }
-  }
+}
   {method public {get-index-daily-value str-stock-exchange:String, str-index:String, str-date:String}:(get-index-daily-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-index-daily-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-index,
@@ -1138,11 +1153,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified index on the given date.
+       Method returns the value for the specified index on the given date.
     }
-  }
+}
   {method public {define-get-index-daily-value}:void
     set self.operations["get-index-daily-value"] = 
          {Arguments
@@ -1183,24 +1198,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the latest published value for the specified index.
+       Method returns the latest published value for the specified index.
     }
-  }
+}
   {method public {get-latest-index-daily-value str-stock-exchange:String, str-index:String}:(get-latest-index-daily-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-latest-index-daily-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-index
@@ -1213,11 +1229,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the latest published value for the specified index.
+       Method returns the latest published value for the specified index.
     }
-  }
+}
   {method public {define-get-latest-index-daily-value}:void
     set self.operations["get-latest-index-daily-value"] = 
          {Arguments
@@ -1252,24 +1268,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the current value for the specified index.
+       Method returns the current value for the specified index.
     }
-  }
+}
   {method public {get-latest-index-value str-stock-exchange:String, str-index:String}:(get-latest-index-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-latest-index-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-index
@@ -1282,11 +1299,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the current value for the specified index.
+       Method returns the current value for the specified index.
     }
-  }
+}
   {method public {define-get-latest-index-value}:void
     set self.operations["get-latest-index-value"] = 
          {Arguments
@@ -1321,24 +1338,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified index at the given time.
+       Method returns the value for the specified index at the given time.
     }
-  }
+}
   {method public {get-index-value str-stock-exchange:String, str-index:String, str-date-time:String}:(get-index-value-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-index-value",
             {{Array-of any}
                 str-stock-exchange,
                 str-index,
@@ -1352,11 +1370,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns the value for the specified index at the given time.
+       Method returns the value for the specified index at the given time.
     }
-  }
+}
   {method public {define-get-index-value}:void
     set self.operations["get-index-value"] = 
          {Arguments
@@ -1397,24 +1415,25 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified index in the given time interval as XML string.
+       Method returns all values for the specified index in the given time interval as XML string.
     }
-  }
+}
   {method public {get-index-values-by-date-time-xml str-stock-exchange:String, str-index:String, str-date-time-low:String, str-date-time-high:String}:(get-index-values-by-date-time-xmlresult:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-index-values-by-date-time-xml",
             {{Array-of any}
                 str-stock-exchange,
                 str-index,
@@ -1429,11 +1448,11 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Method returns all values for the specified index in the given time interval as XML string.
+       Method returns all values for the specified index in the given time interval as XML string.
     }
-  }
+}
   {method public {define-get-index-values-by-date-time-xml}:void
     set self.operations["get-index-values-by-date-time-xml"] = 
          {Arguments
@@ -1481,7 +1500,8 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValuesByDateTimeXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1526,10 +1546,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.gama-system.com/webservices/stockquotes.asmx"}
+            {abs-url "http://www.gama-system.com/webservices/stockquotes.asmx"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

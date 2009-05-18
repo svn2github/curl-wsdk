@@ -1,17 +1,17 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.TerraService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/TerraService.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TerraService.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/TerraService.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TerraService.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
-  {doc-next 
+{doc-next 
     {details 
-      TerraServer Web Service
+       TerraServer Web Service
     }
-  }
+}
 {define-class public TerraService {inherits WSDLHTTPRPCPostClient}
 
   {method public {convert-lon-lat-pt-to-nearest-place point:LonLatPt}:(convert-lon-lat-pt-to-nearest-place-result:#String)
@@ -20,8 +20,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "convert-lon-lat-pt-to-nearest-place",
             {{Array-of any}
                 point
             },
@@ -62,7 +62,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlaceResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -73,8 +74,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "convert-lon-lat-pt-to-utm-pt",
             {{Array-of any}
                 point
             },
@@ -115,7 +116,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -126,8 +128,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "convert-utm-pt-to-lon-lat-pt",
             {{Array-of any}
                 utm
             },
@@ -168,7 +170,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -179,8 +182,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "convert-place-to-lon-lat-pt",
             {{Array-of any}
                 place
             },
@@ -221,7 +224,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -232,8 +236,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "count-places-in-rect",
             {{Array-of any}
                 upperleft,
                 lowerright,
@@ -286,7 +290,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRectResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -297,8 +302,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-area-from-pt",
             {{Array-of any}
                 center,
                 theme,
@@ -363,7 +368,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -374,8 +380,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-area-from-rect",
             {{Array-of any}
                 upper-left,
                 lower-right,
@@ -435,7 +441,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRectResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -446,8 +453,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-area-from-tile-id",
             {{Array-of any}
                 id,
                 display-pix-width,
@@ -500,7 +507,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileIdResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -511,8 +519,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-lat-lon-metrics",
             {{Array-of any}
                 point
             },
@@ -553,7 +561,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetricsResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -564,8 +573,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-place-facts",
             {{Array-of any}
                 place
             },
@@ -606,7 +615,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFactsResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -617,8 +627,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-place-list",
             {{Array-of any}
                 place-name,
                 max-items,
@@ -671,7 +681,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -682,8 +693,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-place-list-in-rect",
             {{Array-of any}
                 upperleft,
                 lowerright,
@@ -743,7 +754,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRectResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -754,8 +766,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-theme",
             {{Array-of any}
                 theme
             },
@@ -795,7 +807,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetThemeResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -806,8 +819,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-tile-meta-from-lon-lat-pt",
             {{Array-of any}
                 point,
                 theme,
@@ -860,7 +873,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -871,8 +885,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-tile-meta-from-tile-id",
             {{Array-of any}
                 id
             },
@@ -913,7 +927,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileIdResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -924,8 +939,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-tile",
             {{Array-of any}
                 id
             },
@@ -966,7 +981,8 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false
+            write-encoding-attribute? = false,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1134,7 +1150,7 @@
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
-                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
                 xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
                 curl-type = LonLatPt,
                 nillable? = true
@@ -2019,10 +2035,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://terraservice.net/TerraService.asmx"}
+            {abs-url "http://terraservice.net/TerraService.asmx"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

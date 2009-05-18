@@ -19,13 +19,7 @@
 {import * from COM.CURL.WSDK.WSDL}
 
 {value 
-    def loc = {url "s-wsconnection.wsdl"}
-    def sloc = {url "WSConnectionService.scurl"}
+    def loc = {url "WSConnectionService.wsdl"}
     {generate-wsdl-code loc, 
-        package-suffix = "WSConnectionService",
-        target = sloc}
+        package-suffix = "WSConnectionService"}
 }
-
-
-
-

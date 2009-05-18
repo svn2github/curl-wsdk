@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.TranslationEngine,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/TranslationEngine.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TranslationEngine.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/branches/v1.1/tests/test-cases/wsdl-services/TranslationEngine.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TranslationEngine.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public TranslateService {inherits WSDLHTTPRPCPostClient}
@@ -30,28 +30,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {doc-next 
-    {details 
-      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
-    }
-  }
-  {method public {async-translate language-mode:Language, text:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                language-mode,
-                text
-            },
-            {splice self.operations["translate"]},
-            event-handler,
-            ...
-
-        }
     }
   }
 

@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.WarehouseCallback,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WarehouseCallbackService {inherits WSDLHTTPRPCPostClient}
@@ -676,7 +676,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"},
-                    curl-type = int64
+                    curl-type = uint64
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedShort"},
@@ -746,7 +746,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"},
-                    curl-type = int64
+                    curl-type = uint64
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedShort"},
@@ -1298,14 +1298,14 @@
 
 {define-class public open Item
 
-  field public id:int64
+  field public id:uint64
   field public qty:uint16
   field public price:float
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      id:int64 = {uninitialized-value-for-type int64},
+      id:uint64 = {uninitialized-value-for-type uint64},
       qty:uint16 = {uninitialized-value-for-type uint16},
       price:float = {uninitialized-value-for-type float}
     }
@@ -1323,14 +1323,14 @@
 
 {define-class public open ManufacturerSN-Item
 
-  field public id:int64
+  field public id:uint64
   field public qty:uint16
   field public price:float
   {constructor public {default}
   }
   {constructor public 
     {from-keywords
-      id:int64 = {uninitialized-value-for-type int64},
+      id:uint64 = {uninitialized-value-for-type uint64},
       qty:uint16 = {uninitialized-value-for-type uint16},
       price:float = {uninitialized-value-for-type float}
     }

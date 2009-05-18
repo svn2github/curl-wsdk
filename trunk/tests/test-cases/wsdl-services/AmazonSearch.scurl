@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.AmazonSearch,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/AmazonSearch.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/AmazonSearch.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK_Z/RELEASE/tests/test-cases/wsdl-services/AmazonSearch.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/AmazonSearch.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public AmazonSearchService {inherits WSDLHTTPRPCPostClient}
@@ -15,8 +15,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "keyword-search-request",
             {{Array-of any}
                 keyword-search-request
             },
@@ -57,7 +57,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -68,8 +69,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "text-stream-search-request",
             {{Array-of any}
                 text-stream-search-request
             },
@@ -110,7 +111,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -121,8 +123,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "power-search-request",
             {{Array-of any}
                 power-search-request
             },
@@ -163,7 +165,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -174,8 +177,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "browse-node-search-request",
             {{Array-of any}
                 browse-node-search-request
             },
@@ -216,7 +219,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -227,8 +231,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "asin-search-request",
             {{Array-of any}
                 asin-search-request
             },
@@ -269,7 +273,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -280,8 +285,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "blended-search-request",
             {{Array-of any}
                 blended-search-request
             },
@@ -322,7 +327,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -333,8 +339,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "upc-search-request",
             {{Array-of any}
                 upc-search-request
             },
@@ -375,7 +381,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -386,8 +393,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "sku-search-request",
             {{Array-of any}
                 sku-search-request
             },
@@ -428,7 +435,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -439,8 +447,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "author-search-request",
             {{Array-of any}
                 author-search-request
             },
@@ -481,7 +489,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -492,8 +501,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "artist-search-request",
             {{Array-of any}
                 artist-search-request
             },
@@ -534,7 +543,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -545,8 +555,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "actor-search-request",
             {{Array-of any}
                 actor-search-request
             },
@@ -587,7 +597,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -598,8 +609,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "manufacturer-search-request",
             {{Array-of any}
                 manufacturer-search-request
             },
@@ -640,7 +651,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -651,8 +663,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "director-search-request",
             {{Array-of any}
                 director-search-request
             },
@@ -693,7 +705,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -704,8 +717,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "exchange-search-request",
             {{Array-of any}
                 exchange-search-request
             },
@@ -746,7 +759,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -757,8 +771,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "list-mania-search-request",
             {{Array-of any}
                 list-mania-search-request
             },
@@ -799,7 +813,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -810,8 +825,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "wishlist-search-request",
             {{Array-of any}
                 wishlist-search-request
             },
@@ -852,7 +867,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -863,8 +879,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "seller-profile-search-request",
             {{Array-of any}
                 seller-profile-search-request
             },
@@ -905,7 +921,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -916,8 +933,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "seller-search-request",
             {{Array-of any}
                 seller-search-request
             },
@@ -958,7 +975,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -969,8 +987,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "marketplace-search-request",
             {{Array-of any}
                 marketplace-search-request
             },
@@ -1011,7 +1029,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1022,8 +1041,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "similarity-search-request",
             {{Array-of any}
                 similarity-search-request
             },
@@ -1064,7 +1083,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1075,8 +1095,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-shopping-cart-request",
             {{Array-of any}
                 get-shopping-cart-request
             },
@@ -1117,7 +1137,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1128,8 +1149,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "clear-shopping-cart-request",
             {{Array-of any}
                 clear-shopping-cart-request
             },
@@ -1170,7 +1191,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1181,8 +1203,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "add-shopping-cart-items-request",
             {{Array-of any}
                 add-shopping-cart-items-request
             },
@@ -1223,7 +1245,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1234,8 +1257,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "remove-shopping-cart-items-request",
             {{Array-of any}
                 remove-shopping-cart-items-request
             },
@@ -1276,7 +1299,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1287,8 +1311,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "modify-shopping-cart-items-request",
             {{Array-of any}
                 modify-shopping-cart-items-request
             },
@@ -1329,7 +1353,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -1340,8 +1365,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-transaction-details-request",
             {{Array-of any}
                 get-transaction-details-request
             },
@@ -1382,7 +1407,8 @@
             default-namespace = "http://soap.amazon.com",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true
+            write-encoding-attribute? = true,
+            mtom-support-range = self.mtom-support-range
     }
   }
 
@@ -6681,7 +6707,69 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "", "Items"},
+                        element-name = {XMLName "", "Accessories"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Lists"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Authors"},
                         xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
                         curl-type = {Array-of String},
                         nillable? = true
@@ -6713,6 +6801,37 @@
                     },
                     {SOAPObjectType
                         element-name = {XMLName "", "Artists"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Directors"},
                         xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
                         curl-type = {Array-of String},
                         nillable? = true
@@ -6805,130 +6924,6 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "", "Directors"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = {Array-of String},
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Accessories"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = {Array-of String},
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "Authors"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = {Array-of String},
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
-                        element-name = {XMLName "", "OrderIds"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
-                        curl-type = {Array-of String},
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String
-                    },
-                    {SOAPObjectType
                         element-name = {XMLName "", "Platforms"},
                         xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
                         curl-type = {Array-of String},
@@ -6991,7 +6986,38 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "", "Lists"},
+                        element-name = {XMLName "", "OrderIds"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        curl-type = {Array-of String},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "Items"},
                         xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
                         curl-type = {Array-of String},
                         nillable? = true
@@ -7118,10 +7144,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://soap.amazon.com/onca/soap3"}
+            {abs-url "http://soap.amazon.com/onca/soap3"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

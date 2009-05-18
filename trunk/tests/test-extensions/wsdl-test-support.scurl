@@ -127,33 +127,32 @@
   field public-get constant location:Url
   field public-get constant directory:Url
   field public-get constant manifest-loc:Url
-  field public-get constant include-async-methods?:bool
-  field public-get constant exclude-unreferenced-types?:bool
+  field public-get constant directives:WSDLPackageDirectives
   field package:#Package 
   {constructor public {default 
                           name:String, 
                           location:Url, 
                           directory:Url,
                           manifest-loc:Url = {directory.concat "manifest.mcurl"},
-                          include-async-methods?:bool = false,
-                          exclude-unreferenced-types?:bool = false
+                          directives:WSDLPackageDirectives =
+                              {WSDLPackageDirectives location,
+                                  include-async-methods? = false,
+                                  || TODO: exploded variant
+                                  target-directory = null
+                              }
                       }
     set self.directory = directory
     set self.location = location
     set self.manifest-loc = manifest-loc
-    set self.include-async-methods? = include-async-methods?
-    set self.exclude-unreferenced-types? = exclude-unreferenced-types?
+    set self.directives = directives
     {construct-super name}
   }
   {method public {run}:void
     let wloc:Url = self.location
     let basename:String = self.name
     let sloc:Url = self.loc-scurl
-    {generate-wsdl-code wloc,
-        package-suffix = basename,
-        target = sloc,
-        include-async-methods? = self.include-async-methods?,
-        exclude-unreferenced-types? = self.exclude-unreferenced-types?}     
+    def writer = {WSDLPackageWriter self.directives}
+    {writer.generate-code}
     || trial evaluation
     let package:Package =
         {import-package 
@@ -424,7 +423,9 @@
             {if not result isa rett and
                 (not result isa FastArray or not result[0] isa rett)
              then
-                {TestCondition.fail message = result & " is not a " & self.return-type}
+                {TestCondition.fail message =
+                    {message Unexpected return type:
+                        '{value result}' is not a {value self.return-type}}}
             }
         }
         {if self.return-value != null and self.return-value != "" then
@@ -572,76 +573,76 @@
 ||--            main}
 ||--    }
 ||--}
-|| TextEditPanel "pseudo control"
-|| ====================
-{define-class public TextEditFrame {inherits BaseFrame}
-  field public-get panel:TextEditPanel
-  {constructor public {default ...}
-    set self._value = {StringBuf}
-    set self.panel =
-        {TextEditPanel
-            mode = curl-mode}
-    {construct-super ...}
-    let scrollbox:ScrollBox =
-        {ScrollBox
-            hstretch? = true,
-            vstretch? = true,
-            self.panel}
-    set {scrollbox.get-vscroll}.width = 8pt
-    {self.add-internal scrollbox}
-    || no apparent public way to note changes
-    {self.panel.add-event-handler
-        {on FocusOut do
-            {if self.value-changed? then
-                {self.value-finished}}}}
-  }
-  field _value:StringBuf
-  {getter public {value}:String
-    let buf:StringBuf = {self.get-contents}
-    {return {buf.to-String}}
-  }
-  {setter public {value val:String}:void
-    let buf:StringBuf = self._value
-    {if val != buf then
-        {buf.clear}
-        {buf.concat val}
-        set self._value-changed? = false
-        {self.panel.load-from-stream 
-            {val.to-InputStream}}}
-  }
-  {method public {keyword-init-arg k:String, x:any}:void
-    {switch k
-     case "value" do
-        set self.value = x asa String
-     else {super.keyword-init-arg k, x}}
-  }
-  {method {get-contents}:StringBuf
-    let buf:StringBuf = {StringBuf}
-    {self.panel.write-to-stream buf}
-    {return buf}
-  }
-  {method public {unset-property name:String}:bool
-    {return
-        {switch name
-         case "value" do
-            set self.value = ""
-            true
-         else
-            {super.unset-property name}}}
-  }
-  field _value-changed?:bool
-  {getter {value-changed?}:bool
-    {if not self._value-changed? then
-        set self._value-changed? =
-            self._value != {self.get-contents}}
-    {return self._value-changed?}
-  }
-  {method {value-finished}:void
-    set self._value = {self.get-contents}
-    set self._value-changed? = false
-    {self.handle-event {ValueFinished}}
-  }
-}
+||--|| TextEditPanel "pseudo control"
+||--|| ====================
+||--{define-class public TextEditFrame {inherits BaseFrame}
+||--  field public-get panel:TextEditPanel
+||--  {constructor public {default ...}
+||--    set self._value = {StringBuf}
+||--    set self.panel =
+||--        {TextEditPanel
+||--            mode = curl-mode}
+||--    {construct-super ...}
+||--    let scrollbox:ScrollBox =
+||--        {ScrollBox
+||--            hstretch? = true,
+||--            vstretch? = true,
+||--            self.panel}
+||--    set {scrollbox.get-vscroll}.width = 8pt
+||--    {self.add-internal scrollbox}
+||--    || no apparent public way to note changes
+||--    {self.panel.add-event-handler
+||--        {on FocusOut do
+||--            {if self.value-changed? then
+||--                {self.value-finished}}}}
+||--  }
+||--  field _value:StringBuf
+||--  {getter public {value}:String
+||--    let buf:StringBuf = {self.get-contents}
+||--    {return {buf.to-String}}
+||--  }
+||--  {setter public {value val:String}:void
+||--    let buf:StringBuf = self._value
+||--    {if val != buf then
+||--        {buf.clear}
+||--        {buf.concat val}
+||--        set self._value-changed? = false
+||--        {self.panel.load-from-stream 
+||--            {val.to-InputStream}}}
+||--  }
+||--  {method public {keyword-init-arg k:String, x:any}:void
+||--    {switch k
+||--     case "value" do
+||--        set self.value = x asa String
+||--     else {super.keyword-init-arg k, x}}
+||--  }
+||--  {method {get-contents}:StringBuf
+||--    let buf:StringBuf = {StringBuf}
+||--    {self.panel.write-to-stream buf}
+||--    {return buf}
+||--  }
+||--  {method public {unset-property name:String}:bool
+||--    {return
+||--        {switch name
+||--         case "value" do
+||--            set self.value = ""
+||--            true
+||--         else
+||--            {super.unset-property name}}}
+||--  }
+||--  field _value-changed?:bool
+||--  {getter {value-changed?}:bool
+||--    {if not self._value-changed? then
+||--        set self._value-changed? =
+||--            self._value != {self.get-contents}}
+||--    {return self._value-changed?}
+||--  }
+||--  {method {value-finished}:void
+||--    set self._value = {self.get-contents}
+||--    set self._value-changed? = false
+||--    {self.handle-event {ValueFinished}}
+||--  }
+||--}
 || code generation
 || ====================
 {let public format-arguments-depth-limit:int = 50}
@@ -765,12 +766,12 @@
   || spec
   field public loc:Url
   || variants
-  field public-get constant literal?:bool = true
-  field public-get constant document?:bool = true
-  field public-get constant soap12?:bool = false
+  field public-get constant literal?:bool
+  field public-get constant document?:bool
+  field public-get constant soap12?:bool
   field public-get constant mtom?:bool = false
   || parameters
-  field public-get constant include-async-methods?:bool = false
+  field public-get constant directives:WSDLPackageDirectives
   
   {constructor public {default
                           loc:Url,
@@ -780,15 +781,16 @@
                           document?:bool = true,
                           soap12?:bool = false,
                           mtom?:bool = false,
-                          || parameters
-                          include-async-methods?:bool = false
+                          || parameters,
+                          directives:WSDLPackageDirectives =
+                              {WSDLPackageDirectives {string-url "undefined"}}
                       }
     set self.loc = loc
     set self.literal? = literal?
     set self.document? = document?
     set self.soap12? = soap12?
     set self.mtom? = mtom?
-    set self.include-async-methods? = include-async-methods?
+    set self.directives = directives
     {construct-super name}
   }
   {method public {generate-tests}:void
@@ -826,7 +828,7 @@
                         literal? = self.literal?,
                         soap12? = self.soap12?,
                         mtom? = self.mtom?,
-                        include-async-methods? = self.include-async-methods?}}
+                        directives = self.directives}}
             }
         }
     }
@@ -849,12 +851,12 @@
   field public-get constant xsd-type-source:StringInterface
   field public-get constant request-value-source:StringInterface
   || variants
-  field public-get constant literal?:bool = true
-  field public-get constant document?:bool = true
-  field public-get constant soap12?:bool = false
+  field public-get constant literal?:bool
+  field public-get constant document?:bool
+  field public-get constant soap12?:bool
   field public-get constant mtom?:bool = false
   || parameters
-  field public-get constant include-async-methods?:bool = false
+  field public-get constant directives:WSDLPackageDirectives
   
   {constructor public {default
                           name:String,
@@ -866,14 +868,16 @@
                           soap12?:bool = false,
                           mtom?:bool = false,
                           || parameters
-                          include-async-methods?:bool = false}
+                          directives:WSDLPackageDirectives =
+                              {WSDLPackageDirectives {string-url "undefined"}}
+                      }
     set self.xsd-type-source = xsd-type-source
     set self.request-value-source = request-value-source
     set self.literal? = literal?
     set self.document? = document?
     set self.soap12? = soap12?
     set self.mtom? = mtom?
-    set self.include-async-methods? = include-async-methods?
+    set self.directives = directives
     {construct-super name}
   } 
   || state
@@ -920,7 +924,7 @@
     set self.service-package-source = {StringBuf}
     set self.service-package =
         {make-service-package wloc,
-            include-async-methods? = self.include-async-methods?,
+            directives = {self.directives.clone-for wloc},
             out = self.service-package-source}
 
     || evaluate argument
@@ -1004,15 +1008,15 @@
 {define-proc public {make-service-package 
                         loc:Url, 
                         out:StringBuf = {StringBuf},
-                        include-async-methods?:bool = false
+                        directives:WSDLPackageDirectives =
+                            {WSDLPackageDirectives loc}
                     }:OpenPackage
-    def w = {WSDL loc}
+    def w = {WSDLPackageWriter directives}
     def package =
         {OpenPackage 
             COM.CURL.WSDK.SOAP, 
             COM.CURL.WSDK.XML-DOCUMENT-MODEL}
-    {w.dump-client-stubs out,
-        do-async? = include-async-methods?}
+    {w.dump-client-stubs out}
     {evaluate package = package, out}
     {return package}
 }

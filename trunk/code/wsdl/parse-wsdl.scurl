@@ -68,8 +68,6 @@
     {return self.schema.type-to-element-name}
   }
   
-  field public constant writer:WSDLWriter
-  
   field package constant local-namespaces:{Set-of String} = {{Set-of String}}
   
   || imports possibly defined by "forward references"
@@ -149,15 +147,6 @@
         {WSDLSchema
             self.top-node,
             curlify-names? = curlify-names?} 
-
-    set self.writer =
-        {WSDLWriter
-            self.schema,
-            self.services, 
-            self.curl-namer,
-            self.type-to-element-name,
-            self.source-url}
-
 
     || parse document root
     let error?:bool = false
@@ -1071,20 +1060,6 @@
     {return
         {WSDLHttpAddress location, node}
     }
-  }
-
-  || code generation
-  || --------------------
-  {method public open {dump-client-stubs 
-                          out:TextOutputStream,
-                          exclude-unreferenced-types?:bool = false,
-                          || TODO: from instance variable
-                          do-async?:bool = true
-                      }:StringArray
-    {return
-        {self.writer.dump-client-stubs out,
-            exclude-unreferenced-types? = exclude-unreferenced-types?,
-            do-async? = do-async?}}
   }
   
   || support methods

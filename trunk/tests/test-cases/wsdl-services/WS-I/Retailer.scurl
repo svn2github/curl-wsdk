@@ -9,19 +9,19 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public RetailerService {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      returns a product catalog
+       returns a product catalog
     }
-  }
+}
   {method public {get-catalog}:(_return:#{Array-of CatalogItem})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-catalog",
             {{Array-of any}
             },
             {splice self.operations["get-catalog"]}
@@ -32,14 +32,14 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      returns a product catalog
+       returns a product catalog
     }
-  }
+}
   {method public {define-get-catalog}:void
     set self.operations["get-catalog"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -65,13 +65,13 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Accept an order for quantities of multiple products
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       Accept an order for quantities of multiple products
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
-  }
+}
   {method public {submit-order parts-order:#{Array-of PartsOrderItem}, customer-details:#CustomerDetailsType, configuration:#ConfigurationType}:(_return:#{Array-of PartsOrderResponseItem})
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}
@@ -94,8 +94,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "submit-order",
             {{Array-of any}
                 parts-order,
                 customer-details
@@ -111,16 +111,16 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Accept an order for quantities of multiple products
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       Accept an order for quantities of multiple products
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
-  }
+}
   {method public {define-submit-order}:void
     set self.operations["submit-order"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "PartsOrder"},
                 {XMLName "", "CustomerDetails"}
@@ -1055,10 +1055,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/services/Retailer"}
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/Retailer"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

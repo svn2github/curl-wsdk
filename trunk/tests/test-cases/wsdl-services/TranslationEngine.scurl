@@ -9,19 +9,19 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public TranslateService {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+       Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
     }
-  }
+}
   {method public {translate language-mode:Language, text:String}:(translate-result:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "translate",
             {{Array-of any}
                 language-mode,
                 text
@@ -34,14 +34,14 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+       Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
     }
-  }
+}
   {method public {define-translate}:void
     set self.operations["translate"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.webservicex.net", "LanguageMode"},
                 {XMLName "http://www.webservicex.net", "Text"}
@@ -127,10 +127,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.webservicex.com/TranslateService.asmx"}
+            {abs-url "http://www.webservicex.com/TranslateService.asmx"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

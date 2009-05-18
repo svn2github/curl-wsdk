@@ -9,19 +9,19 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public LoggingFacilityService {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      Append an entry to the system log.
+       Append an entry to the system log.
     }
-  }
+}
   {method public {log-event document:LogEventRequestType}:void
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "log-event",
             {{Array-of any}
                 document
             },
@@ -33,14 +33,14 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Append an entry to the system log.
+       Append an entry to the system log.
     }
-  }
+}
   {method public {define-log-event}:void
     set self.operations["log-event"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestElement"}
             },
@@ -64,19 +64,19 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Retrieve entries from the system log with the specified userId.
+       Retrieve entries from the system log with the specified userId.
     }
-  }
+}
   {method public {get-events demo-user-id:String}:(document:{Array-of LogEntry})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-events",
             {{Array-of any}
                 demo-user-id
             },
@@ -88,14 +88,14 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Retrieve entries from the system log with the specified userId.
+       Retrieve entries from the system log with the specified userId.
     }
-  }
+}
   {method public {define-get-events}:void
     set self.operations["get-events"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "DemoUserID"}
             },
@@ -264,10 +264,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"}
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

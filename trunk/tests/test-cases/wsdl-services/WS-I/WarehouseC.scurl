@@ -9,16 +9,16 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WarehouseServiceC {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      Ship the specified number of the specified part to the specified customer.
-      A response of true indicates the goods have been shipped. A response of false
+       Ship the specified number of the specified part to the specified customer.
+       A response of true indicates the goods have been shipped. A response of false
         indicates the warehouse either does not carry that part or does not have enough stock to
         fill the requested quantity.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
-  }
+}
   {method public {ship-goods item-list:#{Array-of Item}, customer:#CustomerReferenceType, configuration:#ConfigurationType = null}:(response:#{Array-of ItemShippingStatus})
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
@@ -44,8 +44,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "ship-goods",
             {{Array-of any}
                 item-list,
                 customer
@@ -61,19 +61,19 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Ship the specified number of the specified part to the specified customer.
-      A response of true indicates the goods have been shipped. A response of false
+       Ship the specified number of the specified part to the specified customer.
+       A response of true indicates the goods have been shipped. A response of false
         indicates the warehouse either does not carry that part or does not have enough stock to
         fill the requested quantity.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
-  }
+}
   {method public {define-ship-goods}:void
     set self.operations["ship-goods"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "ItemList"},
                 {XMLName "", "Customer"}
@@ -702,10 +702,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/services/WarehouseC"}
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/WarehouseC"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

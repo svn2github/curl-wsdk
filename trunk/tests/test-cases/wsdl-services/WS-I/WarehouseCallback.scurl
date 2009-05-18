@@ -9,17 +9,17 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WarehouseCallbackService {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      Submit a shipment notice for specified items to the retailer.
-      A shipment notification.
-      A response of true indicates the shipment notice has been accepted for processing.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       Submit a shipment notice for specified items to the retailer.
+       A shipment notification.
+       A response of true indicates the shipment notice has been accepted for processing.
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-      To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
-  }
+}
   {method public {submit-sn shipment-notice:ShipmentNoticeType, configuration:#ConfigurationType = null, callback-header:#CallbackHeaderType = null}:(response:bool)
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
@@ -58,8 +58,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "submit-sn",
             {{Array-of any}
                 shipment-notice
             },
@@ -74,20 +74,20 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Submit a shipment notice for specified items to the retailer.
-      A shipment notification.
-      A response of true indicates the shipment notice has been accepted for processing.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       Submit a shipment notice for specified items to the retailer.
+       A shipment notification.
+       A response of true indicates the shipment notice has been accepted for processing.
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-      To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
-  }
+}
   {method public {define-submit-sn}:void
     set self.operations["submit-sn"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-10/ManufacturerSN.xsd", "ShipmentNotice"}
             },
@@ -115,19 +115,19 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Notify warehouse  there was an error in processing a submitted PO.
-      Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
+       Notify warehouse  there was an error in processing a submitted PO.
+       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
 		having been acknowledged by the Manufacturer.  Contains callback information with
 		which to find the original replenishment request.
-      A response of true indicates the purchase order has been accepted for processing.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       A response of true indicates the purchase order has been accepted for processing.
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-      To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
-  }
+}
   {method public {error-po process-pofault:SubmitPOFaultType, callback-header:#CallbackHeaderType = null}:(response:bool)
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
@@ -153,8 +153,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "error-po",
             {{Array-of any}
                 process-pofault
             },
@@ -169,22 +169,22 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Notify warehouse  there was an error in processing a submitted PO.
-      Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
+       Notify warehouse  there was an error in processing a submitted PO.
+       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
 		having been acknowledged by the Manufacturer.  Contains callback information with
 		which to find the original replenishment request.
-      A response of true indicates the purchase order has been accepted for processing.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       A response of true indicates the purchase order has been accepted for processing.
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-      To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
-  }
+}
   {method public {define-error-po}:void
     set self.operations["error-po"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-10/ManufacturerPO.xsd", "submitPOFault"}
             },
@@ -1139,10 +1139,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"}
+            {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

@@ -44,7 +44,7 @@
 }
   {method public {define-get-stocks-xmlschema}:void
     set self.operations["get-stocks-xmlschema"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -65,8 +65,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStocksXMLSchemaResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -105,7 +104,7 @@
 }
   {method public {define-get-stock-daily-values-by-value-xml}:void
     set self.operations["get-stock-daily-values-by-value-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -148,8 +147,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByValueXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -188,7 +186,7 @@
 }
   {method public {define-get-stock-daily-values-by-date-xml}:void
     set self.operations["get-stock-daily-values-by-date-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -233,8 +231,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesByDateXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -272,7 +269,7 @@
 }
   {method public {define-get-stock-daily-values-xml}:void
     set self.operations["get-stock-daily-values-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strSegment"},
@@ -311,8 +308,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -349,7 +345,7 @@
 }
   {method public {define-get-latest-stock-daily-values-xml}:void
     set self.operations["get-latest-stock-daily-values-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strSegment"}
@@ -382,8 +378,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -421,7 +416,7 @@
 }
   {method public {define-get-stock-daily-value}:void
     set self.operations["get-stock-daily-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -459,8 +454,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -497,7 +491,7 @@
 }
   {method public {define-get-latest-stock-daily-value}:void
     set self.operations["get-latest-stock-daily-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"}
@@ -529,8 +523,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -567,7 +560,7 @@
 }
   {method public {define-get-latest-stock-value}:void
     set self.operations["get-latest-stock-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"}
@@ -599,8 +592,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestStockValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -638,7 +630,7 @@
 }
   {method public {define-get-stock-value}:void
     set self.operations["get-stock-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -676,8 +668,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -716,7 +707,7 @@
 }
   {method public {define-get-stock-values-by-date-time-xml}:void
     set self.operations["get-stock-values-by-date-time-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strStock"},
@@ -761,8 +752,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetStockValuesByDateTimeXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -797,7 +787,7 @@
 }
   {method public {define-get-indices-xmlschema}:void
     set self.operations["get-indices-xmlschema"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -818,8 +808,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndicesXMLSchemaResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -858,7 +847,7 @@
 }
   {method public {define-get-index-daily-values-by-value-xml}:void
     set self.operations["get-index-daily-values-by-value-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -901,8 +890,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByValueXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -941,7 +929,7 @@
 }
   {method public {define-get-index-daily-values-by-date-xml}:void
     set self.operations["get-index-daily-values-by-date-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -986,8 +974,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesByDateXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1024,7 +1011,7 @@
 }
   {method public {define-get-index-daily-values-xml}:void
     set self.operations["get-index-daily-values-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strDate"}
@@ -1057,8 +1044,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1094,7 +1080,7 @@
 }
   {method public {define-get-latest-index-daily-values-xml}:void
     set self.operations["get-latest-index-daily-values-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"}
             },
@@ -1121,8 +1107,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValuesXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1160,7 +1145,7 @@
 }
   {method public {define-get-index-daily-value}:void
     set self.operations["get-index-daily-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -1198,8 +1183,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1236,7 +1220,7 @@
 }
   {method public {define-get-latest-index-daily-value}:void
     set self.operations["get-latest-index-daily-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"}
@@ -1268,8 +1252,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexDailyValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1306,7 +1289,7 @@
 }
   {method public {define-get-latest-index-value}:void
     set self.operations["get-latest-index-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"}
@@ -1338,8 +1321,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetLatestIndexValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1377,7 +1359,7 @@
 }
   {method public {define-get-index-value}:void
     set self.operations["get-index-value"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -1415,8 +1397,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValueResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1455,7 +1436,7 @@
 }
   {method public {define-get-index-values-by-date-time-xml}:void
     set self.operations["get-index-values-by-date-time-xml"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.gama-system.com/webservices", "strStockExchange"},
                 {XMLName "http://www.gama-system.com/webservices", "strIndex"},
@@ -1500,8 +1481,7 @@
             response-operation = {XMLName "http://www.gama-system.com/webservices", "GetIndexValuesByDateTimeXMLResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 

@@ -9,17 +9,17 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public ManufacturerServiceA {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      Submit a purchase order for specified items to the manufacturer.
-      A purchase order.
-      A response of true indicates the purchase order has been accepted for processing.
-      A reason code for the rejection of a given PO that can be matched through the conversationID
+       Submit a purchase order for specified items to the manufacturer.
+       A purchase order.
+       A response of true indicates the purchase order has been accepted for processing.
+       A reason code for the rejection of a given PO that can be matched through the conversationID
 		in the callback section of the SOAP header.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
-  }
+}
   {method public {submit-po purchase-order:PurchOrdType, configuration:#ConfigurationType = null, start-header:#StartHeaderType = null}:(response:bool)
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
@@ -58,8 +58,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "submit-po",
             {{Array-of any}
                 purchase-order
             },
@@ -74,20 +74,20 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      Submit a purchase order for specified items to the manufacturer.
-      A purchase order.
-      A response of true indicates the purchase order has been accepted for processing.
-      A reason code for the rejection of a given PO that can be matched through the conversationID
+       Submit a purchase order for specified items to the manufacturer.
+       A purchase order.
+       A response of true indicates the purchase order has been accepted for processing.
+       A reason code for the rejection of a given PO that can be matched through the conversationID
 		in the callback section of the SOAP header.
-      The Configuration fault header indicates why the configuration was invalid and enumerates all
+       The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
     }
-  }
+}
   {method public {define-submit-po}:void
     set self.operations["submit-po"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-10/ManufacturerPO.xsd", "PurchaseOrder"}
             },
@@ -1041,10 +1041,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/services/ManufacturerA"}
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/ManufacturerA"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

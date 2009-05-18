@@ -31,7 +31,7 @@
 
   {method public {define-do-get-cached-page}:void
     set self.operations["do-get-cached-page"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "url"}
@@ -64,8 +64,7 @@
             default-namespace = "urn:GoogleSearch",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = true
     }
   }
 
@@ -92,7 +91,7 @@
 
   {method public {define-do-spelling-suggestion}:void
     set self.operations["do-spelling-suggestion"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "phrase"}
@@ -125,8 +124,7 @@
             default-namespace = "urn:GoogleSearch",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = true
     }
   }
 
@@ -161,7 +159,7 @@
 
   {method public {define-do-google-search}:void
     set self.operations["do-google-search"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "q"},
@@ -238,8 +236,7 @@
             default-namespace = "urn:GoogleSearch",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = true
     }
   }
 

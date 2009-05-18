@@ -41,7 +41,7 @@
 }
   {method public {define-get-quote}:void
     set self.operations["get-quote"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbol"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -74,8 +74,7 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -112,7 +111,7 @@
 }
   {method public {define-get-quick-quote}:void
     set self.operations["get-quick-quote"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbol"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -144,8 +143,7 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuickQuoteResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -182,7 +180,7 @@
 }
   {method public {define-get-quote-data-set}:void
     set self.operations["get-quote-data-set"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbols"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -215,8 +213,7 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -241,7 +238,7 @@
 
   {method public {define-important-message}:void
     set self.operations["important-message"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -262,8 +259,7 @@
             response-operation = {XMLName "http://ws.cdyne.com/", "ImportantMessageResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 

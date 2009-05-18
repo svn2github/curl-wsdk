@@ -15,8 +15,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-database-names",
             {{Array-of any}
             },
             {splice self.operations["get-database-names"]}
@@ -29,7 +29,7 @@
 
   {method public {define-get-database-names}:void
     set self.operations["get-database-names"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -61,8 +61,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-database-tables",
             {{Array-of any}
                 database
             },
@@ -76,7 +76,7 @@
 
   {method public {define-get-database-tables}:void
     set self.operations["get-database-tables"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"}
             },
@@ -114,8 +114,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-fields",
             {{Array-of any}
                 database,
                 table
@@ -130,7 +130,7 @@
 
   {method public {define-get-fields}:void
     set self.operations["get-fields"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "table"}
@@ -174,8 +174,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "get-data",
             {{Array-of any}
                 database,
                 query,
@@ -191,7 +191,7 @@
 
   {method public {define-get-data}:void
     set self.operations["get-data"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "query"},
@@ -240,8 +240,8 @@
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+        {self.call
+            "execute",
             {{Array-of any}
                 database,
                 sql
@@ -256,7 +256,7 @@
 
   {method public {define-execute}:void
     set self.operations["execute"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "sql"}
@@ -452,10 +452,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost/SERVER/soap-services/q-wsconnection.php"}
+            {abs-url "http://localhost/SERVER/soap-services/q-wsconnection.php"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

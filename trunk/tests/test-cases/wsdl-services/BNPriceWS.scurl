@@ -30,7 +30,7 @@
 
   {method public {define-get-bnquote}:void
     set self.operations["get-bnquote"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://www.abundanttech.com/webservices/BNPrice", "sISBN"}
             },
@@ -57,8 +57,7 @@
             response-operation = {XMLName "http://www.abundanttech.com/webservices/BNPrice", "GetBNQuoteResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 

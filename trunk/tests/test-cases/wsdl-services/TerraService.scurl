@@ -35,7 +35,7 @@
 
   {method public {define-convert-lon-lat-pt-to-nearest-place}:void
     set self.operations["convert-lon-lat-pt-to-nearest-place"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "point"}
             },
@@ -62,8 +62,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToNearestPlaceResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -89,7 +88,7 @@
 
   {method public {define-convert-lon-lat-pt-to-utm-pt}:void
     set self.operations["convert-lon-lat-pt-to-utm-pt"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "point"}
             },
@@ -116,8 +115,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertLonLatPtToUtmPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -143,7 +141,7 @@
 
   {method public {define-convert-utm-pt-to-lon-lat-pt}:void
     set self.operations["convert-utm-pt-to-lon-lat-pt"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "utm"}
             },
@@ -170,8 +168,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertUtmPtToLonLatPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -197,7 +194,7 @@
 
   {method public {define-convert-place-to-lon-lat-pt}:void
     set self.operations["convert-place-to-lon-lat-pt"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "place"}
             },
@@ -224,8 +221,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "ConvertPlaceToLonLatPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -253,7 +249,7 @@
 
   {method public {define-count-places-in-rect}:void
     set self.operations["count-places-in-rect"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "upperleft"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "lowerright"},
@@ -290,8 +286,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "CountPlacesInRectResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -321,7 +316,7 @@
 
   {method public {define-get-area-from-pt}:void
     set self.operations["get-area-from-pt"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "center"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
@@ -368,8 +363,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -398,7 +392,7 @@
 
   {method public {define-get-area-from-rect}:void
     set self.operations["get-area-from-rect"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "upperLeft"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "lowerRight"},
@@ -441,8 +435,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromRectResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -470,7 +463,7 @@
 
   {method public {define-get-area-from-tile-id}:void
     set self.operations["get-area-from-tile-id"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "id"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "displayPixWidth"},
@@ -507,8 +500,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetAreaFromTileIdResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -534,7 +526,7 @@
 
   {method public {define-get-lat-lon-metrics}:void
     set self.operations["get-lat-lon-metrics"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "point"}
             },
@@ -561,8 +553,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetLatLonMetricsResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -588,7 +579,7 @@
 
   {method public {define-get-place-facts}:void
     set self.operations["get-place-facts"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "place"}
             },
@@ -615,8 +606,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceFactsResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -644,7 +634,7 @@
 
   {method public {define-get-place-list}:void
     set self.operations["get-place-list"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "placeName"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "MaxItems"},
@@ -681,8 +671,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -711,7 +700,7 @@
 
   {method public {define-get-place-list-in-rect}:void
     set self.operations["get-place-list-in-rect"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "upperleft"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "lowerright"},
@@ -754,8 +743,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetPlaceListInRectResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -781,7 +769,7 @@
 
   {method public {define-get-theme}:void
     set self.operations["get-theme"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "theme"}
             },
@@ -807,8 +795,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetThemeResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -836,7 +823,7 @@
 
   {method public {define-get-tile-meta-from-lon-lat-pt}:void
     set self.operations["get-tile-meta-from-lon-lat-pt"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "point"},
                 {XMLName "http://terraserver-usa.com/terraserver/", "theme"},
@@ -873,8 +860,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromLonLatPtResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -900,7 +886,7 @@
 
   {method public {define-get-tile-meta-from-tile-id}:void
     set self.operations["get-tile-meta-from-tile-id"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "id"}
             },
@@ -927,8 +913,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileMetaFromTileIdResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -954,7 +939,7 @@
 
   {method public {define-get-tile}:void
     set self.operations["get-tile"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://terraserver-usa.com/terraserver/", "id"}
             },
@@ -981,8 +966,7 @@
             response-operation = {XMLName "http://terraserver-usa.com/terraserver/", "GetTileResponse"},
             rpc-style? = false,
             write-type-attribute? = false,
-            write-encoding-attribute? = false,
-            mtom-support-range = self.mtom-support-range
+            write-encoding-attribute? = false
     }
   }
 
@@ -1150,7 +1134,7 @@
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
-                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
                 xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
                 curl-type = LonLatPt,
                 nillable? = true
@@ -1484,7 +1468,7 @@
         let constant enum-marshaler:SOAPEnumMarshaler =
             {SOAPEnumMarshaler
                 {SOAPObjectType
-                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
                     curl-type = Scale
                 },

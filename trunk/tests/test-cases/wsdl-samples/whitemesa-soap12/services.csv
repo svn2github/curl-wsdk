@@ -2,7 +2,7 @@ COM.CURL.WSDL.Soap12-test,Soap12TestDocPort,empty-body,"{Arguments echo-ok=""bor
 COM.CURL.WSDL.Soap12-test,Soap12TestDocPort,echo-ok,"{Arguments ""bork"", echo-ok2 = ""foo""}",""bork"",String,
 COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,return-void,"{Arguments }",,,
 COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,echo-struct,"{SOAPStruct.from-keywords var-string = ""zyx"", var-int = 10, var-float = 2.2f}",,SOAPStruct,
-COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,echo-struct-array,"{{Array-of SOAPStruct} {SOAPStruct.from-keywords var-string = ""zyx"", var-int = 10, var-float = 2.2f}, {SOAPStruct.from-keywords var-string = ""fff""}}",,ArrayOfSOAPStruct,
+COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,echo-struct-array,"{{Array-of SOAPStruct} {SOAPStruct.from-keywords var-string = ""zyx"", var-int = 10, var-float = 2.2f}, {SOAPStruct.from-keywords var-string = ""fff""}}",,{Array-of SOAPStruct},
 COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,echo-struct-as-simple-types,"{SOAPStruct.from-keywords var-string = ""zyx"", var-int = -10, var-float = -2.2f}","{FastArray ""zyx"", -10, -2.2f}",String,
 COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,echo-simple-types-as-struct,"{Arguments ""iii"", -11, -22.0f}",,SOAPStruct,
 COM.CURL.WSDL.Soap12-test,Soap12TestRpcPort,echo-nested-struct,"{SOAPStructStruct.from-keywords var-string = ""zyx"", var-int = 10, var-float = 2.2f, var-struct = {SOAPStruct.from-keywords var-string = ""uuu"", var-int = 999, var-float = 0.0001f}}",,SOAPStructStruct,

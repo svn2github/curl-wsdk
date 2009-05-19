@@ -570,13 +570,7 @@
 
   {method package {dump out:TextOutputStream}:void
     let constant ref-name:String = self.ref-name
-    let constant type-ref-name:String =
-        || NOTE: guard against undefined 'anyType'
-        {type-switch self.type
-         case type:WSDLSchemaXMLDocumentType do
-            "any"
-         else
-            self.type.ref-name}
+    let constant type-ref-name:String = self.type.ref-name
     {if ref-name != type-ref-name then
         {format out = out,
             "\{let public constant %s:Type = %s\}\n\n",
@@ -2017,7 +2011,6 @@
              else
                 self.curl-type-name}}                    
     {return {non-null self._ref-name}}
-||--    {return "any"}
   }
 
   {getter package {nullable?}:bool
@@ -2040,8 +2033,13 @@
                 "            \}\n%s" &
                 "    \}\n"
                 ,
-                {self.soap-object-type-string
-                    tab-level = 16, element-name = element-name
+                {WSDLSchemaType.soap-object-type-code-string
+                    tab-level = 16,
+                    element-name = element-name,
+                    xml-type = self.xml-name,
+                    curl-type = "XDMElement",
+                    nillable? = self.nullable?,
+                    multiple-reference = self.multiple-reference
                 },
                 data-has-root-element?,
                 {WSDLSchemaType.soap-marshaler-regster-code "doc-marshaler"}

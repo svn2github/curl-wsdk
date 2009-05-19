@@ -2462,37 +2462,36 @@
   }  
 
 }
+
 {define-class public open WSDLSchemaSimpleType {inherits WSDLSchemaPrimitiveType}
-
-  field package domain-code:String
   field package _package-name:#String
+  field package constant domain-code:String
 
-  {constructor public {default
-                          xml-name:XMLName,
-                          curl-type-name:String,
-                          nullable?:bool,
-                          multiple-reference:SOAPTypeMultipleReference,
-                          domain-code:String,
-                          package-name:#String
-                      }
+  {constructor protected {default
+                           xml-name:XMLName,
+                           curl-type-name:String,
+                           nullable?:bool,
+                           multiple-reference:SOAPTypeMultipleReference,
+                           package-name:#String,
+                           domain-code:String
+                       }
     {construct-super xml-name, curl-type-name, nullable?, multiple-reference}
-    set self.domain-code = domain-code
     set self._package-name = package-name
+    set self.domain-code = domain-code
   }
 
-  {factory public {from-domain
-                          domain:Domain, || TODO: XMLDomain
-                          xml-type:XMLName,
-                          domain-code:#String = null
-                      }:WSDLSchemaSimpleType
+  {factory public implicit {from-xml-simple-type
+                               xml-simple-type:XMLSimpleType
+                           }:WSDLSchemaSimpleType
+    def xml-type = xml-simple-type.name
+    def domain = xml-simple-type.domain
     def type = domain.type
     def domain-type = {type-of domain}
     def package-name = domain-type.package.name
     def nullable? = domain-type.null-variant != null
     || NOTE: assumes no-arg constructor
-    def domain-code-string =
-        {if-non-null domain-code then domain-code
-         else {format |"{%s}"|, domain-type}}
+    def domain-code =
+        {format |"{%s}"|, domain-type}
 
     def simple-type =
         {WSDLSchemaSimpleType 
@@ -2500,8 +2499,8 @@
             type.name, 
             nullable?,
             SOAPTypeMultipleReference.single,
-            domain-code-string,
-            package-name}
+            package-name,
+        domain-code}
     {return simple-type}
   }
 
@@ -2529,12 +2528,6 @@
                     nillable? = self.nullable?,
                     multiple-reference = self.multiple-reference
                 },
-||--                {self.soap-object-type-string
-||--                    tab-level = 16,
-||--                    element-name = element-name,
-||--                    nillable? = self.nullable?,
-||--                    multiple-reference = self.multiple-reference
-||--                },
                 self.domain-code,
                 {WSDLSchemaType.soap-marshaler-regster-code "soap-extension-marshaler"}
             }

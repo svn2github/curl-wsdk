@@ -194,6 +194,11 @@
     || --------------------
     || ordered types
     def types = {self.sorted-types all-types}
+    || additional packages
+    def all-packages = {{Set-of String}}
+    {for type in types do
+        {if-non-null package = type.package-name then
+            {all-packages.insert package}}}
     || process types by namespace
     def plocs = {UrlArray}
     {for n in ns do
@@ -207,6 +212,8 @@
             preserve-existing-files? = D.empty? or spec.preserve-existing-files?}
         def ploc = {pdir.concat "load.scurl"}
         {plocs.append ploc}
+        || collect additional imports
+        def needed-packages = {{Set-of String}}
         
         || generate namespace includes
         || --------------------
@@ -255,7 +262,10 @@
                     || TODO: remove when union loses superfluous alias
                     t isa WSDLSchemaUnionType
                  then
-                    {continue}}
+                    {continue}}            
+                || note additional imports
+                {if-non-null package = t.package-name then
+                    {needed-packages.insert package}}
                 || include source file
                 def file = t.ref-name & ".scurl"
                 def sloc = {pdir.concat file}
@@ -270,6 +280,20 @@
                     {self.write-preamble out}
                     {t.dump out}}
             }
+            || code additional imports
+            def sorted-packages = {StringArray}
+            {for package in needed-packages do
+                {sorted-packages.append package}}
+            {sorted-packages.sort}
+            {if not sorted-packages.empty? then
+                {out.write-one '\n'}
+                {for package in sorted-packages do
+                    {format out = out,
+                        |"{import * from %s}"|, package}
+                    {out.write-one '\n'}}
+                {out.write-one '\n'}}
+            || imports here need not be in container
+            {all-packages.difference needed-packages}
         }
     }
     def service-name = self.directives.source-url.basename
@@ -293,6 +317,18 @@
             package-name,
             dir,
             locs}
+        || additional imports
+        def sorted-packages = {StringArray}
+        {for package in all-packages do
+            {sorted-packages.append package}}
+        {sorted-packages.sort}
+        {if not sorted-packages.empty? then
+            {out.write-one '\n'}
+            {for package in sorted-packages do
+                {format out = out,
+                    |"{import * from %s}"|, package}
+                {out.write-one '\n'}}
+            {out.write-one '\n'}}
     }
     || generate manifest
     || --------------------
@@ -426,22 +462,7 @@
             & "    \{compiler-directives careful? = true\},\n"
             & "    wsdl = \"%%s\"\}\n\n",
             self.directives.curl-versions}
-    || TODO: move to default directory computation
-||--    || target location
-||--    let sloc:Url = 
-||--        {if-non-null target then 
-||--            || specified location
-||--            target
-||--         else
-||--            let loc:Url =
-||--                {if source.stem isa StemHttpDirectory then 
-||--                    || HTTP WSDL file: use applet directory
-||--                    {get-working-directory-url}
-||--                 else
-||--                    || local WSDL file: use that directory
-||--                    source}
-||--            {loc.merge source.basename & ".scurl"}}
-    {format out = out, 
+   {format out = out, 
         package-herald-template,
         package-name,
         self.directives.source-url}
@@ -506,11 +527,13 @@
 }
 || helper procs
 || --------------------
-{define-proc package {curl-versions-string}:String
+{define-proc package {curl-versions-string
+                         package:Package = {get-current-package}
+                     }:String
     || determine applicable curl-versions
-    let curl-versions:String = 
-        {if-non-null vs = {this-package}.meta-data.curl-versions then
-            || should be declared in WSDL package herald
+    def curl-versions = 
+        {if-non-null vs = package.meta-data.curl-versions then
+            || should be declared in package herald
             let buf:StringBuf = {StringBuf}
             {for v in vs do
                 {if not buf.empty? then
@@ -518,8 +541,8 @@
                 {buf.concat {String v}}}
             {buf.to-String}
          else
-            || fallback to latest version (should never happen)
-            {String curl-version-number}}
+            || fallback to latest version
+            {String {curl-version-number.n-clone n = 2}}}
     {return curl-versions}
 }
 || derives Curl Package style identifier from XML namespace

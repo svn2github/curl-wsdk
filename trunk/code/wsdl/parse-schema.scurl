@@ -83,11 +83,21 @@
   || extension point
   || --------------------
   || TODO: formalize and document
-  || - need XMLSimpleType maybe Domain subtype
   || TODO: automated discovery
   {define-proc public {register-simple-type
-                          simple-type:WSDLSchemaSimpleType
+                          xml-simple-type:XMLSimpleType,
+                          error-if-exists?:bool = true
                       }:void
+    def simple-type = xml-simple-type asa WSDLSchemaSimpleType
+    {if error-if-exists? then
+        def index =
+            {WSDLSchema.registered-simple-types.find simple-type,
+                equality-proc =
+                    {fn x, y => x.xml-name == y.xml-name}}
+        {if index >= 0 then
+            {wsdl-exception
+                {message
+                    Extension type {value simple-type.xml-name} already registered.}}}}            
     {WSDLSchema.registered-simple-types.append
         simple-type}
   }
@@ -2442,8 +2452,6 @@
         {XMLName.unchecked
             xml-type.namespace,
             WSDLSchema.type-prefix & xml-type.local-name}
-||--    def primitive-type =
-||--        {WSDLSchemaPrimitiveType xml-type, curl-type, nullable?, multiple-reference}
     set names[lookup-name] = primitive-type
 }
 {define-proc package {create-name-table}:(WSDLNameTable, {HashTable-of XMLName, XMLName})

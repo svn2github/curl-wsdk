@@ -90,7 +90,7 @@
                         target-directory:#Url = null,
                         package-prefix:#String = "COM.CURL.WSDL.",
                         package-suffix:#String = null,
-                        curl-versions:#String = null,
+                        curl-versions:String = {curl-versions-string},
                         curlify-names?:bool = true,
                         include-async-methods?:bool = true,
                         ...:WSDLPackageDirectives
@@ -101,7 +101,7 @@
                 target-directory = target-directory,
                 package-prefix = package-prefix,
                 package-suffix = package-suffix,
-                curl-versions = curl-version,
+                curl-versions = curl-versions,
                 curlify-names? = curlify-names?,
                 include-async-methods? = include-async-methods?,
                 {splice ...}
@@ -158,28 +158,11 @@
                         target:#Url = null,
                         package-prefix:#String = "COM.CURL.WSDL.",
                         package-suffix:#String = null,
-                        curl-versions:#String = null,
+                        curl-versions:String = {curl-versions-string},
                         curlify-names?:bool = true,
                         include-async-methods?:bool = true,
                         exclude-unreferenced-types?:bool = false
                     }:Url
-    || determine applicable curl-versions
-    let curl-versions-string:String = 
-        {if-non-null curl-versions then 
-            || specified by caller
-            curl-versions
-         else
-            {if-non-null vs = {this-package}.meta-data.curl-versions then
-                || should be declared in WSDL package herald
-                let buf:StringBuf = {StringBuf}
-                {for v in vs do
-                    {if not buf.empty? then
-                        {buf.concat ", "}}
-                    {buf.concat {String v}}}
-                {buf.to-String}
-             else
-                || fallback to latest version (should never happen)
-                {String curl-version-number}}}
     || package herald template
     let constant package-herald-template:String = 
         {format 

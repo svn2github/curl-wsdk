@@ -1,0 +1,81 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| ====================
+|| Nullable wrapper
+|| --------------------
+|| Curl does not have a way to represent an unspecified primitive
+|| This wrapper is used for that purpose in generated SOAP structs
+|| -- see WSDLSchemaClassType - code generation
+|| -- see SOAPStructMarshaler - null detection
+{doc-next ||=== Nullable
+    {purpose 
+        Represent a primitive value that might be unspecified.}
+    {details
+        Used for generated SOAP structure classes, 
+        when field corresponding to an element
+        that is optional (minOccurs='0') or nillable (xsi:nil='true')
+        is a Curl type that does not admit a null value.}
+}
+{define-class public open {Nullable T:Type}
+  field package constant _value:T
+  {doc-next ||=== Nullable.value?
+    {purpose Returns a {ctext bool} indicating whether the value is specified.}}
+  field public-get constant value?:bool
+  {doc-next ||=== Nullable.default
+    {purpose Construct this object with a value.}}
+  {constructor public implicit {default val:T}
+    set self._value = val
+    set self.value? = true
+  }
+  {doc-next ||=== Nullable.from-null
+    {purpose Construct this object with an unspecified value.}}
+  {constructor public implicit {from-null val:Null}
+    set self._value = {uninitialized-value-for-type T}
+    set self.value? = false
+  }
+  {doc-next ||=== Nullable.value
+    {purpose Returns the value, if specified, otherwise error.}}
+  {getter public open {value}:T
+    {if not self.value? then
+        {error {message Object {value self} has no value}}}
+    {return self._value}
+  }
+  {doc-next ||=== Nullable.value-or-default
+    {purpose Returns the value, if specified, otherwise the default value for its type.}}
+  {getter public open {value-or-default}:T
+    {return self._value}
+  }
+  {doc-next ||=== Nullable.value-as-any
+    {purpose Returns the value, if specified, otherwise null.}}
+  {getter public open {value-as-any}:any
+    {return {if self.value? then self._value else null}}
+  }
+  {doc-next ||=== Nullable.value-if-exists
+    {purpose Returns the value, along with an indication of whether it was specified.}}
+  {method public open {value-if-exists}:(T, bool)
+    {return self._value, self.value?}
+  }
+  {doc-next ||=== Nullable.type
+    {purpose Returns the type of value.}}
+  {getter public open {type}:Type
+    {return T}
+  }
+  {method public open {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, locale = locale, "[%s %s]", {type-of self}, 
+        self.value-as-any}
+    }
+}

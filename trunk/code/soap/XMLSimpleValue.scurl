@@ -1,0 +1,340 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| ====================
+|| other XML Schema primitives
+|| --------------------
+|| There's no specific Curl class for these
+|| Representation is simply a String plus XML type ascription
+
+{doc-next ||=== XMLSimpleValue
+    {purpose 
+        Represent a value associated with an XSD schema simple type.}
+    {details
+        Used by SOAP Web Service methods which refer to types 
+        that do not map directly to a standard Curl type:
+        {itemize            
+            {item xsd:time}
+            {item xsd:duration}
+            {item xsd:gYear}
+            {item xsd:gYearMonth}
+            {item xsd:gMonth}
+            {item xsd:gMonthDay}
+            {item xsd:Day}
+            {item xsd:normalizedString}
+            {item xsd:token}
+            {item xsd:language}
+            {item xsd:Name}
+            {item xsd:NCName}
+            {item xsd:ENTITY}
+            {item xsd:ENTITIES}
+            {item xsd:NMTOKEN}
+            {item xsd:NMTOKENS}
+            {item xsd:ID}
+            {item xsd:IDREF}
+            {item xsd:IDREFS}
+        }}
+}
+{define-class public open XMLSimpleValue
+  {doc-next ||=== XMLSimpleValue.value
+    {purpose The string value.}
+  }
+  field public-get constant value:String
+  {doc-next ||=== XMLSimpleValue.xml-type
+    {purpose The XML Schema type ascribed to this value.}
+  }
+  field public-get constant xml-type:XMLSimpleType
+  
+  {doc-next ||=== XMLSimpleValue.default
+    {purpose Construct this object.
+        {parameter val, The string value 
+            for {docref-abbr XMLSimpleValue.name}.}
+        {parameter xml-type, The XML Schema type ascribed to this value
+            for {docref-abbr XMLSimpleValue.xml-type}.}
+    }
+  }
+  {constructor public {default 
+                          val:String,
+                          xml-type:XMLSimpleType}
+    set self.value = val
+    set self.xml-type = xml-type
+  }  
+  {method public open {object-describe out:TextOutputStream, locale:Locale}:void
+    {out.write-one-string self.value}
+  }  
+  {method public open {object-describe-for-debugging
+                          out:TextOutputStream, 
+                          locale:Locale
+                      }:void
+    {format out = out, locale = locale,
+        |"[XMLSimpleValue (%s) "%s"]"|, 
+        self.xml-type.name.local-name, 
+        self.value}
+  }
+  
+  def public alias-type-names =
+      {{HashTable-of String, String}
+        "token", "XMLTokenString",
+        "language", "XMLLanguageString",
+        "time", "XMLTimeString",
+        "duration", "XMLDurationString",
+        "normalizedString", "XMLNormalizedString"
+      }
+}
+{define-class public open {XMLSimpleValue-for T:String}
+  {inherits XMLSimpleValue}
+  {constructor public implicit {default val:String}
+    let xml-type:XMLSimpleType = 
+        {XMLSimpleType {XMLName SOAPTypeMapper.xml-schema-uri, T}}
+    {construct-super val, xml-type}
+  }
+  {factory public implicit {from-simple-value 
+                               xval:XMLSimpleValue
+                           }:{XMLSimpleValue-for T}
+    || TODO: reject different type ascription
+||--    {if strict? then
+||--        let xtype:XMLType = xval.type
+||--        let t:String = xtype.name.local-name
+||--        {if T != t then
+||--            {wsdl-exception
+||--                {hlmessage Can not convert to {XMLSimpleValue-for T}
+||--                    from {value xtype}}}
+||--        }}
+    {return {{XMLSimpleValue-for T} xval.value}}
+  }
+}
+|| humane aliases
+{def public XMLTokenString = {XMLSimpleValue-for "token"}}
+{def public XMLLanguageString = {XMLSimpleValue-for "language"}}
+{def public XMLTimeString = {XMLSimpleValue-for "time"}}
+{def public XMLDurationString = {XMLSimpleValue-for "duration"}}
+{def public XMLNormalizedString = {XMLSimpleValue-for "normalizedString"}}
+
+{doc-next ||=== XMLType
+    {purpose 
+        Describe XML Schema type associated with an {docref XMLValue}.}
+}
+{define-class public open abstract XMLType
+  
+  {factory public implicit {default 
+                               name:XMLName
+                           }:XMLSimpleType
+    {return {XMLSimpleType name}}
+  }
+  
+  {doc-next ||=== XMLType.name
+    {purpose 
+        The {docref XDMName} of this XML Schema type}
+  }
+  {getter public abstract open {name}:XMLName}
+  
+  {doc-next ||=== XMLSimpleType.domain
+    {purpose 
+        The {docref Domain} of this XML Schema type}
+  }
+  {getter public abstract open {domain}:Domain
+  }
+  
+  {method public open {object-describe
+                          out:TextOutputStream, 
+                          locale:Locale
+                      }:void
+    {format out = out, locale = locale,
+      |"[%s "%s"]"|, 
+      {type-of self}, 
+      self.name}
+  }
+}
+
+{doc-next ||=== XMLSimpleType
+    {purpose 
+        Describe XML Schema simple type.}
+    {details
+        Used for type ascriptions in an {docref XMLSimpleValue}.}
+}
+{define-class public open XMLSimpleType {inherits XMLType}
+  field package constant _name:XMLName
+  field package constant _domain:Domain
+  
+  {doc-next ||=== XMLSimpleType.default
+    {purpose Construct this object.
+        {parameter xml-type, The XML Schema type
+            for {docref-abbr XMLSimpleType.name}}
+    }
+  }
+  {constructor public |#implicit#| {default
+                                       name:XMLName,
+                                       domain:Domain = String}
+    set self._name = name
+    set self._domain = domain
+  }
+  
+  || TODO: should this be forgiving of null xml-type?
+  {constructor public |#implicit#| {from-soap-type
+                                       type:SOAPObjectType,
+                                       domain:Domain = String}
+    set self._name = 
+        {if-non-null name = type.xml-type then 
+            name
+         else 
+            SOAPTypeMapper.xml-schema-string-type}
+    set self._domain = domain
+  }
+  
+  {doc-next ||=== XMLSimpleType.name
+    {purpose 
+        The {docref XDMName} of this XML Schema simple type}
+  }
+  {getter public open {name}:XMLName
+    {return self._name}
+  }
+  {doc-next ||=== XMLSimpleType.domain
+    {purpose 
+        The {docref Domain} of this XML Schema simple type}
+  }
+  {getter public open {domain}:Domain
+    {return self._domain}
+  }
+}
+
+|| marshal / unmarshal as string
+{define-proc package {any-simple-xml-value-marshal-proc
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write XMLAttribute and then XMLCharacters.
+                   stream:XMLOutputStream,
+                   val:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+                     }:(worked?:bool)  
+    || TODO: verify suitable xml-type?
+    || TODO: how much automagic conversion?
+    
+    || extract string (lexical value space) 
+    let string-value:#String =
+        {type-switch val
+         case xval:XMLSimpleValue do
+            xval.value
+         case nval:Null do
+            null
+         case sval:StringInterface do
+            || enforce validity of arbitrary string
+            let xml-type:XMLSimpleType =
+                {XMLSimpleType.from-soap-type type}                
+            {XMLSimpleValue {sval.to-String}, xml-type}.value
+         else
+            {error {lmessage Unexpected type for XMLSimpleValue: {value val}}}
+        }
+    || handle as string
+    let worked?:bool =
+        {any-string-marshal-proc stream, string-value,
+            type, encoding, 
+            marshal-context, current-mapper,
+            curl-type-to-xml-type,
+            write-type-attribute? = write-type-attribute?,
+            multiple-reference = multiple-reference
+        }
+    {return worked?}
+}
+
+{define-proc package {any-simple-xml-value-unmarshal-proc
+                         || stream must be after the XMLStartElement, so that
+                         || it can write out attributes of the element for type
+                         || information.  It will write out the attributes and
+                         || the character data, but not the XMLEndElement
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         unmarshal-context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         || should mapper do this?
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    
+    let constant xml-type:XMLSimpleType =
+        {XMLSimpleType.from-soap-type type}
+   
+    {return
+        {refable-unmarshal-proc 
+            #String,
+            || related-object-converter-proc
+            {proc {obj:any, type:Type}:any
+                || TODO: verify type id subtype of XMLSimpleValue
+                {return obj}
+            },
+            || object-decode-proc
+            {proc {characters:#XMLCharacters, type:Type
+                  }:(ref-object:any, return-object:any)
+                || TODO: verify type id subtype of XMLSimpleValue
+                let constant string:String =
+                    {if-non-null characters then
+                        characters.characters
+                     else
+                        ""}
+                let constant val:XMLSimpleValue =
+                    {XMLSimpleValue string, xml-type}
+                {return val, val}
+            },
+            stream,
+            attributes,
+            type,
+            encoding,
+            unmarshal-context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
+        }
+    }
+}
+  
+{def public simple-xml-types =
+    {{FastArray-of XMLName}
+        {XMLName SOAPTypeMapper.xml-schema-uri, "time"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "duration"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gYear"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gYearMonth"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gMonth"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "gMonthDay"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "Day"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "normalizedString"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "token"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "language"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "Name"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "NCName"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "ENTITY"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "ENTITIES"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKEN"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKENS"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "ID"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "IDREF"},
+        {XMLName SOAPTypeMapper.xml-schema-uri, "IDREFS"}
+    }
+}

@@ -1,4 +1,4 @@
-{curl 7.0.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.GoogleSearch,
     {compiler-directives careful? = true},
     wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl"}
@@ -14,9 +14,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "do-get-cached-page",
             {{Array-of any}
                 key,
                 url
@@ -31,8 +31,8 @@
 
   {method public {async-do-get-cached-page key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "do-get-cached-page",
             {{Array-of any}
                 key,
                 url
@@ -40,7 +40,6 @@
             {splice self.operations["do-get-cached-page"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -48,7 +47,7 @@
 
   {method public {define-do-get-cached-page}:void
     set self.operations["do-get-cached-page"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "url"}
@@ -91,9 +90,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "do-spelling-suggestion",
             {{Array-of any}
                 key,
                 phrase
@@ -108,8 +107,8 @@
 
   {method public {async-do-spelling-suggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "do-spelling-suggestion",
             {{Array-of any}
                 key,
                 phrase
@@ -117,7 +116,6 @@
             {splice self.operations["do-spelling-suggestion"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -125,7 +123,7 @@
 
   {method public {define-do-spelling-suggestion}:void
     set self.operations["do-spelling-suggestion"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "phrase"}
@@ -168,9 +166,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "do-google-search",
             {{Array-of any}
                 key,
                 q,
@@ -193,8 +191,8 @@
 
   {method public {async-do-google-search key:#String, q:#String, start:int, max-results:int, filter:bool, restrict:#String, safe-search:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "do-google-search",
             {{Array-of any}
                 key,
                 q,
@@ -210,7 +208,6 @@
             {splice self.operations["do-google-search"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -218,7 +215,7 @@
 
   {method public {define-do-google-search}:void
     set self.operations["do-google-search"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
                 {XMLName "", "q"},
@@ -613,10 +610,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://api.google.com/search/beta2"}
+            {abs-url "http://api.google.com/search/beta2"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

@@ -1,4 +1,4 @@
-{curl 7.0.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.WSConnectionService,
     {compiler-directives careful? = true},
     wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/WSConnection/WSConnectionService.wsdl"}
@@ -14,9 +14,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-database-names",
             {{Array-of any}
             },
             {splice self.operations["get-database-names"]}
@@ -29,14 +29,13 @@
 
   {method public {async-get-database-names event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-database-names",
             {{Array-of any}
             },
             {splice self.operations["get-database-names"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -44,7 +43,7 @@
 
   {method public {define-get-database-names}:void
     set self.operations["get-database-names"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -75,9 +74,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-database-tables",
             {{Array-of any}
                 database
             },
@@ -91,15 +90,14 @@
 
   {method public {async-get-database-tables database:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-database-tables",
             {{Array-of any}
                 database
             },
             {splice self.operations["get-database-tables"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -107,7 +105,7 @@
 
   {method public {define-get-database-tables}:void
     set self.operations["get-database-tables"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"}
             },
@@ -144,9 +142,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-fields",
             {{Array-of any}
                 database,
                 table
@@ -161,8 +159,8 @@
 
   {method public {async-get-fields database:#String, table:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-fields",
             {{Array-of any}
                 database,
                 table
@@ -170,7 +168,6 @@
             {splice self.operations["get-fields"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -178,7 +175,7 @@
 
   {method public {define-get-fields}:void
     set self.operations["get-fields"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "table"}
@@ -221,9 +218,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-data",
             {{Array-of any}
                 database,
                 query,
@@ -239,8 +236,8 @@
 
   {method public {async-get-data database:#String, query:#String, size-limit:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-data",
             {{Array-of any}
                 database,
                 query,
@@ -249,7 +246,6 @@
             {splice self.operations["get-data"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -257,7 +253,7 @@
 
   {method public {define-get-data}:void
     set self.operations["get-data"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "query"},
@@ -305,9 +301,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "execute",
             {{Array-of any}
                 database,
                 sql
@@ -322,8 +318,8 @@
 
   {method public {async-execute database:#String, sql:#{Array-of String}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "execute",
             {{Array-of any}
                 database,
                 sql
@@ -331,7 +327,6 @@
             {splice self.operations["execute"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -339,7 +334,7 @@
 
   {method public {define-execute}:void
     set self.operations["execute"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "database"},
                 {XMLName "", "sql"}
@@ -535,10 +530,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost/work/services/soap/s-wsconnection.php"}
+            {abs-url "http://localhost/work/services/soap/s-wsconnection.php"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

@@ -1,4 +1,4 @@
-{curl 7.0.0 package}
+{curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
     wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/PowerQuote.wsdl"}
@@ -9,19 +9,19 @@
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {get-quote stock-symbol:String, license-key:String}:(get-quote-result:QuoteData)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-quote",
             {{Array-of any}
                 stock-symbol,
                 license-key
@@ -34,15 +34,15 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {async-get-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-quote",
             {{Array-of any}
                 stock-symbol,
                 license-key
@@ -50,20 +50,19 @@
             {splice self.operations["get-quote"]},
             event-handler,
             ...
-
         }
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves a current stock quote.  Use a license key of 0 for testing.
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {define-get-quote}:void
     set self.operations["get-quote"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbol"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -101,19 +100,19 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {get-quick-quote stock-symbol:String, license-key:String}:(get-quick-quote-result:double)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-quick-quote",
             {{Array-of any}
                 stock-symbol,
                 license-key
@@ -126,15 +125,15 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {async-get-quick-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-quick-quote",
             {{Array-of any}
                 stock-symbol,
                 license-key
@@ -142,20 +141,19 @@
             {splice self.operations["get-quick-quote"]},
             event-handler,
             ...
-
         }
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves just a stock price.  Use a license key of 0 for testing.
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {define-get-quick-quote}:void
     set self.operations["get-quick-quote"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbol"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -192,19 +190,19 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {get-quote-data-set stock-symbols:String, license-key:String}:(get-quote-data-set-result:#GetQuoteDataSetResult)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-quote-data-set",
             {{Array-of any}
                 stock-symbols,
                 license-key
@@ -217,15 +215,15 @@
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {async-get-quote-data-set stock-symbols:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-quote-data-set",
             {{Array-of any}
                 stock-symbols,
                 license-key
@@ -233,20 +231,19 @@
             {splice self.operations["get-quote-data-set"]},
             event-handler,
             ...
-
         }
     }
   }
 
 
-  {doc-next 
+{doc-next 
     {details 
-      This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
-  }
+}
   {method public {define-get-quote-data-set}:void
     set self.operations["get-quote-data-set"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "http://ws.cdyne.com/", "StockSymbols"},
                 {XMLName "http://ws.cdyne.com/", "LicenseKey"}
@@ -289,9 +286,9 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "important-message",
             {{Array-of any}
             },
             {splice self.operations["important-message"]}
@@ -304,14 +301,13 @@
 
   {method public {async-important-message event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "important-message",
             {{Array-of any}
             },
             {splice self.operations["important-message"]},
             event-handler,
             ...
-
         }
     }
   }
@@ -319,7 +315,7 @@
 
   {method public {define-important-message}:void
     set self.operations["important-message"] = 
-         {Arguments
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -554,10 +550,13 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
+            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"},
+        mtom-support-range:SOAPMTOMSupportRange =
+            SOAPMTOMSupportRange.none
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "5",
+        mtom-support-range = mtom-support-range
     }
   }
 }

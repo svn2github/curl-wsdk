@@ -113,13 +113,13 @@
     set self.request-http-headers = request-http-headers
     set self.message-writer =
         {if-non-null message-writer then   
-             message-writer
+            message-writer
          else
             {new SOAPRPCMessageWriter}
         }
     set self.message-reader =
         {if-non-null message-reader then   
-             message-reader
+            message-reader
          else
             {new SOAPRPCMessageReader}
         }
@@ -278,7 +278,7 @@
             {new-headers.set "SOAPAction",
                 {if soap-action.size < 1 or soap-action[0] != '\"' then
                     '\"' & soap-action & '\"'
-                else
+                 else
                     soap-action
                 }
             }
@@ -305,7 +305,7 @@
   {doc-next
     {purpose
         Create the {docref HttpRequestData} and {docref XMLOutputStream} to
-        do this request with.
+     do this request with.
         Called by {docref SOAPHTTPRPCPostCaller.setup-request-data}.
     }
     {override
@@ -475,7 +475,7 @@
     {if (mtom-support-range == SOAPMTOMSupportRange.both or
          mtom-support-range == SOAPMTOMSupportRange.response) and
         not ((bis isa HttpByteInputStream) and
-         response-headers.mime-type != "multipart/related")
+             response-headers.mime-type != "multipart/related")
      then
         def mr = {SOAPMTOMMessageReader bis, response-headers}
         set bis = {mr.get-root-stream}
@@ -950,10 +950,10 @@
                      else
                         {if {aw.async-read-finished} then
                             let responses:#{Array-of any},
-                                headers:#{Array-of any},
-                                header-roles:#{Array-of #String},
-                                header-must-understands:#{Array-of bool},
-                                root-element-attributes:#{Array-of XMLAttribute}
+                            headers:#{Array-of any},
+                            header-roles:#{Array-of #String},
+                            header-must-understands:#{Array-of bool},
+                            root-element-attributes:#{Array-of XMLAttribute}
                             || read responses
                             {try
                                 set (responses,

@@ -155,6 +155,12 @@
         out = out, locale = locale,
         "[XDMName %s]", {XDMName.namestring self.namespace, self.local-name}}
   }
+  {method public {object-describe-for-debugging 
+                     out:TextOutputStream, locale:Locale}:void
+    {format 
+        out = out, locale = locale,
+        "%s", {XDMName.namestring self.namespace, self.local-name}}
+  }
   {define-proc package {namestring namespace:String, local-name:String}:String
     {return
         {if namespace == "" then local-name

@@ -937,7 +937,9 @@
     def service =
         {if self.mtom? then
             def c = {service-class.get-constructor "default"}
-            {c.new mtom-support-range = SOAPMTOMSupportRange.both}
+            def s = {c.new} asa WSDLHTTPRPCPostClient
+            set s.mtom-support-range = SOAPMTOMSupportRange.both
+            s
          else
             {with-compiler-directives allow-any-calls? = true do
                 {service-class} asa WSDLHTTPRPCPostClient}

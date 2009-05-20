@@ -36,41 +36,44 @@
 
   field public constant service-location:Url
 
-  {doc-next ||== WSDLHTTPRPCPostClient.generated-using-version
-    {purpose 
-        The {docref wsdl-service-class-version} 
-        used to generate this class.
-    }}
-  field public constant generated-using-version:String
-  
   {doc-next ||== WSDLHTTPRPCPostClient.operations
     {purpose 
         Characteristics of the operations defined by this web service.
     }}
-  field public-get constant operations:{HashTable-of String, Arguments}
+  field public constant operations:{HashTable-of String, Arguments}
+
 
   {doc-next
     {purpose
-        proc to handle any response headers.
+        Proc Type for {WSDLHTTPRPCPostClient.response-headers-callback}.
+    }
+  }
+  {def public ResponseHeadersCallback =
+    {proc-type
+         {operation:String,
+          headers:#Array,
+          header-roles:#{Array-of #String},
+          header-must-understands:#{Array-of bool},
+          defined-header-count:int
+         }:void
+     }
+  }
+
+  {doc-next
+    {purpose
+        proc to handle any SOAP response headers.
     }
     {parameter defined-headers-size,
         Number of response headers that were defined in the call.
         Any headers after this are extra ones that will be {docref XDMElement}
-        representations of the header's XML.
+        representations of the SOAP header's XML.
     }
     {details
         The parameters match the header return values from
         {docref SOAPHTTPRPCPostCaller.call}.
     }
   }
-  field public response-headers-callback:#{proc-type
-                                              {operation:String,
-                                               headers:#Array,
-                                               header-roles:#{Array-of #String},
-                                               header-must-understands:#{Array-of bool},
-                                               defined-header-count:int
-                                              }:void
-                                          }
+  field public response-headers-callback:#WSDLHTTPRPCPostClient.ResponseHeadersCallback
 
   {doc-next
     {purpose
@@ -85,22 +88,40 @@
         not yet
     }
   }
-  field public constant mtom-support-range:SOAPMTOMSupportRange
+  field public mtom-support-range:SOAPMTOMSupportRange
 
+  {doc-next
+    {purpose
+        Create a {docref WSDLHTTPRPCPostClient}.
+    }
+    {parameter generated-using-version,
+        Version of the WSDL generation code that was used to generate the
+        service subclass.  If it is out of date with the version of
+        the library being used an error will be thrown.
+    }
+    {details
+        The parameters match the fields or getters and setters on
+        {docref WSDLHTTPRPCPostClient} of the same names.
+    }
+  }
   {constructor public {default 
                           service-location:Url,
                           generated-using-version:String = "1",
+                          accept-encoding:#String = null,
+                          additional-request-headers:#{Array-of XDMElement} = null,
+                          response-headers-callback:#WSDLHTTPRPCPostClient.ResponseHeadersCallback = null,
                           mtom-support-range:SOAPMTOMSupportRange =
                               SOAPMTOMSupportRange.none
                       }
     
-    set self.generated-using-version = generated-using-version
-    {self.verify-service-version}
+    {self.verify-service-version generated-using-version}
 
     set self.service-location = service-location
 
     set self.operations = {{HashTable-of String, Arguments}}
 
+    set self.additional-request-headers = additional-request-headers
+    set self.response-headers-callback = response-headers-callback
     set self.mtom-support-range = mtom-support-range
 
     def (type-mapper:SOAPTypeMapper,
@@ -131,6 +152,9 @@
                     xml-type-to-element-name = xml-type-to-element-name
                 }
         }
+    {if-non-null accept-encoding then
+        set self.accept-encoding = accept-encoding
+    }
   }
   
   {doc-next  ||== WSDLHTTPRPCPostClient.trace-stream
@@ -195,14 +219,16 @@
         compares {docref WSDLHTTPRPCPostClient.generated-using-version}
         with {docref wsdl-service-class-version}.
     }}
-  {method public open {verify-service-version}:void
-    {if self.generated-using-version != wsdl-service-class-version then
+  {method protected open {verify-service-version generated-using-version:String
+                         }:void
+    {if generated-using-version != wsdl-service-class-version then
         {throw-soap-exception
             {lmessage
                 This service package was generated using 
-                WSDL service class version {value self.generated-using-version}
+                WSDL service class version {value generated-using-version}
                 but the current version is {value wsdl-service-class-version}
-            }}}
+            }}
+    }
   }
 
   {doc-next ||== WSDLHTTPRPCPostClient.parse-response

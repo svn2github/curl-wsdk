@@ -740,7 +740,7 @@
     }
   }
 
-  {method public open {read-response-or-header-values
+  {method protected open {read-response-or-header-values
                           stream:XMLInputStream,
                           response-names:{Array-of #XMLName},
                           || has xml-name + some type info
@@ -1172,7 +1172,7 @@
         }
     }
   }
-  {method public open {handle-soap-1-1-fault
+  {method protected open {handle-soap-1-1-fault
                           stream:XMLInputStream,
                           headers:#{Array-of any},
                           header-roles:#{Array-of #String},
@@ -1340,7 +1340,7 @@
     }
   }
 
-  {method public open {handle-soap-1-2-fault
+  {method protected open {handle-soap-1-2-fault
                           stream:XMLInputStream,
                           headers:#{Array-of any},
                           header-roles:#{Array-of #String},
@@ -1561,7 +1561,7 @@
     }
   }
 
-  {define-proc private {read-soap-1-2-fault-subcodes
+  {define-proc protected {read-soap-1-2-fault-subcodes
                            stream:XMLInputStream
                        }:#{Array-of XMLName}
     let subcodes:#{Array-of XMLName}
@@ -1609,7 +1609,7 @@
     {return subcodes}
   }
 
-  {define-proc private {read-soap-1-2-fault-reason
+  {define-proc protected {read-soap-1-2-fault-reason
                            stream:XMLInputStream
                        }:#StringStringTable
     let reasons:#StringStringTable

@@ -126,9 +126,9 @@
     set self.trace-stream = trace-stream
   }
 
-  {define-proc public {soap-version-to-content-type
-                          soap-version:SOAPVersion
-                      }:String
+  {define-proc private {soap-version-to-content-type
+                           soap-version:SOAPVersion
+                       }:String
     {return
         {switch soap-version
          case SOAPVersion.soap-1-1 do

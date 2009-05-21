@@ -1503,6 +1503,7 @@
     }
     let new-type:SOAPObjectType =
         {new SOAPObjectType,
+            element-name = type.element-name,
             curl-type =
                 {if type.curl-type != null and
                     type.curl-type != (any asa Type)
@@ -1514,6 +1515,19 @@
             nillable? = type.nillable?
         }
     set new-type = {curl-type-to-xml-type.curl-type-to-xml-type new-type}
+    || If we didn't actually figure out some type information, then
+    || we would just end up looping.
+    {if new-type.xml-type == type.xml-type and
+        new-type.curl-type == type.curl-type
+     then
+        {throw-marshal-exception
+            {lformat
+                "any marshal proc could not figure out what xml-type to use "&
+                "for value %s.",
+                value
+            }
+        }
+    }
     || will throw if can't do it, which isn't ideal, but is ok
     || FIXME should we catch and return false?
     {current-mapper.marshal
@@ -1564,7 +1578,10 @@
                 attributes,
                 xml-type-to-curl-type
             }
-        {if new-type.xml-type != null and new-type.curl-type != null then
+        {if new-type.xml-type != null and new-type.curl-type != null and
+            (new-type.xml-type != type.xml-type or
+             new-type.curl-type != type.curl-type)
+         then
             {return
                 {current-mapper.unmarshal
                     stream,
@@ -3537,7 +3554,8 @@
 {do
     let constant any-curl-types:{FastArray-of Type} =
         {new {FastArray-of Type},
-            XDMElement
+            XDMElement,
+            StandardXDMElement
         }
     {for curl-type in any-curl-types do
         let constant doc-marshaler:SOAPXMLDocumentMarshaler =

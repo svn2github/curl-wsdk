@@ -209,10 +209,9 @@
                 {buf.append ','}}
             {format
                 out = buf,
-                "\n%s            \{XMLName \"%s\", \"%s\"\}",
+                "\n%s            %s",
                 tabs,
-                x.namespace,
-                x.local-name
+                {WSDLSchemaType.xml-name-to-curl-code x}
             }
         }
         {format

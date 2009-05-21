@@ -920,18 +920,13 @@
                         }
                      else
                         let constant exp-double:double = {floor {log10 {abs f}}}
-                        let constant exp:int = exp-double asa int
-                        let constant f2:double = f / {pow 10, exp-double}
-                        let constant fraction-format:String =
+                        {format
                             {if float? then
                                 "%.8G"
                              else || is a double
-                                "%.18G"
-                            }
-                        {if exp != 0 then
-                            {format fraction-format & "E%d", f2, exp}
-                         else
-                            {format fraction-format, f2}
+                                "%.17G"
+                            },
+                            f
                         }
                     }
                 }

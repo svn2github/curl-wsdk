@@ -93,17 +93,19 @@
                         curl-versions:String = {curl-versions-string},
                         curlify-names?:bool = true,
                         include-async-methods?:bool = true,
+                        preserve-existing-files?:bool = false,
                         ...:WSDLPackageDirectives
                     }:Url
     def writer =
         {WSDLPackageWriter
-            {WSDLPackageDirectives source,
+            {WSDLPackageDirectives source, 
                 target-directory = target-directory,
                 package-prefix = package-prefix,
                 package-suffix = package-suffix,
                 curl-versions = curl-versions,
                 curlify-names? = curlify-names?,
                 include-async-methods? = include-async-methods?,
+                preserve-existing-files? =  preserve-existing-files?,
                 {splice ...}
             }}
     def sloc = {writer.generate-code}

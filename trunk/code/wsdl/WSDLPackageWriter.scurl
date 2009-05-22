@@ -134,17 +134,7 @@
         {return ploc}
      else
         def sloc = {self.directives.source-url.set-extension ".scurl"}
-        || TODO: unduplicate this code
-        def service-name = self.directives.source-url.basename
-        def package-prefix = 
-            {if-non-null package-prefix = self.directives.package-prefix
-             then package-prefix
-             else ""}
-        def package-suffix =
-            {if-non-null package-suffix = self.directives.package-suffix
-             then package-suffix
-             else service-name}
-        def package-name = package-prefix & package-suffix
+        def package-name = self.service-package-name
         {with-open-streams out = {write-open sloc} do
             {self.write-consolidated-package-herald out,
                 package-name}
@@ -296,16 +286,7 @@
             {all-packages.difference needed-packages}
         }
     }
-    def service-name = self.directives.source-url.basename
-    def package-prefix = 
-        {if-non-null package-prefix = self.directives.package-prefix
-         then package-prefix
-         else ""}
-    def package-suffix =
-        {if-non-null package-suffix = self.directives.package-suffix
-         then package-suffix
-         else service-name}
-    def package-name = package-prefix & package-suffix
+    def package-name = self.service-package-name
   
     || generate package
     || --------------------
@@ -469,6 +450,22 @@
   }
   || helper methods
   || --------------------
+  {getter package {service-package-name}:String
+    def service-name = self.directives.source-url.basename
+    def package-prefix = 
+        {if-non-null package-prefix = self.directives.package-prefix
+         then package-prefix
+         else
+            {if-non-null tns = self.wsdl.target-namespace
+             then {namespace-contraction tns} & "."
+             else ""}
+        }
+    def package-suffix =
+        {if-non-null package-suffix = self.directives.package-suffix
+         then package-suffix
+         else service-name}
+    {return package-prefix & package-suffix}
+  }
   {method package {namespace-spec-for
                       namespace:String
                   }:WSDLNamespaceSpec

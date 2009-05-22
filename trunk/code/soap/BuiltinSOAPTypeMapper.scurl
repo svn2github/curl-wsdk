@@ -972,7 +972,7 @@
                             {localize "Empty double or float value."}
                         }
                     }
-                    let value:double =
+                    let dvalue:double =
                         {switch string
                          case "NaN" do
                             nan
@@ -994,12 +994,12 @@
                             }
                             v
                         }
+                    let value:any =
+                        {if type == float then
+                            dvalue asa float
+                         else
+                            dvalue}
                     {return value, value}
-||--                    {if type == (float asa Type) then
-||--                        {return value asa float}
-||--                     else
-||--                        {return value}
-||--                    }
                  else
                     {throw-unmarshal-exception
                         {localize "Empty double or float value."}

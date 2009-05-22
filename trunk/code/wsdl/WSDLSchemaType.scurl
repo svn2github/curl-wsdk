@@ -1863,7 +1863,7 @@
                         true
                     }
                  else
-                    false
+                    true
                 }
             {format out = out, "\n    %s = %s",
                 {self.curl-namer.get-curl-name
@@ -1891,42 +1891,46 @@
             let constant curl-type:String = self.base-type.ref-name
             {if curl-type == "String" then
                 {format "\"%s\"", s}
-             elseif {curl-type.prefix? "int"} or
-                {curl-type.prefix? "uint"}
+             elseif
+                {curl-type.prefix? "int"} or
+                {curl-type.prefix? "uint"} or
+                curl-type == "bool"
              then
-|| TODO: "Enum values may only be numbers, chars, bools, or string constants."
-||       Bools should be supported here shouldn't they?
                 {format "%s", s}
-             elseif {curl-type.prefix? "float"} or
-                {curl-type.prefix? "double"}
+             elseif
+                curl-type == "float" or
+                curl-type == "double"
              then
-                {format 
-                    "%s asa %s",
-                    {switch s
-                     case "NaN" do
-                        "nan"
-                     case "INF" do
-                        "infinity"
-                     case "-INF" do
-                        "-infinity"
-                     else
-                        s
-                    },
-                    curl-type
+                {switch s
+                 case "NaN" do "nan"
+                 case "INF" do "infinity"
+                 case "-INF" do "-infinity"
+                 else                                    
+                    {format "%s%s",
+                        s,
+                        {if curl-type == "float"
+                         then "f"
+                         else ""}
+                    }
                 }
-             elseif curl-type == "Url" then
-                || FIXME relative URLs might be legal here...
-                {format "\"%s\"", s}
+
+                || NOTE: from dguide
+                || - "Enum values may only be numbers, chars, bools, or string constants."
                 
-             elseif curl-type == "XMLName" then
-                || NOTE: namespace information has been lost
-                {format "\"%s\"", s}
+||--             elseif curl-type == "Url" then
+||--                || FIXME relative URLs might be legal here...
+||--                {format "\"%s\"", s}
+||--                
+||--             elseif curl-type == "XMLName" then
+||--                || NOTE: namespace information has been lost
+||--                {format "\"%s\"", s}
+||--                
+||--             elseif (curl-type == "XMLSimpleValue" 
+||--                     or {curl-type.prefix? |"{XMLSimpleValue-for"|})
+||--             then
+||--                || NOTE: these have implicit constructors from String
+||--                {format "\"%s\"", s}
                 
-             elseif (curl-type == "XMLSimpleValue" 
-                     or {curl-type.prefix? |"{XMLSimpleValue-for"|})
-             then
-                || NOTE: these have implicit constructors from String
-                {format "\"%s\"", s}
              else
                 {wsdl-exception
                     {format "enumerations of %s are not supported.", curl-type}
@@ -1944,12 +1948,20 @@
                 "        let constant enum-marshaler:SOAPEnumMarshaler =\n" &
                 "            \{SOAPEnumMarshaler\n" &
                 "%s,\n" &
+                "                value-type = \n" &
+                "%s,\n" &
                 "                use-value? = true\n" &
                 "            \}\n%s" &
                 "    \}\n"
                 ,
                 {self.soap-object-type-string
                     tab-level = 16, element-name = element-name
+                },
+                {if-non-null base-type = self.base-type then
+                    {base-type.soap-object-type-string
+                        tab-level = 16}
+                 else
+                    "null"
                 },
                 {WSDLSchemaType.soap-marshaler-regster-code "enum-marshaler"}
             }

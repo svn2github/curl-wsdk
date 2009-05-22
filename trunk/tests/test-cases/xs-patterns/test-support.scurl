@@ -32,6 +32,7 @@
     def kinds =
         {{Array-of XDMPath}
             ".//xs:choice",
+            ".//xs:enumeration",
             "(not(*[2]) and xs:element and not(*/*))",
             ".//xs:attribute",
             ".//xs:complexType",
@@ -40,6 +41,7 @@
     def names =
         {StringArray
             "choice",
+            "enum",
             "element",
             "attribute",
             "complexType",

@@ -1886,6 +1886,14 @@
   }
 
   {method private {value-string s:String}:String
+    def number-string =
+        {proc {s:String}:String
+            || NOTE: guard against leading '+'
+            set s = {s.trim-clone}
+            {if {s.find '+'} == 0 then
+                set s = {s.tail 1}}
+            {return s}
+        }
     {return
         {value
             let constant curl-type:String = self.base-type.ref-name
@@ -1896,7 +1904,7 @@
                 {curl-type.prefix? "uint"} or
                 curl-type == "bool"
              then
-                {format "%s", s}
+                {format "%s", {number-string s}}
              elseif
                 curl-type == "float" or
                 curl-type == "double"
@@ -1907,7 +1915,7 @@
                  case "-INF" do "-infinity"
                  else                                    
                     {format "%s%s",
-                        s,
+                        {number-string s},
                         {if curl-type == "float"
                          then "f"
                          else ""}
@@ -1916,20 +1924,23 @@
 
                 || NOTE: from dguide
                 || - "Enum values may only be numbers, chars, bools, or string constants."
+                || TODO: these need special treatment when marshaling
                 
-||--             elseif curl-type == "Url" then
-||--                || FIXME relative URLs might be legal here...
-||--                {format "\"%s\"", s}
-||--                
-||--             elseif curl-type == "XMLName" then
-||--                || NOTE: namespace information has been lost
-||--                {format "\"%s\"", s}
-||--                
-||--             elseif (curl-type == "XMLSimpleValue" 
-||--                     or {curl-type.prefix? |"{XMLSimpleValue-for"|})
-||--             then
-||--                || NOTE: these have implicit constructors from String
-||--                {format "\"%s\"", s}
+             elseif curl-type == "Url" then
+                || FIXME relative URLs might be legal here...
+                {format "\"%s\"", s}
+                
+             elseif curl-type == "XMLName" then
+                || NOTE: namespace information has been lost
+                {format "\"%s\"", s}
+                
+             elseif (curl-type == "XMLSimpleValue" or
+                     {curl-type.prefix? |"{XMLSimpleValue-for"|} or
+                     {XMLSimpleValue.alias-type-names.key-exists?
+                            self.base-type.xml-name.local-name})
+             then
+                || NOTE: these have implicit constructors from String
+                {format "\"%s\"", s}
                 
              else
                 {wsdl-exception

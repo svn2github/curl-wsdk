@@ -36,8 +36,10 @@
 
 {import * from CURL.XML.SAX.PARSER}
 {import * from COM.CURL.WSDK.SOAP}
-{import StemHttpDirectory from CURL.IO.HTTP} || for WSDLCurlNamer
-{import Domain from CURL.DATA-ACCESS.BASE} || for WSDLSchema.register-simple-type
+{import * from CURL.LANGUAGE.REGEXP}
+{import StemHttpDirectory from CURL.IO.HTTP}  || for WSDLCurlNamer
+{import Identifier from CURL.LANGUAGE.SOURCE} || for WSDLCurlNamer, namespace-contraction
+{import Domain from CURL.DATA-ACCESS.BASE}    || for WSDLSchema.register-simple-type
 
 {include "WSDLNameTable.scurl"}
 {include "WSDLCurlNamer.scurl"}

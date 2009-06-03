@@ -146,6 +146,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nilable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    context:SOAPMarshalContext,
@@ -529,6 +530,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nilable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    context:SOAPMarshalContext,
@@ -662,13 +664,16 @@
                         }
                     }
                 }
-            {stream.write-one
-                {new XMLStartElement, element-name}
+            {if not type.marshaler-handled-element? then
+                {stream.write-one
+                    {XMLStartElement element-name}
+                }
             }
             {state.marshaler
                 stream,
                 keys[i],
                 state.type,
+                element-name,
                 state.encoding,
                 context,
                 type-mapper,
@@ -677,8 +682,10 @@
                 multiple-reference = SOAPTypeMultipleReference.multiple-instance
             }
             || do end element
-            {stream.write-one
-                {new XMLEndElement, element = element-name}
+            {if not type.marshaler-handled-element? then
+                {stream.write-one
+                    {XMLEndElement element = element-name}
+                }
             }
         }
     }

@@ -51,9 +51,6 @@
   field public constant n-attributes:int 
   || use character content for single non-attribute field
   field public constant simple-content?:bool 
-  || fields with repeating elements
-  || - otherwise arrays are wrapped
-  field public constant repeating-elements:#{Set-of XMLName}
   || optional fields (minOccurs='0')
   || - can be skipped if null
   field public constant optional-elements:#{Set-of XMLName}
@@ -75,7 +72,6 @@
                           field-curl-names:#{Array-of String},
                           n-attributes:int = 0,
                           simple-content?:bool = false,
-                          repeating-elements:#{Set-of XMLName} = null,
                           optional-elements:#{Set-of XMLName} = null,
                           field-namespace:String = "",
                           constructor-name:String = "default",
@@ -91,7 +87,6 @@
     {construct-super.SOAPMarshaler type}
     set self.n-attributes = n-attributes
     set self.simple-content? = simple-content? 
-    set self.repeating-elements = repeating-elements
     set self.optional-elements = optional-elements
     
     set self.element-name-to-xml-type = element-name-to-xml-type
@@ -409,6 +404,7 @@
 
                             || xml-type and curl-type required
                             type:SOAPObjectType,
+                            element:XMLName,
 
                             encoding:#String, ||default? (multiple urls poss.)
                             context:SOAPMarshalContext,
@@ -460,8 +456,9 @@
                 {marshal-write-type-attribute stream, subtype}}
             || use the more specific marshaler
             {current-mapper.marshal  
-                stream, value, subtype,
-                encoding, context, current-mapper, curl-type-to-xml-type,
+                stream, value, subtype, element,
+                encoding, context, current-mapper,
+                curl-type-to-xml-type,
                 write-type-attribute? = write-type-attribute?, 
                 multiple-reference = multiple-reference}
             {return true}
@@ -545,11 +542,7 @@
                     {XMLCharacters s}
                 }
              else
-                || as element
-                let write-element?:bool = 
-                    not {self.repeating-element? element-name}
-                || NOTE: array valued fields may not be wrapped
-                {if write-element? then
+                {if not field-type.marshaler-handled-element? then
                     {stream.write-one
                         {new XMLStartElement, element-name}
                     }
@@ -558,16 +551,18 @@
                     stream,
                     v,
                     field-type,
+                    element-name,
                     encoding,
                     context,
                     current-mapper,
                     curl-type-to-xml-type,
                     || NOTE: nowhere to write these if not wrapped (repeating element)
                     || -- but that's OK, because those can not exist in 'encoded' usage
-                    write-type-attribute? = write-element? and write-type-attribute?,
+                    write-type-attribute? =
+                        not type.marshaler-handled-element? and write-type-attribute?,
                     multiple-reference = field-type.multiple-reference
                 }
-                {if write-element? then
+                {if not field-type.marshaler-handled-element? then
                     {stream.write-one
                         {new XMLEndElement, element = element-name}
                     }
@@ -827,7 +822,6 @@
                     encoding,
                     current-mapper,
                     context,
-                    repeating-elements = self.repeating-elements,
                     element-name-to-xml-type = self.element-name-to-xml-type,
                     xml-type-to-curl-type = xml-type-to-curl-type,
                     curl-type-to-xml-type = self.curl-type-to-xml-type,
@@ -845,7 +839,7 @@
     {return object, true}
   }
 
-  || can this be merged with Reader's code?
+  || can this be merged with the SOAPRPCMessageReader code?
   {define-proc public {read-fields
                           stream:XMLInputStream,
                           field-names:{Array-of #XMLName},
@@ -862,7 +856,6 @@
                           || does this make sense, should this be in
                           || types and element names already?
                           default-namespace:#String = "",
-                          repeating-elements:#{Set-of XMLName} = null,
                           check-type-attribute?:bool = false,
                           element-name-to-xml-type:SOAPElementNameToXMLTypeMapper =
                               builtin-soap-element-name-to-xml-type-mapper,
@@ -992,23 +985,10 @@
                 }
             }
             
-            let repeating-element?:bool =
-                {if-non-null repeating-elements then
-                    || NOTE: with choice, current-element may be different
-                    def element-name =
-                        {if choice-element? then
-                            {non-null field-names[current-field-index]}
-                         else
-                            se.element}
-                    {repeating-elements.member? element-name}
-                 else
-                    false}
-            let wrapped?:bool = not (repeating-element? or choice-element?)
-            
             let attributes:#{Array-of XMLAttribute} = null
             let encoding:#String = null
             
-            {if wrapped? then
+            {if not type.marshaler-handled-element? then
                 || normal case: value or values expected 
                 set attributes = {reader-read-attributes stream}
                 || get encoding from attributes
@@ -1094,7 +1074,7 @@
             {type-switch current-token
              case ee:XMLEndElement do
 
-                {if wrapped? then
+                {if not type.marshaler-handled-element? then
                     {if ee.element != null and ee.element != se.element then
                         || normal case: need end element
                         {throw-unmarshal-exception
@@ -1111,7 +1091,7 @@
                     {stream.unread-one ee}
                 }
              case se:XMLStartElement do
-                {if wrapped? then
+                {if not type.marshaler-handled-element? then
                     || normal case: need end element
                     {throw-unmarshal-exception
                         {lformat
@@ -1150,14 +1130,6 @@
     }
   }      
       
-  {method package {repeating-element? xml-name:XMLName}:bool
-    {return
-        {if-non-null repeating-elements = self.repeating-elements then
-            {repeating-elements.member? xml-name}
-         else
-            false}}
-  }
-  
   {method package {optional-element? xml-name:XMLName}:bool
     {return
         {if-non-null optional-elements = self.optional-elements then

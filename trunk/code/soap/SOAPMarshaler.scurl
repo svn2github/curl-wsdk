@@ -146,7 +146,8 @@
                 curl-type,
                 xml-type,
                 type.multiple-reference,
-                type.nillable?
+                type.nillable?,
+                marshaler-handled-element? = type.marshaler-handled-element?
             }
         }
     }
@@ -165,6 +166,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    context:SOAPMarshalContext,
@@ -179,6 +181,7 @@
                    stream,
                    value,
                    type,
+                   element,
                    encoding, || default? (multiple urls poss.)
                    context,
                    current-mapper,
@@ -230,6 +233,7 @@
 
                             || xml-type and curl-type required
                             type:SOAPObjectType,
+                            element:XMLName,
 
                             encoding:#String, ||default? (multiple urls poss.)
                             context:SOAPMarshalContext,

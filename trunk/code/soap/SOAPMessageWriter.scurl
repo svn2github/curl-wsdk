@@ -354,7 +354,6 @@
                           argument-types:{Array-of SOAPObjectType},
                           || default this?
                           encoding:#String,
-                          repeating-elements:#{Set-of XMLName} = null,
                           operation:#XMLName = null,
                           marshal-context:#SOAPMarshalContext = null,
                           || (Or is that in marshaler?)
@@ -462,7 +461,6 @@
                     {new {Array-of SOAPObjectType}}
                 },
                 encoding,
-                repeating-elements = repeating-elements,
                 marshal-context = marshal-context,
                 write-type-attribute? = write-type-attribute?,
                 write-encoding-attribute? = write-encoding-attribute?,
@@ -485,6 +483,8 @@
                         a
                      case fa:{FastArray-of XMLToken} do
                         {{Array-of XMLToken}.from-FastArray fa}
+                     case e:XDMElement do
+                        {XDMElement-to-tokens e}
                      else
                         {throw-marshal-exception
                             {lformat
@@ -597,7 +597,6 @@
         {non-null argument-names},
         argument-types,
         encoding,                
-        repeating-elements = repeating-elements,
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
         write-encoding-attribute? = write-encoding-attribute?,
@@ -680,7 +679,6 @@
                           header-types:{Array-of SOAPObjectType},
                           || default this?
                           encoding:#String,
-                          repeating-elements:#{Set-of XMLName} = null,
                           marshal-context:#SOAPMarshalContext = null,
                           || (Or is that in marshaler?)
                           write-type-attribute?:bool = false,
@@ -695,7 +693,6 @@
         header-names,
         header-types,
         encoding,
-        repeating-elements = repeating-elements,
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
         write-encoding-attribute? = write-encoding-attribute?,
@@ -729,7 +726,6 @@
                           argument-types:{Array-of SOAPObjectType},
                           || default this?
                           encoding:#String,
-                          repeating-elements:#{Set-of XMLName} = null,
                           marshal-context:#SOAPMarshalContext = null,
                           || (Or is that in marshaler?)
                           write-type-attribute?:bool = false,
@@ -743,7 +739,6 @@
         argument-names,
         argument-types,
         encoding,
-        repeating-elements = repeating-elements,
         marshal-context = marshal-context,
         write-type-attribute? = write-type-attribute?,
         write-encoding-attribute? = write-encoding-attribute?,
@@ -760,7 +755,6 @@
                              argument-types:{Array-of SOAPObjectType},
                              || default this?
                              encoding:#String,
-                             repeating-elements:#{Set-of XMLName} = null,
                              marshal-context:#SOAPMarshalContext = null,
                              || (Or is that in marshaler?)
                              write-type-attribute?:bool = false,
@@ -794,11 +788,7 @@
     }
     {for at key i in argument-types do
         let constant a:any = arguments[i]
-        {if at.curl-type == null or
-            ((at.curl-type == any or at.curl-type == Object or
-              at.curl-type == #Object)
-             and a != null)
-         then
+        {if at.curl-type == null then
             set at =
                 {SOAPObjectType.clone-with at, curl-type =
                     {if a == null then
@@ -853,18 +843,12 @@
                 }
             }
         
-        || repeating-element
-        let repeating-element?:bool = 
-            {if-non-null repeating-elements then
-                {repeating-elements.member? argument-element-name}
-             else 
-                false}
-        
-        {if not repeating-element? then
+        {if not at.marshaler-handled-element? then
             {stream.write-one
                 {new XMLStartElement, argument-element-name}
             }
-            || FIXME: SOAP 1.2 what about doing this for repeating elements?
+            || FIXME: SOAP 1.2 marshalers that do marshaler-handled-element?
+            || Need to do this themselves.
             {if soap-version == SOAPVersion.soap-1-2 then
                 {if write-encoding-attribute? and not rpc-style? then
                     {self.write-encoding-style
@@ -899,6 +883,7 @@
             stream,
             a,
             at,
+            argument-element-name,
             encoding,
             context,
             self.type-mapper,
@@ -907,7 +892,7 @@
             || passed in twice to allow overriding the default.
             multiple-reference = at.multiple-reference
         }
-        {if not repeating-element? then
+        {if not at.marshaler-handled-element? then
             {stream.write-one
                 {new XMLEndElement, element = argument-element-name}
             }

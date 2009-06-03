@@ -179,6 +179,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           context:SOAPMarshalContext,
@@ -316,13 +317,16 @@
                         {lformat "Unable to figure out a type for '%s'.", v}
                     }
                 }
-                {stream.write-one
-                    {new XMLStartElement, {non-null field-name}}
+                {if not field-type.marshaler-handled-element? then
+                    {stream.write-one
+                        {XMLStartElement {non-null field-name}}
+                    }
                 }
                 {current-mapper.marshal
                     stream,
                     v,
                     field-type,
+                    {non-null field-name},
                     encoding,
                     context,
                     current-mapper,
@@ -330,8 +334,10 @@
                     write-type-attribute? = write-type-attribute?,
                     multiple-reference = field-type.multiple-reference
                 }
-                {stream.write-one
-                    {new XMLEndElement, element = field-name}
+                {if not field-type.marshaler-handled-element? then
+                    {stream.write-one
+                        {XMLEndElement element = field-name}
+                    }
                 }
             }
         }

@@ -36,6 +36,8 @@
                           xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
                               builtin-soap-xml-type-to-element-name-mapper
                       }
+
+    {assert type.marshaler-handled-element?, "Choice "& type.xml-type & " "& type.curl-type}
     {construct-super type}
     set self.types = types
     
@@ -51,6 +53,7 @@
 
                             || xml-type and curl-type required
                             type:SOAPObjectType,
+                            element:XMLName,
 
                             encoding:#String, ||default? (multiple urls poss.)
                             context:SOAPMarshalContext,
@@ -101,6 +104,7 @@
         stream,
         val,
         choice-type,
+        choice-element-name,
         encoding,
         context,
         current-mapper,
@@ -133,57 +137,33 @@
     {self.check-type type, false}
 
     || TODO: consider xsi:type
-    || TODO: consider id/href
-    || TODO: consider xsi:nil
+    || FIXME: consider id/href
+    || FIXME: consider xsi:nil
 
-    || dispatch by element
-    def opening-token = {stream.read-one}
-    {type-switch opening-token
-     case se:XMLStartElement do
         || match element name
-        let element-type:#SOAPObjectType = null
-        {for t in self.types do
-            {if t.element-name == se.element then
-                set element-type = t
-                {break}
-            }}
-        {if-non-null element-type then
-            || read attributes, if any
-            def attributes = {reader-read-attributes stream}
-            || invoke unmarshaller
-            def val:any  =
-                {current-mapper.unmarshal 
-                    stream,
-                    attributes,
-                    element-type,
-                    encoding,
-                    context,
-                    current-mapper,
-                    xml-type-to-curl-type,
-                    check-type-attribute? = check-type-attribute?}
-            || consume matching end element
-            def closing-token = {stream.read-one}
-            {type-switch closing-token
-             case ee:XMLEndElement do
-                {if ee.element != null and ee.element != se.element then
-                    {throw-unmarshal-exception
-                        {lmessage
-                            Expected XMLEndElement for {value se.element}
-                            but got {value ee.element}}}}
-             else
-                {throw-unmarshal-exception
-                    {lmessage
-                        Expected XMLEndElement for {value se.element}
-                        but got {value closing-token}}}
-            }
-            {return val, true}
-         else
-            || Unrecognized element
-            {return null, false}
+    let element-type:#SOAPObjectType = null
+    {for t in self.types do
+        {if t.element-name == type.element-name then
+            set element-type = t
+            {break}
+        }}
+    {if-non-null element-type then
+        || invoke unmarshaller
+        {return
+            {current-mapper.unmarshal 
+                stream,
+                attributes,
+                element-type,
+                encoding,
+                context,
+                current-mapper,
+                xml-type-to-curl-type,
+                check-type-attribute? = check-type-attribute?
+            },
+            true
         }
      else
-        || Not start of element
-        {stream.unread-one opening-token}
+        || Unrecognized element
         {return null, false}
     }
   }

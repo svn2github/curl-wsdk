@@ -772,7 +772,6 @@
                 }
                 
                 || write out argument types
-                let repeating-element-names:{Array-of XMLName} = {{Array-of XMLName}}
                 {for param key i in in-params do
                     {if i > 0 then
                         {out.write-one ','}
@@ -784,12 +783,6 @@
                             expected-content-types = param.content-types
                         }
                     }
-                    || note repeating elements 
-                    {type-switch param.type
-                     case t:WSDLSchemaArrayType do                        
-                        {if-non-null name = t.repeating-element-name then
-                            {repeating-element-names.append name}
-                        }}
                 }
                 {out.write-one-string
                     "\n" &
@@ -839,26 +832,6 @@
                         "            null,\n"
                     }
                 }
-                || note any repeating elements
-                {if not repeating-element-names.empty? then
-                    {format out = out,
-                        "            repeating-elements = \n" &
-                        "                \{\{Set-of XMLName\}"
-                    }
-                    {for name key i in repeating-element-names do
-                        {if i > 0 then
-                            {out.write-one ','}}
-                        {out.write-one '\n'}
-                        {format out = out, 
-                            "                    %s",
-                            {WSDLSchemaType.xml-name-to-curl-code name}
-                        }
-                    }
-                    {format out = out,
-                        "\n                \},\n"
-                    }
-                }
-
                 {if-non-null soap-action = soap-op.soap-action then
                     {format out = out,
                         "            soap-action = \"%s\",\n",
@@ -1133,7 +1106,21 @@
         }
     }
     || register types
-    {for type in sorted-types do
+    {for type key i in sorted-types do
+        || Skip duplicates.
+        {if i > 0 then
+            def prev-type = sorted-types[i - 1]
+            {if type.ref-name == prev-type.ref-name and
+                type.xml-name == prev-type.xml-name and
+                type.nullable? == prev-type.nullable? and
+                type.multiple-reference == prev-type.multiple-reference and
+                type.package-name == prev-type.package-name and
+                type.marshaler-handled-element? ==
+                    prev-type.marshaler-handled-element?
+             then
+                {continue}
+            }
+        }
         let element-name:#XMLName = types[type]
         let best-element-name:#XMLName =
             {if-non-null type-xml-name = type.xml-name then

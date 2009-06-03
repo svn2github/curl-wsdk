@@ -217,6 +217,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -376,6 +377,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           marshal-context:SOAPMarshalContext,
@@ -491,6 +493,20 @@
                                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
                                    check-type-attribute?:bool = false
                           }:(value:any)
+  }
+
+  {method public abstract open {get-marshal-proc
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+                                   encoding:#String ||default? (multiple urls poss.)
+                                }:#SOAPTypeMapper.MarshalProc
+  }
+
+  {method public abstract open {get-unmarshal-proc
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+                                   encoding:#String ||default? (multiple urls poss.)
+                               }:#SOAPTypeMapper.UnmarshalProc
   }
 }
 
@@ -840,6 +856,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           marshal-context:SOAPMarshalContext,
@@ -861,6 +878,7 @@
                 stream,
                 value,
                 type,
+                element,
                 encoding,
                 marshal-context,
                 current-mapper,
@@ -1102,7 +1120,17 @@
 
                           encoding:#String ||default? (multiple urls poss.)
                        }:#SOAPTypeMapper.MarshalProc
-    {return {super.get-marshal-proc type, encoding}}
+    {return
+        {if-non-null mp = {super.get-marshal-proc type, encoding} then
+            mp
+         else
+            {if-non-null chain = self.chain then
+                {chain.get-marshal-proc type, encoding}
+             else
+                null
+            }
+        }
+    }
   }
 
   {doc-next
@@ -1139,7 +1167,17 @@
 
                           encoding:#String ||default? (multiple urls poss.)
                        }:#SOAPTypeMapper.UnmarshalProc
-    {return {super.get-unmarshal-proc type, encoding}}
+    {return
+        {if-non-null up = {super.get-unmarshal-proc type, encoding} then
+            up
+         else
+            {if-non-null chain = self.chain then
+                {chain.get-unmarshal-proc type, encoding}
+             else
+                null
+            }
+        }
+    }
   }
 
   {method public open {unmarshal
@@ -1156,7 +1194,7 @@
                               check-type-attribute?:bool = false
                           }:(value:any)
     let unmarshal-proc:#SOAPTypeMapper.UnmarshalProc =
-        {self.get-unmarshal-proc type, encoding}
+        {super.get-unmarshal-proc type, encoding}
 
     || if we found an unmarshal-proc, try and run it
     {if-non-null unmarshal-proc then
@@ -1206,6 +1244,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           marshal-context:SOAPMarshalContext,
@@ -1218,7 +1257,7 @@
                               SOAPTypeMultipleReference.unknown
                         }:void
     let marshal-proc:#SOAPTypeMapper.MarshalProc =
-        {self.get-marshal-proc type, encoding}
+        {super.get-marshal-proc type, encoding}
 
     || if we found a marshal-proc, try and run it
     {if-non-null marshal-proc then
@@ -1227,6 +1266,7 @@
                 stream,
                 value,
                 type,
+                element,
                 encoding,
                 marshal-context,
                 current-mapper,
@@ -1245,6 +1285,7 @@
             stream,
             value,
             type,
+            element,
             encoding,
             marshal-context,
             current-mapper,
@@ -1812,7 +1853,8 @@
   {constructor package {default
                            curl-type:Type,
                            multiple-reference:SOAPTypeMultipleReference,
-                           nillable?:bool}
+                           nillable?:bool
+                       }
     set self.curl-type = curl-type
     set self.multiple-reference = multiple-reference
     set self.nillable? = nillable?
@@ -1824,8 +1866,8 @@
 ||--                 k:TableSOAPXMLTypeToCurlTypeValue}:int
 ||--    {return
 ||--        {value-hash k.curl-type} +
-||--        {value-hash k.multiple-reference} +
-||--        {value-hash k.nillable?}
+||--        {value-hash k.multiple-reference} * 0x80 +
+||--        {value-hash k.nillable?} * 0x800
 ||--    }
 ||--}
 ||--
@@ -2042,6 +2084,9 @@
         implementation of this interface.
     }
 }
+|| FIXME: [bardwell 5-27-2009] This, and anything mapping to the xml-type
+|| should also fill in the other parameters in the SOAPObjectType like
+|| the choice and mtom and element-handling stuff.
 {define-class public abstract open SOAPCurlTypeToXMLTypeMapper
 
   {doc-next
@@ -2084,13 +2129,17 @@
   field package constant xml-type:XMLName
   field package constant multiple-reference:SOAPTypeMultipleReference
   field package constant nillable?:bool
+  field package constant marshaler-handled-element?:bool
   {constructor package {default
                            xml-type:XMLName,
                            multiple-reference:SOAPTypeMultipleReference,
-                           nillable?:bool}
+                           nillable?:bool,
+                           marshaler-handled-element?:bool
+                       }
     set self.xml-type = xml-type
     set self.multiple-reference = multiple-reference
     set self.nillable? = nillable?
+    set self.marshaler-handled-element? = marshaler-handled-element?
   }
 }
 
@@ -2099,8 +2148,8 @@
 ||--                 k:TableSOAPCurlTypeToXMLTypeValue}:int
 ||--    {return
 ||--        {value-hash k.xml-type} +
-||--        {value-hash k.multiple-reference} +
-||--        {value-hash k.nillable?}
+||--        {value-hash k.multiple-reference} * 0x80 +
+||--        {value-hash k.nillable?} * 0x800
 ||--    }
 ||--}
 ||--
@@ -2169,22 +2218,20 @@
             set curl-type = initial-curl-type
         }
         set type =
-            {if value.multiple-reference != SOAPTypeMultipleReference.unknown
-             then
-                {SOAPObjectType.clone-with
-                    type,
-                    curl-type = curl-type,
-                    xml-type = value.xml-type,
-                    multiple-reference = value.multiple-reference,
-                    nillable? = value.nillable?
-                }
-             else
-                {SOAPObjectType.clone-with
-                    type,
-                    curl-type = curl-type,
-                    xml-type = value.xml-type,
-                    nillable? = value.nillable?
-                }
+            {SOAPObjectType.clone-with
+                type,
+                curl-type = curl-type,
+                xml-type = value.xml-type,
+                multiple-reference =
+                    {if value.multiple-reference !=
+                        SOAPTypeMultipleReference.unknown
+                     then
+                        value.multiple-reference
+                     else
+                        type.multiple-reference
+                    },
+                nillable? = value.nillable?,
+                marshaler-handled-element? = value.marshaler-handled-element?
             }
     }
 
@@ -2195,7 +2242,8 @@
                              curl-type:Type,
                              xml-type:XMLName,
                              multiple-reference:SOAPTypeMultipleReference,
-                             nillable?:bool
+                             nillable?:bool,
+                             marshaler-handled-element?:bool = false
                          }:void
     {self.table.set
         {if curl-type.can-be-null? and curl-type.non-null-variant != null then
@@ -2203,10 +2251,11 @@
          else
             curl-type
         },
-        {new TableSOAPCurlTypeToXMLTypeValue,
+        {TableSOAPCurlTypeToXMLTypeValue
             xml-type,
             multiple-reference,
-            nillable?
+            nillable?,
+            marshaler-handled-element?
         }
     }
   }
@@ -2315,18 +2364,27 @@
         well as setting {docref SOAPObjectType.xml-type} in the new
         {docref SOAPObjectType} which it creates.
     }
+    {parameter marshaler-handled-element?,
+        When {docref DefaultSOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.marshaler-handled-element?} to this value as
+        well as setting {docref SOAPObjectType.xml-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
   }
   {method public open {set-curl-type-to-xml-type
                           curl-type:Type,
                           xml-type:XMLName,
                           multiple-reference:SOAPTypeMultipleReference,
-                          nillable?:bool
+                          nillable?:bool,
+                          marshaler-handled-element?:bool = false
                       }:void
     {super.set-curl-type-to-xml-type
         curl-type,
         xml-type,
         multiple-reference,
-        nillable?
+        nillable?,
+        marshaler-handled-element? = marshaler-handled-element?
     }
   }
 }

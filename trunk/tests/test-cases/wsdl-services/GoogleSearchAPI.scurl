@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.GoogleSearchAPI,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/GoogleSearchAPI.wsdl"}
+    wsdl = "file:///u:/bardwell/w/tests/test-cases/wsdl-services/GoogleSearchAPI.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/GoogleSearchAPI.wsdl
+|| WSDL file: file:///u:/bardwell/w/tests/test-cases/wsdl-services/GoogleSearchAPI.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public GoogleSearchService {inherits WSDLHTTPRPCPostClient}
@@ -14,7 +14,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "do-get-cached-page",
             {{Array-of any}
@@ -74,7 +74,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "do-spelling-suggestion",
             {{Array-of any}
@@ -134,7 +134,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "do-google-search",
             {{Array-of any}
@@ -554,13 +554,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://api.google.com/search/beta2"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://api.google.com/search/beta2"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "5"
     }
   }
 }

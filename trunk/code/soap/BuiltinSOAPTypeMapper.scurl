@@ -214,7 +214,8 @@
         {self.set-marshal-proc
             {new SOAPObjectType,
                 xml-type = xml-type,
-                curl-type = (any asa Type)
+                curl-type = (any asa Type),
+                marshaler-handled-element? = true
             },
             null,
             any-marshal-proc
@@ -465,6 +466,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           marshal-context:SOAPMarshalContext,
@@ -489,7 +491,7 @@
             }
     }
     let marshal-proc:#SOAPTypeMapper.MarshalProc =
-        {self.get-marshal-proc type, encoding}
+        {current-mapper.get-marshal-proc type, encoding}
     {if marshal-proc == null and
         ({type.xml-type.local-name.find '\['} >= 0 or 
          type.xml-type == SOAPArrayMarshaler.soap-1-1-array-type-name)
@@ -499,10 +501,12 @@
                 type,
                 curl-type-to-xml-type = curl-type-to-xml-type
             }
+        || FIXME: should this register in current-mapper when it is a
+        || TableSOAPTypeMapper?
         {array-marshaler.type-mapper-register
             self, marshal? = true, unmarshal? = false
         }
-        set marshal-proc = {self.get-marshal-proc type, encoding}
+        set marshal-proc = {current-mapper.get-marshal-proc type, encoding}
     }
     || FIXME: save this list in an array somewhere so we can just search it.
     || if it is SOAP-ENC xml-type, then just treat it like they said
@@ -512,7 +516,7 @@
           type.xml-type.namespace == SOAPTypeMapper.soap-1-2-encoding-uri)
      then
         set marshal-proc =
-            {self.get-marshal-proc
+            {current-mapper.get-marshal-proc
                 {SOAPObjectType.clone-with
                     type,
                     xml-type =
@@ -526,14 +530,12 @@
     }
     || For any types make sure that we find the any marshaler, it has a
     || plan for how to find the right marshal-proc.
-    || Note: maybe we should do this for any xml-type?
-    {if marshal-proc == null and type.xml-type != null and
-        {BuiltinSOAPTypeMapper.any-xml-types.find
-            {non-null type.xml-type}} >= 0 and
+    {if marshal-proc == null and
+        type.xml-type != null and
         type.curl-type != (any asa Type)
      then
         set marshal-proc =
-            {self.get-marshal-proc
+            {current-mapper.get-marshal-proc
                 {SOAPObjectType.clone-with
                     type,
                     curl-type = (any asa Type)
@@ -548,6 +550,7 @@
                 stream,
                 value,
                 type,
+                element,
                 encoding,
                 marshal-context,
                 current-mapper,
@@ -594,7 +597,7 @@
             }
     }
     let unmarshal-proc:#SOAPTypeMapper.UnmarshalProc =
-        {self.get-unmarshal-proc type, encoding}
+        {current-mapper.get-unmarshal-proc type, encoding}
 
     {if unmarshal-proc == null and
         {type.xml-type.local-name.find '\['} >= 0
@@ -604,10 +607,12 @@
                 type,
                 xml-type-to-curl-type = xml-type-to-curl-type
             }
+        || FIXME: should this register in current-mapper when it is a
+        || TableSOAPTypeMapper?
         {array-marshaler.type-mapper-register
             self, unmarshal? = true, marshal? = false
         }
-        set unmarshal-proc = {self.get-unmarshal-proc type, encoding}
+        set unmarshal-proc = {current-mapper.get-unmarshal-proc type, encoding}
     }
 
     {if unmarshal-proc == null and
@@ -620,7 +625,7 @@
          type.xml-type.namespace == SOAPTypeMapper.soap-1-2-encoding-uri)
      then
         set unmarshal-proc =
-            {self.get-unmarshal-proc
+            {current-mapper.get-unmarshal-proc
                 {SOAPObjectType.clone-with
                     type,
                     xml-type =
@@ -641,7 +646,7 @@
         type.curl-type != (any asa Type)
      then
         set unmarshal-proc =
-            {self.get-unmarshal-proc 
+            {current-mapper.get-unmarshal-proc 
                 {SOAPObjectType.clone-with
                     type,
                     curl-type = (any asa Type)
@@ -857,6 +862,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -910,6 +916,9 @@
                     "-INF"
                  else
                     {if type.xml-type.local-name == "decimal" then
+                        || FIXME: [bardwell 6/1/2009] This ends up with a
+                        || bunch of trailing zeros that are legal, but a waste
+                        || and they cause bogus test failures.
                         {format
                             {if float? then
                                 "%.8f"
@@ -1027,6 +1036,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -1170,6 +1180,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -1366,6 +1377,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -1486,6 +1498,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -1498,12 +1511,18 @@
                }:(worked?:bool)
     let constant curl-type:Type = {type-of value}
     {if curl-type == Null then
+        {if type.marshaler-handled-element?  then
+            {stream.write-one {XMLStartElement element}}
+        }
         {marshal-write-nil-type stream, type}
+        {if type.marshaler-handled-element?  then
+            {stream.write-one {XMLEndElement element = element}}
+        }
         {return true}
     }
     let new-type:SOAPObjectType =
-        {new SOAPObjectType,
-            element-name = type.element-name,
+        {SOAPObjectType.clone-with
+            type,
             curl-type =
                 {if type.curl-type != null and
                     type.curl-type != (any asa Type)
@@ -1512,13 +1531,15 @@
                  else
                     curl-type
                 },
-            nillable? = type.nillable?
+            marshaler-handled-element? =
+                (curl-type == StandardXDMElement)
         }
     set new-type = {curl-type-to-xml-type.curl-type-to-xml-type new-type}
     || If we didn't actually figure out some type information, then
     || we would just end up looping.
-    {if new-type.xml-type == type.xml-type and
-        new-type.curl-type == type.curl-type
+    {if (new-type.xml-type == type.xml-type and
+         new-type.curl-type == type.curl-type) or
+        {current-mapper.get-marshal-proc new-type, encoding} == null
      then
         {throw-marshal-exception
             {lformat
@@ -1528,12 +1549,18 @@
             }
         }
     }
+    {if type.marshaler-handled-element? and
+        not new-type.marshaler-handled-element?
+     then
+        {stream.write-one {XMLStartElement element}}
+    }
     || will throw if can't do it, which isn't ideal, but is ok
     || FIXME should we catch and return false?
     {current-mapper.marshal
         stream,
         value,
         new-type,
+        element,
         encoding, || default? (multiple urls poss.)
         marshal-context,
         current-mapper,
@@ -1542,6 +1569,11 @@
         || thing really is, so we must write out type attributes.
         write-type-attribute? = true,
         multiple-reference = multiple-reference
+    }
+    {if type.marshaler-handled-element? and
+        not new-type.marshaler-handled-element?
+     then
+        {stream.write-one {XMLEndElement element = element}}
     }
     {return true}
 }
@@ -1567,35 +1599,51 @@
                          || should mapper do this?
                          check-type-attribute?:bool = false
                      }:(value:any, worked?:bool)
+    let new-type:SOAPObjectType = type
     {if-non-null attributes then
         let constant null?:bool = {unmarshal-check-if-nil? attributes, type}
         {if null? then
             {return null, true}
         }
-        let constant new-type:SOAPObjectType =
+        set new-type =
             {any-find-type-from-attributes
                 type,
                 attributes,
                 xml-type-to-curl-type
             }
-        {if new-type.xml-type != null and new-type.curl-type != null and
-            (new-type.xml-type != type.xml-type or
-             new-type.curl-type != type.curl-type)
-         then
-            {return
-                {current-mapper.unmarshal
-                    stream,
-                    attributes,
-                    new-type,
-                    encoding,
-                    unmarshal-context,
-                    current-mapper,
-                    xml-type-to-curl-type,
-                    || we already checked it...
-                    check-type-attribute? = false
-                },
-                true
+    }
+    {if (new-type.curl-type == null or new-type.curl-type == any asa Type)
+        and (new-type.xml-type == type.xml-type)
+     then
+        def new-type2 =
+            {SOAPObjectType.clone-with
+                new-type,
+                curl-type = StandardXDMElement,
+                marshaler-handled-element? = true
             }
+        || Avoid recursing if there isn't actual a marshaler for
+        || StandardXDMElement.
+        {if {current-mapper.get-unmarshal-proc new-type2, encoding} != null then
+            set new-type = new-type2
+        }
+    }
+    {if new-type.xml-type != null and new-type.curl-type != null and
+        (new-type.xml-type != type.xml-type or
+         new-type.curl-type != type.curl-type)
+     then
+        {return
+            {current-mapper.unmarshal
+                stream,
+                attributes,
+                new-type,
+                encoding,
+                unmarshal-context,
+                current-mapper,
+                xml-type-to-curl-type,
+                || we already checked it...
+                check-type-attribute? = false
+            },
+            true
         }
     }
     || not a return null, false because there is no recovery, and we
@@ -1792,6 +1840,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -1991,6 +2040,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -2121,6 +2171,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -2330,6 +2381,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -2473,6 +2525,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -2839,7 +2892,8 @@
         stream,
         v,
         soap-type,
-        null,        
+        {uninitialized-value-for-type XMLName},
+        null,
         empty-marshal-context,
         current-mapper,
         curl-type-to-xml-type,
@@ -3224,12 +3278,12 @@
     }
     || add missing int types...
     || TODO should any really be in here?  Should other xml any types show up?
-    
     {table.set-curl-type-to-xml-type
         StandardXDMElement, ||any,
         SOAPTypeMapper.xml-schema-any-type,
         SOAPTypeMultipleReference.unknown,
-        true
+        true,
+        marshaler-handled-element? = true
     }
 
     {table.set-curl-type-to-xml-type
@@ -3554,37 +3608,39 @@
 {do
     let constant any-curl-types:{FastArray-of Type} =
         {new {FastArray-of Type},
-            XDMElement,
             StandardXDMElement
         }
     {for curl-type in any-curl-types do
-        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
-            {new SOAPXMLDocumentMarshaler,
-                {new SOAPObjectType,
-                    xml-type = SOAPTypeMapper.xml-schema-any-type,
-                    curl-type = curl-type,
-                    nillable? = true
+        {for xml-type in BuiltinSOAPTypeMapper.any-xml-types do
+            def doc-marshaler =
+                {SOAPXMLDocumentMarshaler
+                    {SOAPObjectType
+                        xml-type = xml-type,
+                        curl-type = curl-type,
+                        nillable? = true,
+                        marshaler-handled-element? = true
+                    }
                 }
-            }
 
-        {doc-marshaler.register
-            type-mapper = 
-                (builtin-soap-type-mapper 
-                 asa TableSOAPTypeMapper),
-            element-name-to-xml-type-mapper = 
-                (builtin-soap-element-name-to-xml-type-mapper
-                 asa TableSOAPElementNameToXMLTypeMapper),
-            xml-type-to-curl-type-mapper = 
-                (builtin-soap-xml-type-to-curl-type-mapper
-                 asa TableSOAPXMLTypeToCurlTypeMapper),
-            curl-type-to-xml-type-mapper = 
-                (builtin-soap-curl-type-to-xml-type-mapper
-                 asa TableSOAPCurlTypeToXMLTypeMapper),     
-            xml-type-to-element-name-mapper = 
-                (builtin-soap-xml-type-to-element-name-mapper
-                 asa TableSOAPXMLTypeToElementNameMapper)
+            {doc-marshaler.register
+                type-mapper = 
+                    (builtin-soap-type-mapper 
+                    asa TableSOAPTypeMapper),
+                element-name-to-xml-type-mapper = 
+                    (builtin-soap-element-name-to-xml-type-mapper
+                    asa TableSOAPElementNameToXMLTypeMapper),
+                curl-type-to-xml-type-mapper = 
+                    {if xml-type == SOAPTypeMapper.xml-schema-any-type then
+                        (builtin-soap-curl-type-to-xml-type-mapper
+                            asa TableSOAPCurlTypeToXMLTypeMapper)
+                     else
+                        null
+                    },
+                xml-type-to-element-name-mapper = 
+                    (builtin-soap-xml-type-to-element-name-mapper
+                    asa TableSOAPXMLTypeToElementNameMapper)
+            }
         }
-        
     }
 }
 

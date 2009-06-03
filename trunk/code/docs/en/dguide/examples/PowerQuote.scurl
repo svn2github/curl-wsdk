@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/PowerQuote.wsdl"}
+    wsdl = "file:///u:/bardwell/w/code/docs/en/dguide/examples/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/PowerQuote.wsdl
+|| WSDL file: file:///u:/bardwell/w/code/docs/en/dguide/examples/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
@@ -267,7 +267,8 @@
                 {SOAPObjectType
                     xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 }
             },
             null,
@@ -370,8 +371,9 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://ws.cdyne.com/", "DataSet"},
                     xml-type = {XMLName "http://ws.cdyne.com/", "_DataSet"},
-                    curl-type = DataSet,
-                    nillable? = true
+                    curl-type = XDMElement,
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -388,8 +390,9 @@
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
                     xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
-                    curl-type = GetQuoteDataSetResult,
-                    nillable? = true
+                    curl-type = XDMElement,
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -550,13 +553,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "5"
     }
   }
 }

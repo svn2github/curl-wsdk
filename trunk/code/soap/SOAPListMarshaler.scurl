@@ -36,6 +36,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           context:SOAPMarshalContext,
@@ -73,7 +74,7 @@
     || handle as string
     let worked?:bool =
         {any-string-marshal-proc 
-            stream, out, type, encoding, 
+            stream, out, type, element, encoding, 
             context, current-mapper, curl-type-to-xml-type,
             write-type-attribute? = write-type-attribute?,
             multiple-reference = multiple-reference}

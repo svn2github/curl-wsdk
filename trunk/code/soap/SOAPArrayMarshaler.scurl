@@ -359,6 +359,7 @@
 
                             || xml-type and curl-type required
                             type:SOAPObjectType,
+                            element:XMLName,
 
                             encoding:#String, ||default? (multiple urls poss.)
                             context:SOAPMarshalContext,
@@ -385,7 +386,8 @@
         {self.fill-in-type-and-element-type self.type}
     }
 
-    {if write-type-attribute? then
+    {if write-type-attribute? and not self.type.marshaler-handled-element?
+     then
         || write out generic xsd:type=SOAP-ENC:Array attribute
         let constant dimensions:{Array-of int} =
             {SOAPArrayMarshaler.fill-in-dimensions-from-value
@@ -422,7 +424,9 @@
             {new XMLAttribute.with-xml-name-values,
                 SOAPTypeMapper.xml-schema-type,
                 {new {Array-of XMLName},
-                    {if self.type.xml-type == self.array-type then
+                    {if self.type.xml-type == self.array-type and
+                        context.soap-version == SOAPVersion.soap-1-1
+                     then
                         SOAPArrayMarshaler.soap-1-1-array-type-name
                      else
                         {non-null self.type.xml-type}
@@ -431,12 +435,14 @@
             }
         }
         
-        || write out actual type SOAP-ENC:arrayType="my type" 
-        || if we have a [] type thing
-        {stream.write-one
-            {new XMLAttribute.with-xml-name-values,
-                SOAPArrayMarshaler.soap-1-1-array-type-attribute-name,
-                {new {Array-of XMLName}, array-type}
+        {if context.soap-version == SOAPVersion.soap-1-1 then
+            || write out actual type SOAP-ENC:arrayType="my type" 
+            || if we have a [] type thing
+            {stream.write-one
+                {new XMLAttribute.with-xml-name-values,
+                    SOAPArrayMarshaler.soap-1-1-array-type-attribute-name,
+                    {new {Array-of XMLName}, array-type}
+                }
             }
         }
     }
@@ -502,11 +508,7 @@
                      else
                         vv}
                 
-                let has-wrapper?:bool = v isa XDMElement
-                let choice-element?:bool = self.element-type.choice-elements != null
-                let needs-wrapper?:bool = not (has-wrapper? or choice-element?)
-                {if needs-wrapper? then
-                    || TODO: maybe better get element-name from choice-marshaler
+                {if not self.element-type.marshaler-handled-element? then
                     {stream.write-one
                         {XMLStartElement element-name}
                     }
@@ -521,6 +523,7 @@
                         stream,
                         v,
                         {non-null self.element-type},
+                        element-name,
                         encoding,
                         context,
                         current-mapper,
@@ -533,6 +536,7 @@
                         stream,
                         v,
                         {non-null self.element-type},
+                        element-name,
                         encoding,
                         context,
                         current-mapper,
@@ -541,9 +545,9 @@
                         multiple-reference = self.element-type.multiple-reference
                     }
                 }
-                {if needs-wrapper? then
+                {if not self.element-type.marshaler-handled-element?  then
                     {stream.write-one
-                        {XMLEndElement}
+                        {XMLEndElement element = element-name}
                     }
                 }
             }

@@ -1,17 +1,17 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
+    wsdl = "file:///u:/bardwell/w/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/PowerQuote.wsdl
+|| WSDL file: file:///u:/bardwell/w/tests/test-cases/wsdl-services/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
 
 {doc-next 
     {details 
-       This method retrieves a current stock quote.  Use a license key of 0 for testing.
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
 }
   {method public {get-quote stock-symbol:String, license-key:String}:(get-quote-result:QuoteData)
@@ -19,7 +19,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-quote",
             {{Array-of any}
@@ -36,7 +36,7 @@
 
 {doc-next 
     {details 
-       This method retrieves a current stock quote.  Use a license key of 0 for testing.
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
     }
 }
   {method public {define-get-quote}:void
@@ -81,7 +81,7 @@
 
 {doc-next 
     {details 
-       This method retrieves just a stock price.  Use a license key of 0 for testing.
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
 }
   {method public {get-quick-quote stock-symbol:String, license-key:String}:(get-quick-quote-result:double)
@@ -89,7 +89,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-quick-quote",
             {{Array-of any}
@@ -106,7 +106,7 @@
 
 {doc-next 
     {details 
-       This method retrieves just a stock price.  Use a license key of 0 for testing.
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
 }
   {method public {define-get-quick-quote}:void
@@ -150,7 +150,7 @@
 
 {doc-next 
     {details 
-       This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
 }
   {method public {get-quote-data-set stock-symbols:String, license-key:String}:(get-quote-data-set-result:#GetQuoteDataSetResult)
@@ -158,7 +158,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-quote-data-set",
             {{Array-of any}
@@ -175,7 +175,7 @@
 
 {doc-next 
     {details 
-       This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
 }
   {method public {define-get-quote-data-set}:void
@@ -204,7 +204,8 @@
                 {SOAPObjectType
                     xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
                     curl-type = GetQuoteDataSetResult,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 }
             },
             null,
@@ -223,7 +224,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "important-message",
             {{Array-of any}
@@ -293,8 +294,9 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://ws.cdyne.com/", "DataSet"},
                     xml-type = {XMLName "http://ws.cdyne.com/", "_DataSet"},
-                    curl-type = DataSet,
-                    nillable? = true
+                    curl-type = XDMElement,
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -311,8 +313,9 @@
             {SOAPXMLDocumentMarshaler
                 {SOAPObjectType
                     xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
-                    curl-type = GetQuoteDataSetResult,
-                    nillable? = true
+                    curl-type = XDMElement,
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -473,13 +476,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "5"
     }
   }
 }

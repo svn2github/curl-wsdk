@@ -220,6 +220,7 @@
                    || xml-type and curl-type required, multi-reference
                    || and nillable possibly important.
                    type:SOAPObjectType,
+                   element:XMLName,
 
                    encoding:#String, || default? (multiple urls poss.)
                    marshal-context:SOAPMarshalContext,
@@ -251,7 +252,7 @@
     || handle as string
     let worked?:bool =
         {any-string-marshal-proc stream, string-value,
-            type, encoding, 
+            type, element, encoding,
             marshal-context, current-mapper,
             curl-type-to-xml-type,
             write-type-attribute? = write-type-attribute?,

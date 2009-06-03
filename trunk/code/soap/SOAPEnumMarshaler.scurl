@@ -125,6 +125,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           context:SOAPMarshalContext,
@@ -176,10 +177,13 @@
                 }
             }
         }
+    || FIXME: If different types were legal might need to handle switch
+    || from marshaler-handled-element? to not.
     {current-mapper.marshal
         stream,
         new-value,
         new-type,
+        element,
         encoding, || default? (multiple urls poss.)
         context,
         current-mapper,

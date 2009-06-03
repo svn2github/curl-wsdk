@@ -1,71 +1,56 @@
-{curl 6.0 package}
+{curl 7.0 package}
 {package COM.CURL.WSDL.XMethodsQueryService,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-samples/xmethods/XMethodsQueryService.wsdl"}
+    wsdl = "file:///u:/bardwell/w/tests/test-cases/wsdl-samples/xmethods/XMethodsQueryService.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/DEV5/WSDK/support/test-cases/wsdl-samples/xmethods/XMethodsQueryService.wsdl
+|| WSDL file: file:///u:/bardwell/w/tests/test-cases/wsdl-samples/xmethods/XMethodsQueryService.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
-  {doc-next 
+{doc-next 
     {details 
-      XMethods query service
+        XMethods query service
     }
-  }
+}
 {define-class public XMethodsQuery {inherits WSDLHTTPRPCPostClient}
 
-  {method public {get-service-summaries-by-publisher publisher-id:#String}:(result:#ArrayOfServiceSummary)
+  {method public {get-service-summaries-by-publisher publisher-id:#String}:(result:#{Array-of ServiceSummary})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-service-summaries-by-publisher",
             {{Array-of any}
                 publisher-id
             },
-            {{Array-of #XMLName}
-                {XMLName "", "publisherID"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "Result"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"},
-                    curl-type = ArrayOfServiceSummary,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "",
-            request-operation = {XMLName "http://www.xmethods.net/interfaces/query", "getServiceSummariesByPublisher"},
-            default-namespace = "http://www.xmethods.net/interfaces/query",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true
+            {splice self.operations["get-service-summaries-by-publisher"]}
         }
     {return
-        responses[0] asa #ArrayOfServiceSummary
+        responses[0] asa #{Array-of ServiceSummary}
     }
   }
 
 
   {method public {async-get-service-summaries-by-publisher publisher-id:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-service-summaries-by-publisher",
             {{Array-of any}
                 publisher-id
             },
+            {splice self.operations["get-service-summaries-by-publisher"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-get-service-summaries-by-publisher}:void
+    set self.operations["get-service-summaries-by-publisher"] = 
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "publisherID"}
             },
@@ -82,7 +67,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"},
-                    curl-type = ArrayOfServiceSummary,
+                    curl-type = {Array-of ServiceSummary},
                     nillable? = true
                 }
             },
@@ -92,58 +77,46 @@
             default-namespace = "http://www.xmethods.net/interfaces/query",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = true
     }
   }
 
 
-  {method public {get-all-service-summaries}:(result:#ArrayOfServiceSummary)
+  {method public {get-all-service-summaries}:(result:#{Array-of ServiceSummary})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-all-service-summaries",
             {{Array-of any}
             },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "Result"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"},
-                    curl-type = ArrayOfServiceSummary,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "",
-            request-operation = {XMLName "http://www.xmethods.net/interfaces/query", "getAllServiceSummaries"},
-            default-namespace = "http://www.xmethods.net/interfaces/query",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true
+            {splice self.operations["get-all-service-summaries"]}
         }
     {return
-        responses[0] asa #ArrayOfServiceSummary
+        responses[0] asa #{Array-of ServiceSummary}
     }
   }
 
 
   {method public {async-get-all-service-summaries event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-all-service-summaries",
             {{Array-of any}
             },
+            {splice self.operations["get-all-service-summaries"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-get-all-service-summaries}:void
+    set self.operations["get-all-service-summaries"] = 
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -154,7 +127,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"},
-                    curl-type = ArrayOfServiceSummary,
+                    curl-type = {Array-of ServiceSummary},
                     nillable? = true
                 }
             },
@@ -164,58 +137,46 @@
             default-namespace = "http://www.xmethods.net/interfaces/query",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
+            write-encoding-attribute? = true
     }
   }
 
 
-  {method public {get-all-service-names}:(result:#ArrayOfIDNamePair)
+  {method public {get-all-service-names}:(result:#{Array-of IDNamePair})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-all-service-names",
             {{Array-of any}
             },
-            {{Array-of #XMLName}
-            },
-            {{Array-of SOAPObjectType}
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "Result"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"},
-                    curl-type = ArrayOfIDNamePair,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "",
-            request-operation = {XMLName "http://www.xmethods.net/interfaces/query", "getAllServiceNames"},
-            default-namespace = "http://www.xmethods.net/interfaces/query",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true
+            {splice self.operations["get-all-service-names"]}
         }
     {return
-        responses[0] asa #ArrayOfIDNamePair
+        responses[0] asa #{Array-of IDNamePair}
     }
   }
 
 
   {method public {async-get-all-service-names event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
-        {self.soap-caller.async-call
-            self.service-location,
+        {self.async-call
+            "get-all-service-names",
             {{Array-of any}
             },
+            {splice self.operations["get-all-service-names"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-get-all-service-names}:void
+    set self.operations["get-all-service-names"] = 
+        {Arguments
             {{Array-of #XMLName}
             },
             {{Array-of SOAPObjectType}
@@ -226,7 +187,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"},
-                    curl-type = ArrayOfIDNamePair,
+                    curl-type = {Array-of IDNamePair},
                     nillable? = true
                 }
             },
@@ -236,7 +197,38 @@
             default-namespace = "http://www.xmethods.net/interfaces/query",
             rpc-style? = true,
             write-type-attribute? = true,
-            write-encoding-attribute? = true,
+            write-encoding-attribute? = true
+    }
+  }
+
+
+  {method public {get-service-names-by-publisher publisher-id:#String}:(result:#{Array-of IDNamePair})
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-service-names-by-publisher",
+            {{Array-of any}
+                publisher-id
+            },
+            {splice self.operations["get-service-names-by-publisher"]}
+        }
+    {return
+        responses[0] asa #{Array-of IDNamePair}
+    }
+  }
+
+
+  {method public {async-get-service-names-by-publisher publisher-id:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "get-service-names-by-publisher",
+            {{Array-of any}
+                publisher-id
+            },
+            {splice self.operations["get-service-names-by-publisher"]},
             event-handler,
             ...
         }
@@ -244,17 +236,9 @@
   }
 
 
-  {method public {get-service-names-by-publisher publisher-id:#String}:(result:#ArrayOfIDNamePair)
-    let constant (responses:{Array-of any},
-         headers:#{Array-of any},
-         header-roles:#{Array-of #String},
-         header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
-            {{Array-of any}
-                publisher-id
-            },
+  {method public {define-get-service-names-by-publisher}:void
+    set self.operations["get-service-names-by-publisher"] = 
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "publisherID"}
             },
@@ -271,7 +255,7 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"},
-                    curl-type = ArrayOfIDNamePair,
+                    curl-type = {Array-of IDNamePair},
                     nillable? = true
                 }
             },
@@ -282,50 +266,6 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ArrayOfIDNamePair
-    }
-  }
-
-
-  {method public {async-get-service-names-by-publisher publisher-id:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                publisher-id
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "publisherID"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "Result"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"},
-                    curl-type = ArrayOfIDNamePair,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "",
-            request-operation = {XMLName "http://www.xmethods.net/interfaces/query", "getServiceNamesByPublisher"},
-            default-namespace = "http://www.xmethods.net/interfaces/query",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -335,12 +275,38 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
-        {self.soap-caller.call
-            self.service-location,
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-service-detail",
             {{Array-of any}
                 id
             },
+            {splice self.operations["get-service-detail"]}
+        }
+    {return
+        responses[0] asa #ServiceDetail
+    }
+  }
+
+
+  {method public {async-get-service-detail id:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "get-service-detail",
+            {{Array-of any}
+                id
+            },
+            {splice self.operations["get-service-detail"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-get-service-detail}:void
+    set self.operations["get-service-detail"] = 
+        {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "id"}
             },
@@ -368,51 +334,15 @@
             rpc-style? = true,
             write-type-attribute? = true,
             write-encoding-attribute? = true
-        }
-    {return
-        responses[0] asa #ServiceDetail
     }
   }
 
-
-  {method public {async-get-service-detail id:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.soap-caller.async-call
-            self.service-location,
-            {{Array-of any}
-                id
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "id"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                    curl-type = String,
-                    nillable? = true
-                }
-            },
-            {{Array-of #XMLName}
-                {XMLName "", "Result"}
-            },
-            {{Array-of SOAPObjectType}
-                {SOAPObjectType
-                    xml-type = {XMLName "http://www.xmethods.net/interfaces/query.xsd", "ServiceDetail"},
-                    curl-type = ServiceDetail,
-                    nillable? = true
-                }
-            },
-            "http://schemas.xmlsoap.org/soap/encoding/",
-            soap-action = "",
-            request-operation = {XMLName "http://www.xmethods.net/interfaces/query", "getServiceDetail"},
-            default-namespace = "http://www.xmethods.net/interfaces/query",
-            rpc-style? = true,
-            write-type-attribute? = true,
-            write-encoding-attribute? = true,
-            event-handler,
-            ...
-        }
-    }
+  {method protected {define-operations}:void
+     {self.define-get-service-summaries-by-publisher}
+     {self.define-get-all-service-summaries}
+     {self.define-get-all-service-names}
+     {self.define-get-service-names-by-publisher}
+     {self.define-get-service-detail}
   }
 
   {method public {register-types
@@ -432,66 +362,6 @@
         {DefaultSOAPCurlTypeToXMLTypeMapper}
     let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
         {DefaultSOAPXMLTypeToElementNameMapper}
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair"},
-                        curl-type = IDNamePair
-                    },
-                    {SOAPObjectType
-                        xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"},
-                        curl-type = ArrayOfIDNamePair,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
-    {do
-        let constant array-marshaler:SOAPArrayMarshaler =
-            {SOAPArrayMarshaler.from-element-type-array
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary"},
-                        curl-type = ServiceSummary
-                    },
-                    {SOAPObjectType
-                        xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"},
-                        curl-type = ArrayOfServiceSummary,
-                        nillable? = true
-                    }
-                },
-                array-types =
-                    {{Array-of #XMLName}
-                        {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"}
-                    },
-                xml-type-to-curl-type = xml-type-to-curl-type,
-                curl-type-to-xml-type = curl-type-to-xml-type,
-                xml-type-to-element-name = xml-type-to-element-name
-            }
-        {array-marshaler.register
-            type-mapper = type-mapper,
-            element-name-to-xml-type-mapper = element-name-to-xml-type,
-            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
-            xml-type-to-element-name-mapper = xml-type-to-element-name
-        }
-    }
     {do
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
@@ -713,6 +583,66 @@
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair"},
+                        curl-type = IDNamePair
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"},
+                        curl-type = {Array-of IDNamePair},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "IDNamePair[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary"},
+                        curl-type = ServiceSummary
+                    },
+                    {SOAPObjectType
+                        xml-type = {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"},
+                        curl-type = {Array-of ServiceSummary},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "http://www.xmethods.net/interfaces/query.xsd", "ServiceSummary[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
     {return
         type-mapper,
         element-name-to-xml-type,
@@ -728,14 +658,10 @@
             {abs-url "http://www.xmethods.net/interfaces/query"}
     }
     {construct-super service-location,
-        generated-using-version = "2"
+        generated-using-version = "5"
     }
   }
 }
-
-{let public constant ArrayOfIDNamePair:ClassType = {Array-of IDNamePair}}
-
-{let public constant ArrayOfServiceSummary:ClassType = {Array-of ServiceSummary}}
 
 {define-class public open IDNamePair
 

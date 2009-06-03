@@ -801,28 +801,28 @@
             || data, handle it!
             let constant attributes:#{Array-of XMLAttribute} =
                 {reader-read-attributes stream}
-                || Skip the SOAP 1.2 rpc:result element.
-                || FIXME: is this the right way to do this?
-                || Will anyone ever want the contents of this?
-                {if rpc-style? and not headers? and
-                    soap-version == SOAPVersion.soap-1-2 and
-                    se.element == SOAPRPCMessageReader.soap-1-2-rpc-result
-                then
-                    def (token, eof?) = {stream.read-one}
-                    || Skip the expected XMLCharacters.
-                    {if not eof? and not token isa XMLCharacters then
+            || Skip the SOAP 1.2 rpc:result element.
+            || FIXME: is this the right way to do this?
+            || Will anyone ever want the contents of this?
+            {if rpc-style? and not headers? and
+                soap-version == SOAPVersion.soap-1-2 and
+                se.element == SOAPRPCMessageReader.soap-1-2-rpc-result
+            then
+                def (token, eof?) = {stream.read-one}
+                || Skip the expected XMLCharacters.
+                {if not eof? and not token isa XMLCharacters then
+                    {stream.unread-one token}
+                 else
+                    def (token2, eof?) = {stream.read-one}
+                    || Skip the expected XMLEndElement.
+                    {if not eof? and not token2 isa XMLEndElement then
                         {stream.unread-one token}
+                        {stream.unread-one token2}
                      else
-                        def (token2, eof?) = {stream.read-one}
-                        || Skip the expected XMLEndElement.
-                        {if not eof? and not token2 isa XMLEndElement then
-                            {stream.unread-one token}
-                            {stream.unread-one token2}
-                         else
-                            {continue}
-                        }
+                        {continue}
                     }
                 }
+            }
             || see if it might be the next response
             {if maybe-in-values? then
                 set current-response-index = previous-response-index + 1

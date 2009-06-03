@@ -2463,19 +2463,22 @@
         {proc {type:String,
                curl-type:String,
                nullable?:bool,
-               multiple-reference:SOAPTypeMultipleReference
+               multiple-reference:SOAPTypeMultipleReference,
+               marshaler-handled-element?:bool = false
               }:void
             {extend-name-table names,
                 {WSDLSchemaPrimitiveType
                     {XMLName WSDLSchema.schema-namespace-uri, type},
-                    curl-type, nullable?, multiple-reference}}
+                    curl-type, nullable?, multiple-reference,
+                    marshaler-handled-element? = marshaler-handled-element?
+                }}
         }
 
     || FIXME: should this be derived from the builtin-xml-type-to-curl-type-mapper instead?
-    || FIXME: should this be a document type instead? || ### YES
-||--    {bootstrap-schema-type "anyType", "any", false, SOAPTypeMultipleReference.unknown}
+    || FIXME: should this be a document type instead?
+    {bootstrap-schema-type "anyType", "any", false, SOAPTypeMultipleReference.unknown, marshaler-handled-element? = true}
     
-    {bootstrap-schema-type "anySimpleType", "any", false, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "anySimpleType", "any", false, SOAPTypeMultipleReference.unknown, marshaler-handled-element? = true}
     {bootstrap-schema-type "anyURI", "Url", true, SOAPTypeMultipleReference.unknown}
     {bootstrap-schema-type "QName", "XMLName", true, SOAPTypeMultipleReference.unknown}
     {bootstrap-schema-type "base64Binary", |"{Array-of byte}"|, true, SOAPTypeMultipleReference.unknown}
@@ -2505,7 +2508,6 @@
     {bootstrap-schema-type "boolean", "bool", false, SOAPTypeMultipleReference.single}
     {bootstrap-schema-type "dateTime", "DateTime", true, SOAPTypeMultipleReference.unknown}
     {bootstrap-schema-type "date", "DateTime", true, SOAPTypeMultipleReference.unknown}
-    {bootstrap-schema-type "anyType", "any", false, SOAPTypeMultipleReference.unknown}
     || XMLSimpleValue types 
     || - (defined in COM.CURL.WSDK.SOAP.BuiltinSOAPTypeMapper)
     def alias-type-names = XMLSimpleValue.alias-type-names

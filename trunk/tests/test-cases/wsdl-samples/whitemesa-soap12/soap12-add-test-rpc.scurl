@@ -369,19 +369,23 @@
             {{Array-of SOAPObjectType}
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = any
+                    curl-type = any,
+                    marshaler-handled-element? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = any
+                    curl-type = any,
+                    marshaler-handled-element? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = any
+                    curl-type = any,
+                    marshaler-handled-element? = true
                 },
                 {SOAPObjectType
                     xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyType"},
-                    curl-type = any
+                    curl-type = any,
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of #XMLName}
@@ -643,13 +647,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/add-test-rpc"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://www.whitemesa.net/soap12/add-test-rpc"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "5"
     }
   }
 }

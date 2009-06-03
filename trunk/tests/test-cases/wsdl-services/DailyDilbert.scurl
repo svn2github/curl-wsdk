@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.DailyDilbert,
     {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/DailyDilbert.wsdl"}
+    wsdl = "file:///u:/bardwell/w/tests/test-cases/wsdl-services/DailyDilbert.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/DailyDilbert.wsdl
+|| WSDL file: file:///u:/bardwell/w/tests/test-cases/wsdl-services/DailyDilbert.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DailyDilbert {inherits WSDLHTTPRPCPostClient}
@@ -14,7 +14,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "daily-dilbert-image",
             {{Array-of any}
@@ -60,7 +60,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "daily-dilbert-image-path",
             {{Array-of any}
@@ -123,13 +123,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.esynaps.com/WebServices/DailyDiblert.asmx"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://www.esynaps.com/WebServices/DailyDiblert.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "5"
     }
   }
 }

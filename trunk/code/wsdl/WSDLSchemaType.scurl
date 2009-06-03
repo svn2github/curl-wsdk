@@ -77,7 +77,8 @@
             curl-type = self.ref-name,
             nillable? = nillable?,
             multiple-reference = multiple-reference,
-            expected-content-types = expected-content-types
+            expected-content-types = expected-content-types,
+            marshaler-handled-element? = self.marshaler-handled-element?
         }
     }
   }
@@ -134,7 +135,8 @@
                               SOAPTypeMultipleReference.unknown,
                           nillable?:bool = false,
                           choice-elements:#{Array-of XMLName} = null,
-                          expected-content-types:#String = null
+                          expected-content-types:#String = null,
+                          marshaler-handled-element?:bool = false
                       }:String
     let constant tabs:String = {String.repeat-char ' ', tab-level}
     let constant buf:StringBuf = {new StringBuf}
@@ -233,10 +235,23 @@
             ct
         }
     }
+    {if marshaler-handled-element? then
+        {if n-arg > 0 then
+            {buf.append ','}}
+        {inc n-arg}
+        {format
+            out = buf,
+            "\n%s    marshaler-handled-element? = true",
+            tabs
+        }
+    }
     {format out = buf, "\n%s\}", tabs}
     {return {buf.to-String}}
   }
 
+  {getter public open {marshaler-handled-element?}:bool
+    {return false}
+  }
 }
 
 
@@ -370,20 +385,23 @@
 
 
 {define-class public open WSDLSchemaPrimitiveType {inherits WSDLSchemaType}
-  field public curl-type-name:String
-  field private _nullable?:bool
-  field private _multiple-reference:SOAPTypeMultipleReference
+  field public constant curl-type-name:String
+  field private constant _nullable?:bool
+  field private constant _multiple-reference:SOAPTypeMultipleReference
+  field private constant _marshaler-handled-element?:bool
 
   {constructor public {default
                           xml-name:XMLName,
                           curl-type-name:String,
                           nullable?:bool,
-                          multiple-reference:SOAPTypeMultipleReference
+                          multiple-reference:SOAPTypeMultipleReference,
+                          marshaler-handled-element?:bool = false
                       }
     {construct-super xml-name}
     set self.curl-type-name = curl-type-name
     set self._nullable? = nullable?
     set self._multiple-reference = multiple-reference
+    set self._marshaler-handled-element? = marshaler-handled-element?
   }
 
   {getter package {ref-name}:String
@@ -406,16 +424,18 @@
                           self.multiple-reference,
                       expected-content-types:#String = null
                   }:String
-    || call it normally, but without multiple-reference or
-    || element-name, those will be properly defaulted
+    || call it normally, but without multiple-reference and
+    || element-name, those will be properly defaulted.
     {return
-        {if multiple-reference == self.multiple-reference then
+        {if multiple-reference != self._multiple-reference then
             {WSDLSchemaType.soap-object-type-code-string
                 tab-level = tab-level,
                 xml-type = self.xml-name,
                 curl-type = self.ref-name,
                 nillable? = nillable?,
-                expected-content-types = expected-content-types
+                multiple-reference = multiple-reference,
+                expected-content-types = expected-content-types,
+                marshaler-handled-element? = self.marshaler-handled-element?
             }
          else
             {WSDLSchemaType.soap-object-type-code-string
@@ -423,8 +443,8 @@
                 xml-type = self.xml-name,
                 curl-type = self.ref-name,
                 nillable? = nillable?,
-                multiple-reference = multiple-reference,
-                expected-content-types = expected-content-types
+                expected-content-types = expected-content-types,
+                marshaler-handled-element? = self.marshaler-handled-element?
             }
         }
     }
@@ -452,6 +472,9 @@
         "uint64",
         "uint8"
       } 
+  {getter public open {marshaler-handled-element?}:bool
+    {return self._marshaler-handled-element?}
+  }
 }
 
 
@@ -461,7 +484,7 @@
   field public constant use-type-attribute?:bool
   field public constant override-multiple-reference?:bool
   field public constant override-multiple-reference:SOAPTypeMultipleReference
-  field public-get protected-set expected-content-types:#String
+  field public-get package-set expected-content-types:#String
 
   {constructor public {default
                           xml-name:#XMLName,
@@ -517,8 +540,7 @@
             "    \}\n",
             {self.soap-object-type-string
                 tab-level = 16,
-                element-name = element-name,
-                expected-content-types = self.expected-content-types
+                element-name = element-name
             },
             {self.type.soap-object-type-string
                 tab-level = 16,
@@ -532,8 +554,7 @@
                         SOAPTypeMultipleReference.multiple
                      else
                         self.type.multiple-reference 
-                    },
-                expected-content-types = self.expected-content-types
+                    }
             },
             {if self.use-type-attribute? then
                 "true"
@@ -600,9 +621,20 @@
                     ct
                  else
                     expected-content-types
+                },
+            expected-content-types =
+                {if-non-null expected-content-types then
+                    expected-content-types
+                 else
+                    self.expected-content-types
                 }
         }
     }
+  }
+  {getter public open {marshaler-handled-element?}:bool
+    || FIXME: Should this also have a data thing for this for the
+    || Alias source type?
+    {return self.type.marshaler-handled-element?}
   }
 }
 
@@ -1120,8 +1152,6 @@
             self.all-elements-clone
         let constant all-attributes:{Array-of WSDLSchemaAttribute} =
             self.all-attributes-clone        
-        let constant repeating-elements:{Array-of XMLName} =
-            {{Array-of XMLName}}
         let constant optional-elements:{Array-of XMLName} =
             {{Array-of XMLName}}
 
@@ -1267,17 +1297,6 @@
                             curl-type = "field"
                         }
                     }
-                    || note non-nested repeating elements
-                    let repeating?:bool = 
-                        {type-switch e
-                         case e:WSDLInternalSchemaElement do
-                            e.max-occurs != 1
-                         else 
-                            false
-                        }
-                    {if repeating? then
-                        {repeating-elements.append {non-null e.xml-name}}
-                    }
                     || note optional elements
                     let optional?:bool = 
                         {type-switch e
@@ -1308,20 +1327,6 @@
         {if-non-null self.content-element then
             {out.concat
                 "            simple-content? = true,\n"}
-        }
-        || note non-nested repeating elements
-        {if not repeating-elements.empty? then
-            {out.concat "            repeating-elements = \n"}
-            {out.concat 
-                "                \{\{Set-of XMLName\}"}
-            {for f key i in repeating-elements do
-                {if i > 0 then
-                    {out.append ','}}
-                {format out = out, "\n                    %s",
-                    {WSDLSchemaType.xml-name-to-curl-code f}
-                }
-            }
-            {out.concat "\n              \},\n"}
         }
         || note optional elements
         {if not optional-elements.empty? then
@@ -1777,7 +1782,9 @@
                 },
             curl-type = self.ref-name,
             nillable? = nillable?,
-            multiple-reference = self.multiple-reference
+            multiple-reference = self.multiple-reference,
+            expected-content-types = expected-content-types,
+            marshaler-handled-element? = self.marshaler-handled-element?
         }
     }
   }
@@ -1813,6 +1820,10 @@
     {return self._multiple-reference}
   }
 
+
+  {getter public open {marshaler-handled-element?}:bool
+    {return self.repeating-element-name != null}
+  }
 }
 
 
@@ -1990,8 +2001,16 @@
 
 || NOTE: commented out code below was attempt to use 'XDMElement' instead of 'any'
 || -- but that is not appropriate for runtime unmarshaling based on 'xsi:type' 
-
 {define-class public open WSDLSchemaXMLDocumentType {inherits WSDLSchemaType}
+
+  {let constant package any-xml-types:{FastArray-of XMLName} =
+    {new {FastArray-of XMLName},
+        SOAPTypeMapper.xml-schema-any-type,
+        SOAPTypeMapper.xml-schema-any-simple-type,
+        SOAPTypeMapper.xml-schema-simple-type,
+        SOAPTypeMapper.xml-schema-complex-type
+    }
+  }
 
   field package constant curl-namer:WSDLCurlNamer
   {constructor public {default
@@ -2044,6 +2063,12 @@
   {method package {register-type-code element-name:#XMLName = null}:#String
     || TODO: maybe depends on fallback vs declared?
     let data-has-root-element?:bool = true 
+    || TODO: Should this include all pre-registered 'any' like types?
+    {if-non-null xml-name = self.xml-name then
+        {if {WSDLSchemaXMLDocumentType.any-xml-types.find xml-name} >= 0 then
+            {return null}
+        }
+    }
     {return
         {if-non-null xml-name = self.xml-name then
             {format
@@ -2063,7 +2088,8 @@
                     xml-type = self.xml-name,
                     curl-type = "XDMElement",
                     nillable? = self.nullable?,
-                    multiple-reference = self.multiple-reference
+                    multiple-reference = self.multiple-reference,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element?,
                 {WSDLSchemaType.soap-marshaler-regster-code "doc-marshaler"}
@@ -2088,6 +2114,10 @@
 
   {getter package {multiple-reference}:SOAPTypeMultipleReference
     {return SOAPTypeMultipleReference.unknown}
+  }
+
+  {getter public final {marshaler-handled-element?}:bool
+    {return true}
   }
 }
 
@@ -2464,7 +2494,8 @@
             curl-type = self.ref-name,
             nillable? = nillable?,
             multiple-reference = multiple-reference,
-            choice-elements = choice-elements
+            choice-elements = choice-elements,
+            marshaler-handled-element? = self.marshaler-handled-element?
         }
     }
   }
@@ -2483,6 +2514,9 @@
     }
   }  
 
+  {getter public final {marshaler-handled-element?}:bool
+    {return true}
+  }
 }
 
 {define-class public open WSDLSchemaSimpleType {inherits WSDLSchemaPrimitiveType}

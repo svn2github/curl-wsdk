@@ -75,6 +75,11 @@
   }
   field public constant nillable?:bool
 
+  {doc-next
+    {purpose
+        Expected content type for MTOM attachments.
+    }
+  }
   field public constant expected-content-types:#String
 
   {doc-next
@@ -83,6 +88,14 @@
     }
   }
   field public constant choice-elements:#{Set-of XMLName}
+
+  {doc-next
+    {purpose
+        Indicates that the marshaler/unmarshaler is expecting to handle
+        the wrapping element itself.
+    }
+  }
+  field public constant marshaler-handled-element?:bool
 
   {doc-next
     {purpose
@@ -129,7 +142,8 @@
                           SOAPTypeMultipleReference.unknown,
                       nillable?:bool = false,
                       choice-elements:#{Set-of XMLName} = null,
-                      expected-content-types:#String = null
+                      expected-content-types:#String = null,
+                      marshaler-handled-element?:bool = false
                   }:SOAPObjectType
     || instances are interned so pointer-equal? --> value-equal? 
     let key:SOAPObjectType = 
@@ -140,7 +154,9 @@
             multiple-reference = multiple-reference, 
             nillable? = nillable?,
             choice-elements = choice-elements,
-            expected-content-types = expected-content-types}   
+            expected-content-types = expected-content-types,
+            marshaler-handled-element? = marshaler-handled-element?
+        }
 
     let (interned:SOAPObjectType, interned?:bool) =
         {SOAPObjectType.interned.get-member-if-exists key} 
@@ -160,7 +176,8 @@
                                SOAPTypeMultipleReference.unknown,
                            nillable?:bool = false,
                            choice-elements:#{Set-of XMLName} = null,
-                           expected-content-types:#String = null
+                           expected-content-types:#String = null,
+                           marshaler-handled-element?:bool = false
                        }
     set self.element-name = element-name
     set self.xml-type = xml-type
@@ -169,6 +186,7 @@
     set self.nillable? = nillable?
     set self.choice-elements = choice-elements
     set self.expected-content-types = expected-content-types
+    set self.marshaler-handled-element? = marshaler-handled-element?
   }
 
   let package constant interned:SOAPObjectTypeSet = {SOAPObjectTypeSet}
@@ -198,7 +216,8 @@
                           SOAPTypeMultipleReference.unknown,
                       nillable?:bool = false,
                       choice-elements:#{Set-of XMLName} = null,
-                      expected-content-types:#String = null
+                      expected-content-types:#String = null,
+                      marshaler-handled-element?:bool = false
                   }:SOAPObjectType
     def type =
         {SOAPObjectType
@@ -243,6 +262,12 @@
                     expected-content-types
                  else
                     object-type.expected-content-types
+                },
+            marshaler-handled-element? =
+                {if {keyword-supplied? marshaler-handled-element?} then
+                    marshaler-handled-element?
+                 else
+                    object-type.marshaler-handled-element?
                 }
         }
     {return type}
@@ -256,8 +281,8 @@
         ask the {docref SOAPElementNameToXMLTypeMapper} if it can supply
         a new {docref SOAPObjectType} with a {docref SOAPObjectType.xml-type}
         figured out based on the {docref SOAPObjectType.element-name}.
-        Second, if the {docref SOAPObjectType.curl-type} is missing, or
-        equal to {docref any}, ask the {docref SOAPXMLTypeToCurlTypeMapper}
+        Second, if the {docref SOAPObjectType.curl-type} is missing,
+        ask the {docref SOAPXMLTypeToCurlTypeMapper}
         if it can supply a new {docref SOAPObjectType} with a
         {docref SOAPObjectType.curl-type}
         figured out based on the {docref SOAPObjectType.xml-type}.
@@ -278,9 +303,7 @@
             set type = {element-name-to-xml-type.element-name-to-xml-type type}
         }
     }
-    {if type.xml-type != null and
-        (type.curl-type == null or type.curl-type == any)
-     then
+    {if type.xml-type != null and type.curl-type == null then
         {if-non-null xml-type-to-curl-type then
             set type = {xml-type-to-curl-type.xml-type-to-curl-type type}
         }
@@ -406,7 +429,8 @@
                 {value-hash ect}
              else
                 0x8000
-            }
+            },
+            {value-hash self.marshaler-handled-element?}
         }
     }
 }
@@ -426,7 +450,8 @@
             {if-non-null other-choice-elements = other.choice-elements then
                 {choice-elements.equal? other-choice-elements}
              else false}
-         else other.choice-elements == null}
+         else other.choice-elements == null} and
+        self.marshaler-handled-element? == other.marshaler-handled-element?
     }
 }
 

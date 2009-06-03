@@ -44,6 +44,7 @@
                           use-type-attribute?:bool = true
                           || TODO: should be driven by WSDLSchemaXMLDocumentType
                       }
+    {assert type.marshaler-handled-element?, "Document "& type.xml-type & " "& type.curl-type}
     {construct-super.SOAPMarshaler type}
     set self.data-has-root-element? = data-has-root-element?
     set self.use-type-attribute? = use-type-attribute?
@@ -55,6 +56,7 @@
 
                           || xml-type and curl-type required
                           type:SOAPObjectType,
+                          element:XMLName,
 
                           encoding:#String, ||default? (multiple urls poss.)
                           context:SOAPMarshalContext,
@@ -66,7 +68,7 @@
                               SOAPTypeMultipleReference.unknown
                       }:(worked?:bool)
     {self.check-type type, true}
-    
+
     || type has to be XDMElement
     {if not val isa XDMElement then
         {throw-marshal-exception 
@@ -98,6 +100,7 @@
      then
         let tokens:{Array-of XMLToken} =
             {XDMElement-to-tokens val asa XDMElement}
+{for t key i in tokens do {output "writing[", i, "] ", t}}
         {stream.write tokens}            
     }
     {return true}
@@ -269,6 +272,8 @@
                     {stream.unread-one {a.pop}}
                 }
             }
+
+{for t key i in a do {output "read[", i, "] ", t}}
             || create XDMElement
             let element:XDMElement =
                 {XDMElement-from-tokens a}

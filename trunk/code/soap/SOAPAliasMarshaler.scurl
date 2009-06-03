@@ -75,6 +75,7 @@
 
                             || xml-type and curl-type required
                             type:SOAPObjectType,
+                            element:XMLName,
 
                             encoding:#String, ||default? (multiple urls poss.)
                             context:SOAPMarshalContext,
@@ -87,7 +88,10 @@
                         }:(worked?:bool)
     {self.check-type type, true}
 
-    {if write-type-attribute? and self.use-type-attribute? then
+    def write-type-now? =
+        write-type-attribute? and self.use-type-attribute? and
+        not type.marshaler-handled-element?
+    {if write-type-now?  then
         {marshal-write-type-attribute stream, type}
     }
     || this will throw on failures...
@@ -102,13 +106,15 @@
          else
             self.destination-type
         },
+        element,
         encoding,
         context,
         current-mapper,
         curl-type-to-xml-type,
         || we already handled writing out the type
         write-type-attribute? =
-            not self.use-type-attribute? and write-type-attribute?,
+            not self.use-type-attribute? and write-type-attribute? and
+            not write-type-now?,
         multiple-reference = multiple-reference
     }
     {return true}

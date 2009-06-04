@@ -202,7 +202,7 @@
                          request-http-headers:#HttpRequestHeaders)
     || could just save the arguments and do this when demanded by
     || {request-data}
-    let xml-output-stream:#XMLOutputStream
+    let xml-output-stream:#{OutputStream-of XMLToken}
     let request-data:#HttpRequestData
     {try
         let marshal-context:#SOAPMarshalContext
@@ -342,7 +342,7 @@
                           soap-version:SOAPVersion = SOAPVersion.soap-1-1,
                           mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
                       }:(request-data:HttpRequestData,
-                         xml-stream:XMLOutputStream,
+                         xml-stream:{OutputStream-of XMLToken},
                          marshal-context:#SOAPMarshalContext,
                          arguments:{Array-of any},
                          argument-names:{Array-of #XMLName},
@@ -362,8 +362,8 @@
             ({SOAPHTTPRPCPostCallerRequestData content-type}, null)
         }
     
-    let constant xml-stream:XMLOutputStream =
-        {new XMLOutputStream,
+    def xml-stream =
+        {XMLOutputStream
             {TranscodingTextOutputStream
                 {new {ByteOutputStream-into ByteArray},
                     {type-switch request-data
@@ -401,7 +401,7 @@
   }
   {method public open {close-request-data-stream
                           request-data:HttpRequestData,
-                          xml-stream:XMLOutputStream,
+                          xml-stream:{OutputStream-of XMLToken},
                           character-encoding:CharEncoding = CharEncoding.utf8,
                           add-content-type-charset?:bool = true,
                           trace-stream:#TextOutputStream = self.trace-stream

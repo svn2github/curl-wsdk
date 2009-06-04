@@ -461,7 +461,7 @@
 ||--  }
 
   {method public open {marshal
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           value:any,
 
                           || xml-type and curl-type required
@@ -719,7 +719,7 @@
 
 
 {define-proc package {marshal-write-type-attribute
-                        stream:XMLOutputStream, type:SOAPObjectType
+                        stream:{OutputStream-of XMLToken}, type:SOAPObjectType
                      }:void
     {stream.write-one
         {new XMLAttribute.with-xml-name-values,
@@ -731,7 +731,7 @@
 
 || Should this take the type and insist that it be nillable? ?
 {define-proc package {marshal-write-nil-type
-                        stream:XMLOutputStream,
+                        stream:{OutputStream-of XMLToken},
                         type:SOAPObjectType
                      }:void
     {if not type.nillable? then
@@ -856,7 +856,7 @@
 {define-proc package {float-double-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -1030,7 +1030,7 @@
 {define-proc package {any-int-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -1174,7 +1174,7 @@
 {define-proc package {boolean-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -1371,7 +1371,7 @@
 {define-proc package {any-string-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -1492,7 +1492,7 @@
 {define-proc package {any-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -1834,7 +1834,7 @@
 {define-proc package {base64-binary-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -2034,7 +2034,7 @@
 {define-proc package {hex-binary-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -2165,7 +2165,7 @@
 {define-proc package {datetime-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -2375,7 +2375,7 @@
 {define-proc package {uri-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -2519,7 +2519,7 @@
 {define-proc package {qname-marshal-proc
                    || stream must be just after the XMLStartElement, so that
                    || it can write XMLAttribute and then XMLCharacters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -2751,7 +2751,7 @@
 
 
 {define-proc package {marshal-handle-id-href
-                         stream:XMLOutputStream,
+                         stream:{OutputStream-of XMLToken},
                          object:any,
                          type:SOAPObjectType,
                          encoding:#String,
@@ -2880,14 +2880,14 @@
 || unfortunately, marshal/unmarshal code works at XMLToken level
 || thus these hacky adapters
 || TODO: refactor string conversions using Domain format/parse
-{define-proc package {marshal-to-string 
+{define-proc package {marshal-to-XMLCharacters
                          v:any, 
                          soap-type:SOAPObjectType,
                          current-mapper:SOAPTypeMapper,
                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
-             }:String
-    let out:StringBuf = {StringBuf}
-    let stream:XMLOutputStream = {XMLOutputStream out}
+                     }:#XMLCharacters
+    def out = {new {Array-of XMLToken}}
+    def stream = {new {OutputStream-of-into XMLToken, {Array-of XMLToken}}, out}
     {current-mapper.marshal
         stream,
         v,
@@ -2900,10 +2900,22 @@
         write-type-attribute? = false,
         multiple-reference = SOAPTypeMultipleReference.single
     }
-    {return {out.to-String}}
+    {for o in out do
+        {type-switch o
+         case xc:XMLCharacters do {return xc}
+        }
+    }
+    || Special case empty string, is this right?
+    {type-switch v
+     case s:StringInterface do
+        {if s == "" then
+            {return {XMLCharacters ""}}
+        }
+    }
+    {return null}
 }
-{define-proc package {unmarshal-from-string 
-                         string:String, 
+{define-proc package {unmarshal-from-XMLCharacters
+                         characters:XMLCharacters, 
                          soap-type:SOAPObjectType,
                          type-mapper:SOAPTypeMapper,
                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
@@ -2911,7 +2923,7 @@
     let stream:XMLInputStream =
         {XMLInputStream.from-Tokens
             {{Array-of XMLToken}
-                {XMLCharacters string},
+                characters,
                 {XMLEndElement}
             }}
     let val:any =

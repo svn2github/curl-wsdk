@@ -669,21 +669,24 @@
             {if {self.ignorable-attribute-group? child} then
                 || OK to ignore
              else
+                def ag =
+                    {self.parse-attribute-group child, target-namespace, 
+                        attribute-form-qualified?}
                 {type-switch type
-                 case t:Null do
+                 case n:Null do
                     set type =
                         {new WSDLSchemaClassType,
                             xml-name,
                             {new {Array-of WSDLSchemaElement}},
-                            self.curl-namer}
+                            self.curl-namer,
+                            attributes = 
+                                {new {Array-of WSDLSchemaAttribute}, ag}
+                        }
                  case at:WSDLSchemaArrayType do
                     || paranoia: 'has-attributes?' check should prevent this 
                     {self.ignored-tag child}
                     
                  case t:WSDLSchemaClassType do
-                    let ag:WSDLSchemaAttributeGroup =
-                        {self.parse-attribute-group child, target-namespace, 
-                            attribute-form-qualified?}
                     {t.attributes.append ag}
                 }
             }
@@ -691,29 +694,30 @@
             {if {self.ignorable-attribute? child} then
                 || OK to ignore
              else
+                def (name, attribute-type) =
+                    {self.parse-attribute-name-and-type
+                        child, 
+                        target-namespace,
+                        attribute-form-qualified?,
+                        true
+                    }
+                def a = {WSDLSchemaAttribute name, attribute-type, child}
                 {type-switch type
-                 case t:Null do
+                 case n:Null do
                     set type =
                         {new WSDLSchemaClassType,
                             xml-name,
                             {new {Array-of WSDLSchemaElement}},
-                            self.curl-namer}
+                            self.curl-namer,
+                            attributes = 
+                                {new {Array-of WSDLSchemaAttribute}, a}
+                        }
+
                  case at:WSDLSchemaArrayType do
                     || paranoia: 'has-attributes?' check should prevent this 
                     {self.ignored-tag child}
 
                  case t:WSDLSchemaClassType do
-                    let (name:XMLName, type:WSDLSchemaType) =
-                        {self.parse-attribute-name-and-type                             
-                            child, 
-                            target-namespace,
-                            attribute-form-qualified?,
-                            true
-                        }
-                    let a:WSDLSchemaAttribute =
-                        {WSDLSchemaAttribute 
-                            name, type, child}
-                    
                     {t.attributes.append a}
                 }
             }

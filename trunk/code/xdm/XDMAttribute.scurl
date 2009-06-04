@@ -131,7 +131,6 @@
         description =
             {if prefix-available?
              then self.qualified-name
-             else {String self.xmlname}}}
+             else {String self.xmlname}} & "=" & self.value}
   }
-  
 }

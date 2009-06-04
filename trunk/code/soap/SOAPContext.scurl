@@ -140,7 +140,7 @@
                    || it can look at the attributes of the element for type
                    || information.  It will read through to the characters
                    || but not the XMLEndElement.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -238,7 +238,7 @@
     }
   }
   {method public abstract open {marshal-remaining-objects
-                                   stream:XMLOutputStream,
+                                   stream:{OutputStream-of XMLToken},
                                    || should these be saved with marshaler?
                                    type-mapper:SOAPTypeMapper,
                                    context:SOAPMarshalContext,
@@ -524,7 +524,7 @@
             {proc-type {
                    || stream must be just after the XMLStartElement, so that
                    || it can write attributes and characters.
-                   stream:XMLOutputStream,
+                   stream:{OutputStream-of XMLToken},
                    value:any,
 
                    || xml-type and curl-type required, multi-reference
@@ -617,7 +617,7 @@
   }
 
   {method public open {marshal-remaining-objects
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           || should these be saved with marshaler?
                           type-mapper:SOAPTypeMapper,
                           context:SOAPMarshalContext,

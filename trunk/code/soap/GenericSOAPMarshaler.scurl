@@ -22,7 +22,7 @@
         {proc {
                || stream must be just after the XMLStartElement, so that
                || it can write XMLAttribute and then XMLCharacters.
-               stream:XMLOutputStream,
+               stream:{OutputStream-of XMLToken},
                val:any,
                
                || xml-type and curl-type required, multi-reference
@@ -169,7 +169,7 @@
   }
 
   {method public open {default-marshal
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           value:any,
 
                           || xml-type and curl-type required

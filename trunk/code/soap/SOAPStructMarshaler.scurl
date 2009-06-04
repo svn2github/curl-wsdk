@@ -399,7 +399,7 @@
   }
 
   {method public open {default-marshal
-                            stream:XMLOutputStream,
+                            stream:{OutputStream-of XMLToken},
                             value:any,
 
                             || xml-type and curl-type required
@@ -518,28 +518,40 @@
             }
             {if attribute? then
                 || as attribute
-                let s:String = 
-                    {marshal-to-string 
+                def characters = 
+                    {marshal-to-XMLCharacters
                         v, 
                         field-type,
                         current-mapper,
                         curl-type-to-xml-type
                     }
-                {stream.write-one
-                    {XMLAttribute element-name, s}
+                {if-non-null characters then
+                    {stream.write-one
+                        {if-non-null xnv = characters.xml-name-values then
+                            {XMLAttribute.with-xml-name-values
+                                element-name,
+                                xnv
+                            }
+                        else
+                            {XMLAttribute
+                                element-name,
+                                characters.characters
+                            }
+                        }
+                    }
                 }
              elseif self.simple-content? and not context.supports-mtom? then
                 || as characters
-                let s:String = 
-                    {marshal-to-string 
+                def characters = 
+                    {marshal-to-XMLCharacters
                         v, 
                         field-type,
                         current-mapper,
                         curl-type-to-xml-type
                     }
-                || NOTE: constructor verified exactly one of these
-                {stream.write-one
-                    {XMLCharacters s}
+                {if-non-null characters then
+                    || NOTE: constructor verified exactly one of these
+                    {stream.write-one characters}
                 }
              else
                 {if not field-type.marshaler-handled-element? then
@@ -778,8 +790,11 @@
                             }
                             {if f == a.name then
                                 let v:any =
-                                    {unmarshal-from-string  
-                                        a.value asa String,
+                                    {unmarshal-from-XMLCharacters
+                                        {XMLCharacters
+                                            a.value asa String,
+                                            xml-name-values = a.xml-name-values
+                                        },
                                         self.field-types[k],
                                         current-mapper,
                                         xml-type-to-curl-type
@@ -794,14 +809,14 @@
                 || unmarshal characters
                 || NOTE: constructor verified exactly one of these
                 let k:int = self.field-names.size - 1
-                let characters:String =
-                    {if-non-null content:XMLCharacters = 
-                        {unmarshal-read-characters stream}
-                     then content.characters
-                     else ""}
+                def content = {unmarshal-read-characters stream}
                 let v:any =
-                    {unmarshal-from-string  
-                        characters,
+                    {unmarshal-from-XMLCharacters
+                        {if-non-null content then
+                            content
+                         else
+                            {XMLCharacters ""}
+                        },
                         self.field-types[k],
                         current-mapper,
                         xml-type-to-curl-type

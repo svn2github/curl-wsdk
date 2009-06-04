@@ -668,6 +668,7 @@
         || (then flush last set of non-white space characters if any)
         {if (white-space? or i == (string-size - 1)) then
             {if not split-buf.empty? then
+
                 let (value-uri:String, value-local-name:String) =
                     {self.namespace-support.lookup-string
                         {if split-buf.size == string-size then

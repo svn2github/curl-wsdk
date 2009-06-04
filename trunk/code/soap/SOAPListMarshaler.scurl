@@ -31,7 +31,7 @@
   }
 
   {method public open {default-marshal
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           val:any,
 
                           || xml-type and curl-type required
@@ -48,8 +48,15 @@
                               SOAPTypeMultipleReference.unknown
                       }:(worked?:bool)
     {self.check-type type, true}
+
+    {marshal-type-check type}
+    let constant null?:bool = {type-of val} == Null
+    {if write-type-attribute? then
+        {marshal-write-type-attribute stream, type}
+    }
     
     let out:StringBuf = {StringBuf}
+    let out-xml-name-values:#{Array-of XMLName}
     {with-compiler-directives 
         allow-any-calls? = true,
         allow-implicit-any-casts? = true
@@ -58,28 +65,64 @@
         || - this works with Array, or null, or anything iterable
         {if-non-null val then
             {for x key i in val do
-                {if i > 0 then
-                    {out.append ' '}}
-                {out.concat 
-                    {marshal-to-string x,
+                def characters =
+                    {marshal-to-XMLCharacters
+                        x,
                         self.item-type,
                         current-mapper,
                         curl-type-to-xml-type
-                    }}
-                
+                    }
+                {if-non-null characters then
+                    {if i > 0 then
+                        {out.append ' '}}
+                    {out.concat characters.characters}
+                    {if-non-null xnv = characters.xml-name-values then
+                        {if out-xml-name-values == null then
+                            set out-xml-name-values =
+                                {new {Array-of XMLName}.from-size,
+                                    i, {XMLName.unchecked "", ""}
+                                }
+                        }
+                        {if i > 0 then
+                            {out-xml-name-values.set-size
+                                i, {XMLName.unchecked "", ""}
+                            }
+                        }
+                        {out-xml-name-values.concat xnv}
+                    }
+                }
             }
         }
     }
 
-    || handle as string
-    let worked?:bool =
-        {any-string-marshal-proc 
-            stream, out, type, element, encoding, 
-            context, current-mapper, curl-type-to-xml-type,
-            write-type-attribute? = write-type-attribute?,
-            multiple-reference = multiple-reference}
-    
-    {return worked?}
+    || handle id/href stuff for non-null things
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            val,
+            type,
+            encoding,
+            context,
+            multiple-reference,
+            SOAPTypeMultipleReference.single,
+            marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+    {if null? then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        {stream.write-one
+            {XMLCharacters
+                {out.to-String},
+                xml-name-values = out-xml-name-values
+            }
+        }
+    }
+
+    {return true}
   }
 
   {method public open {default-unmarshal
@@ -98,38 +141,70 @@
                       }:(value:any, worked?:bool)
     {self.check-type type, false}
 
-    let (object:any, worked?:bool) = 
-        {any-string-unmarshal-proc 
-            stream, attributes, type,
-            default-encoding, context, current-mapper, xml-type-to-curl-type,
-            check-type-attribute? = check-type-attribute?}
-    
-    {if worked? then
-        {type-switch object
-         case str:StringInterface do
-            let item-type:Type = 
-                {if-non-null type = self.item-type.curl-type
-                 then type
-                 else String} 
-            {with-compiler-directives allow-any-calls? = true do
-                let xs:any = {new {Array-of.construct item-type}}
-                {for s in {str.split} do
-                    {if not s.empty? then
-                        let x:any =
-                            {unmarshal-from-string s, self.item-type, 
-                                current-mapper, xml-type-to-curl-type}
-                        {xs.append x}}}
-                {return xs, true}
-            }
-         case x:Null do
-            || assuming nullability already confirmed
-            {return null, true}
-         else
-            || TODO: should this throw or return failure?
-            {error {lmessage Unexpected type for list: '{value object}'}}
+    {return
+        {refable-unmarshal-proc
+            #String,
+            {proc {obj:any, type:Type}:any
+                {return obj}
+            },
+            {proc {
+                      characters:#XMLCharacters,
+                      type:Type
+                  }:(ref-object:any, return-object:any)
+                    {if-non-null characters then
+                        def item-type = 
+                            {if-non-null type = self.item-type.curl-type then
+                                type
+                             else
+                                String
+                            } 
+                        {with-compiler-directives allow-any-calls? = true do
+                            let xs:any = {new {Array-of.construct item-type}}
+                            let i:int = 0
+                            def str = characters.characters
+                            {for s in {str.split} do
+                                {if not s.empty? then
+                                    def xml-name-values =
+                                        {if characters.xml-name-values != null
+                                            and
+                                            i < characters.xml-name-values.size 
+                                         then
+                                            {new {Array-of XMLName}, 
+                                                characters.xml-name-values[i]}
+                                         else
+                                            null
+                                        }
+                                    def c =
+                                        {XMLCharacters
+                                            s,
+                                            xml-name-values = xml-name-values
+                                        }
+                                    let x:any =
+                                        {unmarshal-from-XMLCharacters
+                                            c,
+                                            self.item-type,
+                                            current-mapper,
+                                            xml-type-to-curl-type
+                                        }
+                                    {xs.append x}
+                                    {inc i}
+                                }
+                            }
+                            {return xs, xs}
+                        }
+                     else
+                        {return null, null}
+                    }
+            },
+            stream,
+            attributes,
+            type,
+            default-encoding,
+            context,
+            current-mapper,
+            xml-type-to-curl-type,
+            check-type-attribute? = check-type-attribute?
         }
-     else
-        {return null, false}
     }
   }
 
@@ -137,7 +212,3 @@
     {return {new {Array-of #String}, null, efficient-size = 1}}
   }
 }
-
-
-
-

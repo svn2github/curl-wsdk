@@ -1999,7 +1999,7 @@
   }
 }
 
-|| NOTE: commented out code below was attempt to use 'XDMElement' instead of 'any'
+|| NOTE: commented out code below was attempt to use 'StandardXDMElement' instead of 'any'
 || -- but that is not appropriate for runtime unmarshaling based on 'xsi:type' 
 {define-class public open WSDLSchemaXMLDocumentType {inherits WSDLSchemaType}
 
@@ -2033,7 +2033,7 @@
 ||--        {if self.xml-name == WSDLSchemaXMLDocumentType.anyType then
 ||--            "any"
 ||--         else
-||--            "XDMElement"
+||--            "StandardXDMElement"
 ||--        }
 ||--    }
 ||--  }
@@ -2086,7 +2086,7 @@
                     tab-level = 16,
                     element-name = element-name,
                     xml-type = self.xml-name,
-                    curl-type = "XDMElement",
+                    curl-type = "StandardXDMElement",
                     nillable? = self.nullable?,
                     multiple-reference = self.multiple-reference,
                     marshaler-handled-element? = true

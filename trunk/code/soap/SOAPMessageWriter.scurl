@@ -173,7 +173,7 @@
     }
   }
   {method public abstract open {write-request
-                                   stream:XMLOutputStream,
+                                   stream:{OutputStream-of XMLToken},
                                    arguments:{Array-of any},
                                    argument-names:#{Array-of #XMLName},
                                    || has some type info
@@ -277,7 +277,7 @@
   }
 
   {method public open {write-request
-                              stream:XMLOutputStream,
+                              stream:{OutputStream-of XMLToken},
                               arguments:{Array-of any},
                               argument-names:#{Array-of #XMLName},
                               || has xml-name and some type info
@@ -347,7 +347,7 @@
     }
   }
   {method public open {write-rpc-request
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           || has xml-name and some type info
                           arguments:{Array-of any},
                           argument-names:#{Array-of #XMLName},
@@ -623,7 +623,7 @@
     {stream.write-one {new XMLEndDocument}}
   }
   {method private {write-encoding-style
-                      stream:XMLOutputStream,
+                      stream:{OutputStream-of XMLToken},
                       encoding:#String = null,
                       soap-version:SOAPVersion = SOAPVersion.soap-1-1
                   }:void
@@ -672,7 +672,7 @@
 
 
   {method public open {write-headers
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           || has xml-name and some type info
                           headers:{Array-of any},
                           header-names:{Array-of #XMLName},
@@ -719,7 +719,7 @@
     }
   }
   {method public open {write-arguments
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           || has xml-name and some type info
                           arguments:{Array-of any},
                           argument-names:{Array-of #XMLName},
@@ -748,7 +748,7 @@
   }
 
   {method protected open {write-arguments-or-headers
-                             stream:XMLOutputStream,
+                             stream:{OutputStream-of XMLToken},
                              || has xml-name and some type info
                              arguments:{Array-of any},
                              argument-names:{Array-of #XMLName},
@@ -908,7 +908,7 @@
   }
 
   {define-proc package {write-header-role
-                           stream:XMLOutputStream,
+                           stream:{OutputStream-of XMLToken},
                            header-role:String,
                            soap-version:SOAPVersion
                        }:void
@@ -929,7 +929,7 @@
   }
 
   {define-proc package {write-header-must-understand
-                           stream:XMLOutputStream,
+                           stream:{OutputStream-of XMLToken},
                            header-must-understand?:bool,
                            soap-version:SOAPVersion
                        }:void

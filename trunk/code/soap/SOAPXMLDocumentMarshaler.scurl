@@ -28,7 +28,6 @@
         {ctext XDMElement} or any similar class.
     }
 }
-{define-class public open SOAPXMLDocumentMarshaler
   {inherits SOAPMarshaler}
   field public constant data-has-root-element?:bool
   field public constant use-type-attribute?:bool
@@ -51,7 +50,7 @@
   }
 
   {method public open {default-marshal
-                          stream:XMLOutputStream,
+                          stream:{OutputStream-of XMLToken},
                           val:any,
 
                           || xml-type and curl-type required
@@ -100,7 +99,6 @@
      then
         let tokens:{Array-of XMLToken} =
             {XDMElement-to-tokens val asa XDMElement}
-{for t key i in tokens do {output "writing[", i, "] ", t}}
         {stream.write tokens}            
     }
     {return true}
@@ -273,7 +271,6 @@
                 }
             }
 
-{for t key i in a do {output "read[", i, "] ", t}}
             || create XDMElement
             let element:XDMElement =
                 {XDMElement-from-tokens a}

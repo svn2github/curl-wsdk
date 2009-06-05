@@ -744,6 +744,7 @@
                        }:#SOAPTypeMapper.UnmarshalProc
     let new-type:SOAPObjectType = type
     {if type.curl-type.can-be-null? and type.curl-type.non-null-variant != null
+        and type.curl-type.non-null-variant != type.curl-type
      then
         set new-type =
             {SOAPObjectType.clone-with
@@ -2118,6 +2119,8 @@
                                    type:SOAPObjectType
                                }:SOAPObjectType
   }
+  {method public abstract open {curl-type-registered? curl-type:Type}:bool
+  }
 }
 
 ||--{define-value-class package final TableSOAPCurlTypeToXMLTypeValue
@@ -2174,6 +2177,23 @@
         {new {HashTable-of Type, TableSOAPCurlTypeToXMLTypeValue}}
   }
 
+  {method private {condition-curl-type curl-type:Type}:Type
+    {return 
+        {if curl-type.can-be-null? and
+            curl-type.non-null-variant != null and
+            curl-type.non-null-variant != curl-type.null-variant
+         then
+            {non-null curl-type.non-null-variant}
+        else
+            curl-type
+        }
+    }
+  }
+
+  {method public open {curl-type-registered? curl-type:Type}:bool
+    {return {self.table.key-exists? {self.condition-curl-type curl-type}}}
+  }
+
   {method public open {curl-type-to-xml-type
                           || curl-type required, xml-type may be ignored
                           || fills in xml-type, multi-ref, nillable
@@ -2189,15 +2209,7 @@
                 }
             }
         }
-    let curl-type:Type =
-        {if initial-curl-type.can-be-null? and
-            initial-curl-type.non-null-variant != null and
-            initial-curl-type.non-null-variant != initial-curl-type.null-variant
-        then
-            {non-null initial-curl-type.non-null-variant}
-        else
-            initial-curl-type
-        }
+    let curl-type:Type = {self.condition-curl-type initial-curl-type}
 
     let (value:TableSOAPCurlTypeToXMLTypeValue, found?:bool) =
         {self.table.get-if-exists curl-type}
@@ -2246,11 +2258,7 @@
                              marshaler-handled-element?:bool = false
                          }:void
     {self.table.set
-        {if curl-type.can-be-null? and curl-type.non-null-variant != null then
-            {non-null curl-type.non-null-variant}
-         else
-            curl-type
-        },
+        {self.condition-curl-type curl-type},
         {TableSOAPCurlTypeToXMLTypeValue
             xml-type,
             multiple-reference,

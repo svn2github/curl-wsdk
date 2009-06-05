@@ -111,14 +111,43 @@
     }
   }
 
-  {define-proc public {soap-marshaler-regster-code name:String}:String
+
+  {method public open {soap-marshaler-regster-code name:String}:String
+    || FIXME: what about alias types where ref-name may not be the real name.
+    def curl-type =
+        || Avoid checking parameterized types.
+        {if {self.ref-name.find ' '} < 0 then
+            {try
+                || TODO: is there a better way to do this?
+                || Note: this is slow, maybe package lookup would work?
+                {evaluate self.ref-name & " asa Type"} asa #Type
+             catch e:Exception do
+                null
+            }
+         else
+            null
+        }
+    def registered? =
+        {if-non-null curl-type then
+            {builtin-soap-curl-type-to-xml-type-mapper.curl-type-registered?
+                curl-type
+            }
+         else
+            false
+        }
     {return
         {format
             "        \{%s.register\n" &
             "            type-mapper = type-mapper,\n" &
             "            element-name-to-xml-type-mapper = element-name-to-xml-type,\n" &
             "            xml-type-to-curl-type-mapper = xml-type-to-curl-type,\n" &
-            "            curl-type-to-xml-type-mapper = curl-type-to-xml-type,\n" &
+            || Suppress registering stuff over the default curl-type-to-xml-type
+            || mappings.
+            {if not registered? then
+                "            curl-type-to-xml-type-mapper = curl-type-to-xml-type,\n"
+             else
+                ""
+            } &
             "            xml-type-to-element-name-mapper = xml-type-to-element-name\n" &
             "        \}\n",
             name
@@ -561,7 +590,7 @@
               else
                 "false"
             },
-            {WSDLSchemaType.soap-marshaler-regster-code "alias-marshaler"}
+            {self.soap-marshaler-regster-code "alias-marshaler"}
         }
     }
 
@@ -1135,7 +1164,7 @@
         {format out = out,
             "        \}\n%s" &
             "    \}\n",
-            {WSDLSchemaType.soap-marshaler-regster-code "soap-named-fields-marshaler"}
+            {self.soap-marshaler-regster-code "soap-named-fields-marshaler"}
         }
         {return {out.to-String}}
      else
@@ -1351,7 +1380,7 @@
         {format out = out,
             "        \}\n%s" &
             "    \}\n",
-            {WSDLSchemaType.soap-marshaler-regster-code "soap-struct-marshaler"}
+            {self.soap-marshaler-regster-code "soap-struct-marshaler"}
         }
         {return {out.to-String}}
      else
@@ -1752,7 +1781,7 @@
                 "                xml-type-to-element-name = xml-type-to-element-name\n" &
                 "            \}\n%s" &
                 "    \}\n",
-                {WSDLSchemaType.soap-marshaler-regster-code "array-marshaler"}
+                {self.soap-marshaler-regster-code "array-marshaler"}
             }
             {out.to-String}
          else
@@ -1985,7 +2014,7 @@
                  else
                     "null"
                 },
-                {WSDLSchemaType.soap-marshaler-regster-code "enum-marshaler"}
+                {self.soap-marshaler-regster-code "enum-marshaler"}
             }
          else
             null
@@ -2082,17 +2111,11 @@
                 "            \}\n%s" &
                 "    \}\n"
                 ,
-                {WSDLSchemaType.soap-object-type-code-string
-                    tab-level = 16,
-                    element-name = element-name,
-                    xml-type = self.xml-name,
-                    curl-type = "StandardXDMElement",
-                    nillable? = self.nullable?,
-                    multiple-reference = self.multiple-reference,
-                    marshaler-handled-element? = true
+                {self.soap-object-type-string
+                    tab-level = 16, element-name = element-name
                 },
                 data-has-root-element?,
-                {WSDLSchemaType.soap-marshaler-regster-code "doc-marshaler"}
+                {self.soap-marshaler-regster-code "doc-marshaler"}
             }
          else
             null
@@ -2319,7 +2342,7 @@
                 {self.item-type.soap-object-type-string
                     tab-level = 16
                 },
-                {WSDLSchemaType.soap-marshaler-regster-code "list-marshaler"}
+                {self.soap-marshaler-regster-code "list-marshaler"}
             }
          else
             null
@@ -2464,7 +2487,7 @@
                     "            \}\n" &
                     "%s" &
                     "     \}\n",
-                    {WSDLSchemaType.soap-marshaler-regster-code "soap-choice-marshaler"}
+                    {self.soap-marshaler-regster-code "soap-choice-marshaler"}
                 }
                 {out.to-String}
             }
@@ -2585,7 +2608,7 @@
                     multiple-reference = self.multiple-reference
                 },
                 self.domain-code,
-                {WSDLSchemaType.soap-marshaler-regster-code "soap-extension-marshaler"}
+                {self.soap-marshaler-regster-code "soap-extension-marshaler"}
             }
          else
             null

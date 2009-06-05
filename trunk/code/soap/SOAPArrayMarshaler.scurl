@@ -114,7 +114,7 @@
     {if type.xml-type == null or type.curl-type == null then
         set type = {self.fill-in-type-and-element-type type}
     }
-    {if type.element-name == null then
+    {if type.xml-type != null and type.element-name == null then
         set type = {xml-type-to-element-name.xml-type-to-element-name type}
     }
     {if-non-null element-names then
@@ -132,7 +132,8 @@
     }
   }
 
-  {method private {fill-in-type-and-element-type type:SOAPObjectType}:SOAPObjectType
+  {method private {fill-in-type-and-element-type type:SOAPObjectType
+                  }:SOAPObjectType
     || should we try to install an element type? (Since it will probably be
     || something obvious, or do they need to use a mapper?)
     let is-array-type?:bool = false, dimensions:#{Array-of int}
@@ -940,8 +941,11 @@
     {type-switch element-curl-type
      case pt:ParameterizedType do
         {if pt.template == Nullable then
-            set element-curl-type = pt.positional-type-parameters[0].parameter asa Type}}
-         
+            set element-curl-type =
+                pt.positional-type-parameters[0].parameter asa Type
+        }
+    }
+
     {if left-over-string == null and
         {SOAPArrayMarshaler.curl-type-dimensions
             {non-null element-curl-type}
@@ -964,13 +968,17 @@
     {return
         {new SOAPObjectType,
             xml-type =
-                {XMLName.unchecked
-                    type.xml-type.namespace, {non-null left-over-string}
+                {if-non-null type.xml-type then
+                    {XMLName.unchecked
+                        type.xml-type.namespace, {non-null left-over-string}
+                    }
+                 else
+                    null
                 },
             curl-type = element-curl-type,
             nillable? = element-curl-type.can-be-null?
         },
-        {left-over-string.find '\['} >= 0,
+        left-over-string != null and {left-over-string.find '\['} >= 0,
         {non-null dimensions}
     }
   }

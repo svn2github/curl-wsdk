@@ -44,7 +44,7 @@
                           use-type-attribute?:bool = true
                           || TODO: should be driven by WSDLSchemaXMLDocumentType
                       }
-    {assert type.marshaler-handled-element?, "Document "& type.xml-type & " "& type.curl-type}
+    {assert type.marshaler-handled-element?}
     {construct-super.SOAPMarshaler type}
     set self.data-has-root-element? = data-has-root-element?
     set self.use-type-attribute? = use-type-attribute?

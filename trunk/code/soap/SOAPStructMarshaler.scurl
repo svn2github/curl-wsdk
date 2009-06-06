@@ -916,7 +916,6 @@
             || see if it might be the next response
             set current-field-index = previous-field-index + 1
 
-            let choice-element?:bool = false
             {if current-field-index >= field-names.size or
                 used-fields?[current-field-index]
              then
@@ -930,7 +929,6 @@
                      elseif {check-choice-element? se.element, field-types[current-field-index]}
                      then
                         || NOTE: expected field matches choices for element
-                        set choice-element? = true
                      else
                         || NOTE: expected field does not match element
                         set current-field-index = -1
@@ -962,12 +960,11 @@
                     {new SOAPObjectType, element-name = se.element}
                  else
                     set used-fields?[current-field-index] = true
-                    field-types[current-field-index]
+                    {SOAPObjectType.clone-with
+                        field-types[current-field-index],
+                        element-name = se.element
+                    }
                 }
-            {if type.element-name == null then
-                set type =
-                    {SOAPObjectType.clone-with type, element-name = se.element}
-            }
             set type = 
                 {SOAPObjectType.fill-in-from-element-name-mapper
                     type,
@@ -1003,28 +1000,14 @@
             let attributes:#{Array-of XMLAttribute} = null
             let encoding:#String = null
             
-            {if not type.marshaler-handled-element? then
-                || normal case: value or values expected 
-                set attributes = {reader-read-attributes stream}
-                || get encoding from attributes
-                set encoding =
-                    {reader-check-attributes-for-encoding
-                        attributes,
-                        default-encoding
-                    }
-             else
-                || choice elements will be read by choice marshaler
-                || repeating elements will be read by array marshaler
-                || - preserve xsi:nil attribute, which governs entire array
-                let xsi-nil:#XMLAttribute = null
-                || unread start-element
-                {stream.unread-one se}
-                || preserve xsi:nil attribute if specified
-                set attributes =
-                    {if-non-null xsi-nil then
-                        {{Array-of XMLAttribute} xsi-nil}
-                     else null}
-            }
+            || normal case: value or values expected 
+            set attributes = {reader-read-attributes stream}
+            || get encoding from attributes
+            set encoding =
+                {reader-check-attributes-for-encoding
+                    attributes,
+                    default-encoding
+                }
             
             || should we get some type info too?
             let constant field-value:any =
@@ -1088,36 +1071,23 @@
             }
             {type-switch current-token
              case ee:XMLEndElement do
-
-                {if not type.marshaler-handled-element? then
-                    {if ee.element != null and ee.element != se.element then
-                        || normal case: need end element
-                        {throw-unmarshal-exception
-                            {lformat
-                                || TODO: why "array" ?
-                                "Mismatched end element for array value %s.",
-                                se.element
-                            }
-                        }
-                    }
-                 else
-                    || repeating elements: no end tag needed
-                    || -- elements were read by array marshaler
-                    {stream.unread-one ee}
-                }
-             case se:XMLStartElement do
-                {if not type.marshaler-handled-element? then
+                {if ee.element != null and ee.element != se.element then
                     || normal case: need end element
                     {throw-unmarshal-exception
                         {lformat
-                            "Expected XMLEndElement for %s got %s.",
-                            se.element, current-token
+                            || TODO: why "array" ?
+                            "Mismatched end element for array value %s.",
+                            se.element
                         }
                     }
-                 else
-                    || repeating elements: no end tag needed
-                    || -- elements were read by array marshaler
-                    {stream.unread-one se}
+                }
+             case se:XMLStartElement do
+                || normal case: need end element
+                {throw-unmarshal-exception
+                    {lformat
+                        "Expected XMLEndElement for %s got %s.",
+                        se.element, current-token
+                    }
                 }
              else
                 {throw-unmarshal-exception

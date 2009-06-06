@@ -870,13 +870,12 @@
                     {new SOAPObjectType, element-name = se.element}
                  else
                     set used-responses?[current-response-index] = true
-                    response-types[current-response-index]
+                    {SOAPObjectType.clone-with
+                        response-types[current-response-index],
+                        element-name = se.element
+                    }
                 }
             let type-known?:bool = true
-            {if type.element-name == null then
-                set type =
-                    {SOAPObjectType.clone-with type, element-name = se.element}
-            }
             || fill in missing type information.
             set type =
                 {SOAPObjectType.fill-in-from-element-name-mapper

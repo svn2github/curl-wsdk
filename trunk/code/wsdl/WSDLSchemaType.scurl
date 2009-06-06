@@ -111,16 +111,19 @@
     }
   }
 
+  {getter public open {real-curl-type-name}:String
+    {return self.ref-name}
+  }
 
   {method public open {soap-marshaler-regster-code name:String}:String
     || FIXME: what about alias types where ref-name may not be the real name.
     def curl-type =
         || Avoid checking parameterized types.
-        {if {self.ref-name.find ' '} < 0 then
+        {if {self.real-curl-type-name.find ' '} < 0 then
             {try
                 || TODO: is there a better way to do this?
                 || Note: this is slow, maybe package lookup would work?
-                {evaluate self.ref-name & " asa Type"} asa #Type
+                {evaluate self.real-curl-type-name & " asa Type"} asa #Type
              catch e:Exception do
                 null
             }
@@ -629,6 +632,9 @@
             type-ref-name
         }
     }
+  }
+  {getter public open {real-curl-type-name}:String
+    {return self.type.ref-name}
   }
 
   {method package {soap-object-type-string
@@ -1830,6 +1836,10 @@
     }
   }
 
+  {getter public open {real-curl-type-name}:String
+    {return {self.default-curl-type-name}}
+  }
+
   {getter package {multiple-reference}:SOAPTypeMultipleReference
     {if not self._multiple-reference-set? then
         set self._multiple-reference-set? = true
@@ -2134,6 +2144,9 @@
         }
     }
   }
+  {getter public open {real-curl-type-name}:String
+    {return self.curl-type-name}
+  }
 
   {getter package {multiple-reference}:SOAPTypeMultipleReference
     {return SOAPTypeMultipleReference.unknown}
@@ -2323,6 +2336,9 @@
         }
     }
   }
+  {getter public open {real-curl-type-name}:String
+    {return {self.default-curl-type-name}}
+  }
 
   {method package {register-type-code element-name:#XMLName = null}:#String
     {return
@@ -2438,6 +2454,9 @@
             default-curl-type
         }
     }
+  }
+  {getter public open {real-curl-type-name}:String
+    {return {self.default-curl-type-name}}
   }
 
   {method package {register-type-code element-name:#XMLName = null}:#String

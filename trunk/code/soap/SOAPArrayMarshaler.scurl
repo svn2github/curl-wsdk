@@ -717,16 +717,19 @@
                 }
             }
         }
-        def choice-element?:bool =
-            {if-non-null element-type = self.element-type then
-                element-type.choice-elements != null
-             else false}
         let constant object-as-any:any = object
         || unmarshal array elements
         let i:int = 0, j:int = 0
+        let last-end-element:#XMLEndElement
         {while true do
+            def first-time-and-unwrapped?  =
+                last-end-element == null and self.type.marshaler-handled-element?
             let (current-token:XMLToken, eof?:bool) =
-                {stream.read-one}
+                {if first-time-and-unwrapped? then
+                    ({XMLStartElement {non-null type.element-name}}, false)
+                 else
+                    {stream.read-one}
+                }
             {if eof? then
                 {throw-unmarshal-exception
                     {localize "Got EOF early while unmarshal array."}
@@ -735,36 +738,35 @@
             {type-switch current-token
              case se:XMLStartElement do
                 || make sure its expected tag, if that matters
-                {if not choice-element? then
-                    {if-non-null check-element-name = self.check-element-name then
-                        {if se.element != check-element-name then
-                            {stream.unread-one se}
-                            {break}
-                        }
+                {if-non-null check-element-name = self.check-element-name then
+                    {if se.element != check-element-name then
+                        {stream.unread-one se}
+                        {break}
                     }
                 }
                 || data, handle it!
-                let constant attributes:#{Array-of XMLAttribute} =
-                    {reader-read-attributes stream}
+                def element-attributes =
+                    {if first-time-and-unwrapped? then
+                        attributes
+                     else
+                        {reader-read-attributes stream}
+                    }
                 || get encoding from attributes
                 let constant encoding:#String =
                     {reader-check-attributes-for-encoding
-                        attributes,
+                        element-attributes,
                         default-encoding
                     }
 
-                || choice elements must be wrapped
-                {if choice-element? then
-                    {reader-unread-attributes stream, attributes}
-                    {stream.unread-one se}
-                }
-                
                 || should we get some type info too?
                 let constant element-value:any =
                     {current-mapper.unmarshal
                         stream,
-                        attributes,
-                        {non-null self.element-type},
+                        element-attributes,
+                        {SOAPObjectType.clone-with
+                            {non-null self.element-type},
+                            element-name = se.element
+                        },
                         encoding,
                         context,
                         current-mapper,
@@ -815,35 +817,32 @@
                 
                 || now finished unmarshaling this element
                 || - assure end elements properly consumed
-                {if choice-element? then
-                    || NOTE: choice element must be wrapped
-                 else
-                    set (current-token, eof?) = {stream.read-one}
-                    {if eof? then
+                set (current-token, eof?) = {stream.read-one}
+                {if eof? then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Got EOF instead of end of response %s.",
+                            se.element
+                        }
+                    }
+                }
+                {type-switch current-token
+                 case ee:XMLEndElement do
+                    {if ee.element != null and ee.element != se.element then
                         {throw-unmarshal-exception
                             {lformat
-                                "Got EOF instead of end of response %s.",
+                                "Mismatched end element for response %s.",
                                 se.element
                             }
                         }
                     }
-                    {type-switch current-token
-                     case ee:XMLEndElement do
-                        {if ee.element != null and ee.element != se.element then
-                            {throw-unmarshal-exception
-                                {lformat
-                                    "Mismatched end element for response %s.",
-                                    se.element
-                                }
-                            }
-                        }
-                     else
-                        {throw-unmarshal-exception
-                            {lformat
-                                "Expected XMLEndElement for %s got %s.",
-                                se.element,
-                                current-token
-                            }
+                    set last-end-element = ee
+                 else
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Expected XMLEndElement for %s got %s.",
+                            se.element,
+                            current-token
                         }
                     }
                 }
@@ -861,6 +860,11 @@
                         current-token
                     }
                 }
+            }
+        }
+        {if self.type.marshaler-handled-element? then
+            {if-non-null last-end-element then
+                {stream.unread-one last-end-element}
             }
         }
     }

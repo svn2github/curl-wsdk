@@ -616,14 +616,14 @@
     || NOTE: check for presence of attributes, which disallow
     || treatment repeating element as array type when parsing sequence
     let has-attributes?:bool = false
-     {for child in node.children do
+    {for child in node.children do
         {if {self.schema-tag-match child.name, "attribute"} or
             {self.schema-tag-match child.name, "attributeGroup"}
          then
             set has-attributes? = true
             {break}
         }
-     }
+    }
    
     {for child in node.children do
 

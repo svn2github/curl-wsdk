@@ -463,7 +463,7 @@
                 multiple-reference = multiple-reference}
             {return true}
         }
-    }    
+    }
     {if write-type-attribute? then
         {marshal-write-type-attribute stream, type}
     }
@@ -570,8 +570,7 @@
                     curl-type-to-xml-type,
                     || NOTE: nowhere to write these if not wrapped (repeating element)
                     || -- but that's OK, because those can not exist in 'encoded' usage
-                    write-type-attribute? =
-                        not type.marshaler-handled-element? and write-type-attribute?,
+                    write-type-attribute? = write-type-attribute?,
                     multiple-reference = field-type.multiple-reference
                 }
                 {if not field-type.marshaler-handled-element? then

@@ -477,23 +477,23 @@
                             }
                     }
                     || we don't know the type, so fill it in as an any
-                    {if-non-null attributes then
-                        {if soap-type == null or
-                            soap-type.xml-type == null or
-                            soap-type.curl-type == null
-                         then
+                    {if soap-type == null or
+                        soap-type.xml-type == null or
+                        soap-type.curl-type == null
+                     then
+                        {if-non-null attributes then
                             set soap-type =
                                 {any-find-type-from-attributes
                                     soap-type,
                                     attributes,
                                     xml-type-to-curl-type
                                 }
-                        }
-                     else
-                        {throw-unmarshal-exception
-                            {lformat
-                                "Not enough type information to unmarshal %y.",
-                                xml-name
+                         else
+                            {throw-unmarshal-exception
+                                {lformat
+                                    "Not enough type information to unmarshal %y.",
+                                    xml-name
+                                }
                             }
                         }
                     }

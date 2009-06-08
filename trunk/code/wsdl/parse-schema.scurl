@@ -1586,6 +1586,10 @@
             || for all of the things that we don't understand, just do document types.
             {self.approximated-tag child}
             set type = {self.get-xml-document-type xml-name}
+
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+
          else
             || FIXME: probably other elements that should trigger 
             {self.unexpected-tag child}

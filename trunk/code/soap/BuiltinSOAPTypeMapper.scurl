@@ -1107,8 +1107,9 @@
                   }:(any, any)
                 {if-non-null characters then
                     let constant string:String = characters.characters
-                    || If we allow overflows then uint64 values can be parsed correctly
-                    || and later cast to uint64.  But we do lose some error checking.
+                    || If we allow overflows then uint64 values can be parsed
+                    || correctly and later cast to uint64.
+                    || FIXME: But we do lose some error checking.
                     let constant (value:int64, nchars:int, flow?:bool) =
                         {string.to-int64 error-if-overflow? = (type != uint64)}
                     || check character not consumed by to-int are whitespace

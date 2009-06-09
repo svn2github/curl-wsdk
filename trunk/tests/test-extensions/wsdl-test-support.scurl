@@ -135,10 +135,10 @@
                           directory:Url,
                           manifest-loc:Url = {directory.concat "manifest.mcurl"},
                           directives:WSDLPackageDirectives =
-                              {WSDLPackageDirectives location,
+                              {WSDLPackageDirectives location, 
                                   include-async-methods? = false,
                                   || TODO: exploded variant
-                                  target-directory = null
+                                  target-url = null
                               }
                       }
     set self.directory = directory

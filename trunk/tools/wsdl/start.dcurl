@@ -14,36 +14,17 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0, 6.0 manifest}
-            
-{manifest COM.CURL.WSDK.IDE,
-    version = "1.0"}
-{delegate-to COM.CURL.WSDK,
-    location = "../code/manifest.mcurl"
-}
-{component package COM.CURL.WSDK.WSDL-IDE,
-    location = "wsdl/load.scurl"
-}
-{component file editor-info.txt,
-    location = "wsdl/editor-info.txt"
-}
-{component file start.curl,
-    location = "wsdl/start.curl"
-}
-{component file project.cprj,
-    location = "project.cprj"
-}
-{component file manifest.mcurl,
-    location = "wsdl/manifest.mcurl"
+{curl 7.0 applet}
+{applet manifest = "manifest.mcurl",
+    {compiler-directives careful? = true}
 }
 
-{component file start.dcurl,
-    location = "wsdl/start.dcurl"
+{import * from COM.CURL.WSDK.WSDL-IDE}
+
+{value
+    def wsdl-generation = {WSDLGeneration}
+    def view = wsdl-generation.main-view
+    || NOTE: exits automatically when window closed
+    set view.visibility = "normal"
+    view
 }
-
-
-
-
-
-
-

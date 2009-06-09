@@ -19,15 +19,14 @@
     {compiler-directives careful? = true}
 }
 
-
 {import * from COM.CURL.WSDK.WSDL-IDE}
 
-{let public constant main:WSDLGeneration = {WSDLGeneration}}
+{def public wsdl-generation = {WSDLGeneration}}
 
 {CommandButton
     label = {message Run},
     {on Action do
-        {main.show}},
+        {wsdl-generation.main-view.show}},
     {on AttachEvent at c:CommandButton do
         {c.handle-event {Action}}}
 }

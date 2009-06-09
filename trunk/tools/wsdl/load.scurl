@@ -29,6 +29,7 @@
 
 {include
     "surge-lab-support.scurl",
+    "WSDLProjectContext.scurl",
     "wsdl-generation.scurl"
 }
 
@@ -36,18 +37,20 @@
 {import * from CURL.GUI.TEXT-EDIT}
 {import * from CURL.IDE.EDITOR-INTERFACE}
 {import * from CURL.IDE.TEMPLATES}
+{import
+    get-the-applet-or-null
+ from CURL.ENGINE.APPLET}
 
 {import * from COM.CURL.WSDK.WSDL}
-{import * from COM.CURL.WSDK.SOAP}
 
 || Purpose:
 
 || Global variable that is the implementation of
 || CURL.IDE.EDITOR-INTERFACE.EditorInterface which will be looked
-|| for by Surge Lab when it starts the WSDL tool.
+|| for by Curl IDE when it starts the WSDL tool.
 || 
 || Comments:
-|| Exported for Surge Lab integration
-{let public constant surge-lab-editor:WSDLLabInterface =
+|| Exported for Curl IDE integration
+{def public surge-lab-editor =
     {WSDLLabInterface}
 }

@@ -59,6 +59,7 @@
   field package unexpected-tags-fatal?:bool = true
   field package approximated-tags-reported?:bool = true
   field package ignored-tags-reported?:bool = true
+  field public-get warnings:{Array-of Exception}
   || - output diagnostic messages
   field package debug?:bool = false
 
@@ -129,6 +130,7 @@
     set self.local-namespaces = {{Set-of String}}
     set self.namespace-imports = {{Array-of WSDLSchemaNamespacePair} }   
     set self.names = {create-name-table}
+    set self.warnings = {{Array-of Exception}}
     
     || extension types
     {for type in WSDLSchema.registered-simple-types do
@@ -2190,6 +2192,11 @@
     }
   }
 
+  {method private {warn e:Exception}:void
+    {self.warnings.append e}
+    {output e.message}
+  }
+
   {method private {unsupported-tag
                       node:WSDLDOMNode
                   }:void
@@ -2205,7 +2212,7 @@
             {hlmessage Approximated as 'anyType': '{WSDLSchema.format-name node}'}}
 
     {if self.approximated-tags-reported? then
-        {output e.message}
+        {self.warn e}
     }
   }
 
@@ -2221,7 +2228,7 @@
         (ignored-annotation-reported? or
          not {self.schema-tag-match node.name, "annotation"})
      then
-        {output e.message}
+        {self.warn e}
     }
   }
 
@@ -2236,7 +2243,7 @@
     {if self.unexpected-tags-fatal? then
         {throw e}
      else
-        {output e.message}
+        {self.warn e}
     }
   }
 

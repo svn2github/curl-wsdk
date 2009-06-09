@@ -14,22 +14,20 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{import * from CURL.LANGUAGE.REGEXP}
-
 {define-class public open WSDLPackageDirectives
-  field public-get constant source-url:Url
-  field public-get constant target-directory:#Url
-  field public-get constant curl-versions:String
-  field public-get constant curlify-names?:bool
-  field public-get constant include-async-methods?:bool
-  field public-get constant preserve-existing-files?:bool
-  field public-get constant package-prefix:#String
-  field public-get constant package-suffix:#String
-  field public-get constant namespace-specs:WSDLNamespaceSpecs
+  field public source-url:Url
+  field public target-url:#Url
+  field public curl-versions:String
+  field public curlify-names?:bool
+  field public include-async-methods?:bool
+  field public preserve-existing-files?:bool
+  field public package-prefix:#String
+  field public package-suffix:#String
+  field public namespace-specs:WSDLNamespaceSpecs
   
   {constructor public {default
                           source-url:Url,
-                          target-directory:#Url = {source-url.merge source-url.basename},
+                          target-url:#Url = null,
                           curl-versions:String = {curl-versions-string},
                           curlify-names?:bool = true,
                           include-async-methods?:bool = true,                          
@@ -38,8 +36,13 @@
                           package-suffix:#String = null,
                           ...:WSDLNamespaceSpec             
                       }
+    || HTTP locations are disallowed
+    {ensure-local-filesystem source-url}
+    {if-non-null target-url then
+        {ensure-local-filesystem target-url}}
+    
     set self.source-url = source-url
-    set self.target-directory = target-directory
+    set self.target-url = target-url
     set self.curl-versions = curl-versions
     
     set self.curlify-names? = curlify-names?
@@ -57,7 +60,7 @@
   }
   {method public open {clone-for
                           source-url:Url,
-                          target-directory:#Url = self.target-directory,
+                          target-url:#Url = self.target-url,
                           curl-versions:String = self.curl-versions,
                           curlify-names?:bool = self.curlify-names?,
                           include-async-methods?:bool = self.include-async-methods?,                          
@@ -68,7 +71,7 @@
                       }:WSDLPackageDirectives
     {return
         {WSDLPackageDirectives source-url,
-            target-directory = target-directory,
+            target-url = target-url,
             curl-versions = curl-versions,
             curlify-names? = curlify-names?,
             include-async-methods? = include-async-methods?,                          
@@ -104,6 +107,7 @@
     set self.skip-processing? =  skip-processing?
   }
 }
+
 {define-class public open WSDLPackageWriter
   field public-get constant wsdl:WSDL
   field public-get constant wsdl-writer:WSDLWriter
@@ -129,18 +133,33 @@
   || code generation
   || --------------------
   {method public open {generate-code}:Url
-    {if-non-null dir = self.directives.target-directory then
-        def ploc = {self.generate-code-directory dir}
-        {return ploc}
-     else
-        def sloc = {self.directives.source-url.set-extension ".scurl"}
-        def package-name = self.service-package-name
-        {with-open-streams out = {write-open sloc} do
-            {self.write-consolidated-package-herald out,
-                package-name}
-            {self.dump-client-stubs out}}
-        {return sloc}
-    }
+    {return
+        {if-non-null loc = self.directives.target-url then
+            {if loc.extension == ".scurl" then
+                || monolithic file
+                {self.generate-code-file loc}
+             else
+                || specified directory
+                {self.generate-code-directory loc}}
+         else
+            || derived directory
+            def sloc = self.directives.source-url
+            def name =
+                {if sloc.extension.empty? then
+                    || guard against lack of extension
+                    sloc.basename & "-PACKAGE"
+                 else sloc.basename}
+            {self.generate-code-directory
+                {sloc.merge name}}
+        }}
+  }
+  {method public open {generate-code-file sloc:Url}:Url
+    def package-name = self.service-package-name
+    {with-open-streams out = {write-open sloc} do
+        {self.write-consolidated-package-herald out,
+            package-name}
+        {self.dump-client-stubs out}}
+    {return sloc}
   }
   {method public open {generate-code-directory
                           dir:Url,
@@ -149,18 +168,10 @@
     || prepare output directory
     {self.prepare-output-directory dir,
         preserve-existing-files? = self.directives.preserve-existing-files?}
-    || collect defined namespaces
-    def ns = {StringArray}
-    {for namespace in self.schema.local-namespaces do
-        def n = namespace
-        {if {ns.find n} < 0 then
-            {ns.append n}}}
-    {ns.sort}
-    || collect service classes
-    def service-class-names = {StringArray}
-    {for key service-class-name in {self.wsdl-writer.service-classes} do
-        {service-class-names.append service-class-name}}
-    {service-class-names.sort}
+
+    || obtain info
+    def ns = self.defined-namespaces
+    def service-class-names = self.service-class-names
     
     || generate service class(es)
     || --------------------
@@ -450,21 +461,56 @@
   }
   || helper methods
   || --------------------
-  {getter package {service-package-name}:String
-    def service-name = self.directives.source-url.basename
+  field package _service-class-names:#StringArray
+  {getter public open {service-class-names}:StringArray
+    {if self._service-class-names == null then
+        def service-class-names = {StringArray}
+        {for key service-class-name in {self.wsdl-writer.service-classes} do
+            {service-class-names.append service-class-name}}
+        {service-class-names.sort}
+        set self._service-class-names = service-class-names}
+    {return {non-null self._service-class-names}}
+  }
+  field package _defined-namespaces:#StringArray
+  {getter public open {defined-namespaces}:StringArray
+    {if self._defined-namespaces == null then
+        def ns = {StringArray}
+        {for namespace in self.schema.local-namespaces do
+            def n = namespace
+            {if {ns.find n} < 0 then
+                {ns.append n}}}
+        {ns.sort}
+        set self._defined-namespaces = ns}
+    {return {non-null self._defined-namespaces}}
+  }
+  {getter public open {service-package-name}:String
     def package-prefix = 
         {if-non-null package-prefix = self.directives.package-prefix
          then package-prefix
-         else
-            {if-non-null tns = self.wsdl.target-namespace
-             then {namespace-contraction tns} & "."
-             else ""}
-        }
+         else self.package-prefix-default}
     def package-suffix =
         {if-non-null package-suffix = self.directives.package-suffix
          then package-suffix
-         else service-name}
-    {return package-prefix & package-suffix}
+         else self.package-suffix-default}
+    def package-name =
+        {if package-prefix.empty? and package-suffix.empty? then
+            self.service-name-default
+         elseif package-prefix.empty? then package-suffix
+         elseif package-suffix.empty? then package-prefix
+         else package-prefix & "." & package-suffix}
+    {return package-name}
+  }
+  {getter public open {package-prefix-default}:String
+    {return        
+        {if-non-null tns = self.wsdl.target-namespace
+         then {namespace-contraction tns}
+         else ""}}
+  }
+  {getter public open {package-suffix-default}:String
+    {return self.service-name-default}
+  }
+  {getter public open {service-name-default}:String
+    {return self.directives.source-url.basename}
   }
   {method package {namespace-spec-for
                       namespace:String
@@ -502,25 +548,25 @@
         error-if-exists? = clear-existing-files?}
   }
   || NOTE: not used
-  {method package {all-types
-                  }:{Array-of WSDLSchemaType}
-    def types = {{Array-of WSDLSchemaType}}
-    {for x key k in self.schema.names do
-        {type-switch x
-         case t:WSDLSchemaType do
-            def ns = k.namespace
-            {if || user defined type
-                not {WSDLSchema.known-namespaces.member? ns}
-                || NOTE: this assumes known-namespaces need no type definitions
-                || TODO: make this explicit
-             then
-                {types.append t}}}}
-    {types.sort comparison-proc =
-        {fn x, y =>
-            {x.ref-name.compare y.ref-name} <= 0}
-    }
-    {return types}
-  }
+||--  {method package {all-types
+||--                  }:{Array-of WSDLSchemaType}
+||--    def types = {{Array-of WSDLSchemaType}}
+||--    {for x key k in self.schema.names do
+||--        {type-switch x
+||--         case t:WSDLSchemaType do
+||--            def ns = k.namespace
+||--            {if || user defined type
+||--                not {WSDLSchema.known-namespaces.member? ns}
+||--                || NOTE: this assumes known-namespaces need no type definitions
+||--                || TODO: make this explicit
+||--             then
+||--                {types.append t}}}}
+||--    {types.sort comparison-proc =
+||--        {fn x, y =>
+||--            {x.ref-name.compare y.ref-name} <= 0}
+||--    }
+||--    {return types}
+||--  }
 }
 || helper procs
 || --------------------
@@ -542,8 +588,10 @@
             {String {curl-version-number.n-clone n = 2}}}
     {return curl-versions}
 }
-|| derives Curl Package style identifier from XML namespace
+|| derives Curl package identifier from XML namespace
 {define-proc package {namespace-contraction ns:String}:String
+    {if ns.empty? then
+        {return "_"}}
     || ignore the scheme
     def ps = {StringArray "http://", "https://", "urn:"}
     {for p in ps do
@@ -552,7 +600,7 @@
             set ns = {ns.tail i}
             {break}}}
     || get directory components
-    def xs = {ns.split split-chars = "/"}
+    def xs = {ns.split split-chars = "/:"}
     {xs.filter {fn x => x.size > 0}}
     || get host components
     def hs = {xs[0].split split-chars = "."}
@@ -563,6 +611,10 @@
             {for part in parts do
                 {unless name.empty? do
                     {name.append '.'}}
+                || NOTE: guard against illegal start character
+                || TODO: use CurlNamer
+                {unless Identifier.start-chars[part[0]] do
+                    {name.append '_'}}
                 {name.concat part}}}
     || starting with reversed host components
     {hs.reverse}
@@ -573,4 +625,85 @@
     || as uppercase string
     {name.to-upper}
     {return {name.to-String}}                     
+}
+{define-proc package {ensure-local-filesystem loc:Url}:void
+    {if loc.stem isa StringDirectory then
+        {return}}
+    {if not {in-local-filesystem? loc} then
+        {error {lmessage Not in local filesystem: {value loc}}}}
+}
+|| directives writer
+|| --------------------
+{define-class public open WSDLPackageDirectivesWriter
+  field public-get out:TextOutputStream
+  {constructor public {default  out:TextOutputStream = {get-stdout}}
+    set self.out = out
+  }
+  {method public open {write-object obj:Object}:void
+    {type-switch obj
+     case obj:WSDLPackageDirectives do
+        {self.write-directives obj}
+     case obj:WSDLNamespaceSpec do
+        {self.write-namespace-spec obj}
+     else
+        {error {lmessage WSDLPackageDirectivesWriter: unexpected type '{value obj}'}}}
+  }
+  {method package {write-directives obj:WSDLPackageDirectives}:void
+    || TODO: suppress defaulted values
+    {self.fmt |"
+{WSDLPackageDirectives
+    %s,
+    target-url = %s,
+    curl-versions = %s,
+    curlify-names? = %s,
+    include-async-methods? = %s,                          
+    preserve-existing-files? = %s,
+    package-prefix = %s,
+    package-suffix = %s       
+"|,
+        {self.val obj.source-url},
+        {self.val obj.target-url},
+        {self.val obj.curl-versions},
+        {self.val obj.curlify-names?},
+        {self.val obj.include-async-methods?},
+        {self.val obj.preserve-existing-files?},
+        {self.val obj.package-prefix},
+        {self.val obj.package-suffix}
+    }
+    {for spec in obj.namespace-specs do
+        {format out = self.out, ",\n"}
+        {self.write-namespace-spec spec}
+    }
+    {self.fmt "\n\}\n"}
+  }
+  {method package {write-namespace-spec obj:WSDLNamespaceSpec}:void
+    {self.fmt |"
+{WSDLNamespaceSpec
+    %s,
+    short-name = %s,                          
+    directory-suffix = %s,
+    preserve-existing-files? = %s,
+    skip-processing? = %s      
+}  
+"|,
+        {self.val obj.uri},
+        {self.val obj.short-name},
+        {self.val obj.directory-suffix},
+        {self.val obj.preserve-existing-files?},
+        {self.val obj.skip-processing?}
+    }
+  }
+  {method package {val x:any}:String
+    {return
+        {type-switch x
+         case x:Null do "null"
+         case x:bool do {String x}
+         case x:Url do {format |"{url "%s"}"|, x.name}
+         case x:String do {format |""%s""|, x}
+         else {String x}
+        }}
+  }
+  {method package {fmt out:TextOutputStream = self.out, ...}:void
+    {format out = out, {splice ...}}
+  }
 }

@@ -78,6 +78,7 @@
   || TODO: consider finer grained categorization
   field package unexpected-tags-fatal?:bool = true
   field package ignored-tags-reported?:bool = true
+  field public-get warnings:{Array-of Exception}
   || - output diagnostic messages
   field package debug?:bool = false
 
@@ -142,6 +143,7 @@
             {wsdl-exception {hlmessage Unable to parse WSDL file '{value source-url}'}}
         }
     {construct-super def-node}
+    set self.warnings = {{Array-of Exception}}
 
     set self.schema =
         {WSDLSchema
@@ -1069,6 +1071,11 @@
     {self.top-node.dump out}
   }
 
+  {method private {warn e:Exception}:void
+    {self.warnings.append e}
+    {output e.message}
+  }
+
   {method private {unsupported-tag
                       node:WSDLDOMNode
                   }:void
@@ -1084,7 +1091,7 @@
             {hlmessage Ignored '{WSDL.format-name node}'}}
 
     {if self.ignored-tags-reported? then
-        {output e.message}
+        {self.warn e}
     }
   }
 
@@ -1099,7 +1106,7 @@
     {if self.unexpected-tags-fatal? then
         {throw e}
      else
-        {output e.message}
+        {self.warn e}
     }
   }
 

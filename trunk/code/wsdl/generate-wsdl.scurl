@@ -1,0 +1,217 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+
+|| WSDLK 2.0 code generation API 
+|| --------------------
+{doc-next ||== generate-wsdl-package
+    {purpose
+        Generate curl source code for Web Service
+        described by a WSDL file.
+        
+        {parameter source-url,
+            the {ctext Url} of the WSDL file.}
+        {parameter target-url,
+            the {ctext Url} of the output.
+            The default is derived from the {param source-url}, by removing the extension.
+            If the url has ".scurl" extension,
+            all generated code will be contained in that file.
+            Otherwise, code will be organized into directories and files
+            corresponding to namespaces and types defined by the WSDL file.}
+        {parameter package-prefix,
+            specifies the first part of the service package name.
+            The default is derived from the target-namespace of the WSDL file.}
+        {parameter package-suffix,
+            specifies the final part of the package name.
+            The default is based on the basename of the WSDL file.}
+        {parameter curl-versions,
+            If specified, indicates curl versions mentioned
+            in generated package herald.  The default is
+            the versions supported by the current package.}
+        {parameter curlify-names?,
+            indicates whether to use curl naming conventions
+            for identifiers in generated code.}
+        {parameter include-async-methods?,
+            indicates whether asynchronous service methods will ge generated,
+            in addition to the usual synchronous methods.}
+        {parameter preserve-existing-files?,
+            controls whether existing files in {param target-url} are preserved.
+            The default is to delete existing files.}
+        {parameter ...,
+            rest arguments supply directives governing code egenration
+            for individual namespaces defined by WSDL file.}
+        || TODO: describe these
+    }
+    {return-vals
+        The {ctext Url} of the generated package file.}
+    {details
+        || describe directory structure
+        || compatibility
+    }
+    {throws 
+        Errors processing the WSDL file will result in
+        {docref WSDLSyntaxException}s.
+        || TODO: describe errors and warnings
+    }
+}
+{define-proc public {generate-wsdl-package
+                        source-url:Url,
+                        target-url:#Url = null,
+                        package-prefix:#String = "COM.CURL.WSDL.",
+                        package-suffix:#String = null,
+                        curl-versions:String = {curl-versions-string},
+                        curlify-names?:bool = true,
+                        include-async-methods?:bool = true,
+                        preserve-existing-files?:bool = false,
+                        ...:WSDLPackageDirectives
+                    }:Url
+    def writer =
+        {WSDLPackageWriter
+            {WSDLPackageDirectives source-url, 
+                target-url = target-url,
+                package-prefix = package-prefix,
+                package-suffix = package-suffix,
+                curl-versions = curl-versions,
+                curlify-names? = curlify-names?,
+                include-async-methods? = include-async-methods?,
+                preserve-existing-files? =  preserve-existing-files?,
+                {splice ...}
+            }}
+    def sloc = {writer.generate-code}
+    {return sloc}
+}
+
+|| WSDLK 1.1 code generation API 
+|| --------------------
+{doc-next
+    {purpose
+        Generate curl source code for Web Service
+        described by a WSDL file.
+        
+        {parameter source,
+            the {ctext Url} of the WSDL file.}
+        {parameter target,
+            the {ctext Url} of the output.
+            Defaults to source filename with extension
+            {monospace .scurl}, in source directory
+            if its local, otherwise applet directory.}
+        {parameter curlify-names?,
+            indicates whether to use curl naming conventions
+            for identifiers in generated code.}
+        {parameter include-async-methods?,
+            indicates whether asynchronous service methods will ge generated,
+            in addition to the usual synchronous methods.}
+        {parameter package-prefix,
+            If specified, generated code will include
+            package herald, with package-name 
+            derived by appending WSDL basename to the prefix.
+            The default is {monospace "COM.CURL.WSDL."}}
+        {parameter package-suffix,
+            If specified, the final part of the package name.
+            The default is based on the service name in the WSDL file.}
+        {parameter curl-versions,
+            If specified, indicates curl versions mentioned
+            in generated package herald.  The default is
+            the versions supported by this package.}
+    }
+    {return-vals
+        The {ctext Url} of the generated file.}
+    {details
+        Uses {docref WSDL.dump-client-stubs}.}
+    {throws 
+        Errors processing the WSDL file will result in
+        {docref WSDLSyntaxException}s.
+        || TODO: describe errors and warnings
+    }
+    {deprecated
+        For WSDK 2.0 WSDL code generation, use {docref generate-wsdl-package}.
+        This function provides WSDK 1.1 code generation behavior.
+    }
+}
+{define-proc public
+    ||deprecated
+    {generate-wsdl-code
+                   source:Url,
+                   target:#Url = null,
+                   package-prefix:#String = "COM.CURL.WSDL.",
+                   package-suffix:#String = null,
+                   curl-versions:String = {curl-versions-string},
+                   curlify-names?:bool = true,
+                   include-async-methods?:bool = true,
+                   exclude-unreferenced-types?:bool = false
+               }:Url
+    || package herald template
+    let constant package-herald-template:String = 
+        {format 
+            "\{curl %s package\}\n\{package %%s,\n"
+            & "    \{compiler-directives careful? = true\},\n"
+            & "    wsdl = \"%%s\"\}\n\n",
+            curl-versions}
+    || target location
+    let sloc:Url = 
+        {if-non-null target then 
+            || specified location
+            target
+         else
+            let loc:Url =
+                {if source.stem isa StemHttpDirectory then 
+                    || HTTP WSDL file: use applet directory
+                    {get-working-directory-url}
+                 else
+                    || local WSDL file: use that directory
+                    source}
+            {loc.merge source.basename & ".scurl"}}
+    || WSDL parser
+    let w:WSDL =
+        {WSDL source,
+            curlify-names? = curlify-names?}
+    
+    || package name
+    let package-name:#String =
+        {if-non-null package-prefix then
+            {if-non-null package-suffix 
+             then package-suffix
+             else
+                || assure proper curl name
+                {w.curl-namer.get-curl-name 
+                    {XMLName "", source.basename},
+                    curl-type = "class"}}
+         else null}
+    
+    || generate code
+    def writer =
+        {WSDLWriter
+            w.schema,
+            w.services, 
+            w.curl-namer,
+            w.type-to-element-name,
+            w.source-url}
+    {with-open-streams
+        out = {write-open sloc} 
+     do
+        || optional package herald
+        {if-non-null package-name then
+            {format out = out, 
+                package-herald-template,
+                package-prefix & package-name,
+                source}}
+        || service classes and support types
+        {writer.dump-client-stubs out,
+            do-async? = include-async-methods?,
+            exclude-unreferenced-types? = exclude-unreferenced-types?}} 
+    || return result
+    {return sloc}
+}

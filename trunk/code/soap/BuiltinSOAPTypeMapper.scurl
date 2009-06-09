@@ -721,10 +721,17 @@
 {define-proc package {marshal-write-type-attribute
                         stream:{OutputStream-of XMLToken}, type:SOAPObjectType
                      }:void
+    || Don't write a type attribute that will be useless, like the
+    || any types are.
+    def xml-type = {non-null type.xml-type}
+    {if {BuiltinSOAPTypeMapper.any-xml-types.find xml-type} >= 0 then
+        {return}
+    }
+
     {stream.write-one
         {new XMLAttribute.with-xml-name-values,
             SOAPTypeMapper.xml-schema-type,
-            {new {Array-of XMLName}, {non-null type.xml-type}}
+            {new {Array-of XMLName}, xml-type}
         }
     }
 }

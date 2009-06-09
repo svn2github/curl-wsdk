@@ -2285,6 +2285,16 @@
         }
     }
   }
+  {getter public final {marshaler-handled-element?}:bool
+    {return 
+        {if-non-null at = self.alias-type then  
+            at.marshaler-handled-element?
+         else
+            || FIXME: what is the right answer in this case?
+            super.marshaler-handled-element?
+        }
+    }
+  }
 }
 
 {define-class public open WSDLSchemaListType {inherits WSDLSchemaType}

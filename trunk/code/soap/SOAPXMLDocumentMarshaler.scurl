@@ -75,9 +75,6 @@
             {lmessage Unacceptable type 
                 '{value type.curl-type}' for '{type-of self}}}}
 
-    {if write-type-attribute? and self.use-type-attribute? then
-        {marshal-write-type-attribute stream, type}
-    }
     || handle multi-ref
     set multiple-reference =
         {marshal-handle-id-href
@@ -98,9 +95,31 @@
      elseif multiple-reference == SOAPTypeMultipleReference.single or 
         multiple-reference == SOAPTypeMultipleReference.multiple-instance
      then
+        def create-start-end? = 
+            not self.data-has-root-element? and type.marshaler-handled-element?
+        {if create-start-end? then
+            {stream.write-one {XMLStartElement element}}
+        }
         let tokens:{Array-of XMLToken} =
             {XDMElement-to-tokens val asa XDMElement}
-        {stream.write tokens}            
+        def do-root-now? =
+            self.data-has-root-element? and tokens.size > 0
+        def skip-root? = do-root-now? and not type.marshaler-handled-element?
+        || write root start early so we can add an attribute if needed.
+        {if do-root-now? and not skip-root? then
+            {stream.write-one tokens[0]}
+        }
+        {if write-type-attribute? and self.use-type-attribute? then
+            {marshal-write-type-attribute stream, type}
+        }
+        {stream.write
+            tokens,
+            start = do-root-now? asa int,
+            n = tokens.size - (do-root-now? asa int + skip-root? asa int)
+        }
+        {if create-start-end? then
+            {stream.write-one {XMLEndElement element = element}}
+        }
     }
     {return true}
   }

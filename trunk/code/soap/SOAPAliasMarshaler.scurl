@@ -147,19 +147,26 @@
             }
         }
     }
+    
+    def new-type =
+        {if type.curl-type != self.destination-type.curl-type then
+            {SOAPObjectType.clone-with
+                self.destination-type,
+                curl-type = type.curl-type,
+                element-name = type.element-name
+            }
+         else
+            {SOAPObjectType.clone-with
+                self.destination-type,
+                element-name = type.element-name
+            }
+        }
     {return
         || this can throw an exception on failure.
         {current-mapper.unmarshal
             stream,
             attributes,
-            {if type.curl-type != self.destination-type.curl-type then
-                {SOAPObjectType.clone-with
-                    self.destination-type,
-                    curl-type = type.curl-type
-                }
-             else
-                self.destination-type
-            },
+            new-type,
             encoding,
             context,
             current-mapper,

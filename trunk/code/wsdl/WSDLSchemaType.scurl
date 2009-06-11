@@ -684,7 +684,7 @@
   field private constant _ref-name:String
   field private constant curl-namer:WSDLCurlNamer
   field private _parent-class:#WSDLSchemaType
-  field private _choice?:bool
+  field private constant _choice?:bool
   field public-get protected-set abstract?:bool
   field public-get protected-set derived-by-restriction?:bool
 
@@ -839,7 +839,9 @@
 
   {method package {dump out:TextOutputStream}:void
     {if-non-null xml-name = self.xml-name then
-        {if self._choice? or {WSDLSchema.elements-has-choice? self.elements} then
+        {if self._choice? or
+            {WSDLSchema.elements-has-choice-or-array? self.elements}
+         then
             {self.dump-choice out}
          else
             {self.dump-non-choice out}
@@ -852,7 +854,7 @@
         let constant ref-name:String = self.ref-name
         {format out = out,
             "\{let constant public %s:ClassType =\n" &
-            "    \{HashTable-of XMLName, any\}\n" &
+            "    \{Array-of SOAPNamedFieldValue\}\n" &
             "\}\n\n",
             ref-name
         }
@@ -863,7 +865,7 @@
     {if-non-null xml-name = self.xml-name then
 
         || resolve possible group and use that as the element list to work with
-        let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+        let fe:{Array-of WSDLSchemaElement} =
             {WSDLSchema.flatten-elements self.elements}
         let fa:{Array-of WSDLSchemaAttribute} =
             {WSDLSchema.flatten-attributes self.attributes}
@@ -1059,7 +1061,7 @@
         }
     }
     || resolve possible group and use that as the element list to work with
-    let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+    let fe:{Array-of WSDLSchemaElement} =
         {WSDLSchema.flatten-elements self.elements}
     {for e in fe do
         || add our element types, but only if there is not already
@@ -1090,7 +1092,9 @@
   {method package {register-type-code element-name:#XMLName = null}:#String
     {return
         {if-non-null xml-name = self.xml-name then
-            {if self._choice? or {WSDLSchema.elements-has-choice? self.elements} then
+            {if self._choice? or
+                {WSDLSchema.elements-has-choice-or-array? self.elements}
+             then
                 {self.register-type-code-choice element-name = element-name}
              else
                 {self.register-type-code-non-choice element-name = element-name}
@@ -1155,6 +1159,7 @@
                 {if i == 0
                  then "\n"
                  else ",\n"}}
+            {out.write-one-string "                    "}
             {out.write-one-string
                 {WSDLSchemaType.xml-name-to-curl-code {non-null e.xml-name}}
             }
@@ -1165,6 +1170,7 @@
         || is this needed? if so this needs to be moved to not be a class global
         {out.write-one-string "            element-name-to-xml-type = element-name-to-xml-type,\n"}
         {out.write-one-string "            xml-type-to-curl-type = xml-type-to-curl-type,\n"}
+        || Shouldn't do this for some cases.
         {out.write-one-string "            curl-type-to-xml-type = curl-type-to-xml-type,\n"}
         {out.write-one-string "            xml-type-to-element-name = xml-type-to-element-name\n"}
         {format out = out,
@@ -1410,7 +1416,7 @@
                 {return self._multiple-reference}
             }
         }
-        let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+        let fe:{Array-of WSDLSchemaElement} =
             {WSDLSchema.flatten-elements self.elements}
         {for e in fe do
             let constant mr:SOAPTypeMultipleReference =
@@ -1466,7 +1472,7 @@
 
   {getter public open {all-elements-clone}:{Array-of WSDLSchemaElement}
     || resolve possible group and use that as the element list to work with
-    let (fe:{Array-of WSDLSchemaElement}, has-choice?:bool) =
+    let fe:{Array-of WSDLSchemaElement} =
         {WSDLSchema.flatten-elements self.elements}
     {return
         {if-non-null pc = self.parent-class then

@@ -1239,7 +1239,9 @@
                         || single element
                         element}}
             }
-            {new WSDLSchemaClassType, xml-name, checked-elements, self.curl-namer, choice? = choice?}
+            {WSDLSchemaClassType
+                xml-name, checked-elements, self.curl-namer, choice? = choice?
+            }
         }
     }
   }
@@ -2285,36 +2287,27 @@
 
   {define-proc package {flatten-elements
                            elements:{Array-of WSDLSchemaElement}
-                       }:({Array-of WSDLSchemaElement},
-                          has-choice?:bool)
-    let has-choice?:bool
-    let ret:#{Array-of WSDLSchemaElement}
-    {for e key i in elements do
+                       }:{Array-of WSDLSchemaElement}
+    let cloned?:bool
+    let i:int = 0
+    {while i < elements.size do
+        def e = elements[i]
         {type-switch e
          case e:WSDLSchemaElementGroup do
-            let constant r:{Array-of WSDLSchemaElement} =
-                {if-non-null ret then
-                    ret
-                 else
-                    set ret = {elements.clone}
-                    {non-null ret}
-                }
-            let constant ge:{Array-of WSDLSchemaElement} = e.elements
-            {r.splice ge, i}
-            {r.remove i + ge.size}
-            {if e.group-type == "choice" then
-                set has-choice? = true
+            {if not cloned? then
+                set elements = {elements.clone}
+                set cloned? = true
             }
+            let constant ge:{Array-of WSDLSchemaElement} = e.elements
+            {elements.remove i}
+            {elements.splice ge, i}
+            || Don't increment i, we just added new stuff where it was.
+         else
+            {inc i}
         }
     }
 
-    {if ret == null then
-        set ret = elements
-    }
-    {return
-        {non-null ret},
-        has-choice?
-    }
+    {return elements}
   }
   
   {define-proc package {flatten-attributes
@@ -2336,22 +2329,26 @@
             {r.remove i + ga.size}
         }
     }
-    {if ret == null then
-        set ret = attributes
-    }
     {return
-        {non-null ret}
+        {if-non-null ret then
+            ret
+         else
+            attributes
+        }
     }
   }
 
-  {define-proc package {elements-has-choice?
+  {define-proc package {elements-has-choice-or-array?
                            elements:{Array-of WSDLSchemaElement}
                        }:bool
     {for e key i in elements do
+        {if (e.max-occurs > 1 and not e.type isa WSDLSchemaArrayType) then
+            {return true}
+        }
         {type-switch e
          case e:WSDLSchemaElementGroup do
             {if e.group-type == "choice" or
-                {WSDLSchema.elements-has-choice? e.elements}
+                {WSDLSchema.elements-has-choice-or-array? e.elements}
              then
                 {return true}
             }

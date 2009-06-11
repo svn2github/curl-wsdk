@@ -926,7 +926,9 @@
                         || FIXME: [bardwell 6/1/2009] This ends up with a
                         || bunch of trailing zeros that are legal, but a waste
                         || and they cause bogus test failures.
+                        def sb = {StringBuf}
                         {format
+                            out = sb,
                             {if float? then
                                 "%.8f"
                              else || is a double
@@ -934,6 +936,9 @@
                             },
                             f
                         }
+                        {sb.trim-right trim-chars = "0"}
+                        {sb.trim-right trim-chars = "."}
+                        {sb.to-String}
                      else
                         let constant exp-double:double = {floor {log10 {abs f}}}
                         {format
@@ -3299,7 +3304,14 @@
     || add missing int types...
     || TODO should any really be in here?  Should other xml any types show up?
     {table.set-curl-type-to-xml-type
-        StandardXDMElement, ||any,
+        StandardXDMElement,
+        SOAPTypeMapper.xml-schema-any-type,
+        SOAPTypeMultipleReference.unknown,
+        true,
+        marshaler-handled-element? = true
+    }
+    {table.set-curl-type-to-xml-type
+        any,
         SOAPTypeMapper.xml-schema-any-type,
         SOAPTypeMultipleReference.unknown,
         true,

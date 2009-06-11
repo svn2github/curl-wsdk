@@ -123,6 +123,54 @@
         key-hash-proc = SOAPNamedFieldInfo-hash}
 }
 
+{doc-next
+    {purpose
+        Object which holds a name and a value use in an array
+        marshaled or unmarshaled by {docref SOAPNamedFieldsMarshaler}.
+    }
+}
+{define-value-class public final SOAPNamedFieldValue
+  {doc-next
+    {purpose
+        The element name for a field.
+    }
+  }
+  field public constant xml-name:XMLName
+  {doc-next
+    {purpose
+        The value of a field.
+    }
+  }
+  field public constant value:any
+
+  {constructor public {default xml-name:XMLName, value:any}
+    set self.xml-name = xml-name
+    set self.value = value
+  }
+}
+
+{define-enum package SOAPNamedFieldType
+  array,
+  name-hash-table,
+  type-hash-table,
+  named-field-hash-table,
+  named-field-array
+}
+
+{doc-next
+    {purpose
+        Marshals things defined as complexType with a variety of elements in
+        them.
+    }
+    {notes
+        Can marshal and unmarshal the following types:
+        {ctext {Array-of any}}, {ctext {FastArray-of any}},
+        {ctext {HashTable-of XMLName, any}},
+        {ctext {HashTable-of SOAPObjectType, any}},
+        {ctext {HashTable-of SOAPNamedFieldInfo, any}}, and
+        {ctext {Array-of SOAPNamedFieldValue}}.
+    }
+}
 {define-class public open SOAPNamedFieldsMarshaler
   {inherits SOAPMarshaler}
 
@@ -217,8 +265,7 @@
      elseif multiple-reference == SOAPTypeMultipleReference.single or 
         multiple-reference == SOAPTypeMultipleReference.multiple-instance
      then
-        let (is-array?:bool, is-name-hash-table?:bool,
-             is-type-hash-table?:bool, is-named-field-hash-table?:bool) =
+        def type =
             {SOAPNamedFieldsMarshaler.identify-type {type-of value}, true}
         || if it is a hash-table, convert it into an array
         let field-types:#{Array-of #SOAPObjectType} = self.field-types
@@ -226,7 +273,10 @@
         let field-set?:#{Array-of bool}
 
         let constant array:any = 
-            {if is-array? then
+            {switch type
+             case SOAPNamedFieldType.array,
+                SOAPNamedFieldType.named-field-array
+             do
                 value
              else || is some sort of hash-table
                 set field-set? = {new {Array-of bool}}
@@ -255,27 +305,60 @@
         {with-compiler-directives allow-any-calls? = true,
             allow-implicit-any-casts? = true
          do
-        {for v:any key i:int in array do
+        {for a:any key i:int in array do
             || only send it if we are sending everything, or it is from a hash
             || table (and was set), or it is from an array and isn't null.
             || (NB if you are sending from an array of int, all will be sent...)
+            let field-index:int = i
+            let field-name:#XMLName
+            def v =
+                {if type == SOAPNamedFieldType.named-field-array then
+                    def named-field = a asa SOAPNamedFieldValue
+                    def fn = named-field.xml-name
+                    set field-name = fn
+                    || search for the name.
+                    {if-non-null field-names then
+                        set field-index = {field-names.find fn}
+                     else
+                        || search for the name in the type.
+                        {if-non-null field-types then
+                            {for ft key i in field-types do
+                                {if fn == ft.element-name or
+                                    (ft.choice-elements != null and
+                                     {ft.choice-elements.member? fn})
+                                 then
+                                    set field-index = i
+                                    {break}
+                                }
+                            }
+                        }
+                    }
+                    named-field.value
+                 else
+                    a
+                }
+            
             {if self.include-null-fields? or
                 (field-set? != null and field-set?[i]) or
                 (field-set? == null and v != null)
              then
-                let field-name:#XMLName = null
-                {if-non-null field-names then
-                    {if field-names.size > i then
-                        set field-name = field-names[i]
+
+                {if type != SOAPNamedFieldType.named-field-array then
+                    {if-non-null field-names then
+                        {if field-names.size > field-index then
+                            set field-name = field-names[field-index]
+                        }
                     }
                 }
                 let field-type:SOAPObjectType =
-                    {if field-types != null and field-types.size > i and
-                        field-types[i] != null
+                    {if field-types != null and
+                        field-index >= 0 and
+                        field-types.size > field-index and
+                        field-types[field-index] != null
                      then
-                        {non-null field-types[i]}
+                        {non-null field-types[field-index]}
                      else
-                        {new SOAPObjectType, curl-type = {type-of v}}
+                        {SOAPObjectType curl-type = {type-of v}}
                     }
                 {if field-type.curl-type == null then
                     set field-type =
@@ -392,8 +475,7 @@
         }
     }
 
-    let (is-array?:bool, is-name-hash-table?:bool,
-         is-type-hash-table?:bool, is-named-field-hash-table?:bool) =
+    def object-type =
         {SOAPNamedFieldsMarshaler.identify-type
             {non-null type.curl-type},
             false
@@ -424,6 +506,7 @@
                     let constant xml-name:XMLName = se.element
                     let soap-type:#SOAPObjectType
                     let index:int = -1
+                    let named-field-array-index:int = 0
                     {if-non-null field-names = self.field-names then
                         set index = {field-names.find se.element}
                     }
@@ -432,10 +515,9 @@
                             set soap-type = field-types[index]
                          else || don't know the index yet
                             {for ft key i in field-types do
-                                {if ft.element-name == se.element and
-                                    (self.field-names == null or
-                                     self.field-names.size <= i or
-                                     self.field-names[i] == null)
+                                {if ft.element-name == se.element or
+                                    (ft.choice-elements != null and
+                                     {ft.choice-elements.member? se.element})
                                  then
                                     set index = i
                                     set soap-type = ft
@@ -501,7 +583,10 @@
                         {current-mapper.unmarshal
                             stream,
                             attributes,
-                            {non-null soap-type},
+                            {SOAPObjectType.clone-with
+                                {non-null soap-type},
+                                element-name = xml-name
+                            },
                             default-encoding,
                             context,
                             current-mapper,
@@ -513,7 +598,8 @@
                      case state:SOAPUnmarshalObjectState do
                         {context.append-callback
                             state.id,
-                            {if is-array? then
+                            {switch object-type
+                             case SOAPNamedFieldType.array do
                                 {proc {
                                        value:any,
                                        status:SOAPUnmarshalObjectStatus
@@ -521,7 +607,7 @@
                                     set object[index] = value
                                     {return true}
                                 }
-                             elseif is-name-hash-table? then
+                             case SOAPNamedFieldType.name-hash-table do
                                 {proc {
                                        value:any,
                                        status:SOAPUnmarshalObjectStatus
@@ -529,7 +615,7 @@
                                     set object[xml-name] = value
                                     {return true}
                                 }
-                             elseif is-type-hash-table? then
+                             case SOAPNamedFieldType.type-hash-table do
                                 {proc {
                                        value:any,
                                        status:SOAPUnmarshalObjectStatus
@@ -537,7 +623,7 @@
                                     set object[soap-type] = value
                                     {return true}
                                 }
-                             elseif is-named-field-hash-table? then
+                             case SOAPNamedFieldType.named-field-hash-table do
                                 {proc {
                                        value:any,
                                        status:SOAPUnmarshalObjectStatus
@@ -548,6 +634,16 @@
                                             soap-type
                                         }
                                     set object[key] = value
+                                    {return true}
+                                }
+                             case SOAPNamedFieldType.named-field-array do
+                                {proc {
+                                       value:any,
+                                       status:SOAPUnmarshalObjectStatus
+                                      }:bool
+                                    || Need an index into this thing.
+                                    set object[named-field-array-index] =
+                                        {SOAPNamedFieldValue xml-name, value}
                                     {return true}
                                 }
                              else
@@ -562,17 +658,28 @@
                             || really care.
                             min-status = SOAPUnmarshalObjectStatus.complete
                         }
+                        {if object-type == SOAPNamedFieldType.named-field-array
+                         then
+                            {inc named-field-array-index}
+                            {object.append {uninitialized-value-for-type SOAPNamedFieldValue}}
+                        }
                      else
-                        {if is-array? then
+                        {switch object-type
+                         case SOAPNamedFieldType.array do
                             set object[index] = field-value
-                         elseif is-name-hash-table? then
+                         case SOAPNamedFieldType.name-hash-table do
                             set object[xml-name] = field-value
-                         elseif is-type-hash-table? then
+                         case SOAPNamedFieldType.type-hash-table do
                             set object[soap-type] = field-value
-                         elseif is-named-field-hash-table? then
+                         case SOAPNamedFieldType.named-field-hash-table do
                             let constant key:SOAPNamedFieldInfo =
                                 {new SOAPNamedFieldInfo, xml-name, soap-type}
                             set object[key] = field-value
+                         case SOAPNamedFieldType.named-field-array do
+                            {object.append
+                                {SOAPNamedFieldValue xml-name, field-value}
+                            }
+                            {inc named-field-array-index}
                         }
                     }
                     } || compiler-directives
@@ -636,33 +743,33 @@
   || {HashTable-of XMLName, any}
   || {HashTable-of SOAPObjectType, any}
   || {HashTable-of SOAPNamedFieldInfo, any}
-  ||
-  || Could have an enum, but this is just as easy...
+  || {Array-of SOAPNamedFieldValue}
   {define-proc package {identify-type
                            type:Type,
                            marshal?:bool
-                       }:(is-array?:bool,
-                          is-name-hash-table?:bool,
-                          is-type-hash-table?:bool,
-                          is-named-field-hash-table?:bool
-                         )
+                       }:SOAPNamedFieldType
     {type-switch type
      case parameterized-type:ParameterizedType do
         let constant template-name:String = parameterized-type.template.name
+        def parameter0 =
+            parameterized-type.positional-type-parameters[0].parameter asa Type
         {switch template-name
          case "Array-of", "FastArray-of" do
-            {return true, false, false, false}
+            {return
+                {if parameter0 == SOAPNamedFieldValue then
+                    SOAPNamedFieldType.named-field-array
+                else
+                    SOAPNamedFieldType.array
+                }
+            }
          case "HashTable-of", "BucketHashTable-of" do
-            let constant parameter0:Type =
-                parameterized-type.positional-type-parameters[0].parameter asa
-                Type
             {switch parameter0
              case XMLName, #XMLName do
-                {return false, true, false, false}
+                {return SOAPNamedFieldType.name-hash-table}
              case SOAPObjectType, #SOAPObjectType do
-                {return false, false, true, false}
+                {return SOAPNamedFieldType.type-hash-table}
              case SOAPNamedFieldInfo, #SOAPNamedFieldInfo do
-                {return false, false, false, true}
+                {return SOAPNamedFieldType.named-field-hash-table}
             }
         }
     }

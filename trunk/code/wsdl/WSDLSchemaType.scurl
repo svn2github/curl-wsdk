@@ -2426,8 +2426,26 @@
     {return SOAPTypeMultipleReference.unknown}
   }
   
+  {getter private {elements-need-names?}:bool
+    def curl-types = {new {Set-of String}}
+    {for e key i in self.elements do
+        def e-curl-type = e.type.real-curl-type-name
+        {if {curl-types.member? e-curl-type} then
+            {return true}
+        }
+        {curl-types.insert e-curl-type}
+    }
+    {return false}
+  }
+
   {method package {default-curl-type-name}:String
-    {return "any"}
+    {return 
+        {if self.elements-need-names? then
+            "SOAPNamedFieldValue"
+         else
+            "any"
+        }
+    }
   }
   
   {method package {resolve-types names:WSDLNameTable}:void

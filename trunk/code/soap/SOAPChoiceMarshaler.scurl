@@ -68,12 +68,20 @@
 
 ||--    {error "NYI: SOAPChoiceMarshaler.default-marshal"}
 
-    || use curl-type to select from choices
+    || use curl-type to select from choices, note that subclasses
+    || won't be checked for.
     def curl-type = {type-of val}
     def types =
-        {self.types.filter-clone
-            {fn type =>
-                type.curl-type == curl-type}}
+        {type-switch val
+         case val:SOAPNamedFieldValue do
+            {self.types.filter-clone
+                {fn type =>
+                    type.element-name == val.xml-name}}
+         else
+            {self.types.filter-clone
+                {fn type =>
+                    type.curl-type == curl-type}}
+        }
 
     || TODO: will not work for simple types
     || - no way to discriminate alternatives
@@ -84,7 +92,13 @@
          case 0 do
             {output {message WARNING: no choice type: {value val}}}
             {SOAPObjectType
-                element-name = self.type.element-name,
+                element-name =
+                    {type-switch val
+                     case val:SOAPNamedFieldValue do
+                        val.xml-name
+                     else
+                        self.type.element-name
+                    },
                 curl-type = curl-type}
          else
             {output {message WARNING: ambiguous choice type: {value val}}}
@@ -102,7 +116,12 @@
     || invoke marshaller
     {current-mapper.marshal  
         stream,
-        val,
+        {type-switch val
+         case val:SOAPNamedFieldValue do
+            val.value
+         else
+            val
+        },
         choice-type,
         choice-element-name,
         encoding,
@@ -149,7 +168,7 @@
         }}
     {if-non-null element-type then
         || invoke unmarshaller
-        {return
+        def v =
             {current-mapper.unmarshal 
                 stream,
                 attributes,
@@ -161,6 +180,12 @@
                 current-mapper,
                 xml-type-to-curl-type,
                 check-type-attribute? = check-type-attribute?
+            }
+        {return
+            {if self.type.curl-type == SOAPNamedFieldValue then
+                {SOAPNamedFieldValue {non-null type.element-name}, v}
+             else
+                v
             },
             true
         }

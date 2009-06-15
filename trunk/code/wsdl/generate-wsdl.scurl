@@ -70,11 +70,11 @@
 {define-proc public {generate-wsdl-package
                         source-url:Url,
                         target-url:#Url = null,
-                        package-prefix:#String = "COM.CURL.WSDL.",
+                        package-prefix:#String = null,
                         package-suffix:#String = null,
                         curl-versions:String = {curl-versions-string},
-                        curlify-names?:bool = true,
-                        include-async-methods?:bool = true,
+                        curlify-names?:bool = false,
+                        include-async-methods?:bool = false,
                         preserve-existing-files?:bool = false,
                         ...:WSDLPackageDirectives
                     }:Url
@@ -94,7 +94,7 @@
     {return sloc}
 }
 
-|| WSDLK 1.1 code generation API 
+|| WSDK 1.1 code generation API 
 || --------------------
 {doc-next
     {purpose

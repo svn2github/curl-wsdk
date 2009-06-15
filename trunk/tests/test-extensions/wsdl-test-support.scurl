@@ -134,12 +134,10 @@
                           location:Url, 
                           directory:Url,
                           manifest-loc:Url = {directory.concat "manifest.mcurl"},
+                          || TODO: exploded variant
                           directives:WSDLPackageDirectives =
-                              {WSDLPackageDirectives location, 
-                                  include-async-methods? = false,
-                                  || TODO: exploded variant
-                                  target-url = null
-                              }
+                              {WSDLPackageDirectives.wsdk10-defaults location, 
+                                  include-async-methods? = false}
                       }
     set self.directory = directory
     set self.location = location
@@ -783,7 +781,8 @@
                           mtom?:bool = false,
                           || parameters,
                           directives:WSDLPackageDirectives =
-                              {WSDLPackageDirectives {string-url "undefined"}}
+                              {WSDLPackageDirectives.wsdk10-defaults
+                                  {string-url "undefined"}}
                       }
     set self.loc = loc
     set self.literal? = literal?
@@ -869,7 +868,8 @@
                           mtom?:bool = false,
                           || parameters
                           directives:WSDLPackageDirectives =
-                              {WSDLPackageDirectives {string-url "undefined"}}
+                              {WSDLPackageDirectives.wsdk10-defaults
+                                  {string-url "undefined"}}
                       }
     set self.xsd-type-source = xsd-type-source
     set self.request-value-source = request-value-source
@@ -977,9 +977,11 @@
                                     {return true}}}}}
                     {return false}
                 }}
-    {if self.match? 
-     then {TestCondition.succeed}
-     else {TestCondition.fail}}
+    {if self.match? then
+        {TestCondition.succeed}
+     else
+        {TestCondition.fail}
+    }
   }
   {method public {dump-service-info}:void
     {output |"========== \\"|}
@@ -1011,7 +1013,7 @@
                         loc:Url, 
                         out:StringBuf = {StringBuf},
                         directives:WSDLPackageDirectives =
-                            {WSDLPackageDirectives loc}
+                            {WSDLPackageDirectives.wsdk10-defaults loc}
                     }:OpenPackage
     def w = {WSDLPackageWriter directives}
     def package =

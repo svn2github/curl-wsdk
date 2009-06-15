@@ -194,6 +194,7 @@
   || coordination
   || --------------------
   {method {source-changed}:void
+    {self.display-body.clear}
     {self.display-body.add self.body}
     set (self.writer, self.exception) =
         {try

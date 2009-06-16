@@ -1768,9 +1768,15 @@
     }
     let new-type:SOAPObjectType =
         {SOAPObjectType.fill-in-from-element-name-mapper
-            {new SOAPObjectType,
+            {SOAPObjectType.clone-with
+                {if-non-null type then
+                    type
+                 else
+                    {SOAPObjectType}
+                },
                 nillable? = nillable?,
-                xml-type = xml-type,
+                xml-type =
+                    {if-non-null xml-type then xml-type else type.xml-type},
                 curl-type =
                     {if type != null and type.curl-type != any then
                         type.curl-type

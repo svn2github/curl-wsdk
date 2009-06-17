@@ -64,8 +64,8 @@
     let constant params:WSDLParamArray = {new WSDLParamArray}
 || Isn't element ok?  We can pull type in, but what is param's name then?
 || WSDL SPEC mixes element and type freely.
-    let constant name-scope:String = 
-        operation.local-name & '.' & self.name & '.' 
+    let constant name-scope:String =
+        operation.local-name
     let return-operation:#XMLName
     {if soap-style == WSDLSOAPStyle.rpc then
         || == RPC style

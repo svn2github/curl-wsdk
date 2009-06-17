@@ -18,13 +18,12 @@
 
 {TestSuite {lmessage SOAP12},
 
-    || TODO: naming confusion - case mismatch?
-||--    {WSDLGenerationTestSuite
-||--        {url "services.csv"}
-||--    },    
+    {WSDLGenerationTestSuite
+        {url "services.csv"}
+    },    
 
     {WSDLServicesTestSuite
-||--        {url "methods.csv"}
-        {url "services.csv"}
+        {url "methods.csv"}
+||--        {url "services.csv"}
     }
 }

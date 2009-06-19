@@ -125,20 +125,25 @@
 
 {doc-next
     {purpose
-        Object which holds a name and a value use in an array
-        marshaled or unmarshaled by {docref SOAPNamedFieldsMarshaler}.
+        Represents a value tagged with and XML element name.}
+    {details
+        Used in cases where XML structure does not map directly
+        to a generated Curl class.}
+    {notes
+        Objects of this type are marshaled and unmarshaled
+        by {docref SOAPNamedFieldsMarshaler}.
     }
 }
-{define-value-class public final SOAPNamedFieldValue
+{define-value-class public final XMLElementValue
   {doc-next
     {purpose
-        The element name for a field.
+        The element name.
     }
   }
   field public constant xml-name:XMLName
   {doc-next
     {purpose
-        The value of a field.
+        The value of the element.
     }
   }
   field public constant value:any
@@ -147,6 +152,21 @@
     set self.xml-name = xml-name
     set self.value = value
   }
+}
+
+{doc-next
+    {purpose
+        Represents a series of values tagged with and XML element name.}
+    {details
+        Used in cases where XML structure does not map directly
+        to a generated Curl class.}
+    {notes
+        Objects of this type are marshaled and unmarshaled
+        by {docref SOAPNamedFieldsMarshaler}.
+    }
+}
+{def public XMLElementValues:ClassType =
+    {Array-of XMLElementValue}
 }
 
 {define-enum package SOAPNamedFieldType
@@ -168,7 +188,7 @@
         {ctext {HashTable-of XMLName, any}},
         {ctext {HashTable-of SOAPObjectType, any}},
         {ctext {HashTable-of SOAPNamedFieldInfo, any}}, and
-        {ctext {Array-of SOAPNamedFieldValue}}.
+        {ctext XMLElementValues}.
     }
 }
 {define-class public open SOAPNamedFieldsMarshaler
@@ -313,7 +333,7 @@
             let field-name:#XMLName
             def v =
                 {if type == SOAPNamedFieldType.named-field-array then
-                    def named-field = a asa SOAPNamedFieldValue
+                    def named-field = a asa XMLElementValue
                     def fn = named-field.xml-name
                     set field-name = fn
                     || search for the name.
@@ -643,7 +663,7 @@
                                       }:bool
                                     || Need an index into this thing.
                                     set object[named-field-array-index] =
-                                        {SOAPNamedFieldValue xml-name, value}
+                                        {XMLElementValue xml-name, value}
                                     {return true}
                                 }
                              else
@@ -661,7 +681,7 @@
                         {if object-type == SOAPNamedFieldType.named-field-array
                          then
                             {inc named-field-array-index}
-                            {object.append {uninitialized-value-for-type SOAPNamedFieldValue}}
+                            {object.append {uninitialized-value-for-type XMLElementValue}}
                         }
                      else
                         {switch object-type
@@ -677,7 +697,7 @@
                             set object[key] = field-value
                          case SOAPNamedFieldType.named-field-array do
                             {object.append
-                                {SOAPNamedFieldValue xml-name, field-value}
+                                {XMLElementValue xml-name, field-value}
                             }
                             {inc named-field-array-index}
                         }
@@ -743,7 +763,7 @@
   || {HashTable-of XMLName, any}
   || {HashTable-of SOAPObjectType, any}
   || {HashTable-of SOAPNamedFieldInfo, any}
-  || {Array-of SOAPNamedFieldValue}
+  || XMLElementValues
   {define-proc package {identify-type
                            type:Type,
                            marshal?:bool
@@ -756,7 +776,7 @@
         {switch template-name
          case "Array-of", "FastArray-of" do
             {return
-                {if parameter0 == SOAPNamedFieldValue then
+                {if parameter0 == XMLElementValue then
                     SOAPNamedFieldType.named-field-array
                 else
                     SOAPNamedFieldType.array

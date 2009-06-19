@@ -66,14 +66,12 @@
                       }:(worked?:bool)
     {self.check-type type, true}
 
-||--    {error "NYI: SOAPChoiceMarshaler.default-marshal"}
-
     || use curl-type to select from choices, note that subclasses
     || won't be checked for.
     def curl-type = {type-of val}
     def types =
         {type-switch val
-         case val:SOAPNamedFieldValue do
+         case val:XMLElementValue do
             {self.types.filter-clone
                 {fn type =>
                     type.element-name == val.xml-name}}
@@ -94,7 +92,7 @@
             {SOAPObjectType
                 element-name =
                     {type-switch val
-                     case val:SOAPNamedFieldValue do
+                     case val:XMLElementValue do
                         val.xml-name
                      else
                         self.type.element-name
@@ -117,7 +115,7 @@
     {current-mapper.marshal  
         stream,
         {type-switch val
-         case val:SOAPNamedFieldValue do
+         case val:XMLElementValue do
             val.value
          else
             val
@@ -182,8 +180,8 @@
                 check-type-attribute? = check-type-attribute?
             }
         {return
-            {if self.type.curl-type == SOAPNamedFieldValue then
-                {SOAPNamedFieldValue {non-null type.element-name}, v}
+            {if self.type.curl-type == XMLElementValue then
+                {XMLElementValue {non-null type.element-name}, v}
              else
                 v
             },

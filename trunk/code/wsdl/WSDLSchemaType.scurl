@@ -827,6 +827,30 @@
             }
         }
     }
+
+    || ========== \\
+    || EXPERIMENTAL
+    {platform-switch case "none" do
+    {if-non-null xml-type-name = self.xml-name then
+        || NOTE: check if groups need to be resolved
+
+        def repeating-elements =
+            {self.elements.filter-clone
+                {fn e => e.max-occurs != 1}}
+        
+        {if not repeating-elements.empty? then
+            
+            {for element key i in self.elements do
+                {if-non-null checked-element =
+                    {WSDLSchemaClassType.process-repeating-element
+                        element, xml-type-name}
+                 then
+                    set self.elements[i] =
+                        checked-element}
+            }
+        }}
+    }
+    || ========== //
   }
 
   {getter package {ref-name}:String
@@ -854,7 +878,7 @@
         let constant ref-name:String = self.ref-name
         {format out = out,
             "\{let constant public %s:ClassType =\n" &
-            "    \{Array-of SOAPNamedFieldValue\}\n" &
+            "    XMLElementValues\n" &
             "\}\n\n",
             ref-name
         }
@@ -1467,8 +1491,6 @@
         }
     }
   }
-    
-  || TODO: verify content-type is kind of anySimpleType
 
   {getter public open {all-elements-clone}:{Array-of WSDLSchemaElement}
     || resolve possible group and use that as the element list to work with
@@ -1541,7 +1563,77 @@
         {return attributes}
     }
   }
+ 
+  {define-proc public {process-repeating-elements
+                          elements:{Array-of WSDLSchemaElement},
+                          xml-type-name:XMLName,
+                          target-namespace:String = xml-type-name.namespace,
+                          schema-names:#WSDLNameTable = null
+                      }:{Array-of WSDLSchemaElement}
+    || handle non-nested repeated elements
+    def checked-elements = {{Array-of WSDLSchemaElement}}
+    {for element in elements do
+        def checked-element = 
+            {WSDLSchemaClassType.process-repeating-element
+                element, xml-type-name,
+                target-namespace = target-namespace,
+                schema-names = schema-names}
+        {checked-elements.append
+            {if-non-null checked-element
+             then checked-element
+             else element}}
+    }
+    {return checked-elements}
+  }
   
+  {define-proc public {process-repeating-element
+                          element:WSDLSchemaElement,
+                          xml-type-name:XMLName,
+                          target-namespace:String = xml-type-name.namespace,
+                          schema-names:#WSDLNameTable = null
+                      }:#WSDLSchemaElement
+    def new-element =
+        {if element.max-occurs != 1 then
+            || synthesize array type
+            def element-name = {non-null element.xml-name}
+            def array-type =
+                {WSDLSchemaArrayType  
+                    || synthesized alias
+                    {XMLName
+                        target-namespace,
+                        "_" & element-name.local-name 
+                        & "_" & xml-type-name.local-name
+                        & "_" & element.type.xml-name.local-name 
+                        & "Array"},
+                    repeating-element-name = element-name,                        
+                    || NOTE: seems not to need new element
+                    element 
+                }
+            || remember the array type
+            || TODO: is this needed ??
+            {if-non-null schema-names then
+                {schema-names.set-name
+                    target-namespace,
+                    WSDLSchema.type-prefix,
+                    array-type.xml-name.local-name, array-type}
+            }
+            || reconstitute element
+            || TODO: could we just bash the type?
+            {WSDLSchemaElement  
+                element.xml-name, 
+                array-type,
+                min-occurs = element.min-occurs,
+                max-occurs = element.max-occurs,
+                || NOTE: need not be nillable, because it can be empty
+                nillable? = false,
+                expected-content-types = element.expected-content-types,
+                element.node}
+         else
+            null
+        }
+    {return new-element}
+  }
+ 
 }
 
 
@@ -2441,7 +2533,7 @@
   {method package {default-curl-type-name}:String
     {return 
         {if self.elements-need-names? then
-            "SOAPNamedFieldValue"
+            "XMLElementValue"
          else
             "any"
         }

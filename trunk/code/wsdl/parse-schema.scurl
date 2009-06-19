@@ -164,7 +164,6 @@
         {self.dump-members}
     }
   }
-
   {method package {resolve-placeholders}:void
     
     || prepare for recursion 
@@ -1191,54 +1190,12 @@
             }
         else
             || handle non-nested repeated elements
-            let checked-elements:{Array-of WSDLSchemaElement} =
-                {{Array-of WSDLSchemaElement}}
-            {for element:WSDLSchemaElement in elements do
-                let array-type:#WSDLSchemaArrayType =
-                    {type-switch element
-                     case e:WSDLInternalSchemaElement do 
-                        {if e.max-occurs != 1 then
-                            let element-name:XMLName = {non-null element.xml-name}
-                            {WSDLSchemaArrayType 
-                                || synthesized alias
-                                {XMLName
-                                    target-namespace,
-                                    "_" & element-name.local-name 
-                                    & "_" & xml-name.local-name
-                                    & "_" & element.type.xml-name.local-name 
-                                    & "Array"},
-                                repeating-element-name = element-name,
-                                
-                                || NOTE: seems not to need new element
-                                e 
-                            }
-                         else null}
-                     else null}
-                || remember the array type
-                {if-non-null array-type then
-                    {self.names.set-name
-                        target-namespace,
-                        WSDLSchema.type-prefix,
-                        array-type.xml-name.local-name, array-type}
+            def checked-elements =
+                {WSDLSchemaClassType.process-repeating-elements elements,
+                    {non-null xml-name},
+                    target-namespace = target-namespace,
+                    schema-names = self.names
                 }
-                {checked-elements.append
-                    {if-non-null array-type then
-                        || repeating element
-                        || NOTE: max-occurs checked to inform StructMarhsaler
-                        let e:WSDLInternalSchemaElement = array-type.element
-                        {WSDLInternalSchemaElement  
-                            element.xml-name, 
-                            array-type,
-                            || NOTE: need not be nillable, because it can be empty
-                            min-occurs = e.min-occurs,
-                            max-occurs = e.max-occurs,
-                            nillable? = false,
-                            expected-content-types = e.expected-content-types,
-                            element.node}
-                     else 
-                        || single element
-                        element}}
-            }
             {WSDLSchemaClassType
                 xml-name, checked-elements, self.curl-namer, choice? = choice?
             }
@@ -2306,36 +2263,31 @@
             {inc i}
         }
     }
-
     {return elements}
   }
-  
+
   {define-proc package {flatten-attributes
                            attributes:{Array-of WSDLSchemaAttribute}
                        }:{Array-of WSDLSchemaAttribute}
-    let ret:#{Array-of WSDLSchemaAttribute}
-    {for a key i in attributes do
+    let cloned?:bool
+    let i:int = 0
+    {while i < attributes.size do
+        def a = attributes[i]
         {type-switch a
          case a:WSDLSchemaAttributeGroup do
-            let constant r:{Array-of WSDLSchemaAttribute} =
-                {if-non-null ret then
-                    ret
-                 else
-                    set ret = {attributes.clone}
-                    {non-null ret}
-                }
+            {if not cloned? then
+                set attributes = {attributes.clone}
+                set cloned? = true
+            }
             let constant ga:{Array-of WSDLSchemaAttribute} = a.attributes
-            {r.splice ga, i}
-            {r.remove i + ga.size}
-        }
-    }
-    {return
-        {if-non-null ret then
-            ret
+            {attributes.remove i}
+            {attributes.splice ga, i}
+            || Don't increment i, we just added new stuff where it was.
          else
-            attributes
+            {inc i}
         }
     }
+    {return attributes}
   }
 
   {define-proc package {elements-has-choice-or-array?

@@ -71,8 +71,10 @@
   def package wsdl-namespace-uri =  || WSDL.wsdl-namespace-uri
       "http://schemas.xmlsoap.org/wsdl/"
 
-  def package soap-enc-namespace-uri = || WSDL.soap-enc-namespace-uri
+  def package soap-1-1-enc-namespace-uri = || WSDL.soap-1-1-enc-namespace-uri
       "http://schemas.xmlsoap.org/soap/encoding/"
+  def package soap-1-2-enc-namespace-uri = || WSDL.soap-1-2-enc-namespace-uri
+      "http://www.w3.org/2003/05/soap-encoding"
 
   || XML Schema items
   def package type-prefix = "t:"  || WSDL.type-prefix
@@ -225,7 +227,8 @@
     {return 
         {if-non-null qname then
             qname.local-name == match-tag and
-            qname.namespace == WSDLSchema.soap-enc-namespace-uri
+            (qname.namespace == WSDLSchema.soap-1-1-enc-namespace-uri or
+            qname.namespace == WSDLSchema.soap-1-2-enc-namespace-uri)
          else
             false
         }
@@ -2500,10 +2503,10 @@
         {WSDLDOMNode null, null, null, {string-url "nonexistent"}, 0, null}
     
     def soapenc-array-name =
-        {XMLName WSDLSchema.soap-enc-namespace-uri, "Array"}
+        {XMLName WSDLSchema.soap-1-1-enc-namespace-uri, "Array"}
     def soapenc-array-key =
         {XMLName.unchecked
-            WSDLSchema.soap-enc-namespace-uri,
+            WSDLSchema.soap-1-1-enc-namespace-uri,
             WSDLSchema.type-prefix & "Array"}
     def soapenc-array-type =
         {WSDLSchemaArrayType    

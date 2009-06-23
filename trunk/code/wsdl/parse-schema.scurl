@@ -89,7 +89,7 @@
   || TODO: automated discovery
   {define-proc public {register-simple-type
                           xml-simple-type:XMLSimpleType,
-                          error-if-exists?:bool = true
+                          error-if-exists?:bool = false
                       }:void
     def simple-type = xml-simple-type asa WSDLSchemaSimpleType
     {if error-if-exists? then

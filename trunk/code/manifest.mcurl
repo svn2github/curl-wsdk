@@ -45,7 +45,21 @@
 {component package COM.CURL.WSDK.RECORDSET-FOR,
     location = "util/recordset-for/load.scurl"
 }
+{component package COM.CURL.WSDK.MULTIPART-SUPPORT,
+    location = "multipart-support/load.scurl"
+}
 
+|| bignum adapters
+|| --------------------
+{component package COM.CURL.WSDK.BIGNUM-WSDK,
+    location = "util/bignum-wsdk/load.scurl"
+}
+{delegate-to COM.CURL.UTIL,
+    || use with adjacent UTIL repository
+||--    location = "../../../CDK/trunk/CURL-UTIL/code/manifest.mcurl"
+    || use with svn:externals
+    location = "../lib/CURL-UTIL/manifest.mcurl"
+}
 || documentation
 || --------------------
 {component directory docs,
@@ -63,9 +77,3 @@
 {component file project.cprj,
     location = "project.cprj"
 }
-
-{component package COM.CURL.WSDK.MULTIPART-SUPPORT,
-    location = "multipart-support/load.scurl"
-}
-
-

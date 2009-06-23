@@ -14,6 +14,9 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
+{import * from COM.CURL.WSDK.WSDL}
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+
 {define-proc public {schema-patterns-test
                         loc:Url,
                         alternates-loc:#Url = null
@@ -117,6 +120,7 @@
 
     {return suite}
 }
+
 {define-class public WSDLEchoTestCase {inherits TestCase}
   || spec
   field public-get constant xsd-type-source:StringInterface
@@ -126,6 +130,8 @@
   field public-get constant type-name:String
   field public-get constant arg-name:String
   field public-get constant target-namespace:String
+  || parameters
+  field public-get constant directives:WSDLPackageDirectives
   
   {constructor public {default
                           name:String,
@@ -138,13 +144,19 @@
                           accept-body-xml-source:#StringInterface = null,
                           || variants
                           literal?:bool = true,
-                          document?:bool = true}
+                          document?:bool = true,
+                          || parameters
+                          directives:WSDLPackageDirectives =
+                              {WSDLPackageDirectives.wsdk10-defaults
+                                  {string-url "undefined"},
+                                  use-bignum-types? = true}}
     set self.xsd-type-source = xsd-type-source
     set self.message-xml-source = message-xml-source
     set self.type-name = type-name
     set self.arg-name = arg-name
     set self.target-namespace = target-namespace
     set self.accept-body-xml-source = accept-body-xml-source
+    set self.directives = directives
     {construct-super name}
   } 
   || state
@@ -194,6 +206,7 @@
     set self.service-package-source = {StringBuf}
     set self.service-package =
         {make-service-package wloc, 
+            directives = {self.directives.clone-for wloc},
             out = self.service-package-source}
 
     || reflect service

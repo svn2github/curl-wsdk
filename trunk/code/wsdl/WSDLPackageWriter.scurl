@@ -20,6 +20,7 @@
   field public curl-versions:String
   field public curlify-names?:bool
   field public include-async-methods?:bool
+  field public use-bignum-types?:bool
   field public preserve-existing-files?:bool
   field public package-prefix:#String
   field public package-suffix:#String
@@ -30,7 +31,8 @@
                           target-url:#Url = null,
                           curl-versions:String = {curl-versions-string},
                           curlify-names?:bool = false,
-                          include-async-methods?:bool = false,                          
+                          include-async-methods?:bool = false,
+                          use-bignum-types?:bool = false,
                           preserve-existing-files?:bool = false,
                           package-prefix:#String = null,
                           package-suffix:#String = null,
@@ -47,6 +49,7 @@
     
     set self.curlify-names? = curlify-names?
     set self.include-async-methods? = include-async-methods?
+    set self.use-bignum-types? = use-bignum-types?
     set self.preserve-existing-files? = preserve-existing-files?
     set self.package-prefix = package-prefix
     set self.package-suffix = package-suffix
@@ -66,7 +69,8 @@
                            else null},
                       curl-versions:String = {curl-versions-string},
                       curlify-names?:bool = true,
-                      include-async-methods?:bool = true,                          
+                      include-async-methods?:bool = true,
+                      use-bignum-types?:bool = false,
                       preserve-existing-files?:bool = false,
                       package-prefix:#String =  "COM.CURL.WSDL",
                       package-suffix:#String = null,
@@ -78,6 +82,7 @@
             curl-versions = curl-versions,            
             curlify-names? = curlify-names?,
             include-async-methods? = include-async-methods?,
+            use-bignum-types? = use-bignum-types?,
             preserve-existing-files? = preserve-existing-files?,
             package-prefix = package-prefix,
             package-suffix = package-suffix
@@ -88,7 +93,8 @@
                           target-url:#Url = self.target-url,
                           curl-versions:String = self.curl-versions,
                           curlify-names?:bool = self.curlify-names?,
-                          include-async-methods?:bool = self.include-async-methods?,                          
+                          include-async-methods?:bool = self.include-async-methods?,
+                          use-bignum-types?:bool = self.use-bignum-types?,                          
                           preserve-existing-files?:bool = self.preserve-existing-files?,
                           package-prefix:#String = self.package-prefix,
                           package-suffix:#String = self.package-suffix,
@@ -101,6 +107,7 @@
             curlify-names? = curlify-names?,
             include-async-methods? = include-async-methods?,                          
             preserve-existing-files? = preserve-existing-files?,
+            use-bignum-types? = use-bignum-types?,
             package-prefix = package-prefix,
             package-suffix = package-suffix,
             {splice self.namespace-specs},
@@ -150,6 +157,11 @@
                           directives:WSDLPackageDirectives
                       }
     set self.directives = directives
+    || NOTE: register types before creating WSDL parser
+    || - which processes registrations on construction
+    {if directives.use-bignum-types? then
+        {register-bignum-types}}
+    
     set self.wsdl =
         {WSDL directives.source-url,
             curlify-names? = directives.curlify-names?}
@@ -264,7 +276,10 @@
         || corresponding directory
         def pdir = {dir.concat D}
         {self.prepare-output-directory pdir,
-            preserve-existing-files? = D.empty? or spec.preserve-existing-files?}
+            preserve-existing-files? =
+               (self.directives.preserve-existing-files?
+                or D.empty?
+                or spec.preserve-existing-files?)}
         def ploc = {pdir.concat "load.scurl"}
         {plocs.append ploc}
         || collect additional imports
@@ -325,7 +340,6 @@
                     {t.dump out}}
                 {inc nt}
             }
-            {output {message %%% {value n} : {value nt} types}}
             || code additional imports
             def sorted-packages = {StringArray}
             {for package in needed-packages do
@@ -447,45 +461,6 @@
             {format out = out, "\n"}
         }
   }
-||--  {method package {write-test-manifest
-||--                      out:TextOutputStream,
-||--                      package-name:String
-||--                  }:void
-||--        {self.write-preamble out}
-||--        {format out = out,
-||--            |"{curl 7.0 manifest}"| & "\n" &
-||--            |"{manifest %s}"| & "\n" &
-||--            || ### HARDWIRED FOR TESTING
-||--            |"{component manifest COM.CURL.WSDK, location = "../../../../code/manifest.mcurl"}"| & "\n" &
-||--||--            |"{delegate-to COM.CURL.WSDK.WORK, location = "../../../manifest.mcurl"}"| & "\n" &
-||--            |"{include "service-manifest.mcurl"}"| & "\n",
-||--            package-name
-||--        }
-||--  }
-||--  {method package {write-test-applet
-||--                      out:TextOutputStream,
-||--                      package-name:String,
-||--                      service-class-names:StringArray
-||--                  }:void
-||--        {self.write-preamble out}
-||--        {format out = out,
-||--            |"{curl 7.0 applet}"| & "\n" &
-||--            |"{applet manifest = "manifest.mcurl"}"| & "\n" &
-||--            |"{import * from COM.CURL.WSDK.SOAP}"| & "\n" &
-||--            |"{import * from %s}"| & "\n",
-||--            package-name
-||--        }
-||--        {for service-class in service-class-names do
-||--            {format out = out,
-||--                |"{value"| & "\n" &
-||--                |"    def service = {%s}"| & "\n\n" &
-||--                |"    || TODO: call service methods ..."| & "\n\n" &
-||--                |"    service"| & "\n" &
-||--                |"}"| & "\n",
-||--                service-class}
-||--        }
-||--
-||--  }
   {method package {write-directives
                       out:TextOutputStream
                   }:void
@@ -520,8 +495,12 @@
     {fmt-arg "target-url", spec.target-url, defaults.target-url}
     {fmt-arg "curl-versions", spec.curl-versions, defaults.curl-versions}
     {fmt-arg "curlify-names?", spec.curlify-names?, defaults.curlify-names?}
-    {fmt-arg "include-async-methods?", spec.include-async-methods?, defaults.include-async-methods?}
-    {fmt-arg "preserve-existing-files?", spec.preserve-existing-files?, defaults.preserve-existing-files?}
+    {fmt-arg "include-async-methods?", spec.include-async-methods?, 
+        defaults.include-async-methods?}
+    {fmt-arg "use-bignum-types?", spec.use-bignum-types?, 
+        defaults.use-bignum-types?}
+    {fmt-arg "preserve-existing-files?", spec.preserve-existing-files?, 
+        defaults.preserve-existing-files?}
     {fmt-arg "package-prefix", spec.package-prefix, defaults.package-prefix}
     {fmt-arg "package-suffix", spec.package-suffix, defaults.package-suffix}
     {for ns in spec.namespace-specs do
@@ -530,9 +509,13 @@
             {fmt ",\n    "}
             {fmt "\{WSDLNamespaceSpec %s", {string-for ns.uri}}
             {fmt-arg "    short-name", ns.short-name, defaults.short-name}
-            {fmt-arg "    directory-suffix", ns.directory-suffix, defaults.directory-suffix}
-            {fmt-arg "    preserve-existing-files?", ns.preserve-existing-files?, defaults.preserve-existing-files?}
-            {fmt-arg "    skip-processing?", ns.skip-processing?, defaults.skip-processing?}
+            {fmt-arg "    directory-suffix", ns.directory-suffix, 
+                defaults.directory-suffix}
+            {fmt-arg "    preserve-existing-files?", 
+                ns.preserve-existing-files?, 
+                defaults.preserve-existing-files?}
+            {fmt-arg "    skip-processing?", ns.skip-processing?, 
+                defaults.skip-processing?}
             {fmt "\n    \}"}
         }}
     {fmt "\n\}\n"}
@@ -736,4 +719,47 @@
         {return}}
     {if not {in-local-filesystem? loc} then
         {error {lmessage Not in local filesystem: {value loc}}}}
+}
+|| register BIGNUM-WSDK contributions
+|| ------------------------------
+{define-proc package {maybe-import-package
+                         package-name:String,
+                         manifest:ComponentManifest = {get-process-manifest}
+                     }:#Package
+    {return
+        {try
+            {import-package
+                {make-package-selector package-name},
+                manifest = manifest}
+         catch e:ComponentLocationException do
+            null}
+    }
+}
+{define-proc package {package-available?
+                         package-name:String,
+                         manifest:ComponentManifest = {get-process-manifest}
+                     }:bool
+    def pkg = {maybe-import-package package-name, manifest = manifest}
+    {return pkg != null}
+}
+{define-proc public {register-bignum-types
+                        manifest:ComponentManifest = {get-process-manifest},
+                        error-if-unavailable?:bool = true
+                    }:void
+    {if {package-available? "COM.CURL.UTIL.BIGNUM",
+            manifest = manifest}
+     then
+        def register-simple-types =
+            {dynamic-lookup
+                {make-package-selector "COM.CURL.WSDK.BIGNUM-WSDK"},
+                "register-simple-types",
+                manifest = manifest
+            } asa {proc-type {}:void}
+        {register-simple-types}
+     elseif error-if-unavailable? then
+        {wsdl-exception
+            {hlmessage
+                Unable to import COM.CURL.UTIL.BIGNUM
+            }}        
+    }
 }

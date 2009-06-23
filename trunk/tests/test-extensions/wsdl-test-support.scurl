@@ -782,6 +782,7 @@
                           || parameters,
                           directives:WSDLPackageDirectives =
                               {WSDLPackageDirectives.wsdk10-defaults
+                                  include-async-methods? = false,
                                   {string-url "undefined"}}
                       }
     set self.loc = loc
@@ -1009,21 +1010,31 @@
 
 
 || helper functions
-{define-proc public {make-service-package 
+{define-proc public {make-service-package
                         loc:Url, 
                         out:StringBuf = {StringBuf},
                         directives:WSDLPackageDirectives =
                             {WSDLPackageDirectives.wsdk10-defaults loc}
                     }:OpenPackage
+    || NOTE: this calls register-bignum-types if directives specify
     def w = {WSDLPackageWriter directives}
+    {w.dump-client-stubs out}
+    def imports =
+        {{Array-of Package}
+            COM.CURL.WSDK.SOAP,
+            COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+    {if directives.use-bignum-types? then
+        {imports.append
+            {import-package
+                {make-package-selector "COM.CURL.WSDK.BIGNUM-WSDK"}}
+        }}
     def package =
         {OpenPackage 
-            COM.CURL.WSDK.SOAP, 
-            COM.CURL.WSDK.XML-DOCUMENT-MODEL}
-    {w.dump-client-stubs out}
+            {splice imports}}
     {evaluate package = package, out}
     {return package}
 }
+
 || TODO: cleaner types input
 {define-proc public {make-wsdl-template 
                         || keywords

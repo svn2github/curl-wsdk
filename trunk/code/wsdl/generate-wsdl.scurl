@@ -44,6 +44,13 @@
         {parameter curlify-names?,
             indicates whether to use curl naming conventions
             for identifiers in generated code.}
+        {parameter use-bignum-types?,
+            indicates whether to use arbitrary precision numbers
+            for schema types requiring them.
+            {itemize
+                {item {docref BigDecimal} {em-dash} {ctext xs:decimal}}
+                {item {docref BigInt} {em-dash} {ctext xs:integer} and variants}
+            }}
         {parameter include-async-methods?,
             indicates whether asynchronous service methods will ge generated,
             in addition to the usual synchronous methods.}
@@ -75,6 +82,7 @@
                         curl-versions:String = {curl-versions-string},
                         curlify-names?:bool = false,
                         include-async-methods?:bool = false,
+                        use-bignum-types?:bool = false,
                         preserve-existing-files?:bool = false,
                         ...:WSDLPackageDirectives
                     }:Url
@@ -87,6 +95,7 @@
                 curl-versions = curl-versions,
                 curlify-names? = curlify-names?,
                 include-async-methods? = include-async-methods?,
+                use-bignum-types? = use-bignum-types?,
                 preserve-existing-files? =  preserve-existing-files?,
                 {splice ...}
             }}

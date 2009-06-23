@@ -160,13 +160,8 @@
                             },
                             e.type,
                             element-name,
-                            {type-switch e
-                             case ise:WSDLInternalSchemaElement do
-                                ise.nillable? or
-                                (for-response? and ise.min-occurs == 0)
-                             else
-                                e.type.nullable?
-                            },
+                            (e.nillable? or
+                             (for-response? and e.min-occurs == 0)),
                             content-types = e.expected-content-types
                         }
                     }
@@ -191,13 +186,8 @@
                         },
                         part.element.type,
                         element-name,
-                        {type-switch part.element
-                         case ise:WSDLInternalSchemaElement do
-                            ise.nillable? or
-                            (for-response? and ise.min-occurs == 0)
-                         else
-                            part.element.type.nullable?
-                        },
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0)),
                         content-types = part.element.expected-content-types
                     }
                 }
@@ -217,13 +207,8 @@
                         },
                         part.element.type,
                         element-name,
-                        {type-switch part.element
-                         case ise:WSDLInternalSchemaElement do
-                            ise.nillable? or
-                            (for-response? and ise.min-occurs == 0)
-                         else
-                            part.element.type.nullable?
-                        }
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0))
                     }
                 }
              case ct:WSDLSchemaXMLDocumentType do
@@ -242,13 +227,8 @@
                         },
                         part.element.type,
                         element-name,
-                        {type-switch part.element
-                         case ise:WSDLInternalSchemaElement do
-                            ise.nillable? or
-                            (for-response? and ise.min-occurs == 0)
-                         else
-                            part.element.type.nullable?
-                        }
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0))
                     }
                 }
              else
@@ -286,13 +266,8 @@
                         },
                         element-type,
                         element-name,
-                        {type-switch part.element
-                         case ise:WSDLInternalSchemaElement do
-                            ise.nillable? or
-                            (for-response? and ise.min-occurs == 0)
-                         else
-                            element-type.nullable?
-                        },
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0)),
                         content-types = part.element.expected-content-types
                     }
                 }

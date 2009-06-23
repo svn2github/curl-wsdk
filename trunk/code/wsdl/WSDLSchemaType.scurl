@@ -701,7 +701,7 @@
                       }
     || ### DEBUG
     {if xml-name == null then
-        {output {message WARNING: anonymous WSDLSchemaClassType}}
+        {output {hlmessage WARNING: anonymous WSDLSchemaClassType}}
     }
     {construct-super xml-name}
     set self.elements = elements
@@ -734,6 +734,24 @@
          else null}
   }
 
+  {factory public {empty
+                      xml-name:#XMLName,
+                      curl-namer:WSDLCurlNamer,
+                      attributes:#{Array-of WSDLSchemaAttribute} = null,
+                      parent-class:#WSDLSchemaType = null,
+                      abstract?:bool = false
+                  }:WSDLSchemaClassType
+    {return
+        {WSDLSchemaClassType
+            xml-name,
+            {{Array-of WSDLSchemaElement}},
+            curl-namer,
+            attributes = attributes,
+            parent-class= parent-class,
+            abstract? = abstract?
+        }}
+  }
+  
   {method package {resolve-types names:WSDLNameTable}:void
     || avoid cycles
     {if-non-null name = self.xml-name then
@@ -828,9 +846,9 @@
         }
     }
 
-    || ========== \\
-    || EXPERIMENTAL
-    {platform-switch case "none" do
+    || ==================== \\
+    || EXPERIMENTAL: transform in resolve-types
+    {platform-switch case "IGNORE" do
     {if-non-null xml-type-name = self.xml-name then
         || NOTE: check if groups need to be resolved
 
@@ -850,7 +868,7 @@
             }
         }}
     }
-    || ========== //
+    || ==================== //
   }
 
   {getter package {ref-name}:String
@@ -866,6 +884,8 @@
         {if self._choice? or
             {WSDLSchema.elements-has-choice-or-array? self.elements}
          then
+||--            {if self._choice? then
+||--                {output "&&& choice? ", xml-name}}
             {self.dump-choice out}
          else
             {self.dump-non-choice out}
@@ -947,7 +967,7 @@
             let fval?:bool = false
             let constant (fnillable?:bool, foptional?:bool) =
                 {type-switch e
-                 case e:WSDLInternalSchemaElement do
+                 case e:WSDLSchemaElement do
                     (e.nillable?, e.min-occurs == 0)
                  else (false, false)}
             let constant ftype:String = 
@@ -1158,16 +1178,12 @@
                     {e.type.soap-object-type-string
                         tab-level = 20,
                         element-name = e-xml-name,
-                        nillable? =
-                            e isa WSDLInternalSchemaElement and
-                            (e asa WSDLInternalSchemaElement).nillable?
+                        nillable? = e.nillable?
                     }
                  else
                     {e.type.soap-object-type-string
                         tab-level = 20,
-                        nillable? =
-                            e isa WSDLInternalSchemaElement and
-                            (e asa WSDLInternalSchemaElement).nillable?
+                        nillable? = e.nillable?
                     }
                 }
             }
@@ -1305,10 +1321,8 @@
                         tab-level = 16,
                         element-name = e.xml-name,
                         nillable? =
-                            {type-switch e
-                             case e:WSDLInternalSchemaElement do
-                                e.nillable? or (e.min-occurs == 0 and e.max-occurs == 1)
-                             else false}
+                            (e.nillable? or
+                             (e.min-occurs == 0 and e.max-occurs == 1))
                     }
                 }
             }
@@ -1363,13 +1377,7 @@
                         }
                     }
                     || note optional elements
-                    let optional?:bool = 
-                        {type-switch e
-                         case e:WSDLInternalSchemaElement do
-                            e.min-occurs == 0
-                         else 
-                            false
-                        }
+                    let optional?:bool = e.min-occurs == 0
                     {if optional? then
                         {optional-elements.append {non-null e.xml-name}}
                     }
@@ -1638,7 +1646,7 @@
 
 
 {define-class public open WSDLSchemaArrayType {inherits WSDLSchemaType}
-  field public constant element:WSDLInternalSchemaElement
+  field public constant element:WSDLSchemaElement
   field public constant array-types:#{Array-of XMLName}
   field private _multiple-reference:SOAPTypeMultipleReference
   field private _multiple-reference-set?:bool
@@ -1648,7 +1656,7 @@
   
   {constructor public {default
                           xml-name:#XMLName,
-                          element:WSDLInternalSchemaElement,
+                          element:WSDLSchemaElement,
                           array-type:#XMLName = null,
                           curl-namer:#WSDLCurlNamer = null,
                           repeating-element-name:#XMLName = null,

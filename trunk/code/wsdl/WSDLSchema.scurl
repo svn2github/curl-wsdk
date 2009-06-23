@@ -15,9 +15,9 @@
 ||| limitations under the License.
 
 || contains the classes:
+|| WSDLSchemaMember
 || WSDLSchemaElement
-|| WSDLInternalSchemaElement
-|| WSDLSchema
+|| WSDLSchemaAttribute
 
 || Also uses classes in WSDLSchemaType.curl
 
@@ -158,11 +158,6 @@
         {self.node.get-attribute attribute, namespace = namespace} != null}
   }
 
-}
-
-|| NOTE: these used to be different
-{let public constant WSDLInternalSchemaElement:ClassType =
-    WSDLSchemaElement
 }
 
 {define-class public open WSDLSchemaAttribute {inherits WSDLSchemaMember}

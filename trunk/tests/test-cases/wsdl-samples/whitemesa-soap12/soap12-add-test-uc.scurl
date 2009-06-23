@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-add-test-uc,
     {compiler-directives careful? = true},
-    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-uc.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Soap12-add-test-uc.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-add-test-uc.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Soap12-add-test-uc.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public WhiteMesaSoap12AddTestSvc {inherits WSDLHTTPRPCPostClient}
@@ -23,20 +23,6 @@
         }
     {return
         responses[0] asa XMLTimeString
-    }
-  }
-
-
-  {method public {async-get-time event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "get-time",
-            {{Array-of any}
-            },
-            {splice self.operations["get-time"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -108,43 +94,6 @@
   }
 
 
-  {method public {async-echo-string input-string:String, unknown:#Unknown = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    let constant request-header-names:{Array-of #XMLName} =
-        {{Array-of #XMLName}}
-    let constant request-header-types:{Array-of SOAPObjectType} =
-        {{Array-of SOAPObjectType}}
-    let constant request-headers:{Array-of any} =
-        {{Array-of any}}
-    {if {keyword-supplied? unknown} then
-        {request-header-types.append
-            {SOAPObjectType
-                xml-type = {XMLName "http://soapinterop.org/", "_Unknown"},
-                curl-type = Unknown,
-                nillable? = true
-            }
-        }
-        {request-header-names.append
-           {XMLName "http://soapinterop.org/", "Unknown"}
-        }
-        {request-headers.append unknown}
-    }
-    {return
-        {self.async-call
-            "echo-string",
-            {{Array-of any}
-                input-string
-            },
-            request-header-names = request-header-names,
-            request-header-types = request-header-types,
-            request-headers = request-headers,
-            {splice self.operations["echo-string"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-string}:void
     set self.operations["echo-string"] = 
         {Arguments
@@ -198,21 +147,6 @@
   }
 
 
-  {method public {async-echo-sender-fault in-element:any, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-sender-fault",
-            {{Array-of any}
-                in-element
-            },
-            {splice self.operations["echo-sender-fault"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-sender-fault}:void
     set self.operations["echo-sender-fault"] = 
         {Arguments
@@ -255,21 +189,6 @@
         }
     {return
 
-    }
-  }
-
-
-  {method public {async-echo-receiver-fault in-element:any, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-receiver-fault",
-            {{Array-of any}
-                in-element
-            },
-            {splice self.operations["echo-receiver-fault"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -378,7 +297,7 @@
             {abs-url "http://www.whitemesa.net/soap12/add-test-doc-int-uc"}
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "6"
     }
   }
 }

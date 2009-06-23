@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-test,
     {compiler-directives careful? = true},
-    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-test.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Soap12-test.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/soap12-test.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Soap12-test.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public Soap12TestDocPort {inherits WSDLHTTPRPCPostClient}
@@ -76,67 +76,6 @@
   }
 
 
-  {method public {async-empty-body echo-ok:#String = null, unknown:#UnknownType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    let constant request-header-names:{Array-of #XMLName} =
-        {{Array-of #XMLName}}
-    let constant request-header-types:{Array-of SOAPObjectType} =
-        {{Array-of SOAPObjectType}}
-    let constant request-headers:{Array-of any} =
-        {{Array-of any}}
-    {if {keyword-supplied? echo-ok} then
-        {request-header-types.append
-            {SOAPObjectType
-                xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                curl-type = String,
-                nillable? = true
-            }
-        }
-        {request-header-names.append
-           {XMLName "http://example.org/ts-tests", "echoOk"}
-        }
-        {request-headers.append echo-ok}
-    }
-    {if {keyword-supplied? unknown} then
-        {request-header-types.append
-            {SOAPObjectType
-                xml-type = {XMLName "http://example.org/ts-tests/xsd", "UnknownType"},
-                curl-type = UnknownType,
-                nillable? = true
-            }
-        }
-        {request-header-names.append
-           {XMLName "http://example.org/ts-tests", "Unknown"}
-        }
-        {request-headers.append unknown}
-    }
-    {return
-        {self.async-call
-            "empty-body",
-            {{Array-of any}
-            },
-            request-header-names = request-header-names,
-            request-header-types = request-header-types,
-            request-headers = request-headers,
-            response-header-names =
-                {{Array-of #XMLName}
-                    {XMLName "http://example.org/ts-tests", "responseOk"}
-                },
-            response-header-types =
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String,
-                        nillable? = true
-                    }
-                },
-            {splice self.operations["empty-body"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-empty-body}:void
     set self.operations["empty-body"] = 
         {Arguments
@@ -157,14 +96,14 @@
   }
 
 
-  {method public {echo-ok echo-ok:String, echo-ok2:#String = null, unknown:#UnknownType = null}:(response-ok:String, headers:#{Array-of any}, header-roles:#{Array-of #String}, header-must-understands:#{Array-of bool})
+  {method public {echo-ok echo-ok:String, ts-tests-echo-ok:#String = null, unknown:#UnknownType = null}:(response-ok:String, headers:#{Array-of any}, header-roles:#{Array-of #String}, header-must-understands:#{Array-of bool})
     let constant request-header-names:{Array-of #XMLName} =
         {{Array-of #XMLName}}
     let constant request-header-types:{Array-of SOAPObjectType} =
         {{Array-of SOAPObjectType}}
     let constant request-headers:{Array-of any} =
         {{Array-of any}}
-    {if {keyword-supplied? echo-ok2} then
+    {if {keyword-supplied? ts-tests-echo-ok} then
         {request-header-types.append
             {SOAPObjectType
                 xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
@@ -175,7 +114,7 @@
         {request-header-names.append
            {XMLName "http://example.org/ts-tests", "echoOk"}
         }
-        {request-headers.append echo-ok2}
+        {request-headers.append ts-tests-echo-ok}
     }
     {if {keyword-supplied? unknown} then
         {request-header-types.append
@@ -222,68 +161,6 @@
         headers,
         header-roles,
         header-must-understands
-    }
-  }
-
-
-  {method public {async-echo-ok echo-ok:String, echo-ok2:#String = null, unknown:#UnknownType = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    let constant request-header-names:{Array-of #XMLName} =
-        {{Array-of #XMLName}}
-    let constant request-header-types:{Array-of SOAPObjectType} =
-        {{Array-of SOAPObjectType}}
-    let constant request-headers:{Array-of any} =
-        {{Array-of any}}
-    {if {keyword-supplied? echo-ok2} then
-        {request-header-types.append
-            {SOAPObjectType
-                xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                curl-type = String,
-                nillable? = true
-            }
-        }
-        {request-header-names.append
-           {XMLName "http://example.org/ts-tests", "echoOk"}
-        }
-        {request-headers.append echo-ok2}
-    }
-    {if {keyword-supplied? unknown} then
-        {request-header-types.append
-            {SOAPObjectType
-                xml-type = {XMLName "http://example.org/ts-tests/xsd", "UnknownType"},
-                curl-type = UnknownType,
-                nillable? = true
-            }
-        }
-        {request-header-names.append
-           {XMLName "http://example.org/ts-tests", "Unknown"}
-        }
-        {request-headers.append unknown}
-    }
-    {return
-        {self.async-call
-            "echo-ok",
-            {{Array-of any}
-                echo-ok
-            },
-            request-header-names = request-header-names,
-            request-header-types = request-header-types,
-            request-headers = request-headers,
-            response-header-names =
-                {{Array-of #XMLName}
-                    {XMLName "http://example.org/ts-tests", "responseOk"}
-                },
-            response-header-types =
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
-                        curl-type = String,
-                        nillable? = true
-                    }
-                },
-            {splice self.operations["echo-ok"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -640,15 +517,15 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "", "varArray"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        element-name = {XMLName "http://example.org/ts-tests", "DataHolder"},
+                        xml-type = {XMLName "http://example.org/ts-tests", "DataHolder_t"},
                         curl-type = {Array-of String},
                         nillable? = true
                     }
                 },
-                array-types =
+                element-names =
                     {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                        {XMLName "http://example.org/ts-tests", "Data"}
                     },
                 xml-type-to-curl-type = xml-type-to-curl-type,
                 curl-type-to-xml-type = curl-type-to-xml-type,
@@ -671,15 +548,15 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "http://example.org/ts-tests", "DataHolder"},
-                        xml-type = {XMLName "http://example.org/ts-tests", "DataHolder_t"},
+                        element-name = {XMLName "", "varArray"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
                         curl-type = {Array-of String},
                         nillable? = true
                     }
                 },
-                element-names =
+                array-types =
                     {{Array-of #XMLName}
-                        {XMLName "http://example.org/ts-tests", "Data"}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
                     },
                 xml-type-to-curl-type = xml-type-to-curl-type,
                 curl-type-to-xml-type = curl-type-to-xml-type,
@@ -768,7 +645,7 @@
             {abs-url "http://www.whitemesa.net/soap12/test-doc"}
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "6"
     }
   }
 }
@@ -789,20 +666,6 @@
         }
     {return
 
-    }
-  }
-
-
-  {method public {async-return-void event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "return-void",
-            {{Array-of any}
-            },
-            {splice self.operations["return-void"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -844,21 +707,6 @@
         }
     {return
         responses[0] asa #SOAPStruct
-    }
-  }
-
-
-  {method public {async-echo-struct input-struct:#SOAPStruct, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-struct",
-            {{Array-of any}
-                input-struct
-            },
-            {splice self.operations["echo-struct"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -916,21 +764,6 @@
   }
 
 
-  {method public {async-echo-struct-array input-struct-array:#{Array-of SOAPStruct}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-struct-array",
-            {{Array-of any}
-                input-struct-array
-            },
-            {splice self.operations["echo-struct-array"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-struct-array}:void
     set self.operations["echo-struct-array"] = 
         {Arguments
@@ -982,21 +815,6 @@
         responses[0] asa #String,
         responses[1] asa int,
         responses[2] asa float
-    }
-  }
-
-
-  {method public {async-echo-struct-as-simple-types input-struct:#SOAPStruct, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-struct-as-simple-types",
-            {{Array-of any}
-                input-struct
-            },
-            {splice self.operations["echo-struct-as-simple-types"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1066,23 +884,6 @@
   }
 
 
-  {method public {async-echo-simple-types-as-struct input-string:#String, input-integer:int, input-float:float, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-simple-types-as-struct",
-            {{Array-of any}
-                input-string,
-                input-integer,
-                input-float
-            },
-            {splice self.operations["echo-simple-types-as-struct"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-simple-types-as-struct}:void
     set self.operations["echo-simple-types-as-struct"] = 
         {Arguments
@@ -1146,21 +947,6 @@
   }
 
 
-  {method public {async-echo-nested-struct input-struct:#SOAPStructStruct, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-nested-struct",
-            {{Array-of any}
-                input-struct
-            },
-            {splice self.operations["echo-nested-struct"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-nested-struct}:void
     set self.operations["echo-nested-struct"] = 
         {Arguments
@@ -1210,21 +996,6 @@
         }
     {return
         responses[0] asa #SOAPArrayStruct
-    }
-  }
-
-
-  {method public {async-echo-nested-array input-struct:#SOAPArrayStruct, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-nested-array",
-            {{Array-of any}
-                input-struct
-            },
-            {splice self.operations["echo-nested-array"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1282,21 +1053,6 @@
   }
 
 
-  {method public {async-echo-float-array input-float-array:#{Array-of float}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-float-array",
-            {{Array-of any}
-                input-float-array
-            },
-            {splice self.operations["echo-float-array"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-float-array}:void
     set self.operations["echo-float-array"] = 
         {Arguments
@@ -1346,21 +1102,6 @@
         }
     {return
         responses[0] asa #{Array-of String}
-    }
-  }
-
-
-  {method public {async-echo-string-array input-string-array:#{Array-of String}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-string-array",
-            {{Array-of any}
-                input-string-array
-            },
-            {splice self.operations["echo-string-array"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1418,21 +1159,6 @@
   }
 
 
-  {method public {async-echo-integer-array input-integer-array:#{Array-of int}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-integer-array",
-            {{Array-of any}
-                input-integer-array
-            },
-            {splice self.operations["echo-integer-array"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-integer-array}:void
     set self.operations["echo-integer-array"] = 
         {Arguments
@@ -1482,21 +1208,6 @@
         }
     {return
         responses[0] asa #{Array-of byte}
-    }
-  }
-
-
-  {method public {async-echo-base64 input-base64:#{Array-of byte}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-base64",
-            {{Array-of any}
-                input-base64
-            },
-            {splice self.operations["echo-base64"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1554,21 +1265,6 @@
   }
 
 
-  {method public {async-echo-boolean input-boolean:bool, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-boolean",
-            {{Array-of any}
-                input-boolean
-            },
-            {splice self.operations["echo-boolean"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-boolean}:void
     set self.operations["echo-boolean"] = 
         {Arguments
@@ -1616,21 +1312,6 @@
         }
     {return
         responses[0] asa #DateTime
-    }
-  }
-
-
-  {method public {async-echo-date input-date:#DateTime, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-date",
-            {{Array-of any}
-                input-date
-            },
-            {splice self.operations["echo-date"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1688,21 +1369,6 @@
   }
 
 
-  {method public {async-echo-decimal input-decimal:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-decimal",
-            {{Array-of any}
-                input-decimal
-            },
-            {splice self.operations["echo-decimal"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-decimal}:void
     set self.operations["echo-decimal"] = 
         {Arguments
@@ -1750,21 +1416,6 @@
         }
     {return
         responses[0] asa float
-    }
-  }
-
-
-  {method public {async-echo-float input-float:float, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-float",
-            {{Array-of any}
-                input-float
-            },
-            {splice self.operations["echo-float"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -1857,55 +1508,6 @@
   }
 
 
-  {method public {async-echo-string input-string:#String, data-holder:#{Array-of String} = null, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    let constant request-header-names:{Array-of #XMLName} =
-        {{Array-of #XMLName}}
-    let constant request-header-types:{Array-of SOAPObjectType} =
-        {{Array-of SOAPObjectType}}
-    let constant request-headers:{Array-of any} =
-        {{Array-of any}}
-    {if {keyword-supplied? data-holder} then
-        {request-header-types.append
-            {SOAPObjectType
-                xml-type = {XMLName "http://example.org/ts-tests", "DataHolder_t"},
-                curl-type = {Array-of String},
-                nillable? = true
-            }
-        }
-        {request-header-names.append
-           {XMLName "http://example.org/ts-tests", "DataHolder"}
-        }
-        {request-headers.append data-holder}
-    }
-    {return
-        {self.async-call
-            "echo-string",
-            {{Array-of any}
-                input-string
-            },
-            request-header-names = request-header-names,
-            request-header-types = request-header-types,
-            request-headers = request-headers,
-            response-header-names =
-                {{Array-of #XMLName}
-                    {XMLName "http://example.org/ts-tests", "DataHolder"}
-                },
-            response-header-types =
-                {{Array-of SOAPObjectType}
-                    {SOAPObjectType
-                        xml-type = {XMLName "http://example.org/ts-tests", "DataHolder_t"},
-                        curl-type = {Array-of String},
-                        nillable? = true
-                    }
-                },
-            {splice self.operations["echo-string"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-string}:void
     set self.operations["echo-string"] = 
         {Arguments
@@ -1959,21 +1561,6 @@
   }
 
 
-  {method public {async-count-items input-string-array:#{Array-of String}, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "count-items",
-            {{Array-of any}
-                input-string-array
-            },
-            {splice self.operations["count-items"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-count-items}:void
     set self.operations["count-items"] = 
         {Arguments
@@ -2022,21 +1609,6 @@
         }
     {return
         responses[0] asa bool
-    }
-  }
-
-
-  {method public {async-is-nil input-string:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "is-nil",
-            {{Array-of any}
-                input-string
-            },
-            {splice self.operations["is-nil"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -2538,7 +2110,7 @@
             {abs-url "http://www.whitemesa.net/soap12/test-rpc"}
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "6"
     }
   }
 }

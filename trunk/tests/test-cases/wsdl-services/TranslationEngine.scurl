@@ -11,7 +11,7 @@
 
 {doc-next 
     {details 
-       Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+        Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
     }
 }
   {method public {translate language-mode:Language, text:String}:(translate-result:#String)
@@ -19,7 +19,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "translate",
             {{Array-of any}
@@ -36,7 +36,7 @@
 
 {doc-next 
     {details 
-       Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
+        Convert text from one lanaguage to another language .Supported languages are English to Chinese,English to French,English to German,English to Italian,English to Japanese,English to Korean,English to Portuguese,English to Spanish,Chinese to English,French to English,French to German,German to English,German to French,Italian to English,Japanese to English,Korean to English,Portuguese to English,Russian to English,Spanish to English.
     }
 }
   {method public {define-translate}:void
@@ -105,6 +105,12 @@
                     xml-type = {XMLName "http://www.webservicex.net", "Language"},
                     curl-type = Language
                 },
+                value-type = 
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
                 use-value? = true
             }
         {enum-marshaler.register
@@ -127,13 +133,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.webservicex.com/TranslateService.asmx"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://www.webservicex.com/TranslateService.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "6"
     }
   }
 }

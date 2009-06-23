@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.PowerQuote,
     {compiler-directives careful? = true},
-    wsdl = "file:///u:/bardwell/w/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/PowerQuote.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///u:/bardwell/w/tests/test-cases/wsdl-services/PowerQuote.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/PowerQuote.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
@@ -304,7 +304,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -323,7 +322,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -479,7 +477,7 @@
             {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "6"
     }
   }
 }

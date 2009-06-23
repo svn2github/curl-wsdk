@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.TerraService,
     {compiler-directives careful? = true},
-    wsdl = "file:///u:/bardwell/w/tests/test-cases/wsdl-services/TerraService.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TerraService.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///u:/bardwell/w/tests/test-cases/wsdl-services/TerraService.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TerraService.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {doc-next 
@@ -1134,7 +1134,7 @@
         let constant soap-struct-marshaler:SOAPStructMarshaler =
         {SOAPStructMarshaler
             {SOAPObjectType
-                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "NorthWest"},
+                element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Center"},
                 xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "LonLatPt"},
                 curl-type = LonLatPt,
                 nillable? = true
@@ -1480,7 +1480,7 @@
         let constant enum-marshaler:SOAPEnumMarshaler =
             {SOAPEnumMarshaler
                 {SOAPObjectType
-                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
+                    element-name = {XMLName "http://terraserver-usa.com/terraserver/", "LoScale"},
                     xml-type = {XMLName "http://terraserver-usa.com/terraserver/", "Scale"},
                     curl-type = Scale
                 },
@@ -2046,7 +2046,7 @@
             {abs-url "http://terraservice.net/TerraService.asmx"}
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "6"
     }
   }
 }

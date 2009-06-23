@@ -1,10 +1,10 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Round5BaseTypes,
     {compiler-directives careful? = true},
-    wsdl = "file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl"}
+    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl"}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///.automount/fs03/local/u72/bardwell/w/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {doc-next 
@@ -29,21 +29,6 @@
         }
     {return
         responses[0] asa double
-    }
-  }
-
-
-  {method public {async-echo-double input-double:double, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-double",
-            {{Array-of any}
-                input-double
-            },
-            {splice self.operations["echo-double"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -96,21 +81,6 @@
         }
     {return
         responses[0] asa #DateTime
-    }
-  }
-
-
-  {method public {async-echo-date-time input-date-time:#DateTime, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-date-time",
-            {{Array-of any}
-                input-date-time
-            },
-            {splice self.operations["echo-date-time"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -169,21 +139,6 @@
   }
 
 
-  {method public {async-echo-time input-time:#XMLTimeString, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-time",
-            {{Array-of any}
-                input-time
-            },
-            {splice self.operations["echo-time"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-time}:void
     set self.operations["echo-time"] = 
         {Arguments
@@ -234,21 +189,6 @@
         }
     {return
         responses[0] asa #Url
-    }
-  }
-
-
-  {method public {async-echo-any-uri input-any-uri:#Url, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-any-uri",
-            {{Array-of any}
-                input-any-uri
-            },
-            {splice self.operations["echo-any-uri"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -307,21 +247,6 @@
   }
 
 
-  {method public {async-echo-long input-long:int64, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-long",
-            {{Array-of any}
-                input-long
-            },
-            {splice self.operations["echo-long"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-long}:void
     set self.operations["echo-long"] = 
         {Arguments
@@ -370,21 +295,6 @@
         }
     {return
         responses[0] asa int
-    }
-  }
-
-
-  {method public {async-echo-int input-int:int, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-int",
-            {{Array-of any}
-                input-int
-            },
-            {splice self.operations["echo-int"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -441,21 +351,6 @@
   }
 
 
-  {method public {async-echo-short input-short:int16, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-short",
-            {{Array-of any}
-                input-short
-            },
-            {splice self.operations["echo-short"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-short}:void
     set self.operations["echo-short"] = 
         {Arguments
@@ -504,21 +399,6 @@
         }
     {return
         responses[0] asa int8
-    }
-  }
-
-
-  {method public {async-echo-byte input-byte:int8, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-byte",
-            {{Array-of any}
-                input-byte
-            },
-            {splice self.operations["echo-byte"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -575,21 +455,6 @@
   }
 
 
-  {method public {async-echo-unsigned-long input-unsigned-long:uint64, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-unsigned-long",
-            {{Array-of any}
-                input-unsigned-long
-            },
-            {splice self.operations["echo-unsigned-long"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-unsigned-long}:void
     set self.operations["echo-unsigned-long"] = 
         {Arguments
@@ -638,21 +503,6 @@
         }
     {return
         responses[0] asa uint32
-    }
-  }
-
-
-  {method public {async-echo-unsigned-int input-unsigned-int:uint32, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-unsigned-int",
-            {{Array-of any}
-                input-unsigned-int
-            },
-            {splice self.operations["echo-unsigned-int"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -709,21 +559,6 @@
   }
 
 
-  {method public {async-echo-unsigned-short input-unsigned-short:uint16, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-unsigned-short",
-            {{Array-of any}
-                input-unsigned-short
-            },
-            {splice self.operations["echo-unsigned-short"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
   {method public {define-echo-unsigned-short}:void
     set self.operations["echo-unsigned-short"] = 
         {Arguments
@@ -772,21 +607,6 @@
         }
     {return
         responses[0] asa uint8
-    }
-  }
-
-
-  {method public {async-echo-unsigned-byte input-unsigned-byte:uint8, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "echo-unsigned-byte",
-            {{Array-of any}
-                input-unsigned-byte
-            },
-            {splice self.operations["echo-unsigned-byte"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -859,7 +679,7 @@
             {abs-url "http://www.whitemesa.net/soap12/baseTypes"}
     }
     {construct-super service-location,
-        generated-using-version = "5"
+        generated-using-version = "6"
     }
   }
 }

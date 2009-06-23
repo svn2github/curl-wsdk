@@ -11,7 +11,7 @@
 
 {doc-next 
     {details 
-       Append an entry to the system log.
+        Append an entry to the system log.
     }
 }
   {method public {log-event document:LogEventRequestType}:void
@@ -19,7 +19,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "log-event",
             {{Array-of any}
@@ -35,7 +35,7 @@
 
 {doc-next 
     {details 
-       Append an entry to the system log.
+        Append an entry to the system log.
     }
 }
   {method public {define-log-event}:void
@@ -48,7 +48,8 @@
                 {SOAPObjectType
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestType"},
                     curl-type = LogEventRequestType,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of #XMLName}
@@ -66,7 +67,7 @@
 
 {doc-next 
     {details 
-       Retrieve entries from the system log with the specified userId.
+        Retrieve entries from the system log with the specified userId.
     }
 }
   {method public {get-events demo-user-id:String}:(document:{Array-of LogEntry})
@@ -74,7 +75,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-events",
             {{Array-of any}
@@ -90,7 +91,7 @@
 
 {doc-next 
     {details 
-       Retrieve entries from the system log with the specified userId.
+        Retrieve entries from the system log with the specified userId.
     }
 }
   {method public {define-get-events}:void
@@ -189,7 +190,8 @@
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "_LogEntry"},
                     curl-type = LogEntry,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -197,7 +199,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -208,7 +209,8 @@
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestElement"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestType"},
                     curl-type = LogEventRequestType,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -216,7 +218,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -227,7 +228,8 @@
                     {SOAPObjectType
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "_LogEntry"},
-                        curl-type = LogEntry
+                        curl-type = LogEntry,
+                        marshaler-handled-element? = true
                     },
                     {SOAPObjectType
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseElement"},
@@ -264,13 +266,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "6"
     }
   }
 }

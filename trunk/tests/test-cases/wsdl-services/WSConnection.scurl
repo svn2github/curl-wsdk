@@ -14,7 +14,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-database-names",
             {{Array-of any}
@@ -60,7 +60,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-database-tables",
             {{Array-of any}
@@ -113,7 +113,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-fields",
             {{Array-of any}
@@ -173,7 +173,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-data",
             {{Array-of any}
@@ -239,7 +239,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "execute",
             {{Array-of any}
@@ -452,13 +452,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost/SERVER/soap-services/q-wsconnection.php"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://localhost/SERVER/soap-services/q-wsconnection.php"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "6"
     }
   }
 }

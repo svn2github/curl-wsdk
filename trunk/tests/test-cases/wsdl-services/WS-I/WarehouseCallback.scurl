@@ -11,12 +11,12 @@
 
 {doc-next 
     {details 
-       Submit a shipment notice for specified items to the retailer.
-       A shipment notification.
-       A response of true indicates the shipment notice has been accepted for processing.
-       The Configuration fault header indicates why the configuration was invalid and enumerates all
+        Submit a shipment notice for specified items to the retailer.
+        A shipment notification.
+        A response of true indicates the shipment notice has been accepted for processing.
+        The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+        To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
 }
@@ -57,7 +57,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "submit-sn",
             {{Array-of any}
@@ -76,12 +76,12 @@
 
 {doc-next 
     {details 
-       Submit a shipment notice for specified items to the retailer.
-       A shipment notification.
-       A response of true indicates the shipment notice has been accepted for processing.
-       The Configuration fault header indicates why the configuration was invalid and enumerates all
+        Submit a shipment notice for specified items to the retailer.
+        A shipment notification.
+        A response of true indicates the shipment notice has been accepted for processing.
+        The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+        To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
 }
@@ -117,14 +117,14 @@
 
 {doc-next 
     {details 
-       Notify warehouse  there was an error in processing a submitted PO.
-       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
+        Notify warehouse  there was an error in processing a submitted PO.
+        Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
 		having been acknowledged by the Manufacturer.  Contains callback information with
 		which to find the original replenishment request.
-       A response of true indicates the purchase order has been accepted for processing.
-       The Configuration fault header indicates why the configuration was invalid and enumerates all
+        A response of true indicates the purchase order has been accepted for processing.
+        The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+        To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
 }
@@ -152,7 +152,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "error-po",
             {{Array-of any}
@@ -171,14 +171,14 @@
 
 {doc-next 
     {details 
-       Notify warehouse  there was an error in processing a submitted PO.
-       Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
+        Notify warehouse  there was an error in processing a submitted PO.
+        Alternative to SNSubmit, indicates a reason for the rejection of a given PO after
 		having been acknowledged by the Manufacturer.  Contains callback information with
 		which to find the original replenishment request.
-       A response of true indicates the purchase order has been accepted for processing.
-       The Configuration fault header indicates why the configuration was invalid and enumerates all
+        A response of true indicates the purchase order has been accepted for processing.
+        The Configuration fault header indicates why the configuration was invalid and enumerates all
         of the service URLs which were not valid in Configuration header of the request message.
-       To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
+        To be used in SOAP headers for relating two req/resp message pairs sent asynchronously.
 		The CallbackFault indicates a reason for the rejection of the second req/resp pair.
     }
 }
@@ -240,7 +240,8 @@
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Body"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Body"},
                     curl-type = Body,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -248,7 +249,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -334,6 +334,12 @@
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
                     curl-type = ConfigurationEndpointRole
                 },
+                value-type = 
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKEN"},
+                    curl-type = {XMLSimpleValue-for "NMTOKEN"},
+                    nillable? = true
+                },
                 use-value? = true
             }
         {enum-marshaler.register
@@ -414,7 +420,8 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
-                    curl-type = {Array-of ConfigurationEndpointRole}
+                    curl-type = {Array-of ConfigurationEndpointRole},
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of String}
@@ -423,10 +430,6 @@
                 "erroneous-element"
             },
             n-attributes = 1,
-            repeating-elements = 
-                {{Set-of XMLName}
-                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
-              },
             optional-elements = 
                 {{Set-of XMLName}
                     {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
@@ -470,7 +473,8 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
-                    curl-type = {Array-of ConfigurationEndpointType}
+                    curl-type = {Array-of ConfigurationEndpointType},
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of String}
@@ -479,10 +483,6 @@
                 "service-url"
             },
             n-attributes = 1,
-            repeating-elements = 
-                {{Set-of XMLName}
-                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"}
-              },
             element-name-to-xml-type = element-name-to-xml-type,
             xml-type-to-curl-type = xml-type-to-curl-type,
             curl-type-to-xml-type = curl-type-to-xml-type,
@@ -527,7 +527,8 @@
                     element-name = {XMLName "", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     curl-type = Detail,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -535,7 +536,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -568,7 +568,8 @@
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
                     curl-type = Envelope,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -576,7 +577,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -613,7 +613,8 @@
                     element-name = {XMLName "", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     curl-type = Detail,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of String}
@@ -647,7 +648,8 @@
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Header"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Header"},
                     curl-type = Header,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -655,7 +657,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -1010,7 +1011,8 @@
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
                         curl-type = {Array-of ConfigurationEndpointRole},
-                        nillable? = true
+                        nillable? = true,
+                        marshaler-handled-element? = true
                     }
                 },
                 element-names =
@@ -1043,7 +1045,8 @@
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
                         curl-type = {Array-of ConfigurationEndpointType},
-                        nillable? = true
+                        nillable? = true,
+                        marshaler-handled-element? = true
                     }
                 },
                 element-names =
@@ -1139,13 +1142,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "6"
     }
   }
 }

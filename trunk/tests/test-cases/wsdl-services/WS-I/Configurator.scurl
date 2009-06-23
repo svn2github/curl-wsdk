@@ -11,17 +11,17 @@
 
 {doc-next 
     {details 
-       This message is used to obtain all of the discovered showcase implementations of 
+        This message is used to obtain all of the discovered showcase implementations of 
 		the WS-I services.  It contains useful information on which selections can be made, 
 		such as platform, in addition to vital information about the choices, such as the
 		endpoints.  The service may perform discovery in response to this message or may
 		return cached information.  When the refresh bit is on, the implementation must
 		perform (re)discovery.
-       This message is returned in response to getConfigurationOptions and contains 
+        This message is returned in response to getConfigurationOptions and contains 
 		a list of alternative showcase implementations of the WS-I Basic Sample Application
 		Web services.  The endpoints for the services and information about the service is
 		provided to aid in selection.
-       This message is used to indicate the configurator was unable to obtain configuration options.
+        This message is used to indicate the configurator was unable to obtain configuration options.
     }
 }
   {method public {get-configuration-options refresh:bool}:(config-options:{Array-of ConfigOptionType})
@@ -29,7 +29,7 @@
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
-         root-attributes:#{Array-of XMLAttribute})=
+         root-attributes:#{Array-of XMLAttribute}) =
         {self.call
             "get-configuration-options",
             {{Array-of any}
@@ -45,17 +45,17 @@
 
 {doc-next 
     {details 
-       This message is used to obtain all of the discovered showcase implementations of 
+        This message is used to obtain all of the discovered showcase implementations of 
 		the WS-I services.  It contains useful information on which selections can be made, 
 		such as platform, in addition to vital information about the choices, such as the
 		endpoints.  The service may perform discovery in response to this message or may
 		return cached information.  When the refresh bit is on, the implementation must
 		perform (re)discovery.
-       This message is returned in response to getConfigurationOptions and contains 
+        This message is returned in response to getConfigurationOptions and contains 
 		a list of alternative showcase implementations of the WS-I Basic Sample Application
 		Web services.  The endpoints for the services and information about the service is
 		provided to aid in selection.
-       This message is used to indicate the configurator was unable to obtain configuration options.
+        This message is used to indicate the configurator was unable to obtain configuration options.
     }
 }
   {method public {define-get-configuration-options}:void
@@ -116,7 +116,8 @@
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Body"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Body"},
                     curl-type = Body,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -124,7 +125,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -182,6 +182,12 @@
                     element-name = {XMLName "", "Role"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ConfigurationEndpointRole"},
                     curl-type = ConfigurationEndpointRole
+                },
+                value-type = 
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKEN"},
+                    curl-type = {XMLSimpleValue-for "NMTOKEN"},
+                    nillable? = true
                 },
                 use-value? = true
             }
@@ -263,7 +269,8 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
-                    curl-type = {Array-of ConfigurationEndpointRole}
+                    curl-type = {Array-of ConfigurationEndpointRole},
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of String}
@@ -272,10 +279,6 @@
                 "erroneous-element"
             },
             n-attributes = 1,
-            repeating-elements = 
-                {{Set-of XMLName}
-                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
-              },
             optional-elements = 
                 {{Set-of XMLName}
                     {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"}
@@ -319,7 +322,8 @@
                 {SOAPObjectType
                     element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                     xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
-                    curl-type = {Array-of ConfigurationEndpointType}
+                    curl-type = {Array-of ConfigurationEndpointType},
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of String}
@@ -328,10 +332,6 @@
                 "service-url"
             },
             n-attributes = 1,
-            repeating-elements = 
-                {{Set-of XMLName}
-                    {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"}
-              },
             element-name-to-xml-type = element-name-to-xml-type,
             xml-type-to-curl-type = xml-type-to-curl-type,
             curl-type-to-xml-type = curl-type-to-xml-type,
@@ -352,7 +352,8 @@
                     element-name = {XMLName "", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     curl-type = Detail,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -360,7 +361,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -393,7 +393,8 @@
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
                     curl-type = Envelope,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -401,7 +402,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -438,7 +438,8 @@
                     element-name = {XMLName "", "detail"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "detail"},
                     curl-type = Detail,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 }
             },
             {{Array-of String}
@@ -472,7 +473,8 @@
                     element-name = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Header"},
                     xml-type = {XMLName "http://schemas.xmlsoap.org/soap/envelope/", "Header"},
                     curl-type = Header,
-                    nillable? = true
+                    nillable? = true,
+                    marshaler-handled-element? = true
                 },
                 data-has-root-element? = true
             }
@@ -480,7 +482,6 @@
             type-mapper = type-mapper,
             element-name-to-xml-type-mapper = element-name-to-xml-type,
             xml-type-to-curl-type-mapper = xml-type-to-curl-type,
-            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
             xml-type-to-element-name-mapper = xml-type-to-element-name
         }
     }
@@ -529,7 +530,8 @@
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ErroneousElement"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ErroneousElement_ConfigurationFaultType_ConfigurationEndpointRoleArray"},
                         curl-type = {Array-of ConfigurationEndpointRole},
-                        nillable? = true
+                        nillable? = true,
+                        marshaler-handled-element? = true
                     }
                 },
                 element-names =
@@ -562,7 +564,8 @@
                         element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "ServiceUrl"},
                         xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configuration.xsd", "_ServiceUrl_ConfigurationType_ConfigurationEndpointTypeArray"},
                         curl-type = {Array-of ConfigurationEndpointType},
-                        nillable? = true
+                        nillable? = true,
+                        marshaler-handled-element? = true
                     }
                 },
                 element-names =
@@ -594,13 +597,10 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/services/Configurator"},
-        mtom-support-range:SOAPMTOMSupportRange =
-            SOAPMTOMSupportRange.none
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/Configurator"}
     }
     {construct-super service-location,
-        generated-using-version = "5",
-        mtom-support-range = mtom-support-range
+        generated-using-version = "6"
     }
   }
 }

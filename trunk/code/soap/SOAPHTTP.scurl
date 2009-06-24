@@ -289,9 +289,15 @@
     }
     {if soap-version == SOAPVersion.soap-1-2 then
         || NOTE: should this include other types at lower priorities?
-        || FIXME: when we have MTOM support, probably need to list that
-        || here too.
-        {new-headers.set "Accept", content-type}
+        def accept-type =
+            {if mtom-support-range == SOAPMTOMSupportRange.response or
+                mtom-support-range == SOAPMTOMSupportRange.both
+             then
+                content-type & "; q=0.9, multipart/releated" ||""
+             else
+                content-type
+            }
+        {new-headers.set "Accept", accept-type}
     }
 
     {return
@@ -1158,10 +1164,11 @@
 
   {method package {verify-mime-type bis:HttpByteInputStream}:void
     let mime-type:#String = bis.response-headers.mime-type
-    || FIXME: MTOM will require some multipart/related variants here.
     {switch mime-type 
      case "text/xml", "application/xml",
-        "application/soap+xml", "multipart/related" do
+        "application/soap+xml",
+        "multipart/related" || for MTOM support
+     do
         || expected
      else
         {bis.close}

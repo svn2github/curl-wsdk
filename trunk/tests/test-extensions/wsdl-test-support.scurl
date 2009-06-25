@@ -40,6 +40,19 @@
 {import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
 {import * from COM.CURL.WSDK.XML-DISPLAY}
 
+{define-class package HttpByteArrayInputStream
+  {inherits HttpByteInputStream, ByteArrayInputStream}
+  field private constant _headers:HttpResponseHeaders
+
+  {getter public {response-headers}:HttpResponseHeaders
+    {return self._headers}
+  }
+  {constructor package {default bytes:ByteArray, content-type:String}
+    set self._headers = {HttpResponseHeaders "HTTP/1.0 200\r\nContent-type: " & content-type & "\r\n" , bytes.size, 200, {url "http://www.example.com/"}}
+    {construct-super.ByteArrayInputStream bytes}
+  }
+}
+
 || ====================
 
 {define-class public GenerativeTestSuite {inherits TestSuite}
@@ -958,8 +971,10 @@
                                 else
                                    {build-xml {ByteArrayInputStream bytes}}
                                }
+    def bis = {HttpByteArrayInputStream bytes,
+        {if self.mtom? then "multipart/related" else "application/xml"}}
     || - response
-    def rets = {parse-response.invoke-n service, method-name, {ByteArrayInputStream bytes}}
+    def rets = {parse-response.invoke-n service, method-name, bis}
     || - result
     set self.response-value = (rets[0] asa Array)[0]
     

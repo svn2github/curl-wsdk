@@ -82,10 +82,15 @@
   }
   field public additional-request-headers:#{Array-of XDMElement}
 
-  || TODO: write doc
   {doc-next
     {purpose
-        not yet
+        Indicates what sort of MTOM support for SOAP 1.2 messages is
+        expected.
+    }
+    {notes
+        Defaults to {docref SOAPMTOMSupportRange}{ctext .response} to allow
+        accepting responses with MTOM, but it will not send them unless
+        this is set to {docref SOAPMTOMSupportRange}{ctext .both}
     }
   }
   field public mtom-support-range:SOAPMTOMSupportRange
@@ -111,7 +116,7 @@
                           additional-request-headers:#{Array-of XDMElement} = null,
                           response-headers-callback:#WSDLHTTPRPCPostClient.ResponseHeadersCallback = null,
                           mtom-support-range:SOAPMTOMSupportRange =
-                              SOAPMTOMSupportRange.none
+                              SOAPMTOMSupportRange.response
                       }
     
     {self.verify-service-version generated-using-version}

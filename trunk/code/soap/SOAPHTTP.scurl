@@ -478,8 +478,7 @@
     let context:#SOAPUnmarshalContext = null
     {if (mtom-support-range == SOAPMTOMSupportRange.both or
          mtom-support-range == SOAPMTOMSupportRange.response) and
-        not ((bis isa HttpByteInputStream) and
-             response-headers.mime-type != "multipart/related")
+        response-headers.mime-type == "multipart/related"
      then
         def mr = {SOAPMTOMMessageReader bis, response-headers}
         set bis = {mr.get-root-stream}

@@ -845,30 +845,6 @@
             }
         }
     }
-
-    || ==================== \\
-    || EXPERIMENTAL: transform in resolve-types
-    {platform-switch case "IGNORE" do
-    {if-non-null xml-type-name = self.xml-name then
-        || NOTE: check if groups need to be resolved
-
-        def repeating-elements =
-            {self.elements.filter-clone
-                {fn e => e.max-occurs != 1}}
-        
-        {if not repeating-elements.empty? then
-            
-            {for element key i in self.elements do
-                {if-non-null checked-element =
-                    {WSDLSchemaClassType.process-repeating-element
-                        element, xml-type-name}
-                 then
-                    set self.elements[i] =
-                        checked-element}
-            }
-        }}
-    }
-    || ==================== //
   }
 
   {getter package {ref-name}:String
@@ -885,7 +861,7 @@
             {WSDLSchema.elements-has-choice-or-array? self.elements}
          then
 ||--            {if self._choice? then
-||--                {output "&&& choice? ", xml-name}}
+||--                {output "@@@ dump-choice: ", xml-name}}
             {self.dump-choice out}
          else
             {self.dump-non-choice out}
@@ -1976,7 +1952,7 @@
   field public constant members:StringArray
   field private constant _ref-name:String
   field private constant curl-namer:WSDLCurlNamer
-  field private constant base-type:#WSDLSchemaType
+  field private base-type:#WSDLSchemaType
 
   {constructor public {default
                           xml-name:XMLName,
@@ -1998,6 +1974,24 @@
 
   {getter package {nullable?}:bool
     {return false}
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {type-switch self.base-type
+     case pt:WSDLSchemaPlaceholderType do
+        set self.base-type = {pt.resolve-type names}
+    }
+  }
+
+  {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
+    {if-non-null t = self.base-type then
+        let constant (element-name:#XMLName, found?:bool) =
+            {h.get-if-exists t}
+        {if not found? then
+            {h.set t, null}
+            {t.concat-sub-types h}
+        }
+    }
   }
 
   {method package {dump out:TextOutputStream}:void
@@ -2088,6 +2082,12 @@
                 
              elseif curl-type == "XMLName" then
                 || NOTE: namespace information has been lost
+                {format "\"%s\"", s}
+                
+             elseif (curl-type == "BigInt" or
+                     curl-type == "BigDecimal")
+             then
+                || NOTE: these have implicit constructors from String
                 {format "\"%s\"", s}
                 
              elseif (curl-type == "XMLSimpleValue" or

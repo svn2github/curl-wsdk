@@ -152,6 +152,14 @@
     set self.xml-name = xml-name
     set self.value = value
   }
+  {doc-next
+    {purpose
+        True if xml-name is unspecified.
+    }
+  }
+  {getter public {null?}:bool
+    {return (self.xml-name asa #XMLName) == null}
+  }
 }
 
 {doc-next

@@ -173,21 +173,21 @@
 
   {method package {resolve-groups}:void
 
-    || ==================== \\
-    || EXPERIMENTAL: resolve-groups
-    {platform-switch case "IGNORE" do
-    {for t in self.types do
-        {type-switch t
-         case t:WSDLSchemaClassType do
-            {WSDLSchema.splice-elements
-                t.elements}
-            {WSDLSchema.splice-attributes
-                t.attributes}
-        }
-    }
-    }
-    || NOTE: types were generated for top-level elements
-    || ==================== //
+    || NOTE: currently, parsing performs some transformations
+    || - (some) nested model groups combined during parsing
+    || - groups are flattened during code generation
+    || TODO: consider distinct phase for transformations
+    || - this code would prepare for those transformations
+||--    {for t in self.types do
+||--        {type-switch t
+||--         case t:WSDLSchemaClassType do
+||--            {WSDLSchema.splice-elements
+||--                t.elements}
+||--            {WSDLSchema.splice-attributes
+||--                t.attributes}
+||--        }
+||--    }
+||--    || NOTE: types were generated for top-level elements
 
   }
 
@@ -698,7 +698,7 @@
                 }
 
          elseif {self.schema-tag-match child.name, "group"} then
-            || NOTE: these should be the same (except for @base)
+            || NOTE: these are almost the same (except for @base)
             || - parse-complex-type
             || - parse-complex-type-complex-content-extension
             let (group:#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType) =
@@ -947,25 +947,19 @@
                       target-namespace:String,
                       element-form-qualified?:bool
                   }:(element:#WSDLSchemaElement, maybe-doc:#WSDLSchemaType)
-    def specified-xml-name = xml-name
+    
+    || TODO: should get (or derive) name from scope
     {if xml-name == null then
-        || TODO: should get (or derive) name from scope
         set xml-name = {XMLName "", "Anonymous_Choice"}}
     
+    || synthesize element(-type) name
     {if-non-null xml-name then
-        || EXPERIMENTAL: unmangle derived element type name
-        def buf = {StringBuf xml-name.local-name}
-        {if buf[0] == '_' then
-            {buf.remove 0}}
-        set buf[0] = {char-downcase buf[0]}
-        def local-name = {buf.to-String}
-        def choice-name = {XMLName target-namespace, local-name & "Value"}
         
-||--        || TODO: need inner element name ?
-||--        || - this should work, but causes name conflict
-||--        || -- maybe "steals" outer type name
-||--||--        def choice-name = xml-name 
-||--        def choice-name = {XMLName target-namespace, xml-name.local-name & "Value"}
+        || TODO: is 'Value' suffix necessary?
+        def local-name = xml-name.local-name
+        def choice-name = {XMLName target-namespace, local-name & "Value"}
+
+        || parse model-group elements
         def (sub-elements, maybe-doc) =
             {self.parse-sequence-element-list 
                 node,
@@ -977,27 +971,72 @@
         {if maybe-doc != null then
             {return null, maybe-doc}
         }
+        
+        def (min-occurs, max-occurs, nillable?) =
+            {self.parse-element-occurrance-attributes node}
 
+        || analyze subelements
+        || - single subelement: simplify to non-choice element
+        || - nested structure: fallback to NamedElements
+        || - nested choice: flatten
+        
+        || - nested structure: fallback to NamedElements
+        def sub-groups =
+            {sub-elements.filter-clone
+                {fn e => e isa WSDLSchemaElementGroup}}
+        {if not sub-groups.empty? then
+            {return
+                {WSDLSchemaElementGroup null, null, "choice", 
+                    sub-elements, node},
+                null}}
+
+        || - nested choice: flatten
+        let spliced?:bool = false
+        let i:int = 0
+        {while i < sub-elements.size do
+            def e = sub-elements[i]
+            {type-switch e.type
+             case t:WSDLSchemaChoiceType do
+                set spliced? = true
+                {sub-elements.remove i}
+                {sub-elements.splice t.elements, i}
+                || Don't increment i, we just added new stuff where it was.
+             else
+                {inc i}
+            }}
+
+        || - single subelement: simplify to non-choice element
+        {if sub-elements.size == 1 then
+            def e = sub-elements[0]
+            def e-min-occurs = min-occurs * e.min-occurs
+            def e-max-occurs =
+                {if max-occurs == -1 or e.max-occurs == -1 then -1
+                 else max-occurs * e.max-occurs}
+            def e-nillable? = nillable? or e.nillable?
+            set e.min-occurs = e-min-occurs
+            set e.max-occurs = e-max-occurs
+            set e.nillable? = e-nillable?
+            {return e, null}
+        }
+
+        || construct choice element-type and element
         || NOTE: local element names may not be unique
         def element-name = 
             {self.get-unique-name choice-name,
                 prefix = WSDLSchema.type-prefix,
                 target-namespace = target-namespace}
-        || construct choice type and element
-        def type =
+        def element-type =
             {WSDLSchemaChoiceType
                 element-name,
-||--                choice-name,
                 sub-elements,
                 self.curl-namer}
         {self.names.set-name
             element-name.namespace, WSDLSchema.type-prefix,
-            element-name.local-name, type}
-        def (min-occurs, max-occurs, nillable?) =
-            {self.parse-element-occurrance-attributes node}
+            element-name.local-name, element-type}
         def element =
             {WSDLSchemaElement
-                element-name, type,
+                element-name,
+                element-type,
                 min-occurs = min-occurs,
                 max-occurs = max-occurs,
                 nillable? = nillable?,
@@ -1249,9 +1288,7 @@
     
     def choice? = {self.schema-tag-match node.name, "choice"}
     
-    || ====================\\
-    || EXPERIMENTAL: outermost choice transformation
-    {platform-switch case "IGNORE" do
+    || outermost choice transformation
     {if choice? then
         def (element, maybe-doc) =
             {self.parse-choice-elements
@@ -1262,6 +1299,13 @@
         }
         || the choice element
         {if-non-null element then
+
+            || treat repeating choice element as array
+            {if element.max-occurs == -1 or element.max-occurs > 1 then
+                {return
+                    {WSDLSchemaArrayType xml-name, element,
+                        curl-namer = self.curl-namer}}
+            }
             {return
                 {WSDLSchemaClassType xml-name, 
                     {{Array-of WSDLSchemaElement} element},
@@ -1270,8 +1314,6 @@
                     parent-class = parent-class}}
         }
     }
-    }
-    || ====================//
    
     def (elements, maybe-doc) =
         {self.parse-sequence-element-list
@@ -1285,12 +1327,13 @@
     || check special case: single repeating element
     {if allow-array-type? and
         not choice? and
-        elements.size == 1 and
-        || NOTE: does not resolve group references
-        not elements[0] isa WSDLSchemaElementGroup
+        elements.size == 1
      then
         def element = elements[0]
-        {if element.max-occurs == -1 or element.max-occurs > 1 then
+        {if element.max-occurs == -1 or element.max-occurs > 1 and
+            || NOTE: does not resolve group references
+            not elements[0] isa WSDLSchemaElementGroup
+         then
             || treat as Array
             {return
                 {WSDLSchemaArrayType xml-name, element,
@@ -1440,44 +1483,40 @@
                 }
             }
 
-            || ====================\\
-            || EXPERIMENTAL: unified model-group processing
-            || the new way (as in parse-complex-type)
+            || NOTE: unified model-group processing
+            || - (as in parse-complex-type)
             || - recognizes repeating elements
-            || - recognizes choice particles (sort of)
-            {platform-switch case "IGNORE" do
+            || - recognizes choice particles
             set type =
                 {self.parse-complex-type-sequence
                     child, xml-name, target-namespace, element-form-qualified?,
                     allow-array-type? = not has-attributes? and not abstract?,
                     parent-class = {self.get-type-from-node-string node, base}
                 }
-                || ====================
-                else
+            || ====================\\
             || the old way
-            let constant (elements:{Array-of WSDLSchemaElement},
-                          maybe-doc:#WSDLSchemaType) =
-                {self.parse-sequence-element-list
-                    child, xml-name, target-namespace, element-form-qualified?
-                }
-            set type = 
-                {if-non-null maybe-doc then
-                    maybe-doc
-                 else
-                    {WSDLSchemaClassType
-                        xml-name,
-                        elements,
-                        self.curl-namer,
-                        parent-class =
-                            {self.get-type-from-node-string node, base},
-                        choice? = {self.schema-tag-match child.name, "choice"}
-                    }
-                }
-            }
+||--            let constant (elements:{Array-of WSDLSchemaElement},
+||--                          maybe-doc:#WSDLSchemaType) =
+||--                {self.parse-sequence-element-list
+||--                    child, xml-name, target-namespace, element-form-qualified?
+||--                }
+||--            set type = 
+||--                {if-non-null maybe-doc then
+||--                    maybe-doc
+||--                 else
+||--                    {WSDLSchemaClassType
+||--                        xml-name,
+||--                        elements,
+||--                        self.curl-namer,
+||--                        parent-class =
+||--                            {self.get-type-from-node-string node, base},
+||--                        choice? = {self.schema-tag-match child.name, "choice"}
+||--                    }
+||--                }
             || ====================//
-
+ 
          elseif {self.schema-tag-match child.name, "group"} then
-            || NOTE: these should be the same (except for @base)
+            || NOTE: these are almost the same (except for @base)
             || - parse-complex-type
             || - parse-complex-type-complex-content-extension
             let (group:#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType) =
@@ -2391,6 +2430,7 @@
     }
   }
 
+  || NOTE: not currently used - see resolve-groups
   {define-proc package {splice-elements
                            elements:{Array-of WSDLSchemaElement}
                        }:bool
@@ -2413,6 +2453,7 @@
     {return spliced?}
   }
 
+  || NOTE: not currently used - see resolve-groups
   {define-proc package {splice-attributes
                            attributes:{Array-of WSDLSchemaAttribute}
                        }:{Array-of WSDLSchemaAttribute}

@@ -608,6 +608,13 @@
             let constant type:SOAPObjectType = self.field-types[index]
             let val:any = {get-public-property t, name}
             let val?:bool = val != null
+            || deal with uninitialized XMLElementValue
+            {type-switch val
+             case v:XMLElementValue do
+                {if v.null? then
+                    set val = null
+                    set val? = false
+                }}
             || deal with nullable primitives
             {if (type.nillable? or {self.optional-element? {non-null self.field-names[index]}})
                 || NOTE: curl-type has null-variant if its nullable

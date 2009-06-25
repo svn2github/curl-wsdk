@@ -274,10 +274,17 @@
                             {if-non-null prefix = {xml-namespace-context.get-prefix ns}
                              then {format "%s:%s", prefix, name}
                              else {format "`%s`:%s", ns, name}}}
-                     else                        
-                        || Url, XMLSimpleType : print representation is OK
-                        {String value}}
-                }
+                     else
+                        {switch value-type.name
+                         case "BigInt", "BigDecimal" do
+                            || print representation is OK (but not implicit)
+                            def t = value-type asa ClassType
+                            def to-String = {non-null {t.get-method "to-String"}}
+                            {to-String.invoke value asa Object}
+                         else
+                            || Url, XMLSimpleType : print representation is OK
+                            {String value}}
+                        }}
             {(type.curl-type asa EnumType).new-from-value allowable-value}
          else
             || can't happen...

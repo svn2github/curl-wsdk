@@ -57,7 +57,9 @@
         label = "Stop Coverage",
         {on Action do
             {coverage-stop}
-            {coverage-view {coverage-results}}
+            def data = {coverage-results}
+            {CoverageAdjustment.adjust-data data}
+            {coverage-view data}
         }}
 } 
 || ===== //

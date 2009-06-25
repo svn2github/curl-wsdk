@@ -2431,6 +2431,7 @@
   }
 
   || NOTE: not currently used - see resolve-groups
+  || START UNCOVERED unused
   {define-proc package {splice-elements
                            elements:{Array-of WSDLSchemaElement}
                        }:bool
@@ -2474,6 +2475,7 @@
     }
     {return attributes}
   }
+  || END UNCOVERED unused
 
   {define-proc package {flatten-elements
                            elements:{Array-of WSDLSchemaElement}
@@ -2547,6 +2549,7 @@
     
   || debugging support
   || --------------------
+  || START UNCOVERED debug
   {method package {dump-types
                       show-internal?:bool = false
                   }:void
@@ -2613,6 +2616,7 @@
                     {value m.xml-name.namespace}`{value m.xml-name.local-name}}}}
     {output "MEMBERS === //\n"}
   }
+  || END UNCOVERED debug
 }
 
 {define-class public open WSDLSchemaImport {inherits WSDLDocumentedNode}

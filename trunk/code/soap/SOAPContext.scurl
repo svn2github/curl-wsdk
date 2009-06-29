@@ -265,6 +265,8 @@
             SOAPMarshalContext.soap-1-1-reference-attribute-name
          case SOAPVersion.soap-1-2 do
             SOAPMarshalContext.soap-1-2-reference-attribute-name
+         else
+            {unreachable}
         }
     }
   }
@@ -282,6 +284,8 @@
             SOAPMarshalContext.soap-1-1-id-attribute-name
          case SOAPVersion.soap-1-2 do
             SOAPMarshalContext.soap-1-2-id-attribute-name
+         else
+            {unreachable}
         }
     }
   }
@@ -437,6 +441,8 @@
             "#" & prefix
          case SOAPVersion.soap-1-2 do
             prefix
+         else
+            {unreachable}
         }
          
     {construct-super
@@ -914,6 +920,8 @@
             SOAPMarshalContext.soap-1-1-reference-attribute-name
          case SOAPVersion.soap-1-2 do
             SOAPMarshalContext.soap-1-2-reference-attribute-name
+        else
+            {unreachable}
         }
     }
   }
@@ -937,6 +945,8 @@
             SOAPMarshalContext.soap-1-1-id-attribute-name
          case SOAPVersion.soap-1-2 do
             SOAPMarshalContext.soap-1-2-id-attribute-name
+        else
+            {unreachable}
         }
     }
   }

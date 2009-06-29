@@ -61,6 +61,8 @@
             SOAPMessageWriter.soap-1-1-envelope-uri
          case SOAPVersion.soap-1-2 do
             SOAPMessageWriter.soap-1-2-envelope-uri
+         else
+            {unreachable}
         }
     }
   }
@@ -407,6 +409,8 @@
                     SOAPMessageWriter.
                         soap-1-2-encoding-style-attribute-default-value
                 }
+             else
+                {unreachable}
             },
             {new XMLAttribute,
                 {XMLName.unchecked "", "xmlns:xsi"},
@@ -640,6 +644,8 @@
                     SOAPMessageWriter.soap-1-1-encoding-style-attribute-default-value
                  case SOAPVersion.soap-1-2 do
                     SOAPMessageWriter.soap-1-2-encoding-style-attribute-default-value
+                 else
+                    {unreachable}
                 }
             }
         }
@@ -921,6 +927,8 @@
                     "actor"
                  case SOAPVersion.soap-1-2 do
                     "role"
+                 else
+                    {unreachable}
                 }
             },
             header-role

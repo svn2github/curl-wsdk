@@ -16,7 +16,7 @@
 
 {value
     def name = "COM.CURL.WSDK"
-    def version = "1.1"
+    def version = "2.0"
     def dirname = name & "." & version
     
     {DeploySpecs  
@@ -54,6 +54,13 @@
             "deploy", 
             "src/lib/CDU"
         },
+        || incorporate CURL-UTIL  
+        || --------------------
+        {DeploySpec
+            "lib/CURL-UTIL/project.cprj",
+            "deploy", 
+            "src/lib/CURL-UTIL"
+        },
         || -- build scripts (copy)
         {DeployAction
             caption = {lmessage copy 'build' scripts},
@@ -65,9 +72,11 @@
                     error-if-exists? = false}
                 def files =
                     {StringArray
+                        "deploy-specs.scurl",
                         "deploy.curl",
                         "deploy-batch.curl",
-                        "deploy-specs.scurl"}
+                        "deploy-batch.xcurl",
+                        "become-v6.xcurl"}
                 {for file in files do
                     {copy 
                         {source-root.concat "build/" & file},

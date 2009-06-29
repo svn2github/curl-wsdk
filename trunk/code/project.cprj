@@ -26,13 +26,13 @@
         {package-transform "COM.CURL.WSDK.XML-ELABORATION\u0000package\u0000xdm-elaboration/load.scurl", pcurl? = true},
         {resource-transform "resources\u0000directory\u0000resources", copy? = true},
         {package-transform "COM.CURL.WSDK.XML-QUERY-FUNCTIONS\u0000package\u0000xdm-query/function-defs.scurl", pcurl? = true},
-        {resource-transform "COM.CURL.UTIL\u0000manifest\u0000", use-path? = true}
+        {resource-transform "COM.CURL.UTIL\u0000manifest\u0000", use-path? = false}
     },
     {target
         name = "deploy-docs",
         target-url-name = "file:///C:/curl/WSDK_deploy-docs",
         {package-transform "COM.CURL.WSDK.MULTIPART-SUPPORT\u0000package\u0000multipart-support/load.scurl", pcurl? = true, generate-doc? = true},
-        {assembly-transform "COM.CURL.UTIL", use-path? = true},
+        {assembly-transform "COM.CURL.UTIL", relocate-path = "../COM.CURL.UTIL.1.0/manifest.mcurl"},
         {resource-transform "docs\u0000directory\u0000docs", copy? = true},
         {package-transform "COM.CURL.WSDK.XML-DOCUMENT-MODEL\u0000package\u0000xdm/load.scurl", pcurl? = true, generate-doc? = true},
         {package-transform "COM.CURL.WSDK.RECORDSET-FOR\u0000package\u0000util/recordset-for/load.scurl", pcurl? = true, generate-doc? = true},

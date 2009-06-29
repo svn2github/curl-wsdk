@@ -98,7 +98,7 @@
         || DOCS distribution
         || ====================
         
-        || documentation {pcurl + docs)
+        || documentation (pcurl + docs)
         || -------------------- 
         {DeploySpec 
             "code/project.cprj",
@@ -106,7 +106,15 @@
             "docs-install/" & dirname
         },
         || dguide index
-        || -------------------- 
+        || --------------------
+        || NOTE: this fails unless every delegate-to resolves
+        || -- First, temporarily incorporate CURL-UTIL lib
+        {DeploySpec
+            "lib/CURL-UTIL/project.cprj",
+            "deploy", 
+            "docs-install/COM.CURL.UTIL.1.0"
+        },
+        || -- Then, generate the index
         {DeployAction
             caption = {lmessage Generate DGuide Index},
             {proc {self:DeployAction,
@@ -117,6 +125,17 @@
                         "docs-install/" & dirname 
                         & "/docs/en/dguide/_contents.scurl"}
                 {generate-dguide-index contents-loc.parent}
+            }},
+        || -- Finally, remove CURL-UTIL lib
+        {DeployAction
+            caption = {lmessage Remove temporary CURL-UTIL},
+            {proc {self:DeployAction,
+                   source-root:Url,
+                   target-root:Url}:void
+                def loc =
+                    {target-root.concat
+                        "docs-install/COM.CURL.UTIL.1.0"}
+                {delete recurse? = true, loc}
             }},
 
         || final steps

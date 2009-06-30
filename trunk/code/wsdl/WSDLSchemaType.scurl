@@ -83,7 +83,40 @@
     }
   }
 
+  || used to obtain reachable types for code generation
   {method package {concat-sub-types a:{HashTable-of WSDLSchemaType, #XMLName}}:void
+  }
+
+  || visit one type
+  {method package {concat-sub-type
+                      type:WSDLSchemaType,
+                      xml-name:#XMLName = null,
+                      h:{HashTable-of WSDLSchemaType, #XMLName}
+                  }:void
+    def (name, found?) = {h.get-if-exists type}
+    {if not found? then
+        || note type and continue
+        set h[type] = xml-name
+        {type.concat-sub-types h}
+     else
+        || consistent order
+        def replace? = {WSDLSchemaType.type-name-less? xml-name, name}
+        {if replace? then
+            set h[type] = xml-name
+        }
+    }
+  }
+
+  {define-proc package {type-name-less?
+                           x:#XMLName,
+                           y:#XMLName
+                       }:bool
+    {return
+        {if-non-null x then
+            {if-non-null y then
+                {x.compare y} < 0
+             else false}
+         else false}}
   }
 
   {define-proc public {xml-name-to-curl-code xml-name:XMLName}:String
@@ -609,7 +642,7 @@
   }
 
   {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
-    {self.type.concat-sub-types h}
+    {self.concat-sub-type self.type, h}
   }
 
   {getter package {multiple-reference}:SOAPTypeMultipleReference
@@ -1065,47 +1098,18 @@
 
   {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
     {if-non-null pc = self.parent-class then
-        let constant (element-name:#XMLName, found?:bool) =
-            {h.get-if-exists pc}
-        {if not found? then
-            {h.set pc, null}
-            {pc.concat-sub-types h}
-        }
+        {self.concat-sub-type pc, h}
     }
     {if-non-null t = self.content-type then
-        let constant (element-name:#XMLName, found?:bool) =
-            {h.get-if-exists t}
-        {if not found? then
-            {h.set t, null}
-            {t.concat-sub-types h}
-        }
+        {self.concat-sub-type t, h}
     }
-    || resolve possible group and use that as the element list to work with
-    let fe:{Array-of WSDLSchemaElement} =
-        {WSDLSchema.flatten-elements self.elements}
+    def fe = {WSDLSchema.flatten-elements self.elements}
     {for e in fe do
-        || add our element types, but only if there is not already
-        || an entry for them which has an element name.
-        let constant (element-name:#XMLName, found?:bool) =
-            {h.get-if-exists e.type}
-        {if not found? or element-name == null then
-            {h.set e.type, e.xml-name}
-            {if not found? then
-                {e.type.concat-sub-types h}
-            }
-        }
+        {self.concat-sub-type e.type, h, xml-name = e.xml-name}
     }
-    let fa:{Array-of WSDLSchemaAttribute} =
-        {WSDLSchema.flatten-attributes self.attributes} 
+    def fa = {WSDLSchema.flatten-attributes self.attributes} 
     {for a in fa do
-        let constant (name:#XMLName, found?:bool) =
-            {h.get-if-exists a.type}
-        {if not found? or name == null then
-            {h.set a.type, a.xml-name}
-            {if not found? then
-                {a.type.concat-sub-types h}
-            }
-        }
+        {self.concat-sub-type a.type, h, xml-name = a.xml-name}
     }
   }
 
@@ -1760,16 +1764,8 @@
   {method package {concat-sub-types
                       h:{HashTable-of WSDLSchemaType, #XMLName}
                   }:void
-    || add our element type, but only if there is not already
-    || an entry for them (which might have an element name)
-    let constant (element-name:#XMLName, found?:bool) =
-        {h.get-if-exists self.element.type}
-    {if not found? or element-name == null then
-        {h.set self.element.type, self.element.xml-name}
-        {if not found? then
-            {self.element.type.concat-sub-types h}
-        }
-    }
+    def e = self.element
+    {self.concat-sub-type e.type, h, xml-name = e.xml-name}
   }
 
   {method package {register-type-code element-name:#XMLName = null}:#String
@@ -1985,12 +1981,7 @@
 
   {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
     {if-non-null t = self.base-type then
-        let constant (element-name:#XMLName, found?:bool) =
-            {h.get-if-exists t}
-        {if not found? then
-            {h.set t, null}
-            {t.concat-sub-types h}
-        }
+        {self.concat-sub-type t, h}
     }
   }
 
@@ -2328,21 +2319,11 @@
   }
 
   {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
-    {for t in self.types do
-        let constant (element-name:#XMLName, found?:bool) =
-            {h.get-if-exists t}
-        {if not found? then
-            {h.set t, null}
-            {t.concat-sub-types h}
-        }
+    {for t in self.types do        
+        {self.concat-sub-type t, h}
     }
-    {if-non-null at = self.alias-type then
-        let constant (element-name:#XMLName, found?:bool) =
-            {h.get-if-exists at}
-        {if not found? then
-            {h.set at, null}
-            {at.concat-sub-types h}
-        }
+    {if-non-null at = self.alias-type then        
+        {self.concat-sub-type at, h}
     }
   }
 
@@ -2484,15 +2465,8 @@
   
   || used to obtain reachable types for code generation
   {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
-    let t:WSDLSchemaType = self.item-type
-    let constant (name:#XMLName, found?:bool) =
-        {h.get-if-exists t}
-    {if not found? or name == null then
-        {h.set t, t.xml-name}
-        {if not found? then
-            {t.concat-sub-types h}
-        }
-    }
+    let t:WSDLSchemaType = self.item-type        
+    {self.concat-sub-type t, h}
   }  
 
 }
@@ -2678,15 +2652,9 @@
   
   || used to obtain reachable types for code generation
   {method package {concat-sub-types h:{HashTable-of WSDLSchemaType, #XMLName}}:void
-    {for e in self.elements do
-        def t = e.type
-        def (name, found?) = {h.get-if-exists t}
-        {if not found? or name == null then
-            set h[t] = t.xml-name
-            {if not found? then
-                {t.concat-sub-types h}
-            }
-        }
+    {for e in self.elements do 
+        def t = e.type               
+        {self.concat-sub-type t, h, xml-name = t.xml-name}
     }
   }  
 

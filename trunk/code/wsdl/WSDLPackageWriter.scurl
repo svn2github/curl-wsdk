@@ -160,8 +160,10 @@
     || NOTE: register types before creating WSDL parser
     || - which processes registrations on construction
     {if directives.use-bignum-types? then
-        {register-bignum-types}}
-    
+        {register-bignum-types}
+     else
+        {unregister-bignum-types}
+    }    
     set self.wsdl =
         {WSDL directives.source-url,
             curlify-names? = directives.curlify-names?}
@@ -220,6 +222,7 @@
     || generate service class(es)
     || --------------------
     def wlocs = {UrlArray}
+    || collect reachable types
     def all-types = {{Set-of WSDLSchemaType}}
     {for port key service-class-name in {self.wsdl-writer.service-classes} do
         def wfile = service-class-name & ".scurl"
@@ -244,16 +247,17 @@
             {fn t =>
                 not
                 (t isa WSDLSchemaArrayType or
+                 || TODO: WSDLSchemaChoiceType
                  || TODO: remove when union loses superfluous alias
                  t isa WSDLSchemaUnionType)
             }}
-    || ordered types
-    def types = {self.sorted-types needed-types}
     || additional packages
     def all-packages = {{Set-of String}}
-    {for type in types do
+    {for type in all-types do
         {if-non-null package = type.package-name then
             {all-packages.insert package}}}
+    || ordered types
+    def types = {self.sorted-types needed-types}
     || process types by namespace
     def plocs = {UrlArray}
     {for n in ns do
@@ -722,6 +726,51 @@
 }
 || register BIGNUM-WSDK contributions
 || ------------------------------
+{define-proc public {register-bignum-types
+                        manifest:ComponentManifest = {get-process-manifest},
+                        error-if-unavailable?:bool = true
+                    }:void
+    {process-bignum-types "register-simple-types",
+        manifest = manifest,
+        error-if-unavailable? = error-if-unavailable?}
+}
+{define-proc public {unregister-bignum-types
+                        manifest:ComponentManifest = {get-process-manifest},
+                        error-if-unavailable?:bool = true
+                    }:void
+    {process-bignum-types "unregister-simple-types",
+        manifest = manifest,
+        error-if-unavailable? = error-if-unavailable?}
+}
+{define-proc package {process-bignum-types
+                         function:String,
+                         manifest:ComponentManifest = {get-process-manifest},
+                         error-if-unavailable?:bool = true
+                     }:void
+    {if {package-available? "COM.CURL.UTIL.BIGNUM",
+            manifest = manifest}
+     then
+        def f =
+            {dynamic-lookup
+                {make-package-selector "COM.CURL.WSDK.BIGNUM-WSDK"},
+                function,
+                manifest = manifest
+            } asa {proc-type {}:void}
+        {f}
+     elseif error-if-unavailable? then
+        {wsdl-exception
+            {hlmessage
+                Unable to import COM.CURL.UTIL.BIGNUM
+            }}        
+    }
+}
+{define-proc package {package-available?
+                         package-name:String,
+                         manifest:ComponentManifest = {get-process-manifest}
+                     }:bool
+    def pkg = {maybe-import-package package-name, manifest = manifest}
+    {return pkg != null}
+}
 {define-proc package {maybe-import-package
                          package-name:String,
                          manifest:ComponentManifest = {get-process-manifest}
@@ -733,33 +782,5 @@
                 manifest = manifest}
          catch e:ComponentLocationException do
             null}
-    }
-}
-{define-proc package {package-available?
-                         package-name:String,
-                         manifest:ComponentManifest = {get-process-manifest}
-                     }:bool
-    def pkg = {maybe-import-package package-name, manifest = manifest}
-    {return pkg != null}
-}
-{define-proc public {register-bignum-types
-                        manifest:ComponentManifest = {get-process-manifest},
-                        error-if-unavailable?:bool = true
-                    }:void
-    {if {package-available? "COM.CURL.UTIL.BIGNUM",
-            manifest = manifest}
-     then
-        def register-simple-types =
-            {dynamic-lookup
-                {make-package-selector "COM.CURL.WSDK.BIGNUM-WSDK"},
-                "register-simple-types",
-                manifest = manifest
-            } asa {proc-type {}:void}
-        {register-simple-types}
-     elseif error-if-unavailable? then
-        {wsdl-exception
-            {hlmessage
-                Unable to import COM.CURL.UTIL.BIGNUM
-            }}        
     }
 }

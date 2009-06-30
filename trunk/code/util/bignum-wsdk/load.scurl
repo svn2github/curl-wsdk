@@ -44,7 +44,21 @@
 || registers contributions for WSDL extension point
 || --------------------
 {define-proc public {register-simple-types}:void
-    {WSDLSchema.register-simple-type
+    {process-simple-types
+        {fn type =>
+            {WSDLSchema.register-simple-type type}}}
+}
+|| unregisters contributions for WSDL extension point
+|| --------------------
+{define-proc public {unregister-simple-types}:void
+    {process-simple-types
+        {fn type =>
+            {WSDLSchema.unregister-simple-type type}}}
+}
+{define-proc {process-simple-types
+                 process-simple-type:{proc-type {simple-type:XMLSimpleType}:void}
+             }:void
+    {process-simple-type
         {XMLSimpleType 
             {XMLName "http://www.w3.org/2001/XMLSchema", "decimal"},
             domain =  BigDecimalDomain.standard
@@ -58,7 +72,7 @@
             {XMLName "http://www.w3.org/2001/XMLSchema", "positiveInteger"}
         }
     {for xsd-type in xsd-integer-types do
-        {WSDLSchema.register-simple-type 
+        {process-simple-type 
             {XMLSimpleType xsd-type,
                 domain = BigIntDomain.standard
             }}}

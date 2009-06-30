@@ -85,25 +85,46 @@
 
   || extension point
   || --------------------
-  || TODO: formalize and document
-  || TODO: automated discovery
+  || TODO: document
   {define-proc public {register-simple-type
                           xml-simple-type:XMLSimpleType,
                           error-if-exists?:bool = false
                       }:void
     def simple-type = xml-simple-type asa WSDLSchemaSimpleType
-    {if error-if-exists? then
-        def index =
-            {WSDLSchema.registered-simple-types.find simple-type,
-                equality-proc =
-                    {fn x, y => x.xml-name == y.xml-name}}
-        {if index >= 0 then
+    def index =
+        {WSDLSchema.registered-simple-types.find simple-type,
+            equality-proc =
+                {fn x, y => x.xml-name == y.xml-name}}
+    {if index >= 0 then
+        {if error-if-exists? then
             {wsdl-exception
                 {message
-                    Extension type {value simple-type.xml-name} already registered.}}}}
-        
+                    Extension type {value simple-type.xml-name} already registered.}}
+         else       
+            {WSDLSchema.registered-simple-types.remove 
+                index}
+        }}
     {WSDLSchema.registered-simple-types.append
         simple-type}
+  }
+  {define-proc public {unregister-simple-type
+                          xml-simple-type:XMLSimpleType,
+                          error-if-missing?:bool = false
+                      }:void
+    def simple-type = xml-simple-type asa WSDLSchemaSimpleType
+    def index =
+        {WSDLSchema.registered-simple-types.find simple-type,
+            equality-proc =
+                {fn x, y => x.xml-name == y.xml-name}}
+    {if index < 0 then
+        {if error-if-missing? then
+            {wsdl-exception
+                {message
+                    Extension type {value simple-type.xml-name} not already registered.}}}
+     else        
+        {WSDLSchema.registered-simple-types.remove 
+            index}
+    }
   }
   def package registered-simple-types =
       {{Array-of WSDLSchemaSimpleType}}

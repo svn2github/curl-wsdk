@@ -582,13 +582,11 @@
     let constant package-herald-template:String = 
         {format 
             "\{curl %s package\}\n\{package %%s,\n"
-            & "    \{compiler-directives careful? = true\},\n"
-            & "    wsdl = \"%%s\"\}\n\n",
+            & "    \{compiler-directives careful? = true\}\}\n\n",
             self.directives.curl-versions}
    {format out = out, 
         package-herald-template,
-        package-name,
-        self.directives.source-url}
+        package-name}
   }
   || helper methods
   || --------------------

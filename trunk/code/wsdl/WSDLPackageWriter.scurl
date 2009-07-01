@@ -21,6 +21,7 @@
   field public curlify-names?:bool
   field public include-async-methods?:bool
   field public use-bignum-types?:bool
+  field public service-class-mixin:#String
   field public preserve-existing-files?:bool
   field public package-prefix:#String
   field public package-suffix:#String
@@ -33,6 +34,7 @@
                           curlify-names?:bool = false,
                           include-async-methods?:bool = false,
                           use-bignum-types?:bool = false,
+                          service-class-mixin:#String = null,
                           preserve-existing-files?:bool = false,
                           package-prefix:#String = null,
                           package-suffix:#String = null,
@@ -50,6 +52,7 @@
     set self.curlify-names? = curlify-names?
     set self.include-async-methods? = include-async-methods?
     set self.use-bignum-types? = use-bignum-types?
+    set self.service-class-mixin = service-class-mixin
     set self.preserve-existing-files? = preserve-existing-files?
     set self.package-prefix = package-prefix
     set self.package-suffix = package-suffix
@@ -71,6 +74,7 @@
                       curlify-names?:bool = true,
                       include-async-methods?:bool = true,
                       use-bignum-types?:bool = false,
+                      service-class-mixin:#String = null,
                       preserve-existing-files?:bool = false,
                       package-prefix:#String =  "COM.CURL.WSDL",
                       package-suffix:#String = null,
@@ -83,9 +87,11 @@
             curlify-names? = curlify-names?,
             include-async-methods? = include-async-methods?,
             use-bignum-types? = use-bignum-types?,
+            service-class-mixin = service-class-mixin,
             preserve-existing-files? = preserve-existing-files?,
             package-prefix = package-prefix,
-            package-suffix = package-suffix
+            package-suffix = package-suffix,
+            {splice ...}
         }}
   }
   {method public open {clone-for
@@ -94,7 +100,8 @@
                           curl-versions:String = self.curl-versions,
                           curlify-names?:bool = self.curlify-names?,
                           include-async-methods?:bool = self.include-async-methods?,
-                          use-bignum-types?:bool = self.use-bignum-types?,                          
+                          use-bignum-types?:bool = self.use-bignum-types?,  
+                          service-class-mixin:#String = self.service-class-mixin,                        
                           preserve-existing-files?:bool = self.preserve-existing-files?,
                           package-prefix:#String = self.package-prefix,
                           package-suffix:#String = self.package-suffix,
@@ -108,6 +115,7 @@
             include-async-methods? = include-async-methods?,                          
             preserve-existing-files? = preserve-existing-files?,
             use-bignum-types? = use-bignum-types?,
+            service-class-mixin = service-class-mixin,
             package-prefix = package-prefix,
             package-suffix = package-suffix,
             {splice self.namespace-specs},
@@ -218,6 +226,20 @@
     || obtain info
     def ns = self.defined-namespaces
     def service-class-names = self.service-class-names
+
+    || user supplied base class
+    def (service-class-mixin-name, service-class-mixin-package) =
+        {if-non-null service-class-mixin = self.directives.service-class-mixin then
+            def i = {service-class-mixin.find '.', search-direction = SearchDirection.backward}
+            {if i >= 0 then
+                def name = {service-class-mixin.tail i + 1}
+                def package = {service-class-mixin.substr 0, i}
+                || package-qualified classname
+                (name, {if package.empty? then null else package})
+             else || just classname
+                (service-class-mixin, null)}
+         else || not specified
+            (null, null)}
     
     || generate service class(es)
     || --------------------
@@ -234,6 +256,7 @@
             {self.write-preamble out}
             {self.wsdl-writer.dump-service-class
                 out, service-class-name, port,
+                service-class-mixin-name = service-class-mixin-name,
                 do-async? = self.directives.include-async-methods?,
                 all-types = all-types}
         }}
@@ -296,15 +319,18 @@
          do
             {self.write-preamble out}
             || NOTE: package declaration not enabled
+||--            {format out = out,
+||--                |"||| Generated for namespace: '%s'"| & "\n\n" &
+||--                |"|IGNORE# "| & "\n" &
+||--                |"{curl 7.0 package}"| & "\n" &
+||--                |"{package %s,"| & "\n" &
+||--                |"    {compiler-directives careful? = true}}"| & "\n" &
+||--                |"{import * from COM.CURL.WSDK.SOAP}"| & "\n" &
+||--                |"#IGNORE|"| & "\n\n",
+||--                n, P}
             {format out = out,
-                |"||| Generated for namespace: '%s'"| & "\n\n" &
-                |"|IGNORE# "| & "\n" &
-                |"{curl 7.0 package}"| & "\n" &
-                |"{package %s,"| & "\n" &
-                |"    {compiler-directives careful? = true}}"| & "\n" &
-                |"{import * from COM.CURL.WSDK.SOAP}"| & "\n" &
-                |"#IGNORE|"| & "\n\n",
-                n, P}
+                |"||| Generated for namespace: '%s'"| & "\n\n",
+                n}
             || imported namespaces
             def imports = {StringArray}
             {for pair in self.schema.namespace-imports do
@@ -318,10 +344,13 @@
                 def spec = {self.namespace-spec-for import}
                 def P = spec.short-name
                 || NOTE: package declaration not enabled
+||--                {format out = out,
+||--                    |"|| namespace: '%s'"| & "\n" &
+||--                    |"|IGNORE#{import * from %s}#IGNORE|"| & "\n",
+||--                    import, P}
                 {format out = out,
-                    |"|| namespace: '%s'"| & "\n" &
-                    |"|IGNORE#{import * from %s}#IGNORE|"| & "\n",
-                    import, P}}
+                    |"|| namespace: '%s'"| & "\n",
+                    import}}
             {format out = out, "\n"}            
             || process by type
             let nt:int = 0
@@ -372,6 +401,14 @@
             package-name,
             dir,
             locs}
+        || import for mixin
+        {if-non-null service-class-mixin-package then
+            {format out = out,
+                |"{import %s from %s}"|,
+                service-class-mixin-name,
+                service-class-mixin-package}
+            {out.write-one '\n'}}
+        
         || additional imports
         def sorted-packages = {StringArray}
         {for package in all-packages do
@@ -503,6 +540,8 @@
         defaults.include-async-methods?}
     {fmt-arg "use-bignum-types?", spec.use-bignum-types?, 
         defaults.use-bignum-types?}
+    {fmt-arg "service-class-mixin", spec.service-class-mixin, 
+        defaults.service-class-mixin}
     {fmt-arg "preserve-existing-files?", spec.preserve-existing-files?, 
         defaults.preserve-existing-files?}
     {fmt-arg "package-prefix", spec.package-prefix, defaults.package-prefix}

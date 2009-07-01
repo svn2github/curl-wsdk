@@ -44,6 +44,9 @@
         {parameter curlify-names?,
             indicates whether to use curl naming conventions
             for identifiers in generated code.}
+        {parameter include-async-methods?,
+            indicates whether asynchronous service methods will ge generated,
+            in addition to the usual synchronous methods.}
         {parameter use-bignum-types?,
             indicates whether to use arbitrary precision numbers
             for schema types requiring them.
@@ -51,9 +54,11 @@
                 {item {docref BigDecimal} {em-dash} {ctext xs:decimal}}
                 {item {docref BigInt} {em-dash} {ctext xs:integer} and variants}
             }}
-        {parameter include-async-methods?,
-            indicates whether asynchronous service methods will ge generated,
-            in addition to the usual synchronous methods.}
+        {parameter service-class-mixin,
+            specifies a class to be inherited by the generated service class, or null.
+            The class name can be qualified with a package name, e.g.
+            {ctext "[{metavar PACKAGE-NAME}.]{metavar ClassName}"}
+        }
         {parameter preserve-existing-files?,
             controls whether existing files in {param target-url} are preserved.
             The default is to delete existing files.}
@@ -82,7 +87,8 @@
                         curl-versions:String = {curl-versions-string},
                         curlify-names?:bool = false,
                         include-async-methods?:bool = false,
-                        use-bignum-types?:bool = false,
+                        use-bignum-types?:bool = false,                        
+                        service-class-mixin:#String = null,
                         preserve-existing-files?:bool = false,
                         ...:WSDLPackageDirectives
                     }:Url
@@ -96,6 +102,7 @@
                 curlify-names? = curlify-names?,
                 include-async-methods? = include-async-methods?,
                 use-bignum-types? = use-bignum-types?,
+                service-class-mixin = service-class-mixin,
                 preserve-existing-files? =  preserve-existing-files?,
                 {splice ...}
             }}

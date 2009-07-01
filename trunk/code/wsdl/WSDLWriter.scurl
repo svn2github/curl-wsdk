@@ -142,6 +142,7 @@
                           service-class-name:String,
                           port:WSDLServicePort,
                           do-async?:bool = false,
+                          service-class-mixin-name:#String = null,
                           exclude-unreferenced-types?:bool = false,
                           all-types:{Set-of WSDLSchemaType} =
                               {{Set-of WSDLSchemaType}}
@@ -171,11 +172,18 @@
                     {if-non-null t = e._type then
                         {ignore-types.insert t}}}
             }}
+
+    || mixin, if specified
+    def service-class-mixin =
+        {if-non-null service-class-mixin-name then
+            service-class-mixin-name & ", "
+         else ""}
     
     {format
         out = out,
-        "\{define-class public %s \{inherits WSDLHTTPRPCPostClient\}\n",
-        service-class-name
+        "\{define-class public %s \{inherits %sWSDLHTTPRPCPostClient\}\n",
+        service-class-name,
+        service-class-mixin
     }
     let constant types:{HashTable-of WSDLSchemaType, #XMLName} =
         {new {HashTable-of WSDLSchemaType, #XMLName}}
@@ -1195,12 +1203,14 @@
         "  \{constructor public\n" &
         "    \{default\n" & 
         "        service-location:Url =\n" &
-        "            " & service-location & "\n" &
+        "            " & service-location & ",\n" &
+        "            ...\n" &
         "    \}\n" &
-        || --------------------------------------------------
-        "    \{construct-super service-location,\n" &
+        || --------------------------------------------------        
+        "    \{construct-super.WSDLHTTPRPCPostClient service-location,\n" &
         "        generated-using-version = \"" & 
-        wsdl-service-class-version & "\"\n" &
+        wsdl-service-class-version & "\",\n" &
+        "        \{splice ...\}\n" &
         "    \}\n" &
         "  \}\n"
     }

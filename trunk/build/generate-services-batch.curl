@@ -35,13 +35,17 @@
 || ====================
 || GoogleService
 || --------------------
-{generate-wsdl-code
+{generate-wsdl-package
+    include-async-methods? = true,
     {wsdk-dguide-root.concat "google/GoogleSearch.wsdl"}
 }
 
 || PowerQuote
-{generate-wsdl-code
-    {wsdk-dguide-root.concat "PowerQuote.wsdl"}
+|| --------------------
+{generate-wsdl-package
+    curlify-names? = true,
+    {wsdk-dguide-root.concat "PowerQuote.wsdl"},
+    target-url = {wsdk-dguide-root.concat "PowerQuote.scurl"}
 }
 
 || Samples (unadvertised)

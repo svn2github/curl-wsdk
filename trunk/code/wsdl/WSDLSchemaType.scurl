@@ -99,24 +99,12 @@
         set h[type] = xml-name
         {type.concat-sub-types h}
      else
-        || consistent order
-        def replace? = {WSDLSchemaType.type-name-less? xml-name, name}
+        || prefer type with name
+        def replace? = name == null and xml-name != null
         {if replace? then
             set h[type] = xml-name
         }
     }
-  }
-
-  {define-proc package {type-name-less?
-                           x:#XMLName,
-                           y:#XMLName
-                       }:bool
-    {return
-        {if-non-null x then
-            {if-non-null y then
-                {x.compare y} < 0
-             else false}
-         else false}}
   }
 
   {define-proc public {xml-name-to-curl-code xml-name:XMLName}:String

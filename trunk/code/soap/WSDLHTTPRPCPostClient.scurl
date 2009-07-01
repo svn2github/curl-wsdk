@@ -548,6 +548,9 @@
             soap-version = soap-version,
             mtom-support-range = self.mtom-support-range,
             additional-request-headers = self.additional-request-headers,
+            || from application
+            event-handler,
+            || for dynamic headers
             {on e:SOAPHTTPRPCPostAsyncEvent do
                 {if e.exception != null or e.canceled? then
                     {return}
@@ -566,7 +569,7 @@
                     }
                 }
             },
-            ...
+            {splice ...}
         }
     }
   }

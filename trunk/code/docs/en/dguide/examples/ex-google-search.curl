@@ -17,7 +17,7 @@
 {applet manifest = "google/manifest.mcurl"}
 
 || import the service package
-{import * from COM.CURL.WSDL.GoogleSearch}
+{import * from GOOGLESEARCH.GoogleSearch}
 {import * from COM.CURL.WSDK.RECORDSET-FOR}
 
 || instantiate the service class
@@ -45,25 +45,25 @@
              }:(RecordSet, GoogleSearchResult)
     
     || get the results (most they allow at a time is 10)
-    let result:GoogleSearchResult =
+    let result =
         {non-null
-            {gss.do-google-search
+            {gss.doGoogleSearch
                 gss-key, query,
                 start, {min 10, max-results},
                 filter?, restrict, safe-search?, language-restrict, 
                 input-encoding, output-encoding}}
     
     || construct recordset
-    let result-recordset:RecordSet =
+    def result-recordset =
         {{RecordSet-for ResultElement} 
-            {splice result.result-elements}}
+            {splice result.resultElements}}
     
     || return
     {return result-recordset, result}
 }
 {try
-    let query:String = "Curl Web 2.0"
-    let (rs:RecordSet, result:GoogleSearchResult) =
+    def query = "Curl Web 2.0"
+    def (rs, result) =
         {google-search query}
     
     {VBox
@@ -73,7 +73,7 @@
             height = 3in,
             halign = "left",
             {RecordGridColumn "title", width = 2in},
-            {RecordGridColumn "url", width = 2in},
+            {RecordGridColumn "uRL", header-spec = "URL", width = 2in},
             {RecordGridColumn "snippet", width = 3in},
             record-source = rs}
     }

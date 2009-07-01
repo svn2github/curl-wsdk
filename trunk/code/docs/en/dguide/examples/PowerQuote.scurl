@@ -1,7 +1,6 @@
 {curl 6.0, 7.0 package}
-{package COM.CURL.WSDL.PowerQuote,
-    {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/PowerQuote.wsdl"}
+{package COM.CDYNE.WS.PowerQuote,
+    {compiler-directives careful? = true}}
 
 || This file was generated with COM.CURL.WSDK.WSDL
 || WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/PowerQuote.wsdl
@@ -30,27 +29,6 @@
         }
     {return
         responses[0] asa QuoteData
-    }
-  }
-
-
-{doc-next 
-    {details 
-        This method retrieves a current stock quote.  Use a license key of 0 for testing.
-    }
-}
-  {method public {async-get-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "get-quote",
-            {{Array-of any}
-                stock-symbol,
-                license-key
-            },
-            {splice self.operations["get-quote"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -130,27 +108,6 @@
         This method retrieves just a stock price.  Use a license key of 0 for testing.
     }
 }
-  {method public {async-get-quick-quote stock-symbol:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "get-quick-quote",
-            {{Array-of any}
-                stock-symbol,
-                license-key
-            },
-            {splice self.operations["get-quick-quote"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
-{doc-next 
-    {details 
-        This method retrieves just a stock price.  Use a license key of 0 for testing.
-    }
-}
   {method public {define-get-quick-quote}:void
     set self.operations["get-quick-quote"] = 
         {Arguments
@@ -220,27 +177,6 @@
         This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
     }
 }
-  {method public {async-get-quote-data-set stock-symbols:String, license-key:String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "get-quote-data-set",
-            {{Array-of any}
-                stock-symbols,
-                license-key
-            },
-            {splice self.operations["get-quote-data-set"]},
-            event-handler,
-            ...
-        }
-    }
-  }
-
-
-{doc-next 
-    {details 
-        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
-    }
-}
   {method public {define-get-quote-data-set}:void
     set self.operations["get-quote-data-set"] = 
         {Arguments
@@ -296,20 +232,6 @@
         }
     {return
         responses[0] asa #String
-    }
-  }
-
-
-  {method public {async-important-message event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
-    {return
-        {self.async-call
-            "important-message",
-            {{Array-of any}
-            },
-            {splice self.operations["important-message"]},
-            event-handler,
-            ...
-        }
     }
   }
 
@@ -551,10 +473,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"}
+            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

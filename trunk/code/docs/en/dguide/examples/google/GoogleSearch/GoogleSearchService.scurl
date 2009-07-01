@@ -1,27 +1,21 @@
-{curl 6.0, 7.0 package}
-{package COM.CURL.WSDL.GoogleSearch,
-    {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl"}
-
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl
 
-{import * from COM.CURL.WSDK.SOAP}
 {define-class public GoogleSearchService {inherits WSDLHTTPRPCPostClient}
 
-  {method public {do-get-cached-page key:#String, url:#String}:(_return:#{Array-of byte})
+  {method public {doGetCachedPage key:#String, url:#String}:(_return:#{Array-of byte})
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute}) =
         {self.call
-            "do-get-cached-page",
+            "doGetCachedPage",
             {{Array-of any}
                 key,
                 url
             },
-            {splice self.operations["do-get-cached-page"]}
+            {splice self.operations["doGetCachedPage"]}
         }
     {return
         responses[0] asa #{Array-of byte}
@@ -29,15 +23,15 @@
   }
 
 
-  {method public {async-do-get-cached-page key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-doGetCachedPage key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
         {self.async-call
-            "do-get-cached-page",
+            "doGetCachedPage",
             {{Array-of any}
                 key,
                 url
             },
-            {splice self.operations["do-get-cached-page"]},
+            {splice self.operations["doGetCachedPage"]},
             event-handler,
             ...
         }
@@ -45,8 +39,8 @@
   }
 
 
-  {method public {define-do-get-cached-page}:void
-    set self.operations["do-get-cached-page"] = 
+  {method public {define-doGetCachedPage}:void
+    set self.operations["doGetCachedPage"] = 
         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
@@ -85,19 +79,19 @@
   }
 
 
-  {method public {do-spelling-suggestion key:#String, phrase:#String}:(_return:#String)
+  {method public {doSpellingSuggestion key:#String, phrase:#String}:(_return:#String)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute}) =
         {self.call
-            "do-spelling-suggestion",
+            "doSpellingSuggestion",
             {{Array-of any}
                 key,
                 phrase
             },
-            {splice self.operations["do-spelling-suggestion"]}
+            {splice self.operations["doSpellingSuggestion"]}
         }
     {return
         responses[0] asa #String
@@ -105,15 +99,15 @@
   }
 
 
-  {method public {async-do-spelling-suggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-doSpellingSuggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
         {self.async-call
-            "do-spelling-suggestion",
+            "doSpellingSuggestion",
             {{Array-of any}
                 key,
                 phrase
             },
-            {splice self.operations["do-spelling-suggestion"]},
+            {splice self.operations["doSpellingSuggestion"]},
             event-handler,
             ...
         }
@@ -121,8 +115,8 @@
   }
 
 
-  {method public {define-do-spelling-suggestion}:void
-    set self.operations["do-spelling-suggestion"] = 
+  {method public {define-doSpellingSuggestion}:void
+    set self.operations["doSpellingSuggestion"] = 
         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
@@ -161,27 +155,27 @@
   }
 
 
-  {method public {do-google-search key:#String, q:#String, start:int, max-results:int, filter:bool, restrict:#String, safe-search:bool, lr:#String, ie:#String, oe:#String}:(_return:#GoogleSearchResult)
+  {method public {doGoogleSearch key:#String, q:#String, start:int, maxResults:int, filter:bool, restrict:#String, safeSearch:bool, lr:#String, ie:#String, oe:#String}:(_return:#GoogleSearchResult)
     let constant (responses:{Array-of any},
          headers:#{Array-of any},
          header-roles:#{Array-of #String},
          header-must-understands:#{Array-of bool},
          root-attributes:#{Array-of XMLAttribute}) =
         {self.call
-            "do-google-search",
+            "doGoogleSearch",
             {{Array-of any}
                 key,
                 q,
                 start,
-                max-results,
+                maxResults,
                 filter,
                 restrict,
-                safe-search,
+                safeSearch,
                 lr,
                 ie,
                 oe
             },
-            {splice self.operations["do-google-search"]}
+            {splice self.operations["doGoogleSearch"]}
         }
     {return
         responses[0] asa #GoogleSearchResult
@@ -189,23 +183,23 @@
   }
 
 
-  {method public {async-do-google-search key:#String, q:#String, start:int, max-results:int, filter:bool, restrict:#String, safe-search:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+  {method public {async-doGoogleSearch key:#String, q:#String, start:int, maxResults:int, filter:bool, restrict:#String, safeSearch:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
     {return
         {self.async-call
-            "do-google-search",
+            "doGoogleSearch",
             {{Array-of any}
                 key,
                 q,
                 start,
-                max-results,
+                maxResults,
                 filter,
                 restrict,
-                safe-search,
+                safeSearch,
                 lr,
                 ie,
                 oe
             },
-            {splice self.operations["do-google-search"]},
+            {splice self.operations["doGoogleSearch"]},
             event-handler,
             ...
         }
@@ -213,8 +207,8 @@
   }
 
 
-  {method public {define-do-google-search}:void
-    set self.operations["do-google-search"] = 
+  {method public {define-doGoogleSearch}:void
+    set self.operations["doGoogleSearch"] = 
         {Arguments
             {{Array-of #XMLName}
                 {XMLName "", "key"},
@@ -297,9 +291,9 @@
   }
 
   {method protected {define-operations}:void
-     {self.define-do-get-cached-page}
-     {self.define-do-spelling-suggestion}
-     {self.define-do-google-search}
+     {self.define-doGetCachedPage}
+     {self.define-doSpellingSuggestion}
+     {self.define-doGoogleSearch}
   }
 
   {method public {register-types
@@ -343,8 +337,8 @@
                 }
             },
             {{Array-of String}
-                "full-viewable-name",
-                "special-encoding"
+                "fullViewableName",
+                "specialEncoding"
             },
             element-name-to-xml-type = element-name-to-xml-type,
             xml-type-to-curl-type = xml-type-to-curl-type,
@@ -429,17 +423,17 @@
                 }
             },
             {{Array-of String}
-                "document-filtering",
-                "search-comments",
-                "estimated-total-results-count",
-                "estimate-is-exact",
-                "result-elements",
-                "search-query",
-                "start-index",
-                "end-index",
-                "search-tips",
-                "directory-categories",
-                "search-time"
+                "documentFiltering",
+                "searchComments",
+                "estimatedTotalResultsCount",
+                "estimateIsExact",
+                "resultElements",
+                "searchQuery",
+                "startIndex",
+                "endIndex",
+                "searchTips",
+                "directoryCategories",
+                "searchTime"
             },
             element-name-to-xml-type = element-name-to-xml-type,
             xml-type-to-curl-type = xml-type-to-curl-type,
@@ -514,14 +508,14 @@
             },
             {{Array-of String}
                 "summary",
-                "url",
+                "uRL",
                 "snippet",
                 "title",
-                "cached-size",
-                "related-information-present",
-                "host-name",
-                "directory-category",
-                "directory-title"
+                "cachedSize",
+                "relatedInformationPresent",
+                "hostName",
+                "directoryCategory",
+                "directoryTitle"
             },
             element-name-to-xml-type = element-name-to-xml-type,
             xml-type-to-curl-type = xml-type-to-curl-type,
@@ -616,126 +610,5 @@
         generated-using-version = "6"
     }
   }
-}
-
-{define-class public open DirectoryCategory
-
-  field public full-viewable-name:String = ""
-  field public special-encoding:String = ""
-  {constructor public {default}
-  }
-  {constructor public 
-    {from-keywords
-      full-viewable-name:String = {required-keyword "DirectoryCategory.full-viewable-name"} asa String,
-      special-encoding:String = {required-keyword "DirectoryCategory.special-encoding"} asa String
-    }
-    {if {keyword-supplied? full-viewable-name} then
-        set self.full-viewable-name = full-viewable-name}
-    {if {keyword-supplied? special-encoding} then
-        set self.special-encoding = special-encoding}
-  }
-
-}
-
-{define-class public open GoogleSearchResult
-
-  field public document-filtering:bool
-  field public search-comments:String = ""
-  field public estimated-total-results-count:int
-  field public estimate-is-exact:bool
-  field public result-elements:{Array-of ResultElement} = {uninitialized-value-for-type {Array-of ResultElement}}
-  field public search-query:String = ""
-  field public start-index:int
-  field public end-index:int
-  field public search-tips:String = ""
-  field public directory-categories:{Array-of DirectoryCategory} = {uninitialized-value-for-type {Array-of DirectoryCategory}}
-  field public search-time:double
-  {constructor public {default}
-  }
-  {constructor public 
-    {from-keywords
-      document-filtering:bool = {uninitialized-value-for-type bool},
-      search-comments:String = {required-keyword "GoogleSearchResult.search-comments"} asa String,
-      estimated-total-results-count:int = {uninitialized-value-for-type int},
-      estimate-is-exact:bool = {uninitialized-value-for-type bool},
-      result-elements:{Array-of ResultElement} = {required-keyword "GoogleSearchResult.result-elements"} asa {Array-of ResultElement},
-      search-query:String = {required-keyword "GoogleSearchResult.search-query"} asa String,
-      start-index:int = {uninitialized-value-for-type int},
-      end-index:int = {uninitialized-value-for-type int},
-      search-tips:String = {required-keyword "GoogleSearchResult.search-tips"} asa String,
-      directory-categories:{Array-of DirectoryCategory} = {required-keyword "GoogleSearchResult.directory-categories"} asa {Array-of DirectoryCategory},
-      search-time:double = {uninitialized-value-for-type double}
-    }
-    {if {keyword-supplied? document-filtering} then
-        set self.document-filtering = document-filtering}
-    {if {keyword-supplied? search-comments} then
-        set self.search-comments = search-comments}
-    {if {keyword-supplied? estimated-total-results-count} then
-        set self.estimated-total-results-count = estimated-total-results-count}
-    {if {keyword-supplied? estimate-is-exact} then
-        set self.estimate-is-exact = estimate-is-exact}
-    {if {keyword-supplied? result-elements} then
-        set self.result-elements = result-elements}
-    {if {keyword-supplied? search-query} then
-        set self.search-query = search-query}
-    {if {keyword-supplied? start-index} then
-        set self.start-index = start-index}
-    {if {keyword-supplied? end-index} then
-        set self.end-index = end-index}
-    {if {keyword-supplied? search-tips} then
-        set self.search-tips = search-tips}
-    {if {keyword-supplied? directory-categories} then
-        set self.directory-categories = directory-categories}
-    {if {keyword-supplied? search-time} then
-        set self.search-time = search-time}
-  }
-
-}
-
-{define-class public open ResultElement
-
-  field public summary:String = ""
-  field public url:String = ""
-  field public snippet:String = ""
-  field public title:String = ""
-  field public cached-size:String = ""
-  field public related-information-present:bool
-  field public host-name:String = ""
-  field public directory-category:DirectoryCategory = {uninitialized-value-for-type DirectoryCategory}
-  field public directory-title:String = ""
-  {constructor public {default}
-  }
-  {constructor public 
-    {from-keywords
-      summary:String = {required-keyword "ResultElement.summary"} asa String,
-      url:String = {required-keyword "ResultElement.url"} asa String,
-      snippet:String = {required-keyword "ResultElement.snippet"} asa String,
-      title:String = {required-keyword "ResultElement.title"} asa String,
-      cached-size:String = {required-keyword "ResultElement.cached-size"} asa String,
-      related-information-present:bool = {uninitialized-value-for-type bool},
-      host-name:String = {required-keyword "ResultElement.host-name"} asa String,
-      directory-category:DirectoryCategory = {required-keyword "ResultElement.directory-category"} asa DirectoryCategory,
-      directory-title:String = {required-keyword "ResultElement.directory-title"} asa String
-    }
-    {if {keyword-supplied? summary} then
-        set self.summary = summary}
-    {if {keyword-supplied? url} then
-        set self.url = url}
-    {if {keyword-supplied? snippet} then
-        set self.snippet = snippet}
-    {if {keyword-supplied? title} then
-        set self.title = title}
-    {if {keyword-supplied? cached-size} then
-        set self.cached-size = cached-size}
-    {if {keyword-supplied? related-information-present} then
-        set self.related-information-present = related-information-present}
-    {if {keyword-supplied? host-name} then
-        set self.host-name = host-name}
-    {if {keyword-supplied? directory-category} then
-        set self.directory-category = directory-category}
-    {if {keyword-supplied? directory-title} then
-        set self.directory-title = directory-title}
-  }
-
 }
 

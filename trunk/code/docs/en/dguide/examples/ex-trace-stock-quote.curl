@@ -15,21 +15,21 @@
 ||| limitations under the License.
 {curl 7.0, 6.0 applet}
 {applet manifest = "../manifest.mcurl"}
+
 || import the service package
-{import * from COM.CURL.WSDL.PowerQuote}
+{import * from COM.CDYNE.WS.PowerQuote}
 || instantiate the service class
 {value
     || instantiate the service
-    let service:DelayedStockQuote = 
-        {DelayedStockQuote}
+    def service =  {DelayedStockQuote}
     || display elements
-    let quote-display:TextDisplay = {TextDisplay width = 1in}
-    let trace-buffer:StringBuf = {StringBuf}
-    let trace-display:TextArea = 
+    def quote-display = {TextDisplay width = 1in}
+    def trace-buffer = {StringBuf}
+    def trace-display = 
         {TextArea 
             enabled? = false,
             height = 2in}
-    let symbol-field:TextField =
+    def symbol-field =
         {TextField
             value = "IBM",
             width = 1in,
@@ -37,12 +37,12 @@
                 || clear trace output and display
                 {trace-buffer.clear}
                 {trace-display.unset-value}
-                let symbol:String = c.value
+                def symbol = c.value
                 || call the method, using test license key
-                let license-key:String = "0"
-                let quote-data:QuoteData = {service.get-quote symbol, license-key}
+                def license-key = "0"
+                def quote-data = {service.get-quote symbol, license-key}
                 || display the result
-                let quote:double = quote-data.last-trade-amount
+                def quote = quote-data.last-trade-amount
                 set quote-display.value = {String quote}
                 || display the trace
                 set trace-display.value = {trace-buffer.to-String}

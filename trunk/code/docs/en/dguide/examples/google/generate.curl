@@ -18,6 +18,7 @@
 {applet manifest = "manifest.mcurl"}
 {import * from COM.CURL.WSDK.WSDL}
 
-{generate-wsdl-code
-    {url "GoogleSearch.wsdl"}
+{generate-wsdl-package 
+    {url "GoogleSearch.wsdl"},
+    include-async-methods? = true
 }

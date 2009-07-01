@@ -17,15 +17,15 @@
 {applet manifest = "../manifest.mcurl"}
 
 || import the service package
-{import * from COM.CURL.WSDL.PowerQuote}
+{import * from COM.CDYNE.WS.PowerQuote}
 || instantiate the service class
-{let service:DelayedStockQuote = 
+{def service = 
     {DelayedStockQuote}
 }
 || use the service
 {heading level = 3,Delayed Stock Quote Web Service}
 {value
-    let quote-display:TextDisplay = {TextDisplay}
+    def quote-display = {TextDisplay}
     {Table columns = 2,
         || choose symbol
         {text Symbol},
@@ -37,10 +37,10 @@
             || call the service method
             {on ValueFinished at c:ComboBox do
                 {with-busy-cursor
-                    let symbol:String = c.value
+                    def symbol = c.value
                     || call the service, using test license key
-                    let license-key:String = "0"
-                    let quote-data:QuoteData = {service.get-quote symbol, license-key}
+                    def license-key = "0"
+                    def quote-data = {service.get-quote symbol, license-key}
                     {if quote-data.quote-error then
                         || unknown symbol
                         {quote-display.unset-value} 
@@ -48,7 +48,7 @@
                             {message Unknown symbol: {bold {value symbol}}}}
                      else
                         || display the result
-                        let quote:double = quote-data.last-trade-amount
+                        def quote = quote-data.last-trade-amount
                         set quote-display.value = {String quote}
                         || remember user selections
                         {if {c.find symbol} < 0 then

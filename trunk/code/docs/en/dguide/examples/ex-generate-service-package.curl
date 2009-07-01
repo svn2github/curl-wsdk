@@ -18,15 +18,14 @@
 {import * from COM.CURL.WSDK.WSDL}
 
 {value
-    let wloc:Url = {url "PowerQuote.wsdl"}
-    let wsdl-filter:{Array-of FileDialogFilter} =
-        {{Array-of FileDialogFilter}
+    def wloc = {url "PowerQuote.wsdl"}
+    def wsdl-filter =
+        {FileDialogFilterArray
             {FileDialogFilter "WSDL",
-                {{Array-of FileDialogTypeFilter}
-                    {FileDialogTypeFilter "wsdl"}}}}
-    let filename-display:TextDisplay = {TextDisplay width = 4in}
-    let wsdl-frame:Frame = {Frame}
-    let scurl-frame:Frame = {Frame}
+                {FileDialogTypeFilterArray "wsdl"}}}
+    def filename-display = {TextDisplay width = 4in}
+    def wsdl-frame = {Frame}
+    def scurl-frame = {Frame}
     {VBox
         {heading level = 3,
             WSDL Service Package Generation},
@@ -43,14 +42,17 @@
                             filters = wsdl-filter}
                      then 
                         || link to WSDL file
-                        set filename-display.value = wloc.name
+                        set filename-display.value = loc.name
                         {wsdl-frame.add replace? = true,
-                            {link href = wloc, target = "WSDL", 
-                                {value wloc.filename}}}
+                            {link href = loc, target = "WSDL", 
+                                {value loc.filename}}}
                         || generate curl source
                         {scurl-frame.clear}
-                        let sloc:Url =
-                            {generate-wsdl-code loc}
+                        def sloc =
+                            {generate-wsdl-package loc,
+                                || code generation directives
+                                target-url = {loc.set-extension ".scurl"},
+                                curlify-names? = true}
                         || link to curl source
                         {scurl-frame.add
                             {link href = {url "curl://edit/" & sloc.name},

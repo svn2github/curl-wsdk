@@ -85,10 +85,17 @@ package represents XML Schema types in Curl.
     Simple Types
 }
 
-All primitive simple types are supported. XMLSimpleValue is used for
-some infrequently used types that do not have direct equivalents as
-standard Curl types. XMLSimpleValue gives access to the underlying
+All primitive simple types are supported, with correspondence
+to Curl types summarized in the following table.
+
+Types requiring arbitrary precision are mapped to COM.CURL.UTIL.BIGNUM types,
+if {ctext use-bignum-types?} is specified; otherwise primitive types are used. 
+
+XMLSimpleValue is used forsome infrequently used types
+that do not have direct equivalents asstandard Curl types.
+XMLSimpleValue gives access to the underlying
 String value, and the ascribed XML Schema datatype.
+There are aliases for some XMLSimpleValue varieties.
 
 {table font-family = "monospace", font-size = 0.9em, cell-margin = 1px,
     {row {header-cell XML Type} {header-cell Curl Type}}
@@ -100,32 +107,32 @@ String value, and the ascribed XML Schema datatype.
     {row {cell xs:long} {cell int64}}
     {row {cell xs:short} {cell int16}}
     {row {cell xs:byte} {cell int8}}
-    {row {cell xs:base64Binary} {cell {Array-of uint8}}}
-    {row {cell xs:hexBinary} {cell {Array-of uint8}}}
+    {row {cell xs:base64Binary} {cell ByteArray}}
+    {row {cell xs:hexBinary} {cell BytrArray}}
     {row {cell xs:unsignedShort} {cell uint16}}
-    {row {cell xs:unsignedByte} {cell uint8}}
-    {row {cell xs:integer} {cell int64}}
-    {row {cell xs:positiveinteger} {cell int64}}
-    {row {cell xs:negativeinteger} {cell int64}}
-    {row {cell xs:nonPositiveinteger} {cell int64}}
-    {row {cell xs:nonNegativeinteger} {cell int64}}
-    {row {cell xs:unsignedInt} {cell int64}}
-    {row {cell xs:unsignedLong} {cell int64}}
-    {row {cell xs:decimal} {cell double}}
+    {row {cell xs:unsignedByte} {cell byte}}
+    {row {cell xs:integer} {cell int64, BigInt}}
+    {row {cell xs:positiveinteger} {cell int64, BigInt}}
+    {row {cell xs:negativeinteger} {cell int64, BigInt}}
+    {row {cell xs:nonPositiveinteger} {cell int64, BigInt}}
+    {row {cell xs:nonNegativeinteger} {cell int64, BigInt}}
+    {row {cell xs:unsignedInt} {cell unit}}
+    {row {cell xs:unsignedLong} {cell uint64}}
+    {row {cell xs:decimal} {cell double, BigDecimal}}
     {row {cell xs:dateTime} {cell DateTime}}
     {row {cell xs:anyURI} {cell Url}}
     {row {cell xs:QName} {cell XDMName}}
     {row {cell xs:date} {cell DateTime.date}}
-    {row {cell xs:time} {cell XMLSimpleValue}}
-    {row {cell xs:duration} {cell XMLSimpleValue}}
+    {row {cell xs:time} {cell XMLTimeString, XMLSimpleValue}}
+    {row {cell xs:duration} {cell XMLDurationString, XMLSimpleValue}}
     {row {cell xs:gYear} {cell XMLSimpleValue}}
     {row {cell xs:gYearMonth} {cell XMLSimpleValue}}
     {row {cell xs:gMonth} {cell XMLSimpleValue}}
     {row {cell xs:gMonthDay} {cell XMLSimpleValue}}
-    {row {cell xs:Day} {cell XMLSimpleValue}}
+    {row {cell xs:gDay} {cell XMLSimpleValue}}
     {row {cell xs:normalizedString} {cell XMLSimpleValue}}
-    {row {cell xs:token} {cell XMLSimpleValue}}
-    {row {cell xs:language} {cell XMLSimpleValue}}
+    {row {cell xs:token} {cell XMLTokenString, XMLSimpleValue}}
+    {row {cell xs:language} {cell XMLLanguageString, XMLSimpleValue}}
     {row {cell xs:Name} {cell XMLSimpleValue}}
     {row {cell xs:NCName} {cell XMLSimpleValue}}
     {row {cell xs:ENTITY} {cell XMLSimpleValue}}
@@ -143,7 +150,7 @@ Derived simple types are supported as follows:
         
         The values associated with curl enums are limited to simple types
         (number, char, bool, or String).  Therefore, String equivalents are used
-        when the enumeration basis is not one of those types (e.g. Url or XDMName).
+        when the enumeration basis is not one of those types (e.g. Url, XMLName).
     }
     {item Types derived by restriction are represented as an alias to the underlying primitive type.}
     {item Types derived by list are represented by arrays parameterized by the underlying base type.}
@@ -159,8 +166,10 @@ each field is based on the member (element or attribute) type. The
 treatment of members depends on the cardinality and content model.  
 
 In some cases, however, when the specified structure does not have a
-direct equivalent as a class, a different representation is used
-(XDMElement or HashTable).  These cases are noted below.
+direct equivalent as a class, a different representation is used:
+XMLElementValues is a sequence of XMLElementValue.
+Each XMLElementValue associates an elemebt XMLName with some value.
+These cases are noted below.
 
 {heading level = 4,
     Cardinality
@@ -185,8 +194,14 @@ nullable field.
 Elements specified in model groups 'all' and 'sequence' are
 represented as fields in the class.
 
-Elements specified in 'choice' model groups result in the use of
-'HashTable' (rather than a specific class) to represent the container.
+Elements specified in 'choice' model groups are represented
+using 'any', or XMLElementValue (depending on whether the
+alternatives can be disciminated by their type,
+or need to be tagged with their element name).
+
+When model groups have nested structure, the elements will
+be represented using XMLElementValues, preserving their
+element names and order.
 
 Elements specified indirectly, by reference to 'group' definitions,
 are expanded into the constituent elements.
@@ -207,20 +222,24 @@ represent the container.
 Mixed content results in the use of 'XDMElement' (rather than a
 specific class).
 
-Types derived by restriction result, in general, in the use of
-'XDMElement' (rather than a specific class). When the definition
-matches the pattern conventionally used to describe an encoded array,
-it is represented as a parameterized array.
-
 Types derived by extension result in a class definition which inherits
 from the class corresponding to the specified base type.
+
+Types derived by restriction are treated as if they were derived by extension.
+This preserves the content, but does not enforce
+the constraints of the restriction.
+
+When the restriction definition matches the pattern
+conventionally used to describe an encoded array,
+it is represented as a parameterized array.
+
 
 {heading level = 4,
     Subtypes
 }
 
-Elements with a declered type derived by extension from a base type may 
-contain a subtype of the base type.  Such "runtime subtpes" must
+Elements with a declared type derived by extension from a base type may 
+contain a subtype of the base type.  Such "runtime subtypes" must
 be specified using the 'xsi:type' attribute.  
 
 {heading level = 4,
@@ -233,10 +252,10 @@ for one of these types, the generated class provides accessors
 to query and assign the unspecified value:
 {itemize
     {item {monospace <element-name>-specifed?}}
-    {item {monospace unset-<eleemnt-name>}
+    {item {monospace unset-<element-name>}
     }
 }
-The value will be unspecified if an optional element was no supplied,
+The value will be unspecified if an optional element was not supplied,
 or if a nillable element was marked as nil using 'xsi:null=true'.
     
 {heading level = 4,
@@ -276,8 +295,15 @@ schema definitions are not explicitly imported.
 {itemize
     {item "http://www.w3.org/2001/XMLSchema"}
     {item "http://schemas.xmlsoap.org/wsdl/"}
-||--    {item "http://schemas.xmlsoap.org/soap/encoding/"}
-||--    {item "http://www.w3.org/XML/1998/namespace"}
+}
+
+If a schema refers to another namespace, a schemaLocation
+must be specified.  For example, a service might import the
+special XML namespace.  For this to be processed,
+the schemaLocation must be added.
+{pre
+<xs:import namespace='http://www.w3.org/XML/1998/namespace'
+           schemaLocation='http://www.w3.org/2005/08/xml.xsd'/>
 }
 
 {heading level = 4,
@@ -289,9 +315,15 @@ character sets are different; XML names include the namespace; naming
 conventions vary between programming languages and styles). 
 
 When web service definitions are internalized into Curl, legal Curl
-names, following standard Curl conventions, are used. Name conflicts
-are checked, and resolved by addition of namespace prefixes or numeric
-suffixes. 
+name are always used.  Name conflicts are checked,
+and resolved by substitution of underscores for disallowed characters,
+and addition of namespace prefixes or numeric suffixes. 
+
+Furthermore, when code generation directive 'curlify-names? = true'
+is specified, names are converted to follow standard Curl conventions
+(using using hypenated lower case words for variables, and "CamelCase"
+names for classe names).
+
 
 {heading level = 4,
     SOAP encoding
@@ -313,7 +345,7 @@ type. Message elements marked with 'xsi:nil' true are treated as
 nulls. Array elements use 'soapenc:Array' for 'xsi:type' value and
 'soapenc:arrayType' with a value containing the element type
 concatenated with dimensions. (The spec also has provisions for sparse
-arrays and nonstandard offsets. These are rarely used, and are not
+arrays and nonstandard offsets.  These are rarely used, and are not
 supported by the WSDK.)
 
 Message elements may be shared ("multiref"): they are specified once,
@@ -323,14 +355,19 @@ attribute. The original element may be "in place" in the message, or
 services and tools use "multiref" encoding even for primitive values,
 or for values which appear only once.
 
+The WSDK does not support SOAP 1.2 encoding conventions.
+
 {heading level = 4,
     Service Method Signatures
 }
 
 The Curl service class corresponding to a WSDL service port defines
-methods for each SOAP operation (there are two, for synchronous and
-asynchronous requests).  The signatures of these methods (arguments
-and return values) are derived from 'input' and 'output' message
+methods for each SOAP operation (in general, there are two,
+for synchronous and asynchronous requests); the asynchronous variants
+can be suppressed by using 'include-async-methods? = false'.
+
+The signatures of these methods (argumentsand return values)
+are derived from 'input' and 'output' message
 definitions in the WSDL file.  The conventions for the messages vary,
 depending on whether the operation style is "rpc" or "document".  For
 "document" style operations, the input and output messages are
@@ -343,6 +380,10 @@ SOAP messages can contain headers. When headers are specified, input
 headers are represented as keyword arguments, and output headers as
 additional return values.
 
+SOAP headers can also be specified and detected dynamically,
+using service class methods and properties.  That is the only
+way to work with headers that are not specified in the WSDL.
+
 {heading level = 2,
     WSDK Interoperability
 }
@@ -350,6 +391,8 @@ additional return values.
 {heading level = 3,
     Known Issues
 }
+
+|| TODO: summarize more recent issues and resolutions.
 
 The following issues have been identified:
 {itemize
@@ -400,8 +443,8 @@ The following features are rarely used in web service definitions, and
 may be more likely to encounter interoperability issues and unexpected
 behavior from the WSDK
 {itemize
-    {item xs:union}
     {item xs:choice}
+    {item xs:union}
     {item xs:list}
     {item xs:attributeGroup}
     {item xs:anyAttribute}
@@ -428,6 +471,7 @@ identify the problem
 {heading level = 2,
     Examples
 }
+|| TODO: more advanced patterns
 
 {heading level = 3,
     XS patterns with Curl representation

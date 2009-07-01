@@ -68,19 +68,20 @@
     {link href = {url "http://www.w3.org/TR/xmlschema-2"},
     XML Schema Datatypes}
     
+    The web service package can be generated programmatically
+    using {docref generate-wsdl-package}.
+    
     Use the {bold WSDL Services} IDE tool
     to generate a Curl web service package from the WSDL file. 
     The generated code provides a service class which calls methods corresponding to
     SOAP bindings for a  web service described by a WSDL file.
     
     The {bold WSDL Services} IDE tool can be installed in the Curl IDE 
-    with the Tools>Configure Editors 
-    command using the editor description file 
-    {monospace color = "purple", tools/wsdl/editor-info.txt}
-    provided with your WSDK distribution.
-    
-    The web service package can also be generated programmaticallly
-    using {docref generate-wsdl-code}.
+    with the {monospace Tools>Configure Editors} 
+    command using the editor description file
+    {link href = {url "tools/wsdl/editor-info.txt"}, 
+    {monospace color = "purple", tools/wsdl/editor-info.txt}}
+    provided with this documentation.
 
     {code-box
         {curl-code
@@ -88,7 +89,7 @@
             {applet manifest = "manifest.mcurl"}
             {import * from COM.CURL.WSDK.WSDL}
 
-            {generate-wsdl-code
+            {generate-wsdl-package
                 {url "PowerQuote.wsdl"}
             }
         }}
@@ -136,20 +137,18 @@
     {code-box
         {curl-code
             {curl 7.0, 6.0 applet}
-            {applet manifest = "manifest.mcurl"}
+            {applet manifest = "../manifest.mcurl"}
             || import the service package
-            {import * from COM.CURL.WSDL.PowerQuote}
+            {import * from COM.CDYNE.WS.PowerQuote}
             {value
                 || instantiate the service
-                let service:DelayedStockQuote = 
-                    {DelayedStockQuote}
+                def service = {DelayedStockQuote}
                 || call the service method, using test license key
-                let symbol:String = "IBM"
-                let license-key:String = "0"
-                let quote-data:QuoteData =
-                    {service.get-quote symbol, license-key}
+                def symbol = "IBM"
+                def license-key = "0"
+                def quote-data = {service.get-quote symbol, license-key}
                 || use the result
-                let quote:double = quote-data.last-trade-amount
+                def quote = quote-data.last-trade-amount
                 {paragraph
                     The quote for {value symbol} is {value quote}
                 }}
@@ -196,23 +195,23 @@
     
     Processing the {link href = {url "examples/google/GoogleSearch.wsdl"}, WSDL file}
     yields a service class including the method 
-    {monospace do-google-search}, which is used
+    {monospace doGoogleSearch}, which is used
     to request search results.
     
     {code-box
         {curl-code
-            {method public {do-google-search 
+            {method public {doGoogleSearch
                                key:#String, 
                                q:#String, 
                                start:int, 
-                               max-results:int, 
+                               maxResults:int, 
                                filter:bool, 
                                restrict:#String, 
-                               safe-search:bool, 
+                               safeSearch:bool, 
                                lr:#String, 
                                ie:#String, 
                                oe:#String
-                           }:(return-parameter:#GoogleSearchResult)
+                           }:(_return:#GoogleSearchResult)
             }}}    
     
     The positional parameters correspond to search options,
@@ -247,9 +246,9 @@
                          }:(RecordSet, GoogleSearchResult)
                 
                 || get the results (most they allow at a time is 10)
-                let result:GoogleSearchResult =
+                def result =
                     {non-null
-                        {gss.do-google-search
+                        {gss.doGoogleSearch
                             gss-key, query,
                             start, {min 10, max-results},
                             filter?, restrict, safe-search?, language-restrict, 
@@ -258,7 +257,7 @@
                 || construct recordset
                 let result-recordset:RecordSet =
                     {{RecordSet-for ResultElement} 
-                        {splice result.result-elements}}
+                        {splice result.resultElements}}
                 
                 || return
                 {return result-recordset, result}
@@ -291,18 +290,19 @@
     
     {code-box
         {curl-code
-            {method public {async-do-google-search 
+            {method public {async-doGoogleSearch 
                                key:#String, 
                                q:#String, 
                                start:int, 
-                               max-results:int, 
+                               maxResults:int, 
                                filter:bool, 
                                restrict:#String, 
-                               safe-search:bool, 
+                               safeSearch:bool, 
                                lr:#String, 
                                ie:#String, 
                                oe:#String, 
-                               event-handler:EventHandler, ...:EventHandler
+                               event-handler:EventHandler,
+                               ...:EventHandler
                            }:SOAPHTTPRPCPostAsyncWorker
             }}}
     
@@ -313,12 +313,11 @@
         {curl-code
             {on e:SOAPHTTPRPCPostAsyncEvent do
                 {if-non-null responses = e.responses then
-                    let next:GoogleSearchResult = 
-                        responses[0] asa GoogleSearchResult
+                    def next = responses[0] asa GoogleSearchResult
                     || append results to recordset
-                    let n:int = next.result-elements.size
+                    def n = next.result-elements.size
                     {if n > 0 then
-                        {for element in next.result-elements do
+                        {for element in next.resultElements do
                             {result-recordset.append element}}}
                 }}}}
 }
@@ -326,6 +325,9 @@
 {heading level = 2, destination-name = "details", 
     Web Service Package details
 }
+
+{heading level = 3, Service Package}
+
 {paragraph
     The {docref COM.CURL.WSDK.WSDL} package provides tools
     for generating Curl code representing services
@@ -422,7 +424,18 @@
     and also accepts Event handlers which allow the 
     caller to react to responses when they are available
     and to control further processing.
-    
+
+}
+
+{heading level = 3, Code Generation Directives}
+
+|| TODO:
+
+{heading level = 3, Datatypes}
+
+|| TODO: rationalize with wsdk-interop
+
+{paragraph    
     WSDL / SOAP definitions specify datatypes using XML Schema.
     Equivalent Curl types are used in method signatures.
     Standard primitives are mapped directly.
@@ -457,7 +470,7 @@
         {bold XML Type}, {bold Curl Type},
         {xml-node xs:string}, {docref String},
         {xml-node xs:boolean}, {docref bool},
-        {xml-node xs:int}, {docref int32},
+        {xml-node xs:int}, {docref int},
         {xml-node xs:double}, {docref double},
         {xml-node xs:float}, {docref float},
         {xml-node xs:long}, {docref int64},
@@ -465,33 +478,33 @@
         {xml-node xs:byte}, {docref int8},
         {xml-node xs:base64Binary}, {docref ByteArray},
         {xml-node xs:hexBinary}, {docref ByteArray},
-        {cell colspan = 2, {hrule}},
+        {cell-prototype colspan = 2, {hrule}},
         {xml-node xs:unsignedShort}, {docref uint16},
         {xml-node xs:unsignedByte}, {docref byte},
-        {xml-node xs:integer}, {docref int64},
-        {xml-node xs:positiveinteger}, {docref int64},
-        {xml-node xs:negativeinteger}, {docref int64},
-        {xml-node xs:nonPositiveinteger}, {docref int64},
-        {xml-node xs:nonNegativeinteger}, {docref int64},
-        {xml-node xs:unsignedInt}, {docref uint64},
+        {xml-node xs:integer}, {text {docref int64}, {docref BigInt}},
+        {xml-node xs:positiveinteger}, {text {docref int64}, {docref BigInt}},
+        {xml-node xs:negativeinteger}, {text {docref int64}, {docref BigInt}},
+        {xml-node xs:nonPositiveinteger}, {text {docref int64}, {docref BigInt}},
+        {xml-node xs:nonNegativeinteger}, {text {docref int64}, {docref BigInt}},
+        {xml-node xs:unsignedInt}, {docref uint},
         {xml-node xs:unsignedLong}, {docref uint64},
-        {cell colspan = 2, {hrule}},
-        {xml-node xs:decimal}, {docref double},
+        {cell-prototype colspan = 2, {hrule}},
+        {xml-node xs:decimal}, {text {docref double}, {docref BigDecimal}},
         {xml-node xs:dateTime}, {docref DateTime},
         {xml-node xs:date}, {docref DateTime.date#factory},
         {xml-node xs:anyURI}, {docref Url},
         {xml-node xs:QName}, {docref XDMName},
-        {cell colspan = 2, {hrule}},
-        {xml-node xs:time}, {docref XMLSimpleValue},
-        {xml-node xs:duration}, {docref XMLSimpleValue},
+        {cell-prototype colspan = 2, {hrule}},
+        {xml-node xs:time}, {docref XMLTimeString},
+        {xml-node xs:duration}, {docref XMLDurationString},
         {xml-node xs:gYear}, {docref XMLSimpleValue},
         {xml-node xs:gYearMonth}, {docref XMLSimpleValue},
         {xml-node xs:gMonth}, {docref XMLSimpleValue},
         {xml-node xs:gMonthDay}, {docref XMLSimpleValue},
-        {xml-node xs:Day}, {docref XMLSimpleValue},
+        {xml-node xs:gDay}, {docref XMLSimpleValue},
         {xml-node xs:normalizedString}, {docref XMLSimpleValue},
-        {xml-node xs:token}, {docref XMLSimpleValue},
-        {xml-node xs:language}, {docref XMLSimpleValue},
+        {xml-node xs:token}, {docref XMLTokenString},
+        {xml-node xs:language}, {docref XMLLanguageString},
         {xml-node xs:Name}, {docref XMLSimpleValue},
         {xml-node xs:NCName}, {docref XMLSimpleValue},
         {xml-node xs:ENTITY}, {docref XMLSimpleValue},
@@ -527,6 +540,14 @@
     See {link href = {url "wsdk-interop.curl"},
     WSDK Web Services Interoperability} document
     for discussion of WSDK conventions and interoperability issues.
+
+}
+
+{heading level = 3, Service Class Parameters}
+
+|| TODO: dynamic headers, MTOM
+
+{paragraph
     
     The WSDL file defines a specific url where the 
     web service is required.  When the service is also
@@ -554,7 +575,11 @@
     For example, to request gzip compressed responses
     from the server, use
     {ctext set {metavar service}.accept-encoding = "gzip"}.
+}
     
+{heading level = 3, Debugging}
+
+{paragraph    
     The actual request and response XML messages
     can be useful for diagnosing web service problems.    
     When {docref WSDLHTTPRPCPostClient.trace-stream}
@@ -585,19 +610,5 @@
     This is useful for testing, and for diagnosing problems.
 }
 
-||--{TODO
-||--    What could go wrong
-||--    {itemize
-||--        {item projects, manifests and packages}
-||--        {item SOAP Faults}
-||--        {item service availability}
-||--        {item failures}
-||--        {item tracing}
-||--        {item headers and license keys}
-||--    }
-||--}
-
 || ====================
-
 {curl-copyright}
-

@@ -63,14 +63,28 @@
             controls whether existing files in {param target-url} are preserved.
             The default is to delete existing files.}
         {parameter ...,
-            rest arguments supply directives governing code egenration
-            for individual namespaces defined by WSDL file.}
-        || TODO: describe these
+            rest arguments supply {docref WSDLPackageDirectives}
+            governing code generation for individual namespaces defined by WSDL file.}
     }
     {return-vals
-        The {ctext Url} of the generated package file.}
+        The {ctext Url} of the generated package file.
+    }
     {details
-        || describe directory structure
+        When generated code is organized into directories,
+        the following structure is used:
+        {itemize
+            {item each type is defined in its own file}
+            {item each defined XML namespace in its own directory,
+                containing files for types in that namespace}
+            {item the service class
+                (or classes, if there is more than one port defined in the WSDL)
+                are defined in files in the specified directory}
+            {item the service package is defined in {ctext load.scurl} file
+                in the specified directory, which includes the other files}
+        }
+        When an {ctext .scurl} url is specified, all the above definitions
+        are contained in that file.  (The consolidated file format was used by WSDK 1.1).
+        
         || compatibility
     }
     {throws 
@@ -150,7 +164,6 @@
     {throws 
         Errors processing the WSDL file will result in
         {docref WSDLSyntaxException}s.
-        || TODO: describe errors and warnings
     }
     {deprecated
         For WSDK 2.0 WSDL code generation, use {docref generate-wsdl-package}.

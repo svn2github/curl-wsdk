@@ -16,7 +16,6 @@
 
 
 || TODO integration
-|| - warning, error feedback
 || - close: reset defaults ?
 
 || TODO GUI
@@ -30,19 +29,14 @@
 
 || TODO model
 || - rationalize preserve/skip
-|| - spec writer
 
 || TODO IDE
 || - add to project
 || -- method, enablement
 || -- generate template applet ?
 || - choose from service packages in manifest
-|| -- how detect/
-|| -- record directives somewhere
+|| -- how detect ?
 || - deployment configuration
-|| -- release 6
-|| -- locationless manifest?
-|| -- external library
 
 {define-class public WSDLGeneration
 
@@ -163,6 +157,7 @@
   field prefix-field:TextField = {TextField}
   field suffix-field:TextField = {TextField}
   field target-field:TextField = {TextField}
+  field mixin-field:TextField = {TextField}
   field prefix-choice:String = ""
   field prefix-value:String = ""
   field suffix-choice:String = ""
@@ -207,7 +202,9 @@
      case "source-url", "curlify-names?" do
         {self.source-changed}
      case "package-prefix", "package-suffix", "target-url",
-        "include-async-methods?", "curl-versions" do
+        "include-async-methods?", "curl-versions",
+        "use-bignum-types?", "service-class-mixin"
+     do
         || nothing
      else
         {error {hlmessage Unexpected directive: {value which}}}
@@ -364,6 +361,16 @@
             set self.target-path = c.value
             {self.target-changed}}
     }
+    {if-non-null service-class-mixin = self.spec.service-class-mixin then
+        set self.mixin-field.value = service-class-mixin}
+    {self.mixin-field.add-event-handler
+        {on ValueFinished at c:TextField do
+            set self.spec.service-class-mixin =
+                {if c.has-value? and not c.value.empty?
+                 then c.value
+                 else null}
+            {self.spec-changed "service-class-mixin"}}
+    }
   }
   
   {method {get-command name:String}:Command
@@ -468,6 +475,12 @@
                         {on ValueFinished at c:CheckButton do
                             set spec.include-async-methods? = c.value
                             {self.spec-changed "include-async-methods?"}}},
+                    {CheckButton
+                        label = {hlmessage use bignum types},
+                        value = spec.use-bignum-types?,
+                        {on ValueFinished at c:CheckButton do
+                            set spec.use-bignum-types? = c.value
+                            {self.spec-changed "use-bignum-types?"}}},
                     {HBox style-class = "spaced",
                         {hlmessage API Version: },
                         {DropdownList
@@ -484,25 +497,29 @@
             },
             {GroupBox
                 label = {hlmessage Organize Code},
-                {RadioFrame
-                    value = "standard",
-                    {on ValueFinished at c:RadioFrame do
-                        set self.target-choice = c.value asa String
-                        {self.target-changed}},
-                    {VBox hstretch? = true,
-                        {RadioButton
-                            label = {hlmessage in standard directory},
-                            radio-value = "standard"},
-                        {RadioButton
-                            label = {hlmessage in specified directory},
-                            radio-value = "specified"},
-                        {RadioButton
-                            label = {hlmessage in a single file},
-                            radio-value = "file"},
-                        {HBox style-class = "spaced",
-                            {hlmessage Target Url: },
-                            self.target-field}}
-                }},
+                {VBox
+                    {HBox style-class = "spaced",
+                        {hlmessage Service Class Mixin: },
+                        self.mixin-field},
+                    {RadioFrame
+                        value = "standard",
+                        {on ValueFinished at c:RadioFrame do
+                            set self.target-choice = c.value asa String
+                            {self.target-changed}},
+                        {VBox hstretch? = true,
+                            {RadioButton
+                                label = {hlmessage in standard directory},
+                                radio-value = "standard"},
+                            {RadioButton
+                                label = {hlmessage in specified directory},
+                                radio-value = "specified"},
+                            {RadioButton
+                                label = {hlmessage in a single file},
+                                radio-value = "file"},
+                            {HBox style-class = "spaced",
+                                {hlmessage Target Url: },
+                                self.target-field}}
+                    }}},
             || namespace directives
             || --------------------
             {GroupBox
@@ -554,9 +571,12 @@
                     {Fill height = {make-elastic stretch-order = 50}}
                 }}
         }
-    {install-style-sheet-on-Graphic 
-        dialog,
-        WSDLGeneration.stylesheet}
+    {api-version-switch
+     case "7+" do
+        {install-style-sheet-on-Graphic 
+            dialog,
+            WSDLGeneration.stylesheet}
+    }
 
     {return dialog}    
   }
@@ -622,6 +642,8 @@
       }
   
   def stylesheet =
+    {api-version-switch
+     case "7+" do
       {StyleSheet
         {get-default-style-sheet},
         {StyleSheet
@@ -654,6 +676,7 @@
             },
             {StyleRule "EOF"}
         }}
+     else null}
   
   || helper methods
   || --------------------

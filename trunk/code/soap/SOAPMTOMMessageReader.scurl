@@ -152,7 +152,7 @@
                 {if at.name == {XMLName "", "href"} then
                     {if href-handled? then
                         {throw-unmarshal-exception
-                            {lmessage href has already specified.}
+                            {lmessage href has already been specified.}
                         }
                      else
                         set href-handled? = true
@@ -198,7 +198,7 @@
                 {break}
              else
                 {throw-unmarshal-exception
-                    {lmessage "Final token was not an expected type."}
+                    {lmessage Final token was not an expected type.}
                 }
             }
         }

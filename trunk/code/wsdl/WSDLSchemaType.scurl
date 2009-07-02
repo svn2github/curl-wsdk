@@ -1290,7 +1290,8 @@
                         element-name = e.xml-name,
                         nillable? =
                             (e.nillable? or
-                             (e.min-occurs == 0 and e.max-occurs == 1))
+                             (e.min-occurs == 0 and e.max-occurs == 1)),
+                        expected-content-types = e.expected-content-types
                     }
                 }
             }

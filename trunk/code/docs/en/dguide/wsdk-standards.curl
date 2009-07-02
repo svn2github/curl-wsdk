@@ -57,14 +57,14 @@
 }
 
 {Table 
-    background = "beige",
+    background = "#EEE",
     cell-border-width = 2px,
     cell-border-style = "sunken",
-    cell-border-color = "tan",
+    cell-border-color = "silver",
     cell-margin = 4px,
     {row-prototype
         font-weight = "bold",
-        background = "tan",
+        background = "silver",
         {text Standard},
         {text Version},
         {text Status},
@@ -117,7 +117,7 @@
             Handle datatypes used in web service messages}
     },
     {row-prototype
-        {standard-ref "SOAP"},
+        {standard-ref "SOAP12"},
         {monospace 1.2},
         {status Released},
         {conformance-level Subset},
@@ -308,7 +308,25 @@
     {text Exceptions},
     {paragraph font-size = 8pt,
         {itemize
+            {item sparse or offset encoded arrays}
             {item ...}
+        }}
+}
+
+{standard-heading "SOAP12"}
+
+{conformance-table   
+    {text Specification},   
+    {link href = {url "http://www.w3.org/TR/soap12-part0/"}, 
+        Simple Object Access Protocol (SOAP) 1.2},
+    {text Package}, {docref COM.CURL.WSDK.SOAP},    
+    {text Status}, {monospace Released},    
+    {text Level}, {monospace Subset},
+    {text Exceptions},
+    {paragraph font-size = 8pt,
+        {itemize
+            {item SOAP 1.2 Encoding Scheme}
+            {item Message Exchange Patterns other than Request / Response}
         }}
 }
 

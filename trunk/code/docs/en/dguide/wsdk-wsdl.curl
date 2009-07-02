@@ -288,7 +288,7 @@
     A {docref WSDLHTTPRPCPostClient} always contains asynchronous 
     versions of each service method, in this case:
     
-    {code-box
+    {code-box margin = 6pt,
         {curl-code
             {method public {async-doGoogleSearch 
                                key:#String, 
@@ -309,7 +309,7 @@
     This allows the results to be processed when they become available
     (or for requests to be cancelled after some delay).
     
-    {code-box
+    {code-box margin = 6pt,
         {curl-code
             {on e:SOAPHTTPRPCPostAsyncEvent do
                 {if-non-null responses = e.responses then
@@ -329,16 +329,22 @@
 {heading level = 3, Service Package}
 
 {paragraph
-    The {docref COM.CURL.WSDK.WSDL} package provides tools
+    The {docref COM.CURL.WSDK.WSDL} package provides
+    the {docref generate-wsdl-package} procedure
     for generating Curl code representing services
-    described by a WSDL file.
+    described by a WSDL file. 
     
     The {docref COM.CURL.WSDK.SOAP} package 
     provides support for making SOAP calls over HTTP.
     The generated service code uses these facilities.
+
+    WSDK 2.0 supports both SOAP 1.1 and SOAP 1.2,
+    according to the namespace of the 
+    {xml-node binding} elements in the WSDL file.
     
     This table shows the correspondence between
-    elements of the WSDL definition and the Curl equivalent.
+    elements of the WSDL definition and the Curl equivalent,
+    using examples in the GoogleSearch service example above.
     
     {Table
         columns = 4,
@@ -355,7 +361,7 @@
             {text service},
             {xml-node <service name="GoogleSearchService">},
             {text package},
-            {ctext COM.CURL.WSDL.GoogleSearchService}},
+            {ctext GOOGLESEARCH.GoogleSearchService}},
         {row-prototype 
             {text port},
             {xml-node <service name="GoogleSearchServicePort">},
@@ -365,7 +371,7 @@
             {text operation},
             {xml-node <operation name="doSpellingSuggestion">},
             {text method},
-            {curl-code {method {do-spelling-suggestion ...}}}},
+            {curl-code {method {doSpellingSuggestion ...}}}},
         {row-prototype 
             {text input},
             {xml-node <message name="doSpellingSuggestion">{br}
@@ -400,10 +406,17 @@
     
     Different languages have different requirements for names,
     and different naming conventions. When web service definitions
-    are internalized into Curl, legal Curl names, following
-    standard Curl conventions are used.  Thus, for example,
-    the operation {monospace doSpellingSuggestion} becomes
+    are internalized into Curl, legal Curl names are always used.
+    Furthermore, when code generation directive
+    {ctext curlify-names? = true} is specified,
+    names are converted to follow standard Curl conventions.
+    Thus, for example,
+    the operation {monospace doSpellingSuggestion} woukd become
     {monospace do-spelling-suggestion}.
+
+    The service-package name is derived from the target-namespace,
+    and the service-class name is derived from the service (or port) name.
+    Code genereration directives can be used to modify these defaults.
     
     Each operation corresponds to a method on the service class,
     with arguments corresponding to input message definitions,
@@ -414,13 +427,105 @@
     as keyword arguments, and output headers as additional
     return values.
     
-    SOAP web services can signal errors using Fault messages.
-    These result in Curl {docref SOAP-1-1-FaultException} exceptions,
-    which contain the Fault contents.
+    SOAP headers can also be specified and detected dynamically,
+    using service class 
+    {docref-abbr WSDLHTTPRPCPostClient.additional-request-headers} 
+    and {docref-abbr WSDLHTTPRPCPostClient.response-headers-callback}
+    properties. That is the only way to work with headers
+    that are not specified in the WSDL.
+
+    {expandable {bold Dynamic Headers},
+        {paragraph            
+            Some services use request headers for authentication.
+            For example, consider the login protocol for the
+            SalesForce.com APEX enterprise web service.
+            Credentials are supplied to the 'login' operation,
+            which returns, for valid credentials, a session token
+            and service url to be used for subsequent requests.
+            Each request muct be accomapined by a
+            session header containing the token.
+
+            The header is defined in the WSDL file,
+            so the header can be supplied as a keyword argument,
+            as in the following code fragment.
+
+            {code-box margin = 6pt,
+                {curl-code
+                    || SalesForce.com login protocol
+                    || - provide credentials
+                    || - get service url, session token
+                    || ------------------------------
+                    def login-service = {SforceService}
+                    def login-result =
+                        {login-service.login
+                            "YOUR-uSERNAME",
+                            "YOUR-PASSWORD"}
+                    def session-id = {non-null login-result.sessionId}
+                    def service-url = {non-null login-result.serverUrl}
+                    def session-header =
+                        {SessionHeader.from-keywords
+                            sessionId = session-id}
+
+                    || active service
+                    || ------------------------------
+                    def service =
+                        {SforceService
+                            service-location = {url service-url}}
+
+                    || include session-header with each request
+                    || ------------------------------
+                    def describe-global-result =
+                        {service.describeGlobal
+                            sessionHeader = session-header}
+
+                    || process response
+                    || ------------------------------
+                    def types = describe-global-result.types
+                    {VBox font-size = 8pt, font-family = "monospace",
+                        {splice types}}
+                }}
+
+            The header could also be supplied as
+            {docref-abbr WSDLHTTPRPCPostClient.additional-request-headers}.
+            This is the only way to supply headers not defined in the WSDL.
+
+            {code-box margin = 6pt,
+                {curl-code
+                    || using dynamic headers
+                    || ------------------------------
+                    || construct XML representation of session header
+                    def x-session-header =
+                        {with-namespace-declarations
+                            SF = "urn:enterprise.soap.sforce.com"
+                         do
+                            {XDMElement "SF:SessionHeader", 
+                                {XDMElement "SF:sessionId", 
+                                    session-id}}
+                        }            
+                    || include session-header with each request
+                    || ------------------------------
+                    def describe-global-result =
+                        {with
+                            service.additional-request-headers =
+                                {{Array-of XDMElement}
+                                    x-session-header}
+                         do
+                            {service.describeGlobal}
+                        }
+                }}
+        }}
     
-    The Curl service class also contains an asynchronous version
-    of each service method.  Like all Curl async IO operations,
-    it returns an {docref AsyncWorker} subclass,
+    SOAP web services can signal errors using Fault messages.
+    These result in Curl {docref SOAPFaultException} exceptions,
+    which contain the Fault contents.  Dependeing on SOAP version,
+    one of {docref SOAP-1-1-FaultException}
+    or {docref SOAP-1-2-FaultException} will be used.
+    
+    The Curl service class also may contain an asynchronous variant
+    of each service method (the asynchronous variants
+    can be suppressed by using the {ctext include-async-methods? = false}
+    code generation directive).
+    The asynchronous variant returns an {docref AsyncWorker} subclass,
     and also accepts Event handlers which allow the 
     caller to react to responses when they are available
     and to control further processing.
@@ -429,98 +534,148 @@
 
 {heading level = 3, Code Generation Directives}
 
-|| TODO:
+{paragraph
+    WSDK 2.0 code generation is governed by the following directives,
+    which are arguments to {docref generate-wsdl-package}.
+
+    {itemize
+        {item Code Organization
+            
+            {ctext target-url}:
+            the {ctext Url} of the output.
+            The default is derived from the {param source-url},
+            by removing the extension.
+            If the url has ".scurl" extension,
+            all generated code will be contained in that file.
+            Otherwise, code will be organized into directories and files
+            corresponding to namespaces and types defined by the WSDL file.
+        }
+        {item Package Name
+            
+            {ctext package-prefix}:
+            specifies the first part of the service package name.
+            The default is derived from the target-namespace of the WSDL file.
+            
+            {ctext package-suffix}:
+            specifies the final part of the package name.
+            The default is based on the basename of the WSDL file.
+        }
+        {item Coding Style
+            
+            {ctext curl-versions}:
+            If specified, indicates curl versions mentioned
+            in generated package herald.  The default is
+            the versions supported by the current package.
+            
+            {ctext curlify-names?}:
+            indicates whether to use curl naming conventions
+            for identifiers in generated code. The default is {ctext false}.
+            
+            {ctext include-async-methods?}:
+            indicates whether asynchronous service methods will ge generated,
+            in addition to the usual synchronous methods. The default is {ctext false}.
+            
+            {ctext use-bignum-types?}:
+            indicates whether to use arbitrary precision numbers
+            for schema types requiring them. The default is {ctext false}.
+            {itemize
+                {item {docref BigDecimal} {em-dash} {ctext xs:decimal}}
+                {item {docref BigInt} {em-dash} {ctext xs:integer} and variants}
+            }
+            
+            {ctext service-class-mixin}:
+            specifies a class to be inherited by the generated service class, or null.
+            The class name can be qualified with a package name, e.g.
+            {ctext "[{metavar PACKAGE-NAME}.]{metavar ClassName}"}
+            
+        }
+        {item Partial Code Generation
+            
+            {ctext preserve-existing-files?}:
+            controls whether existing files in {param target-url} are preserved.
+            The default is {ctext false} to delete existing files.
+            
+            {ctext ...}:
+            rest arguments supply {docref WSDLPackageDirectives}
+            governing code generation for individual namespaces defined by WSDL file.}
+    }
+
+    {bold Code Organization}
+
+    Unless a single ".scurl" {ctext target-url} is specified,
+    code will be organized into directories and files
+    corresponding to namespaces and types defined by the WSDL file.
+
+    For example, this is the directory structure produced by
+    {link href = {url "curl://edit/" & {url "examples/google/project.cprj"}.name},
+    Google Search example project}.
+
+
+    {itemize font-size = 9pt,
+        {item {monospace GoogleSearch/} {em-dash} service directory}
+        {itemize
+            {item {ctext load.scurl} {em-dash} package definition }
+            {item {ctext GoogleSearch.scurl} {em-dash} service class}
+            {item {ctext GOOGLESEARCH/} {em-dash} namespace}
+            {itemize
+                {item {ctext load.scurl} {em-dash} includes each type}
+                {item {ctext DirectoryCategory.scurl} {em-dash} class}
+                {item {ctext GoogleSearchResult.scurl} {em-dash} class}
+                {item {ctext ResultElement.scurl} {em-dash} class}
+            }
+        }
+    }
+
+    {bold COMPATIBILITY NOTE:} WSDK 2.0 WSDL code generation API,
+    {docref generate-wsdl-package} has defaults different from those
+    used in WSDK 1.1 and earlier.
+
+    However, WSDL 1.1 code generation API,
+    {docref generate-wsdl-code}, remains unchanged.
+    It corresponds to
+    
+    {code-box margin = 6pt,
+        {curl-code
+            def source-url = {url "whatever.wsdl"}
+            {generate-wsdl-package source-url,
+                target-url = {source-url.set-extension ".scurl"},
+                curlify-names? = true,
+                include-async-methods? = true,                
+                package-prefix = "COM.CURL.WSDL"
+            }}}
+}
 
 {heading level = 3, Datatypes}
-
-|| TODO: rationalize with wsdk-interop
 
 {paragraph    
     WSDL / SOAP definitions specify datatypes using XML Schema.
     Equivalent Curl types are used in method signatures.
-    Standard primitives are mapped directly.
-    Where complex types are defined (e.g. structures, arrays,
-    enumerated values) the corresponding Curl type
-    is defined in the service package.
-    Where an arbitrary type ({xml-node xs:any}) is specified, 
-    the curl type is {docref XDMElement}.    
-    
-    {paragraph
-        The following table shows the supplied mapping between
-        XML Schema primitive and derived simple datatypes 
-        and the corresponding Curl language datatypes.
+    There is often a natural mapping:
+    {itemize    
+        {item standard primitives correspond to Curl primitives}
+        {item enumerated simple types correspond to Curl enums}
+        {item complex types correspond to Curl classes}
+        {item repeating elements corrspond to Curl arrays}
+    }
+    Otherwise, specialized Curl types are used:
+    {itemize
+        {item some infrequently used simple types do not have direct Curl equivalents:
+            the are represented using {docref XMLSimpleValue}, which
+            gives access to the underlying String value,
+            and the ascribed XML Schema datatype.}
+        {item XML Schema allows for simple types to be declared 'nillable' or absent.
+            When a Curl type that does not admit the null value is dictated,
+            it is represented by the {docref Nullable} wrapper,
+            and the structure that contains it is augmented by a
+            {ctext {metavar name}-specified?} getter}
+        {item nested structures are represented using {docref XMLElementValues}
+            as arrays of tagged values}
+        {item arbitrary structures (wildcards, mixed) are represebted
+            using {docref XDMElement}}
+    }
         
-        For some infrequently used types that do not have direct
-        equivalents as standard Curl types, {docref XMLSimpleValue} is used.
-        This gives access to the underlying String value,
-        and the ascribed XML Schema datatype.
-
-        XML Schema allows for simple types to be declared 'nillable' or absent.
-        However, Curl primitive types do not admit the {docref null} value.
-        Therefore, when a nillable primitive is dictated by the WSDL schema,
-        it is represented by the {docref Nullable} wrapper,
-        and the structure that contains it is augmented by a
-        {ctext {metavar name}-specified?} getter.
-    }
-
-    {Table
-        columns = 2,
-        font-size = 8pt,
-        background = "beige",
-        {bold XML Type}, {bold Curl Type},
-        {xml-node xs:string}, {docref String},
-        {xml-node xs:boolean}, {docref bool},
-        {xml-node xs:int}, {docref int},
-        {xml-node xs:double}, {docref double},
-        {xml-node xs:float}, {docref float},
-        {xml-node xs:long}, {docref int64},
-        {xml-node xs:short}, {docref int16},
-        {xml-node xs:byte}, {docref int8},
-        {xml-node xs:base64Binary}, {docref ByteArray},
-        {xml-node xs:hexBinary}, {docref ByteArray},
-        {cell-prototype colspan = 2, {hrule}},
-        {xml-node xs:unsignedShort}, {docref uint16},
-        {xml-node xs:unsignedByte}, {docref byte},
-        {xml-node xs:integer}, {text {docref int64}, {docref BigInt}},
-        {xml-node xs:positiveinteger}, {text {docref int64}, {docref BigInt}},
-        {xml-node xs:negativeinteger}, {text {docref int64}, {docref BigInt}},
-        {xml-node xs:nonPositiveinteger}, {text {docref int64}, {docref BigInt}},
-        {xml-node xs:nonNegativeinteger}, {text {docref int64}, {docref BigInt}},
-        {xml-node xs:unsignedInt}, {docref uint},
-        {xml-node xs:unsignedLong}, {docref uint64},
-        {cell-prototype colspan = 2, {hrule}},
-        {xml-node xs:decimal}, {text {docref double}, {docref BigDecimal}},
-        {xml-node xs:dateTime}, {docref DateTime},
-        {xml-node xs:date}, {docref DateTime.date#factory},
-        {xml-node xs:anyURI}, {docref Url},
-        {xml-node xs:QName}, {docref XDMName},
-        {cell-prototype colspan = 2, {hrule}},
-        {xml-node xs:time}, {docref XMLTimeString},
-        {xml-node xs:duration}, {docref XMLDurationString},
-        {xml-node xs:gYear}, {docref XMLSimpleValue},
-        {xml-node xs:gYearMonth}, {docref XMLSimpleValue},
-        {xml-node xs:gMonth}, {docref XMLSimpleValue},
-        {xml-node xs:gMonthDay}, {docref XMLSimpleValue},
-        {xml-node xs:gDay}, {docref XMLSimpleValue},
-        {xml-node xs:normalizedString}, {docref XMLSimpleValue},
-        {xml-node xs:token}, {docref XMLTokenString},
-        {xml-node xs:language}, {docref XMLLanguageString},
-        {xml-node xs:Name}, {docref XMLSimpleValue},
-        {xml-node xs:NCName}, {docref XMLSimpleValue},
-        {xml-node xs:ENTITY}, {docref XMLSimpleValue},
-        {xml-node xs:ENTITIES}, {docref XMLSimpleValue},
-        {xml-node xs:NMTOKEN}, {docref XMLSimpleValue},
-        {xml-node xs:NMTOKENS}, {docref XMLSimpleValue},
-        {xml-node xs:ID}, {docref XMLSimpleValue},
-        {xml-node xs:IDREF}, {docref XMLSimpleValue},
-        {xml-node xs:IDREFS}, {docref XMLSimpleValue}
-    }
-    
-    Types specified in response messages using an {xml-node xsi:type}
-    attribute will be used while processing responses.
-    Also, responses containing "multiref" values
-    (using {xml-node id} and {xml-node ref} attributes)
-    can be processed.
+    See {link href = {url "wsdk-interop.curl#datatypes"},
+    XML Schema Type correspondence} for more detailed discussion.
     
     WSDL / SOAP definitions allow for a variety of formats
     ({monospace document/literal}, 
@@ -538,31 +693,34 @@
     WS-I Basic Profile} for interoperability guidelines.
     
     See {link href = {url "wsdk-interop.curl"},
-    WSDK Web Services Interoperability} document
+    WSDK Web Services Interoperability}
     for discussion of WSDK conventions and interoperability issues.
-
 }
 
 {heading level = 3, Service Class Parameters}
 
-|| TODO: dynamic headers, MTOM
-
 {paragraph
+
+    Service classes derive from {docref WSDLHTTPRPCPostClient},
+    which provides several configuration properties.
+    These can be specified as keyword arguments,
+    or (in most cases), modified dynamically.
+
+    {bold service location}
     
     The WSDL file defines a specific url where the 
     web service is required.  When the service is also
     under development, it may be necessary to relocate it.
-    The service classes, 
-    which derive from {docref WSDLHTTPRPCPostClient},
-    provide a property, 
-    {docref-abbr WSDLHTTPRPCPostClient.service-location}
+    Use property {docref-abbr WSDLHTTPRPCPostClient.service-location}
     for overriding the defined service location.
-    This can be specified using the {ctext service-location}
+    This must be specified using the {ctext service-location}
     keyword argument on the service class constructor.
     
-    SOAP messages are communicated using XML.
+    {bold compression}
     
+    SOAP messages are communicated using XML.    
     When messages are large, using compression may be desirable.
+    
     The HTTP {monospace Accept-Encoding} header is recognized
     by compression capable services. 
     The service classes, 
@@ -575,6 +733,37 @@
     For example, to request gzip compressed responses
     from the server, use
     {ctext set {metavar service}.accept-encoding = "gzip"}.
+    
+    {bold MTOM attachments}
+
+    SOAP messages represent binary content encoded in XML text.
+
+    SOAP MTOM allows for more efficient transfer of binary content,    
+    when the schema type is {xml-node xs:base64Binary},
+    by using a MIME Multipart/Related package. 
+
+    {docref-abbr WSDLHTTPRPCPostClient.mtom-support-range} can be used to
+    indicate what sort of MTOM support for SOAP messages is expected.
+
+    It defaults to {docref SOAPMTOMSupportRange}{ctext .response}
+    to allow accepting responses with MTOM,
+    but it will not send them unless this is set to
+    {docref SOAPMTOMSupportRange}{ctext .both}
+    
+    {bold dynamic headers}
+
+    {docref-abbr WSDLHTTPRPCPostClient.additional-request-headers}
+    can be used to specify additional XML that should
+    be sent as part of all request SOAP headers.
+    
+    {docref-abbr WSDLHTTPRPCPostClient.response-headers-callback}
+    can be used to specify a proc to handle any SOAP response headers.
+
+    {bold configurable base class}
+
+    Furthermore, behavior of service classes can be extended,
+    when service package code is generated with {docref generate-wsdl-package}
+    by specifying the {ctext service-class-mixin} directive.
 }
     
 {heading level = 3, Debugging}

@@ -33,14 +33,17 @@
     Web Services
 }
 
-Web services are governed by the SOAP specification. They are defined
+Web services are governed by the SOAP specifications. They are defined
 by WSDL files, following the WSDL specification. WSDL files use XML
 Schema for type and element definitions.  
 
-XML Schema (XS) is a broad, complex specification, written to address
-the full spectrum of XML use cases.  Many of its advanced features are
-not often used in web service applications.  Different tools and
-services use varying conventions.
+XML Schema (XS) 
+{link href = {url "http://www.w3.org/TR/xmlschema-1"}, Structures} and
+{link href = {url "http://www.w3.org/TR/xmlschema-2"}, Datatypes}
+are broad, complex specifications, written to address the full
+spectrum of XML use cases.  Many of the advanced features are not
+often used in web service applications.  Different tools and services
+use varying conventions.
 
 It is considered "good practice" for web service interoperability to
 start with a definition of message content, using XSD and WSDL, which
@@ -67,18 +70,21 @@ Conformance with the standard is intended to improve interoperability
 between endpoints of a web service; the standard makes the following
 note:
 
-"It is impossible to completely guarantee the interoperability
+{blockquote
+    "It is impossible to completely guarantee the interoperability
 of a particular service. However, the Profile does address the most
 common problems that implementation experience has revealed to date."
+}
 
 The WS-I web site provides source for sample applications, and some
 test tools for evaluating a service against the Basic Profile.
 
 Many interoperability issues arise from handling the types specified
-by XML Schema - this report summarizes how the Curl WSDK 1.0 WSDL
-package represents XML Schema types in Curl.
+by XML Schema - the following sections summarize how Curl WSDK 2.0
+represents XML Schema types in Curl.
 
 {heading level = 2,
+    destination-name = "datatypes",
     XML Schema Type correspondence
 }
 {heading level = 3,
@@ -88,73 +94,97 @@ package represents XML Schema types in Curl.
 All primitive simple types are supported, with correspondence
 to Curl types summarized in the following table.
 
-Types requiring arbitrary precision are mapped to COM.CURL.UTIL.BIGNUM types,
+Types requiring arbitrary precision are mapped to {docref COM.CURL.UTIL.BIGNUM} types,
 if {ctext use-bignum-types?} is specified; otherwise primitive types are used. 
 
-XMLSimpleValue is used forsome infrequently used types
-that do not have direct equivalents asstandard Curl types.
-XMLSimpleValue gives access to the underlying
-String value, and the ascribed XML Schema datatype.
-There are aliases for some XMLSimpleValue varieties.
+{docref XMLSimpleValue} is used for some infrequently used types
+that do not have direct equivalents as standard Curl types.
+{ctext XMLSimpleValue} gives access to the underlying
+{ctext String value}, and the ascribed XML Schema datatype.
+There are aliases for some {ctext XMLSimpleValue} varieties.
 
-{table font-family = "monospace", font-size = 0.9em, cell-margin = 1px,
-    {row {header-cell XML Type} {header-cell Curl Type}}
-    {row {cell xs:string} {cell String}}
-    {row {cell xs:boolean} {cell bool}}
-    {row {cell xs:int} {cell int}}
-    {row {cell xs:double} {cell double}}
-    {row {cell xs:float} {cell float}}
-    {row {cell xs:long} {cell int64}}
-    {row {cell xs:short} {cell int16}}
-    {row {cell xs:byte} {cell int8}}
-    {row {cell xs:base64Binary} {cell ByteArray}}
-    {row {cell xs:hexBinary} {cell BytrArray}}
-    {row {cell xs:unsignedShort} {cell uint16}}
-    {row {cell xs:unsignedByte} {cell byte}}
-    {row {cell xs:integer} {cell int64, BigInt}}
-    {row {cell xs:positiveinteger} {cell int64, BigInt}}
-    {row {cell xs:negativeinteger} {cell int64, BigInt}}
-    {row {cell xs:nonPositiveinteger} {cell int64, BigInt}}
-    {row {cell xs:nonNegativeinteger} {cell int64, BigInt}}
-    {row {cell xs:unsignedInt} {cell unit}}
-    {row {cell xs:unsignedLong} {cell uint64}}
-    {row {cell xs:decimal} {cell double, BigDecimal}}
-    {row {cell xs:dateTime} {cell DateTime}}
-    {row {cell xs:anyURI} {cell Url}}
-    {row {cell xs:QName} {cell XDMName}}
-    {row {cell xs:date} {cell DateTime.date}}
-    {row {cell xs:time} {cell XMLTimeString, XMLSimpleValue}}
-    {row {cell xs:duration} {cell XMLDurationString, XMLSimpleValue}}
-    {row {cell xs:gYear} {cell XMLSimpleValue}}
-    {row {cell xs:gYearMonth} {cell XMLSimpleValue}}
-    {row {cell xs:gMonth} {cell XMLSimpleValue}}
-    {row {cell xs:gMonthDay} {cell XMLSimpleValue}}
-    {row {cell xs:gDay} {cell XMLSimpleValue}}
-    {row {cell xs:normalizedString} {cell XMLSimpleValue}}
-    {row {cell xs:token} {cell XMLTokenString, XMLSimpleValue}}
-    {row {cell xs:language} {cell XMLLanguageString, XMLSimpleValue}}
-    {row {cell xs:Name} {cell XMLSimpleValue}}
-    {row {cell xs:NCName} {cell XMLSimpleValue}}
-    {row {cell xs:ENTITY} {cell XMLSimpleValue}}
-    {row {cell xs:ENTITIES} {cell XMLSimpleValue}}
-    {row {cell xs:NMTOKEN} {cell XMLSimpleValue}}
-    {row {cell xs:NMTOKENS} {cell XMLSimpleValue}}
-    {row {cell xs:ID} {cell XMLSimpleValue}}
-    {row {cell xs:IDREF} {cell XMLSimpleValue}}
-    {row {cell xs:IDREFS} {cell XMLSimpleValue}}
+{Table
+    columns = 2,
+    font-size = 8pt,
+    background = "beige",
+    cell-margin = 1px,
+    
+    {bold XML Type}, {bold Curl Type},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:string}, {docref String},
+    {xml-node xs:boolean}, {docref bool},
+    {xml-node xs:int}, {docref int},
+    {xml-node xs:double}, {docref double},
+    {xml-node xs:float}, {docref float},
+    {xml-node xs:long}, {docref int64},
+    {xml-node xs:short}, {docref int16},
+    {xml-node xs:byte}, {docref int8},
+    {xml-node xs:base64Binary}, {docref ByteArray},
+    {xml-node xs:hexBinary}, {docref ByteArray},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:unsignedShort}, {docref uint16},
+    {xml-node xs:unsignedByte}, {docref byte},
+    {xml-node xs:unsignedInt}, {docref uint},
+    {xml-node xs:unsignedLong}, {docref uint64},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:integer}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:positiveinteger}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:negativeinteger}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:nonPositiveinteger}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:nonNegativeinteger}, {text {docref int64}, {docref BigInt}},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:decimal}, {text {docref double}, {docref BigDecimal}},
+    {xml-node xs:dateTime}, {docref DateTime},
+    {xml-node xs:date}, {docref DateTime.date#factory},
+    {xml-node xs:anyURI}, {docref Url},
+    {xml-node xs:QName}, {docref XDMName},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:time},
+    {text {docref XMLTimeString}, {docref XMLSimpleValue}},
+    {xml-node xs:duration},
+    {text {docref XMLDurationString}, {docref XMLSimpleValue}},
+    {xml-node xs:token},
+    {text {docref XMLTokenString}, {docref XMLSimpleValue}},
+    {xml-node xs:language},
+    {text {docref XMLLanguageString}, {docref XMLSimpleValue},},
+    {xml-node xs:gYear}, {docref XMLSimpleValue},
+    {xml-node xs:gYearMonth}, {docref XMLSimpleValue},
+    {xml-node xs:gMonth}, {docref XMLSimpleValue},
+    {xml-node xs:gMonthDay}, {docref XMLSimpleValue},
+    {xml-node xs:gDay}, {docref XMLSimpleValue},
+    {xml-node xs:normalizedString}, {docref XMLSimpleValue},
+    {xml-node xs:Name}, {docref XMLSimpleValue},
+    {xml-node xs:NCName}, {docref XMLSimpleValue},
+    {xml-node xs:ENTITY}, {docref XMLSimpleValue},
+    {xml-node xs:ENTITIES}, {docref XMLSimpleValue},
+    {xml-node xs:NMTOKEN}, {docref XMLSimpleValue},
+    {xml-node xs:NMTOKENS}, {docref XMLSimpleValue},
+    {xml-node xs:ID}, {docref XMLSimpleValue},
+    {xml-node xs:IDREF}, {docref XMLSimpleValue},
+    {xml-node xs:IDREFS}, {docref XMLSimpleValue}
 }
 
 Derived simple types are supported as follows:
 {itemize
-    {item Types derived by enumeration are represented as the equivalent Curl 'define-enum'
+    {item Types derived by enumeration are represented 
+        as the equivalent Curl {docref define-enum}
         
-        The values associated with curl enums are limited to simple types
-        (number, char, bool, or String).  Therefore, String equivalents are used
-        when the enumeration basis is not one of those types (e.g. Url, XMLName).
+        The values associated with Curl enums are limited to simple types
+        (number, {docref char}, {docref bool}, or {docref String}).  
+        Therefore, {ctext String} equivalents are used
+        when the enumeration basis is not one of those types 
+        (e.g. {docref Url}, {docref XMLName}).
     }
-    {item Types derived by restriction are represented as an alias to the underlying primitive type.}
-    {item Types derived by list are represented by arrays parameterized by the underlying base type.}
-    {item Types derived by union are represented as an alias to 'any'. }
+    {item Types derived by restriction are represented 
+        as an alias to the underlying primitive type.}
+    {item Types derived by list are represented by 
+        arrays parameterized by the underlying base type.}
+    {item Types derived by union are represented as an alias to {docref any}.}
 }
 {heading level = 3,
     Complex Types
@@ -167,9 +197,9 @@ treatment of members depends on the cardinality and content model.
 
 In some cases, however, when the specified structure does not have a
 direct equivalent as a class, a different representation is used:
-XMLElementValues is a sequence of XMLElementValue.
-Each XMLElementValue associates an elemebt XMLName with some value.
-These cases are noted below.
+{docref XMLElementValues} is a sequence of {docref XMLElementValue}.
+Each {docref XMLElementValue} associates an element 
+{docref XMLName} with some value. These cases are noted below.
 
 {heading level = 4,
     Cardinality
@@ -184,42 +214,42 @@ nullable field.
 A repeating element (maxOccurs > 1) is represented as a parameterized
 array.
 
-An element specified as 'nillable' is always represented as a
+An element specified as {xml-node nillable} is always represented as a
 nullable field.
 
 {heading level = 4,
     Complex Content
 }
 
-Elements specified in model groups 'all' and 'sequence' are
+Elements specified in model groups {xml-node xs:all} and {xml-node xs:sequence} are
 represented as fields in the class.
 
-Elements specified in 'choice' model groups are represented
-using 'any', or XMLElementValue (depending on whether the
-alternatives can be disciminated by their type,
-or need to be tagged with their element name).
+Elements specified in {xml-node xs:choice} model groups are represented using
+{docref any}, or {docref XMLElementValue} 
+(depending on whether the alternatives can be disciminated by their
+type, or need to be tagged with their element name).
 
 When model groups have nested structure, the elements will
-be represented using XMLElementValues, preserving their
+be represented using {docref XMLElementValues}, preserving their
 element names and order.
 
-Elements specified indirectly, by reference to 'group' definitions,
+Elements specified indirectly, by reference to {xml-node xs:group} definitions,
 are expanded into the constituent elements.
 
-Arbitrary elements, specified using the 'any' wildcard result in the
-use of 'XDMElement' (rather than a specific class) to represent the
-container.
+Arbitrary elements, specified using the {xml-node xs:any} wildcard result in the
+use of {docref XDMElement} (rather than a specific class) to represent the
+{italic container}.
 
 Attributes are also represented as fields.
 
-Attributes specified indirectly, by reference to 'attributeGroup'
+Attributes specified indirectly, by reference to {xml-node xs:attributeGroup}
 definitions, are expanded into the constituent attributes.
 
-Arbitrary attributes, specified using the 'anyAttribute' wildcard
-result in the use of 'XDMElement' (rather than a specific class) to
-represent the container.
+Arbitrary attributes, specified using the {xml-node xs:anyAttribute} wildcard
+result in the use of {docref XDMElement} (rather than a specific class) to
+represent the {italic container}.
 
-Mixed content results in the use of 'XDMElement' (rather than a
+Mixed content results in the use of {docref XDMElement} (rather than a
 specific class).
 
 Types derived by extension result in a class definition which inherits
@@ -240,7 +270,7 @@ it is represented as a parameterized array.
 
 Elements with a declared type derived by extension from a base type may 
 contain a subtype of the base type.  Such "runtime subtypes" must
-be specified using the 'xsi:type' attribute.  
+be specified using the {xml-node xsi:type} attribute.  
 
 {heading level = 4,
     Nullable Primitives
@@ -248,15 +278,16 @@ be specified using the 'xsi:type' attribute.
 
 Some Curl types (primitives and enums) do not admit the null value.
 When the schema definition specifies an optional (or nillable) value
-for one of these types, the generated class provides accessors
-to query and assign the unspecified value:
+for one of these types, they are wrapped wiht {docref Nullable}, and
+the generated class provides accessors to query and assign the
+unspecified value:
 {itemize
-    {item {monospace <element-name>-specifed?}}
-    {item {monospace unset-<element-name>}
+    {item {ctext {metavar<element-name>}-specifed?}}
+    {item {ctext unset-{metavar<element-name>}}
     }
 }
 The value will be unspecified if an optional element was not supplied,
-or if a nillable element was marked as nil using 'xsi:null=true'.
+or if a nillable element was marked as nil using {xml-node xsi:nil=true}.
     
 {heading level = 4,
     Simple Content
@@ -264,7 +295,7 @@ or if a nillable element was marked as nil using 'xsi:null=true'.
 
 This is used to describe "atomic" elements, which contain only a text
 element (and possibly attributes). The text value is represented using
-a field named 'content'.
+a field named {ctext content}.
 
 {heading level = 4,
     Global Definitions
@@ -289,7 +320,7 @@ used.
 }
 
 A schema or WSDL file may incorporate definitions from other schema
-files by use of 'import' and 'include'. These are processed similarly
+files by use of {xml-node xs:import} and {xml-node xs:include}. These are processed similarly
 to the top level schema definition. Certain "well known" SOAP/WSDL
 schema definitions are not explicitly imported.
 {itemize
@@ -319,10 +350,10 @@ name are always used.  Name conflicts are checked,
 and resolved by substitution of underscores for disallowed characters,
 and addition of namespace prefixes or numeric suffixes. 
 
-Furthermore, when code generation directive 'curlify-names? = true'
+Furthermore, when code generation directive {ctext curlify-names? = true}
 is specified, names are converted to follow standard Curl conventions
 (using using hypenated lower case words for variables, and "CamelCase"
-names for classe names).
+names for class names).
 
 
 {heading level = 4,
@@ -330,26 +361,26 @@ names for classe names).
 }
 
 SOAP allows operation inputs and outputs to be interpreted without use
-of explicit XS types according to an encoding. This 'encoded' usage is
+of explicit XS types according to an encoding. This {xml-node "encoded"} usage is
 discouraged by the WS-I interoperability guidelines, in favor of the
-more explicit 'literal' usage described above.
+more explicit {xml-node "literal"} usage described above.
 
-The conventions used for 'encoded' services are as follows. The SOAP
+The conventions used for {xml-node "encoded"} services are as follows. The SOAP
 spec allows for arbitrary encoding styles, identified by the value of
-the 'encodingStyle' attribute. In practice, the default encoding style
+the {xml-node encodingStyle} attribute. In practice, the default encoding style
 that is defined in the specification
-('http://schemas.xmlsoap.org/soap/encoding/') is always used.
+({xml-node "http://schemas.xmlsoap.org/soap/encoding/"}) is always used.
 
-Message elements use the 'xsi:type' attribute to describe their
-type. Message elements marked with 'xsi:nil' true are treated as
-nulls. Array elements use 'soapenc:Array' for 'xsi:type' value and
-'soapenc:arrayType' with a value containing the element type
+Message elements use the {xml-node xsi:type} attribute to describe their
+type. Message elements marked with {xml-node xsi:nil} true are treated as
+nulls. Array elements use {xml-node soapenc:Array} for {xml-node xsi:type} value and
+{xml-node soapenc:arrayType} with a value containing the element type
 concatenated with dimensions. (The spec also has provisions for sparse
 arrays and nonstandard offsets.  These are rarely used, and are not
 supported by the WSDK.)
 
 Message elements may be shared ("multiref"): they are specified once,
-with an unique 'id' attribute, and reference elsewhere, via a 'ref'
+with an unique {xml-node id} attribute, and reference elsewhere, via a {xml-node ref}
 attribute. The original element may be "in place" in the message, or
 "freestanding" in the message envelope outside the message body. Some
 services and tools use "multiref" encoding even for primitive values,
@@ -364,25 +395,32 @@ The WSDK does not support SOAP 1.2 encoding conventions.
 The Curl service class corresponding to a WSDL service port defines
 methods for each SOAP operation (in general, there are two,
 for synchronous and asynchronous requests); the asynchronous variants
-can be suppressed by using 'include-async-methods? = false'.
+can be suppressed by using {ctext include-async-methods? = false}.
 
-The signatures of these methods (argumentsand return values)
-are derived from 'input' and 'output' message
+WSDK 2.0 supports both SOAP 1.1 and SOAP 1.2,
+according to the namespace of the 
+{xml-node binding} elements in the WSDL file.
+
+The signatures of these methods (arguments and return values)
+are derived from {xml-node input} and {xml-node output} message
 definitions in the WSDL file.  The conventions for the messages vary,
 depending on whether the operation style is "rpc" or "document".  For
 "document" style operations, the input and output messages are
-expected to contain a single 'part', which refers to a defined
-'element' in the types.  For "rpc" style operations, the messages may
-contain multiple parts: each 'part' of the input message describes an
-argument; each 'part' in an output message describes a return value.
+expected to contain a single {xml-node part}, which refers to a defined
+{xml-node element} in the types.  For "rpc" style operations, the messages may
+contain multiple parts: each {xml-node part} of the input message describes an
+argument; each {xml-node part} in an output message describes a return value.
 
 SOAP messages can contain headers. When headers are specified, input
 headers are represented as keyword arguments, and output headers as
 additional return values.
 
 SOAP headers can also be specified and detected dynamically,
-using service class methods and properties.  That is the only
-way to work with headers that are not specified in the WSDL.
+using service class 
+{docref-abbr WSDLHTTPRPCPostClient.additional-request-headers} 
+and {docref-abbr WSDLHTTPRPCPostClient.response-headers-callback}
+properties. That is the only way to work with headers
+that are not specified in the WSDL.
 
 {heading level = 2,
     WSDK Interoperability
@@ -443,12 +481,12 @@ The following features are rarely used in web service definitions, and
 may be more likely to encounter interoperability issues and unexpected
 behavior from the WSDK
 {itemize
-    {item xs:choice}
-    {item xs:union}
-    {item xs:list}
-    {item xs:attributeGroup}
-    {item xs:anyAttribute}
-    {item xs:any}
+    {item {xml-node xs:choice}}
+    {item {xml-node xs:union}}
+    {item {xml-node xs:list}}
+    {item {xml-node xs:attributeGroup}}
+    {item {xml-node xs:anyAttribute}}
+    {item {xml-node xs:any}}
 }
 Similarly, the use of SOAP headers is less frequent, so services
 employing headers may also encounter interoperability issues.

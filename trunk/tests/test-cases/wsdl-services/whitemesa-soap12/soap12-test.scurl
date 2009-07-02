@@ -1,10 +1,9 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Soap12-test,
-    {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Soap12-test.wsdl"}
+    {compiler-directives careful? = true}}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Soap12-test.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/whitemesa-soap12/Soap12-test.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {define-class public Soap12TestDocPort {inherits WSDLHTTPRPCPostClient}
@@ -517,15 +516,15 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "http://example.org/ts-tests", "DataHolder"},
-                        xml-type = {XMLName "http://example.org/ts-tests", "DataHolder_t"},
+                        element-name = {XMLName "", "varArray"},
+                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
                         curl-type = {Array-of String},
                         nillable? = true
                     }
                 },
-                element-names =
+                array-types =
                     {{Array-of #XMLName}
-                        {XMLName "http://example.org/ts-tests", "Data"}
+                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
                     },
                 xml-type-to-curl-type = xml-type-to-curl-type,
                 curl-type-to-xml-type = curl-type-to-xml-type,
@@ -548,15 +547,15 @@
                         curl-type = String
                     },
                     {SOAPObjectType
-                        element-name = {XMLName "", "varArray"},
-                        xml-type = {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"},
+                        element-name = {XMLName "http://example.org/ts-tests", "DataHolder"},
+                        xml-type = {XMLName "http://example.org/ts-tests", "DataHolder_t"},
                         curl-type = {Array-of String},
                         nillable? = true
                     }
                 },
-                array-types =
+                element-names =
                     {{Array-of #XMLName}
-                        {XMLName.unchecked SOAPTypeMapper.xml-schema-uri, "string[]"}
+                        {XMLName "http://example.org/ts-tests", "Data"}
                     },
                 xml-type-to-curl-type = xml-type-to-curl-type,
                 curl-type-to-xml-type = curl-type-to-xml-type,
@@ -642,10 +641,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/test-doc"}
+            {abs-url "http://www.whitemesa.net/soap12/test-doc"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }
@@ -2107,10 +2108,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/test-rpc"}
+            {abs-url "http://www.whitemesa.net/soap12/test-rpc"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

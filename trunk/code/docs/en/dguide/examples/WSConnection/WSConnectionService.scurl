@@ -530,10 +530,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost/work/services/soap/s-wsconnection.php"}
+            {abs-url "http://localhost/work/services/soap/s-wsconnection.php"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

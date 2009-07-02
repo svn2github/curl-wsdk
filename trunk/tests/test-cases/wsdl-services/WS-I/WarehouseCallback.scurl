@@ -1,7 +1,6 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.WarehouseCallback,
-    {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl"}
+    {compiler-directives careful? = true}}
 
 || This file was generated with COM.CURL.WSDK.WSDL
 || WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/WarehouseCallback.wsdl
@@ -1142,10 +1141,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"}
+            {abs-url "http://localhost:8888/ws-i/supplychain/WarehouseCallback"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

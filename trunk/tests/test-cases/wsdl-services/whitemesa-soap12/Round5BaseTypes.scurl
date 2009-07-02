@@ -1,10 +1,9 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.Round5BaseTypes,
-    {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl"}
+    {compiler-directives careful? = true}}
 
 || This file was generated with COM.CURL.WSDK.WSDL
-|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-samples/whitemesa-soap12/Round5BaseTypes.wsdl
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/whitemesa-soap12/Round5BaseTypes.wsdl
 
 {import * from COM.CURL.WSDK.SOAP}
 {doc-next 
@@ -676,10 +675,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.whitemesa.net/soap12/baseTypes"}
+            {abs-url "http://www.whitemesa.net/soap12/baseTypes"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

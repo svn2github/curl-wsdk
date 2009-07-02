@@ -604,10 +604,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://api.google.com/search/beta2"}
+            {abs-url "http://api.google.com/search/beta2"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

@@ -1,7 +1,6 @@
 {curl 6.0, 7.0 package}
 {package COM.CURL.WSDL.TranslationEngine,
-    {compiler-directives careful? = true},
-    wsdl = "file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TranslationEngine.wsdl"}
+    {compiler-directives careful? = true}}
 
 || This file was generated with COM.CURL.WSDK.WSDL
 || WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/TranslationEngine.wsdl
@@ -133,10 +132,12 @@
   {constructor public
     {default
         service-location:Url =
-            {abs-url "http://www.webservicex.com/TranslateService.asmx"}
+            {abs-url "http://www.webservicex.com/TranslateService.asmx"},
+            ...
     }
-    {construct-super service-location,
-        generated-using-version = "6"
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
     }
   }
 }

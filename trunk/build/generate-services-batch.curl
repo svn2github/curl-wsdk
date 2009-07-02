@@ -37,7 +37,9 @@
 || --------------------
 {generate-wsdl-package
     include-async-methods? = true,
-    {wsdk-dguide-root.concat "google/GoogleSearch.wsdl"}
+    {wsdk-dguide-root.concat "google/GoogleSearch.wsdl"},
+    || NOTE: svn friendly
+    preserve-existing-files? = true
 }
 
 || PowerQuote

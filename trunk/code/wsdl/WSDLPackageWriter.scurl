@@ -471,10 +471,11 @@
                   }:void
     {self.write-preamble out}
     {format out = out,
-        |"{curl 7.0 package}"| & "\n" &
+        |"{curl %s package}"| & "\n" &
         |"{package %s,"| & "\n" &
         |"    {compiler-directives careful? = true}}"| & "\n" &
         |"{import * from COM.CURL.WSDK.SOAP}"| & "\n",
+        self.directives.curl-versions,
         package-name
     }
     {for loc in include-locs do
@@ -490,8 +491,9 @@
                   }:void
         {self.write-preamble out}
         {format out = out,
-            |"{curl 7.0 manifest}"| & "\n" &
-            |"{delegate-to COM.CURL.WSDK}"| & "\n"
+            |"{curl %s manifest}"| & "\n" &
+            |"{delegate-to COM.CURL.WSDK}"| & "\n",
+            self.directives.curl-versions
         }
         {do
             {format out = out,

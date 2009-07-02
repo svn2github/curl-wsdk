@@ -626,7 +626,12 @@
   {getter {detached-applet?}:bool
     {return
         {if-non-null this-applet = {get-the-applet-or-null} then
-            this-applet.detached?
+            {api-version-switch
+             case "7+" do
+                this-applet.detached?
+             case "6" do
+                this-applet.url.extension == ".dcurl"
+             else false}
          else false}}
   }
   {method public {save-open-files}:bool

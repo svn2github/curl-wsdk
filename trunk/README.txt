@@ -82,6 +82,11 @@ IDE 'Tools>Configure Editors...' command.
 
 - docs/en/dguide/tools/wsdl/editor-info.txt   	WSDK tool definition
 
+Note: The WSDL IDE Tool must be installed using the files installed
+with the Curl Documentation Viewer.  This assures it has access to the
+necessary libraries.  The 'WSDK Web Services' chapter contains
+the necessary filename for the installed documentation.
+
 If an earlier version of WSDL Services IDE tool has been installed, 
 it must be replaced with the version in this distribution, 
 in order to function with the Curl Version 7.0 IDE. 

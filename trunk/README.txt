@@ -37,6 +37,7 @@ DIRECTORIES
 The distribution is organized into directories which each serve a
 specific purpose.
 
+
 Deployable Library
 --------------------
  
@@ -92,6 +93,21 @@ it must be replaced with the version in this distribution,
 in order to function with the Curl Version 7.0 IDE. 
 The generated service packages will be marked with the 
 curl version defined by their project. 
+
+Prerequisites
+--------------------
+
+WSDK 2.0 depends on the CURL-UTIL library.
+
+* CURL-UTIL Documentation must be installed for WSDK documentation,
+  including WSDL IDE Tool, to function properly.
+
+* CURL-UTIL Library must be accessible as a delegate from the root
+  manifest of applications using WSDK Library.
+
+For installatiuon convenience, a CURL-UTIL distribution may be
+included in this directory.
+
 
 KNOWN ISSUES
 ====================

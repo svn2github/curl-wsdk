@@ -229,7 +229,7 @@
   {method {result-changed}:void
     {self.clear-display}
     {self.check-failures}
-    {if-non-null writer= self.writer then
+    {if-non-null writer = self.writer then
         {self.display-service-package.add
             writer.service-package-name}
         def class-names = writer.service-class-names
@@ -248,10 +248,12 @@
   {method {check-failures}:void
     {if-non-null exception = self.exception then
         {self.note-exception exception}}
-    {for warning in self.writer.schema.warnings do
-        {self.note-warning warning}}
-    {for warning in self.writer.wsdl.warnings do
-        {self.note-warning warning}}
+    {if-non-null writer = self.writer then
+        {for warning in writer.schema.warnings do
+            {self.note-warning warning}}
+        {for warning in writer.wsdl.warnings do
+            {self.note-warning warning}}
+    }
   }
   {method {note-exception exception:Exception}:void
     {self.display-failures.add

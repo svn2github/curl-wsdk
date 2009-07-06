@@ -40,8 +40,6 @@
 {import StemHttpDirectory from CURL.IO.HTTP}  || for WSDLCurlNamer
 {import Identifier from CURL.LANGUAGE.SOURCE} || for WSDLCurlNamer, namespace-contraction
 {import Domain from CURL.DATA-ACCESS.BASE}    || for WSDLSchema.register-simple-type
-{import CURL.LANGUAGE.COMPONENT} || for register-bignum-types
-{import ComponentLocationException from CURL.LANGUAGE.COMPONENT}
 
 {include "WSDLNameTable.scurl"}
 {include "WSDLCurlNamer.scurl"}
@@ -57,21 +55,29 @@
 {include "WSDLPackageWriter.scurl"}
 {include "generate-wsdl.scurl"}
 
-
-{api-version-switch
- case "7+" do
-    {def public get-process-manifest =
-        CURL.LANGUAGE.COMPONENT.get-process-manifest
-    }
- case "6" do
-    {import SerializeInputStream from CURL.IO.SERIALIZE}
-    {define-proc public {get-process-manifest}:ComponentManifest
-        def m =
-            {SerializeInputStream
-                {ByteArrayInputStream {ByteArray}}
-            }.manifest
-        {return m}
-    }
+|| root-manifest for all seasons
+|| --------------------
+{import get-the-applet-or-null from CURL.ENGINE.APPLET}
+{import CURL.LANGUAGE.COMPONENT} 
+{import ComponentLocationException from CURL.LANGUAGE.COMPONENT}
+{import CURL.IO.SERIALIZE}
+{define-proc package {get-root-manifest}:ComponentManifest
+    {return
+        {if {get-the-applet-or-null} == null then
+            || No applet: must be IDE
+            {get-default-manifest}
+         else
+            || Normal applet: use its manifest
+            {api-version-switch
+             case "7+" do || has convenient API
+                {CURL.LANGUAGE.COMPONENT.get-process-manifest}
+             case "6" do  || no API; needs contrivance
+                {CURL.IO.SERIALIZE.SerializeInputStream
+                    {ByteArrayInputStream {ByteArray}}
+                }.manifest
+             else
+                {unreachable}}
+        }}
 }
 
 || exceptions

@@ -766,7 +766,7 @@
 || register BIGNUM-WSDK contributions
 || ------------------------------
 {define-proc public {register-bignum-types
-                        manifest:ComponentManifest = {get-process-manifest},
+                        manifest:ComponentManifest = {get-root-manifest},
                         error-if-unavailable?:bool = true
                     }:void
     {process-bignum-types "register-simple-types",
@@ -774,7 +774,7 @@
         error-if-unavailable? = error-if-unavailable?}
 }
 {define-proc public {unregister-bignum-types
-                        manifest:ComponentManifest = {get-process-manifest},
+                        manifest:ComponentManifest = {get-root-manifest},
                         error-if-unavailable?:bool = true
                     }:void
     {process-bignum-types "unregister-simple-types",
@@ -783,7 +783,7 @@
 }
 {define-proc package {process-bignum-types
                          function:String,
-                         manifest:ComponentManifest = {get-process-manifest},
+                         manifest:ComponentManifest = {get-root-manifest},
                          error-if-unavailable?:bool = true
                      }:void
     {if {package-available? "COM.CURL.UTIL.BIGNUM",
@@ -805,14 +805,14 @@
 }
 {define-proc package {package-available?
                          package-name:String,
-                         manifest:ComponentManifest = {get-process-manifest}
+                         manifest:ComponentManifest = {get-root-manifest}
                      }:bool
     def pkg = {maybe-import-package package-name, manifest = manifest}
     {return pkg != null}
 }
 {define-proc package {maybe-import-package
                          package-name:String,
-                         manifest:ComponentManifest = {get-process-manifest}
+                         manifest:ComponentManifest = {get-root-manifest}
                      }:#Package
     {return
         {try

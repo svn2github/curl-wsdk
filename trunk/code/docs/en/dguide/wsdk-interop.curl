@@ -430,10 +430,42 @@ that are not specified in the WSDL.
     Known Issues
 }
 
-|| TODO: summarize more recent issues and resolutions.
-
 The following issues have been identified:
 {itemize
+
+    {item Nonrepeating 'xs:choice' elements yield generated code
+        with a wrapper class around the choice value.
+    }
+
+    {item Types containing 'xs:choice' particles fall back to using 'xs:any'.
+        That yields results containing XDM objects
+        that must be parsed by the application.
+        
+        {italic Fixed (in most cases) in WSDK version 2.0}
+    }
+
+    {item When parameter and header have same name,
+        generated code fails to compile.
+
+        This was a WSDK 1.1 defect.
+        
+        {italic Fixed in WSDK version 2.0}
+    }
+
+    {item When repeating element has same name as its container,
+        a SOAPUnmarshalException occurs.
+
+        This was a WSDK1.1 defect.
+
+        {italic Fixed in WSDK version 2.0}
+    }
+
+    {item Nested local elements can cause name conflicts.
+
+        This was a WSDK1.0.6 defect.
+
+        {italic Fixed in WSDK version 2.0}
+    }
     
     {item Repeating elements must be nested in their own container.
 

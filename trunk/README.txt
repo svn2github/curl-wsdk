@@ -117,14 +117,14 @@ This WSDK release contains several improvements.
 - MTOM (Message Transmission Optimization Mechanism)
 
 * Dynamic access to SOAP headers: WSDK 2.0 provides API for service
-  class to dyanmically access request and response headers, in
+  class to dynamically access request and response headers, in
   addition to static access through service method signature.
 
 * WSDL code generation flexibility:  additional code generation directives
 
 - generated code can be organized into files and directories
   (or consolidated in single file, as before)
-- identifiers can match names specifed in WSDL file 
+- identifiers can match names specified in WSDL file 
   (or be modified to follow standard Curl naming conventions)
 - generation of async methods can be suppressed
 

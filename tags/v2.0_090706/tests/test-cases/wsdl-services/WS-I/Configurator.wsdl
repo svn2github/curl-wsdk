@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	September 14, 2002
+
+	(c) Copyright 2002, The Web Services-Interoperability Organization (WS-I)
+	Download or use of this file is governed by the Policies and Bylaws of WS-I.
+
+	For more information, send email info@ws-i.org. 	
+-->
+<wsdl:definitions name="TestConfigurator" 
+	xmlns="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    targetNamespace="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.wsdl"
+	xmlns:tns="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.wsdl">
+
+<wsdl:import 
+	namespace="http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/Configurator.wsdl"
+    location="LOCAL/Configurator.wsdl"/>
+	<wsdl:service name="ConfiguratorService">
+		<wsdl:port binding="tns:ConfiguratorBinding" name="ConfiguratorPort">
+			<soap:address location="http://localhost:8888/ws-i/supplychain/services/Configurator"/>
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>

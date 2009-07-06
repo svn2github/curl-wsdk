@@ -1,0 +1,293 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPMarshaler
+
+|| abstract idea of something that provides marshal/unmarshal services
+|| provides common impl. of registering code
+{define-class public open abstract SOAPMarshaler
+
+  field public constant type:SOAPObjectType
+  || save marshal/unmarshal procs?
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType
+                      }
+    || should we check this for validity now?
+    set self.type = type
+  }
+
+
+  {method public open {register
+                          type-mapper:#TableSOAPTypeMapper = null,
+                          marshal?:bool = true,
+                          unmarshal?:bool = true,
+                          element-name-to-xml-type-mapper:#TableSOAPElementNameToXMLTypeMapper = null,
+                          xml-type-to-curl-type-mapper:#TableSOAPXMLTypeToCurlTypeMapper = null,
+                          curl-type-to-xml-type-mapper:#TableSOAPCurlTypeToXMLTypeMapper = null,
+                          xml-type-to-element-name-mapper:#TableSOAPXMLTypeToElementNameMapper = null
+                      }:void
+    {if-non-null type-mapper then
+        {self.type-mapper-register
+            type-mapper,
+            marshal? = marshal?,
+            unmarshal? = unmarshal?
+        }
+    }
+    {if-non-null element-name-to-xml-type-mapper then
+        {self.element-name-to-xml-type-register element-name-to-xml-type-mapper}
+    }
+    {if-non-null xml-type-to-curl-type-mapper then
+        {self.xml-type-to-curl-type-register xml-type-to-curl-type-mapper}
+    }
+    {if-non-null curl-type-to-xml-type-mapper then
+        {self.curl-type-to-xml-type-register curl-type-to-xml-type-mapper}
+    }
+    {if-non-null xml-type-to-element-name-mapper then
+        {self.xml-type-to-element-name-register xml-type-to-element-name-mapper}
+    }
+  }
+
+  {method protected open {type-mapper-register
+                          mapper:TableSOAPTypeMapper,
+                          marshal?:bool = true,
+                          unmarshal?:bool = true
+                      }:void
+    let constant type:SOAPObjectType = self.type
+    {for e in self.encodings do
+        {if marshal? then
+            {if-non-null marshal-proc = {self.marshal-proc e} then
+                {mapper.set-marshal-proc
+                    type,
+                    e,
+                    marshal-proc
+                }
+            }
+        }
+        {if unmarshal? then
+            {if-non-null unmarshal-proc = {self.unmarshal-proc e} then
+                {mapper.set-unmarshal-proc
+                    type,
+                    e,
+                    unmarshal-proc
+                }
+            }
+        }
+    }
+  }
+
+  {method protected open {xml-type-to-curl-type-register
+                             mapper:TableSOAPXMLTypeToCurlTypeMapper
+                         }:void
+    let constant type:SOAPObjectType = self.type
+    {if-non-null xml-type = type.xml-type then
+        {if-non-null curl-type = type.curl-type then
+            {mapper.set-xml-type-to-curl-type
+                xml-type,
+                curl-type,
+                type.multiple-reference,
+                type.nillable?
+            }
+        }
+    }
+  }
+
+  {method protected open {element-name-to-xml-type-register
+                             mapper:TableSOAPElementNameToXMLTypeMapper
+                         }:void
+    let constant type:SOAPObjectType = self.type
+    {if-non-null element-name = type.element-name then
+        {if-non-null xml-type = type.xml-type then
+            {mapper.set-element-name-to-xml-type
+                element-name,
+                xml-type,
+                type.multiple-reference
+            }
+        }
+    }
+  }
+
+  {method protected open {xml-type-to-element-name-register
+                             mapper:TableSOAPXMLTypeToElementNameMapper
+                         }:void
+    let constant type:SOAPObjectType = self.type
+    {if-non-null xml-type = type.xml-type then
+        {if-non-null element-name = type.element-name then
+            {mapper.set-xml-type-to-element-name
+                xml-type,
+                element-name,
+                type.multiple-reference
+            }
+        }
+    }
+  }
+
+  {method protected open {curl-type-to-xml-type-register
+                             mapper:TableSOAPCurlTypeToXMLTypeMapper
+                         }:void
+    let constant type:SOAPObjectType = self.type
+    {if-non-null xml-type = type.xml-type then
+        {if-non-null curl-type = type.curl-type then
+            {mapper.set-curl-type-to-xml-type
+                curl-type,
+                xml-type,
+                type.multiple-reference,
+                type.nillable?,
+                marshaler-handled-element? = type.marshaler-handled-element?
+            }
+        }
+    }
+  }
+
+  {method public open {marshal-proc
+                          encoding:#String
+                      }:#SOAPTypeMapper.MarshalProc
+    let p:SOAPTypeMapper.MarshalProc =
+        {proc {
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write attributes and characters.
+                   stream:{OutputStream-of XMLToken},
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+                   element:XMLName,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+            {return
+                {self.default-marshal
+                   stream,
+                   value,
+                   type,
+                   element,
+                   encoding, || default? (multiple urls poss.)
+                   context,
+                   current-mapper,
+                   curl-type-to-xml-type,
+                   p,
+                   write-type-attribute? = write-type-attribute?,
+                   multiple-reference = multiple-reference
+                }
+            }
+        }
+    || should the proc get cached?
+    {return p}
+  }
+
+  {method public open {unmarshal-proc
+                          encoding:#String
+                      }:#SOAPTypeMapper.UnmarshalProc
+    let p:SOAPTypeMapper.UnmarshalProc =
+        {proc {
+               stream:XMLInputStream,
+               attributes:#{Array-of XMLAttribute},
+               type:SOAPObjectType,
+               encoding:#String, || default? (multiple urls poss.)
+               context:SOAPUnmarshalContext,
+               current-mapper:SOAPTypeMapper,
+               xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+               check-type-attribute?:bool = false
+              }:(value:any, worked?:bool)
+            {return
+                {self.default-unmarshal
+                    stream,
+                    attributes,
+                    type,
+                    encoding,
+                    context,
+                    current-mapper,
+                    xml-type-to-curl-type,
+                    check-type-attribute? = check-type-attribute?
+                }
+            }
+        }
+    || should the proc get cached?
+    {return p}
+  }
+
+  {method public abstract open {default-marshal
+                            stream:{OutputStream-of XMLToken},
+                            value:any,
+
+                            || xml-type and curl-type required
+                            type:SOAPObjectType,
+                            element:XMLName,
+
+                            encoding:#String, ||default? (multiple urls poss.)
+                            context:SOAPMarshalContext,
+                            current-mapper:SOAPTypeMapper,
+                            curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                            marshal-proc:SOAPTypeMapper.MarshalProc,
+                            write-type-attribute?:bool = true,
+                            multiple-reference:SOAPTypeMultipleReference =
+                                SOAPTypeMultipleReference.unknown
+                        }:(worked?:bool)
+  }
+
+  {method public abstract open {default-unmarshal
+                                   stream:XMLInputStream,
+                                   attributes:#{Array-of XMLAttribute},
+
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+
+                                   encoding:#String, ||default? (multiple urls poss.)
+                                   context:SOAPUnmarshalContext,
+                                   current-mapper:SOAPTypeMapper,
+                                   xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                                   check-type-attribute?:bool = false
+                                }:(value:any, worked?:bool)
+  }
+
+  {method public open {check-type type:SOAPObjectType, marshal?:bool}:void
+    || Note that we don't check curl-type, to allow some odd uses of
+    || the marshal/unmarshal to other curl types (that is compatible
+    || presumably.)
+    {if type.xml-type != self.type.xml-type then
+        {if marshal? then
+            {throw-marshal-exception
+                {localize 
+                    "Type passed to marshaler doesn't match this SOAPStructMarshaler"
+                }
+            }
+         else
+            {throw-unmarshal-exception
+                {localize 
+                    "Type passed to unmarshaler doesn't match this SOAPStructMarshaler"
+                }
+            }
+        }
+    }
+    {if marshal? then
+        {marshal-type-check type}
+     else
+        {unmarshal-type-check type}
+    }
+  }
+
+  || encodings that this mapper can handle and should be registered for
+  {getter public open abstract {encodings}:{Array-of #String}
+  }
+}

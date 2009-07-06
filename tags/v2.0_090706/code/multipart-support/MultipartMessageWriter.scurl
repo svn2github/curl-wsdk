@@ -1,0 +1,275 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open MultipartMessageWriter {inherits EventTarget}
+
+  field private constant delimiter:MultipartDelimiter
+
+  {constructor public {default
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          multipart-boundary:#String = null
+                      }
+    set self.delimiter = {MultipartDelimiter
+                             character-encoding = character-encoding,
+                             boundary = multipart-boundary
+                         }
+  }
+
+  {getter public open {character-encoding}:CharEncoding
+    {return self.delimiter.character-encoding}
+  }
+
+  {getter public open {boundary}:String
+    {return self.delimiter.boundary}
+  }
+  
+  {method public open {write-message
+                          stream:ByteOutputStream,
+                          message:MultipartMessage,
+                          character-encoding:CharEncoding =
+                              self.character-encoding,
+                          close-stream?:bool = true
+                      }:void
+    set self.delimiter.character-encoding = character-encoding
+    {for part key i in message do
+        {self.write-mime-part
+            stream, part, with-new-line? = (i != 0)}
+    }
+    {self.write-to-stream
+        stream, self.delimiter.cr-lf-bytes}
+    {self.write-to-stream
+        stream, self.delimiter.final-boundary-bytes}
+    {if close-stream? and stream.open? then
+        {stream.close}
+    }
+  }
+
+  || need this method?
+  {method public open {async-write-message
+                          stream:ByteOutputStream,
+                          message:MultipartMessage,
+                          character-encoding:CharEncoding =
+                              self.character-encoding,
+                          close-stream?:bool = true
+                      }:void
+    set self.delimiter.character-encoding = character-encoding
+    def encoder = {MultipartMessageEncoder
+                      self.delimiter
+                  }
+    {stream.async-write
+        {encoder.encode-message message},
+        partial? = true,
+        {on e:AsyncStreamWriteEvent do
+            {if-non-null exception = e.exception then
+                {self.enqueue-write-event e}
+                {if stream.open? then
+                    {stream.close}
+                }
+             else
+                {if e.done? then
+                    {if close-stream? and stream.open? then
+                        {stream.close}
+                    }
+                    {self.enqueue-write-event e}
+                }
+            }
+        }
+    }
+  }
+
+  {method private {enqueue-write-event e:AsyncStreamWriteEvent}:void
+    {self.enqueue-event
+        {MultipartWriteEvent
+            e.exception,
+            e.canceled?,
+            e.done?,
+            e.data-written,
+            e.total-data-written
+        }
+    }
+  }
+
+||--  {method public open {async-write-message2
+||--                          stream:ByteOutputStream,
+||--                          message:MultipartMessage,
+||--                          character-encoding:CharEncoding =
+||--                              self.character-encoding,
+||--                          close-stream?:bool = true
+||--                      }:void
+||--    set self.delimiter.character-encoding = character-encoding
+||--    
+||--    {for part key i in message do
+||--        def bytes = {{Array-of byte}}
+||--        def bos = {ByteArrayOutputStream bytes}
+||--        {self.write-mime-part
+||--            bos, part, with-new-line? = (i != 0)}
+||--        {stream.async-write
+||--            bytes,
+||--            {on e:AsyncStreamWriteEvent do
+||--                {if e.done? then
+||--                    {bytes.clear}
+||--                    {if i == message.size - 1 then
+||--                        {bos.close}
+||--                    }
+||--                }
+||--            }
+||--        }
+||--    }
+||--
+||--    def final-bytes = {{Array-of byte}}
+||--    {final-bytes.concat self.delimiter.cr-lf-bytes}
+||--    {final-bytes.concat self.delimiter.final-boundary-bytes}
+||--    {stream.async-write
+||--        final-bytes,
+||--        {on e:AsyncStreamWriteEvent do
+||--            {if e.done? then
+||--                {if close-stream? and stream.open? then
+||--                    {stream.close}
+||--                }
+||--                {self.enqueue-event e}
+||--            }
+||--        }
+||--    }
+||--  }
+
+  {method protected open {write-mime-part
+                             stream:ByteOutputStream,
+                             part:MIMEPart,
+                             with-new-line?:bool = true
+                         }:void
+    {if with-new-line? then
+        {self.write-to-stream stream, self.delimiter.cr-lf-bytes}
+    }
+    {self.write-to-stream stream, self.delimiter.boundary-bytes}
+    {self.write-headers stream, part.headers}
+    {self.write-to-stream stream, self.delimiter.cr-lf-bytes}
+    {self.write-to-stream stream, part.body}
+  }
+  
+  {method protected open {write-headers
+                             stream:ByteOutputStream,
+                             headers:HttpHeaders
+                         }:void
+    def buf = {StringBuf}
+    {for val key keyword in headers do
+        {buf.concat {format "%s: %s\r\n", keyword, val}}
+    }
+    {self.write-to-stream
+        stream,
+        {encode-string
+            {buf.to-String},
+            character-encoding = self.character-encoding}}
+  }
+
+  {method protected open {write-to-stream
+                             stream:ByteOutputStream,
+                             content:{Array-of byte}
+                         }:void
+    {try
+        {stream.write content}
+     catch ex:Exception do
+        {if stream.open? then
+            {stream.close}
+        }
+        {throw ex}
+    }
+  }
+}
+
+{define-class public open MultipartMessageEncoder
+  field private delimiter:MultipartDelimiter
+
+  {constructor public {default delimiter:MultipartDelimiter}
+    set self.delimiter = delimiter
+  }
+  
+  {method public open {encode-message
+                             message:MultipartMessage
+                         }:{Array-of byte}
+    def bytes = {{Array-of byte}}
+    {for part in message do
+        {bytes.concat {self.encode-mime-part part}}
+    }
+    {bytes.concat self.delimiter.cr-lf-bytes}
+    {bytes.concat self.delimiter.final-boundary-bytes}
+    {return bytes}
+  }
+
+  {method public open {encode-mime-part part:MIMEPart}:{Array-of byte}
+    def bytes = {{Array-of byte}}
+    {bytes.concat self.delimiter.boundary-bytes}
+    {if not part.headers.empty? then
+        {bytes.concat
+            {self.encode-headers part.headers}}
+    }
+    {bytes.concat self.delimiter.cr-lf-bytes}
+    {bytes.concat part.body}
+    {return bytes}
+  }
+
+  {method public open {encode-headers
+                             headers:HttpHeaders
+                         }:{Array-of byte}
+    def buf = {StringBuf}
+    {for val key keyword in headers do
+        {buf.concat {format "%s: %s", keyword, val}}
+    }
+    def buf-bytes = 
+        {encode-string
+            {buf.to-String},
+            character-encoding = self.delimiter.character-encoding}
+    {buf-bytes.concat self.delimiter.cr-lf-bytes}
+    {return buf-bytes}
+  }
+}
+
+{define-class public open MultipartWriteEvent
+  {inherits AsyncWorkEvent}
+
+  field private constant _exception:#Exception
+  field private constant _canceled?:bool
+  field private constant _done?:bool
+  field public constant data-written:int
+  field public constant total-data-written:int
+
+  {constructor public {default 
+                          exception:#Exception,
+                          canceled?:bool,
+                          done?:bool,
+                          data-written:int,
+                          total-data-written:int
+                      }
+    set self._exception = exception
+    set self._canceled? = canceled?
+    set self._done? = done?
+    set self.data-written = data-written
+    set self.total-data-written = total-data-written
+  }
+
+  {getter public open {exception}:#Exception
+    {return self._exception}
+  }
+
+  {getter public open {canceled?}:bool
+    {self.check-exception}
+    {return self._canceled?}
+  }
+
+  {getter public open {done?}:bool
+    {self.check-exception}
+    {return self._done?}
+  }
+}

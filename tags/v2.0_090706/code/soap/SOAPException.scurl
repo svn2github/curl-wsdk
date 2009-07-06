@@ -1,0 +1,199 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next
+    {purpose
+        An {docref Exception} for errors during calls to the SOAP API.
+    }
+    {notes
+        There are several subclasses which are only used during certain
+        parts of the SOAP API such as {docref SOAPUnmarshalException},
+        {docref SOAPMarshalException}, and {docref SOAP-1-1-FaultException}.
+    }
+}
+{define-class public open SOAPException
+  {inherits Exception}
+  {constructor public {default s:String}
+    {construct-super s}
+  }
+}
+
+{doc-next
+    {purpose
+        A {docref SOAPException} for errors during calls involving
+        unmarshaling data from XML to Curl values.
+    }
+}
+{define-class public open SOAPUnmarshalException
+  {inherits SOAPException}
+  {constructor public {default s:String}
+    {construct-super s}
+  }
+}
+
+{doc-next
+    {purpose
+        A {docref SOAPException} for errors during calls involving
+        marshaling data from Curl values to XML.
+    }
+}
+{define-class public open SOAPMarshalException
+  {inherits SOAPException}
+  {constructor public {default s:String}
+    {construct-super s}
+  }
+}
+
+{doc-next
+    {purpose
+        A {docref SOAPException} used when the SOAP message contained
+        a SOAP 1.1 style fault XML element.  The exception includes
+        most of the data in the fault element.
+    }
+}
+{define-class public open SOAPFaultException
+  {inherits SOAPException}
+
+  field public constant fault-code:XMLName
+  field public constant detail:#XDMElement
+  field public constant fault-other-elements:#{Array-of XMLToken}
+  field public constant headers:#{Array-of any}
+  field public constant header-roles:#{Array-of #String}
+  field public constant header-must-understands:#{Array-of bool}
+  field public constant header-xml:#{Array-of XMLToken}
+  field public constant body-attributes:#{Array-of XMLAttribute}
+
+  {constructor public {default
+                          message:String,
+                          fault-code:XMLName,
+                          detail:#XDMElement = null,
+                          fault-other-elements:#{Array-of XMLToken} = null,
+                          headers:#{Array-of any} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-xml:#{Array-of XMLToken} = null,
+                          body-attributes:#{Array-of XMLAttribute} = null
+                      }
+    {construct-super message}
+    set self.fault-code = fault-code
+    set self.detail = detail
+    set self.fault-other-elements = fault-other-elements
+    set self.headers = headers
+    set self.header-roles = header-roles
+    set self.header-must-understands = header-must-understands
+    set self.header-xml = header-xml
+    set self.body-attributes = body-attributes
+  }
+}
+
+{define-class public open SOAP-1-1-FaultException
+  {inherits SOAPFaultException}
+
+  field public constant fault-string:String
+
+  {constructor public {default
+                          fault-code:XMLName,
+                          fault-string:String,
+                          detail:#XDMElement = null,
+                          fault-other-elements:#{Array-of XMLToken} = null,
+                          headers:#{Array-of any} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-xml:#{Array-of XMLToken} = null,
+                          body-attributes:#{Array-of XMLAttribute} = null
+                      }
+    {construct-super
+        {lformat
+            "SOAP Fault (%s): %s",
+            fault-code.local-name, fault-string
+        },
+        fault-code,
+        detail = detail,
+        fault-other-elements = fault-other-elements,
+        headers = headers,
+        header-roles = header-roles,
+        header-must-understands = header-must-understands,
+        header-xml = header-xml,
+        body-attributes = body-attributes
+    }
+    set self.fault-string = fault-string
+  }
+}
+
+{define-class public open SOAP-1-2-FaultException
+  {inherits SOAPFaultException}
+
+  field public constant reasons:#StringStringTable
+  field public constant subcodes:#{Array-of XMLName}
+  field public constant node:#String
+  field public constant role:#String
+
+  {constructor public {default
+                          fault-code:XMLName,
+                          reasons:#StringStringTable = null,
+                          detail:#XDMElement = null,
+                          subcodes:#{Array-of XMLName} = null,
+                          node:#String = null,
+                          role:#String = null,
+                          fault-other-elements:#{Array-of XMLToken} = null,
+                          headers:#{Array-of any} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          header-xml:#{Array-of XMLToken} = null,
+                          body-attributes:#{Array-of XMLAttribute} = null
+                      }
+    let reason:String = ""
+    {if-non-null reasons then
+        def (rl, found?) = {reasons.get-if-exists {get-working-locale}.language}
+        {if found? then
+            set reason = rl
+         else
+            def (r, found?) = {reasons.get-if-exists ""}
+            {if found? then
+                set reason = r
+            }
+        }
+    }
+    {construct-super
+        {lformat
+            "SOAP Fault (%s): %s",
+            fault-code.local-name, reason
+        },
+        fault-code,
+        detail = detail,
+        fault-other-elements = fault-other-elements,
+        headers = headers,
+        header-roles = header-roles,
+        header-must-understands = header-must-understands,
+        header-xml = header-xml,
+        body-attributes = body-attributes
+    }
+    set self.reasons = reasons
+    set self.subcodes = subcodes
+    set self.node = node
+    set self.role = role
+  }
+}
+
+{define-proc package {throw-soap-exception s:String}:never-returns
+    {throw {new SOAPException, s}}
+}
+{define-proc package {throw-unmarshal-exception s:String}:never-returns
+    {throw {new SOAPUnmarshalException, s}}
+}
+{define-proc package {throw-marshal-exception s:String}:never-returns
+    {throw {new SOAPMarshalException, s}}
+}

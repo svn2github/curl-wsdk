@@ -1,0 +1,1143 @@
+<ROOT xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+
+  <!-- ======================================== -->
+  <!-- GROUP REFS -->
+  <GROUP name='groupRef'>
+
+    <!-- EXAMPLE 1a --> 
+    <!-- parse-sequence-element-list -->
+    <CASE name='example1a'> 
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:group ref='g1'/>
+          </xs:sequence>
+        </xs:complexType>
+        
+        <xs:group name='g1'>
+          <xs:sequence>
+            <xs:element name='a' type='xs:int'/>
+          </xs:sequence>
+        </xs:group>
+      </XSD>
+
+      <CURL>
+{Test.from-keywords a = 1}        
+      </CURL>>
+    </CASE>
+
+    <!-- EXAMPLE 1b -->
+    <!-- parse-sequence-element-list -->
+    <CASE name='example1b'> 
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:complexContent>
+            <xs:extension base='xs:anyType'>
+              <xs:sequence>
+                <xs:group ref='g1'/>
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+        
+        <xs:group name='g1'>
+          <xs:sequence>
+            <xs:element name='a' type='xs:int'/>
+          </xs:sequence>
+        </xs:group>
+      </XSD>
+
+      <CURL>
+{Test.from-keywords a = 1}        
+      </CURL>>
+    </CASE>
+
+    <!-- EXAMPLE 1c --> 
+    <!-- parse-complex-type-complex-content-extension -->
+    <CASE name='example1c'> 
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:complexContent>
+            <xs:extension base='xs:anyType'>
+              <xs:group ref='g1'/>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+        
+        <xs:group name='g1'>
+          <xs:sequence>
+            <xs:element name='a' type='xs:int'/>
+          </xs:sequence>
+        </xs:group>
+      </XSD>
+
+      <CURL>
+{Test.from-keywords a = 1}        
+      </CURL>>
+    </CASE>
+
+    <!-- EXAMPLE 1d -->
+    <!-- parse-complex-type-sequence -->
+    <CASE name='example1d'> 
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:group ref='g1'/>
+        </xs:complexType>
+        
+        <xs:group name='g1'>
+          <xs:sequence>
+            <xs:element name='a' type='xs:int'/>
+          </xs:sequence>
+        </xs:group>
+      </XSD>
+
+      <CURL>
+{Test.from-keywords a = 1}       
+      </CURL>>
+    </CASE>
+
+  </GROUP>
+
+  <!-- ======================================== -->
+  <GROUP name='Choice'>
+
+    <CASE name='choice_single'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='object' type='Object'/> 
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name='Object'>
+          <xs:sequence>
+            <xs:element name='contents' type='Contents'/>
+          </xs:sequence>
+          <xs:attribute name='object-type' type='xs:string' use='required'/>
+          <xs:attribute name='object-id' type='xs:long' use='required'/>
+        </xs:complexType>
+
+        <xs:complexType name='Contents'>
+          <xs:sequence>
+            <xs:choice>
+              <xs:element name='primitive' type='Primitive'/>
+              <xs:element name='reference' type='Reference'/>
+            </xs:choice>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name='Primitive'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+        <xs:complexType name='Reference'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <!-- NOTE: extraneous wrapper -->
+      <CURL>
+{Test.from-keywords object = 
+    {Object.from-keywords
+        object-type = "Control",
+        object-id = 22105,
+        contents = 
+            {Contents.from-keywords 
+                contents-value =
+                    {Primitive.from-keywords 
+                        property = "Title", 
+                        content = "This is the title."}
+            }}}
+      </CURL>
+
+    </CASE>
+
+    <CASE name='choice_unbounded'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='object' type='Object'/> 
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name='Object'>
+          <xs:sequence>
+            <xs:element name='contents' type='Contents'/>
+          </xs:sequence>
+          <xs:attribute name='object-type' type='xs:string' use='required'/>
+          <xs:attribute name='object-id' type='xs:long' use='required'/>
+        </xs:complexType>
+
+        <xs:complexType name='Contents'>
+          <xs:sequence>
+            <xs:choice maxOccurs='unbounded' minOccurs='0'>
+              <xs:element name='primitive' type='Primitive'/>
+              <xs:element name='reference' type='Reference'/>
+            </xs:choice>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name='Primitive'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+        <xs:complexType name='Reference'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords 
+    object = 
+        {Object.from-keywords 
+            object-type = "Control", 
+            object-id = 22105, 
+            contents = 
+                {Array
+                    {Primitive.from-keywords 
+                        property = "Title", 
+                        content = "This is the title."},
+                    {Reference.from-keywords 
+                        property = "Description", 
+                        content = "This is the description."}
+                }}}
+      </CURL>
+
+    </CASE>
+
+    <CASE name='outermost_choice_single'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='object' type='Object'/> 
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name='Object'>
+          <xs:sequence>
+            <xs:element name='contents' type='Contents'/>
+          </xs:sequence>
+          <xs:attribute name='object-type' type='xs:string' use='required'/>
+          <xs:attribute name='object-id' type='xs:long' use='required'/>
+        </xs:complexType>
+
+        <xs:complexType name='Contents'>
+          <xs:choice>
+            <xs:element name='primitive' type='Primitive'/>
+            <xs:element name='reference' type='Reference'/>
+          </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name='Primitive'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+        <xs:complexType name='Reference'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords object = 
+    {Object.from-keywords
+        object-type = "Control",
+        object-id = 22105,
+        contents = 
+            {Contents.from-keywords 
+                contents-value =
+                    {Primitive.from-keywords 
+                        property = "Title", 
+                        content = "This is the title."}
+            }}}
+      </CURL>
+
+      <!--<CURL name="best">
+{Test.from-keywords object = 
+    {Object.from-keywords
+        object-type = "Control",
+        object-id = 22105,
+        contents = 
+            {Primitive.from-keywords 
+                property = "Title", 
+                content = "This is the title."}
+            }}
+      </CURL>-->
+
+    </CASE>
+
+    <CASE name='outermost_choice_unbounded'>
+      <XSD>
+        <xs:complexType name='test'>
+          <xs:sequence>
+            <xs:element name='object' type='Object'/> 
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name='Object'>
+          <xs:sequence>
+            <xs:element name='contents' type='Contents'/>
+          </xs:sequence>
+          <xs:attribute name='object-type' type='xs:string' use='required'/>
+          <xs:attribute name='object-id' type='xs:long' use='required'/>
+        </xs:complexType>
+
+        <xs:complexType name='Contents'>
+          <xs:choice maxOccurs='unbounded' minOccurs='0'>
+            <xs:element name='primitive' type='Primitive'/>
+            <xs:element name='reference' type='Reference'/>
+          </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name='Primitive'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+        <xs:complexType name='Reference'>
+          <xs:simpleContent>
+            <xs:extension base='xs:string'>
+              <xs:attribute name='property' type='xs:string' use='required'/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords 
+    object = 
+        {Object.from-keywords 
+            object-type = "Control", 
+            object-id = 22105, 
+            contents = 
+                {Array
+                    {Primitive.from-keywords 
+                        property = "Title", 
+                        content = "This is the title."},
+                    {Reference.from-keywords 
+                        property = "Description", 
+                        content = "This is the description."}
+                }}}
+      </CURL>
+
+    </CASE>
+
+  </GROUP>
+
+  <!-- ======================================== -->
+  <!-- APEX ARRAY -->
+  <GROUP name='APEXArrayExamples'>
+
+    <!-- EXAMPLE 1 -->
+    <CASE name='example1'> 
+      <XSD>
+        <!--<complexType name="MassEmailMessage">-->
+        <xs:complexType name="test">
+          <xs:complexContent>
+            <xs:extension base="Email">
+              <xs:sequence>
+                <xs:element name="targetObjectIds" type="xs:string" minOccurs="0" maxOccurs="250" />
+                <xs:element name="templateId" type="xs:string"/>
+                <xs:element name="whatIds" type="xs:string" minOccurs="0" maxOccurs="250" />
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+        <xs:complexType name="Email">
+          <xs:sequence>
+            <!-- SIMPLIFIED -->
+            <xs:element name="subject" type="xs:string" nillable="true"/>
+          </xs:sequence>
+        </xs:complexType> 
+      </XSD>
+
+      <CURL>
+{Test.from-keywords
+    target-object-ids = {StringArray "TARGET 1", "TARGET 2"},
+    template-id = "TEMPLATE-ID",
+    what-ids = {StringArray "WHAT 1", "WHAT 2"},
+    subject = "SUBJECT"
+}
+      </CURL>>
+    </CASE>
+
+    <CASE name='example2'> 
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="value" type="MassEmailMessage"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="MassEmailMessage">
+          <xs:complexContent>
+            <xs:extension base='xs:anyType'>
+              <xs:sequence>
+                <xs:element name="targetObjectIds" type="xs:string" minOccurs="0" maxOccurs="250" />
+                <xs:element name="templateId" type="xs:string"/>
+                <xs:element name="whatIds" type="xs:string" minOccurs="0" maxOccurs="250" />
+                <xs:element name="subject" type="xs:string" nillable="true"/>
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+      </XSD>
+
+      <CURL name="preferable">
+{Test.from-keywords value =
+{MassEmailMessage.from-keywords
+    target-object-ids = {StringArray "TARGET 1", "TARGET 2"},
+    template-id = "TEMPLATE-ID",
+    what-ids = {StringArray "WHAT 1", "WHAT 2"},
+    subject = "SUBJECT"
+}
+}
+      </CURL>>
+    </CASE>
+
+    <!-- EXAMPLE 3 -->
+    <CASE name='example3'> 
+      <XSD>
+        <!--<complexType name="MassEmailMessage">-->
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="targetObjectIds" type="xs:string" minOccurs="0" maxOccurs="250" />
+            <xs:element name="templateId" type="xs:string"/>
+            <xs:element name="whatIds" type="xs:string" minOccurs="0" maxOccurs="250" />
+            <xs:element name="subject" type="xs:string" nillable="true"/>
+          </xs:sequence>
+        </xs:complexType> 
+      </XSD>
+
+      <CURL>
+{Test.from-keywords
+    target-object-ids = {StringArray "TARGET 1", "TARGET 2"},
+    template-id = "TEMPLATE-ID",
+    what-ids = {StringArray "WHAT 1", "WHAT 2"},
+    subject = "SUBJECT"
+}
+      </CURL>>
+    </CASE>
+
+  </GROUP>
+
+  <!-- ======================================== -->
+  <!-- EXCHANGE CHOICE -->
+  <GROUP name='ExchangeChoiceExamples'>
+
+    <!-- EXAMPLE 1 -->
+    <CASE name='example1'> 
+      <XSD>
+        <!--<xs:complexType name="SetFolderFieldType">-->
+        <xs:complexType name="test">
+          <xs:complexContent>
+            <xs:extension base="FolderChangeDescriptionType">
+              <xs:choice>
+                <xs:element name="Folder" type="FolderType"/>
+                <!-- SIMPLIFIED -->
+                <xs:element name="TasksFolder" type="TasksFolderType"/>
+              </xs:choice>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <!-- Basic information in a folder definition -->
+        <xs:complexType name="BaseFolderType" abstract ="true">
+          <xs:sequence>
+            <xs:element name="FolderId" type="FolderIdType" minOccurs="0"/>
+            <xs:element name="ParentFolderId" type="FolderIdType" minOccurs="0"/>
+            <xs:element name="FolderClass" type="xs:string" minOccurs="0"/>
+            <xs:element name="DisplayName" type="xs:string" minOccurs="0"/>
+            <xs:element name="TotalCount" type="xs:int" minOccurs="0"/>
+            <xs:element name="ChildFolderCount" type="xs:int" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name="FolderType">
+          <xs:complexContent>
+            <xs:extension base="BaseFolderType">
+              <xs:sequence>
+                <xs:element name="UnreadCount" type="xs:int" minOccurs="0"/>
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:complexType name="TasksFolderType">
+          <xs:complexContent>
+            <xs:extension base="FolderType"/>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <!-- Folder Ids -->
+        <xs:complexType name="BaseFolderIdType" abstract="true">
+          <xs:annotation>
+            <xs:documentation>Utility type which should never appear in user documents</xs:documentation>
+          </xs:annotation>
+        </xs:complexType>
+
+        <xs:complexType name="FolderIdType">
+          <xs:annotation>
+            <xs:documentation>Identifier for a fully resolved folder</xs:documentation>
+          </xs:annotation>
+          <xs:complexContent>
+            <xs:extension base="BaseFolderIdType">
+              <xs:attribute name="Id" type="xs:string" use="required" />
+              <xs:attribute name="ChangeKey" type="xs:string" use="optional" />
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:complexType name="FolderChangeDescriptionType">
+          <xs:complexContent>
+            <xs:extension base="ChangeDescriptionType"/>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <!-- Core update operations -->
+        <xs:complexType name="ChangeDescriptionType" abstract="true">
+          <!-- This path element needs some explanation.  For update operations, only ONE
+               property can be modified within a single request.  That single property must be
+               referenced in the Path element.  The Item/Folder element in the derived classes
+               can then only hold a single property that is in agreement with the single path
+               element-->
+          <xs:sequence>
+            <xs:element ref="Path"/>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:element name="Path" abstract="true" type="BasePathToElementType"/>
+        <xs:complexType name="BasePathToElementType" abstract="true"/>
+
+        <xs:complexType name="PathToExtendedFieldType">
+          <xs:annotation>
+            <xs:documentation>
+              Represents an extended property.  Note that there are only a couple of valid attribute
+              combinations.  Note that all occurances require the PropertyType attribute.
+
+              1.  (DistinguishedPropertySetId || PropertySetId) + (PropertyName || Property Id)
+              2.  PropertyTag
+
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexContent>
+            <xs:extension base="t:BasePathToElementType">
+              <xs:attribute name="PropertyName" type="xs:string" use="optional"/>
+              <xs:attribute name="PropertyId" type="xs:int" use="optional"/>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords
+  test-value = 
+    {FolderType.from-keywords
+          folder-id = {FolderIdType.from-keywords id = "ID", change-key = "CHANGE-KEY"},
+          parent-folder-id = null,
+          folder-class = "FOLDER-CLASS",
+          display-name = "DISPLAY-NAME",
+          total-count = 0,
+          child-folder-count = 0,
+          unread-count = 0},
+  path =
+    {PathToExtendedFieldType.from-keywords
+         property-name = "PNAME",
+         property-id = 1
+    }
+}
+      </CURL>
+    </CASE>
+
+    <!-- EXAMPLE 2 -->
+    <CASE name='example2'> 
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="PropertyType" type="ExtendedPropertyType"/>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name="ExtendedPropertyType">
+          <xs:sequence>
+            <xs:element name="ExtendedFieldURI" type="PathToExtendedFieldType"/>
+            <xs:choice>
+              <xs:element name="Value" type="xs:string"/>
+              <xs:element name="Values" type="NonEmptyArrayOfPropertyValuesType"/>
+            </xs:choice>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name="NonEmptyArrayOfPropertyValuesType">
+          <xs:choice>
+            <xs:element name="Value" type="xs:string" maxOccurs="unbounded"/>
+          </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name="BasePathToElementType" abstract="true"/>
+
+        <xs:complexType name="PathToExtendedFieldType">
+          <xs:complexContent>
+            <xs:extension base="BasePathToElementType">
+              <xs:attribute name="PropertyName" type="xs:string" use="optional"/>
+              <xs:attribute name="PropertyId" type="xs:int" use="optional"/>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords 
+   property-type =
+   {ExtendedPropertyType.from-keywords 
+      extended-field-uri = 
+        {PathToExtendedFieldType.from-keywords
+           property-name = "PNAME",
+           property-id = 1
+        },
+      extended-property-type-value = "FOO"
+    }
+}
+      </CURL>
+
+      <CURL>
+{Test.from-keywords 
+   property-type =
+   {ExtendedPropertyType.from-keywords 
+      extended-field-uri = 
+        {PathToExtendedFieldType.from-keywords
+           property-name = "PNAME",
+           property-id = 1
+        },
+      extended-property-type-value = 
+        {StringArray "FIRST", "SECOND"}
+    }
+}
+      </CURL>
+    </CASE>
+
+    <!-- EXAMPLE 3 -->
+    <CASE name='example3'> 
+      <XSD>
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="val" type="SetItemFieldType"/>
+            <!--<xs:element name="val" type="DeleteItemFieldType"/>-->
+          </xs:sequence>
+        </xs:complexType>
+        <xs:complexType name="NonEmptyArrayOfItemChangeDescriptionsType">
+          <xs:choice maxOccurs="unbounded">
+            <!-- SIMPLIFIED -->
+            <xs:element name="SetItemField" type="SetItemFieldType"/>
+            <xs:element name="DeleteItemField" type="DeleteItemFieldType"/>
+          </xs:choice>
+        </xs:complexType>
+
+        <!-- Core update operations -->
+        <xs:complexType name="ChangeDescriptionType" abstract="true">
+          <xs:sequence>
+            <xs:element ref="Path"/>
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:element name="Path" abstract="true" type="BasePathToElementType"/>
+        <xs:complexType name="BasePathToElementType" abstract="true"/>
+
+        <xs:complexType name="PathToExtendedFieldType">
+          <xs:complexContent>
+            <xs:extension base="t:BasePathToElementType">
+              <xs:attribute name="PropertyName" type="xs:string" use="optional"/>
+              <xs:attribute name="PropertyId" type="xs:int" use="optional"/>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:complexType name="ItemChangeDescriptionType">
+          <xs:complexContent>
+            <xs:extension base="ChangeDescriptionType"/>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:complexType name="SetItemFieldType">
+          <xs:complexContent>
+            <xs:extension base="ItemChangeDescriptionType">
+              <xs:choice> 
+                <!-- SIMPLIFIED -->
+                <xs:element name="Item" type="ItemType"/>
+                <xs:element name="Task" type="TaskType"/>
+              </xs:choice>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:complexType name="DeleteItemFieldType">
+          <xs:complexContent>
+            <xs:extension base="ItemChangeDescriptionType">
+              <xs:sequence/>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <!-- Core contents of an item. -->
+        <xs:complexType name="ItemType">
+          <xs:sequence>
+            <!-- SIMPLIFIED -->
+            <xs:element name="Subject" type="xs:string" minOccurs="0" />
+            <xs:element name="LastModifiedName" type="xs:string" minOccurs="0" />
+            <xs:element name="LastModifiedTime" type="xs:dateTime" minOccurs="0" />
+          </xs:sequence>
+        </xs:complexType>
+
+        <xs:complexType name="TaskType">
+          <xs:complexContent>
+            <xs:extension base="ItemType">
+              <xs:sequence>
+                <xs:element name="ActualWork" type="xs:int" minOccurs="0" />
+                <!-- SIMPLIFIED -->
+                <xs:element name="TotalWork" type="xs:int" minOccurs="0" />
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords val =
+    {SetItemFieldType.from-keywords
+      path =
+        {PathToExtendedFieldType.from-keywords
+            property-name = "PNAME",
+            property-id = 1
+        },
+      set-item-field-type-value =
+        {TaskType.from-keywords
+            actual-work = 0,
+            total-work = 100
+        }
+    }
+}
+      </CURL>
+    </CASE>
+
+    <!-- EXAMPLE 4 -->
+    <CASE name='example4'> 
+      <XSD>
+        <!--<xs:complexType name="TimeChangeType">-->
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="Offset" type="xs:duration" />
+            <xs:group ref="TimeChangePatternTypes" minOccurs="0"/>
+            <xs:element name="Time" type="xs:time" />
+          </xs:sequence>
+          <xs:attribute name="TimeZoneName" type="xs:string" use="optional" />
+        </xs:complexType>
+
+        <xs:group name="TimeChangePatternTypes">
+          <xs:sequence>
+            <xs:choice>
+              <xs:element name="RelativeYearlyRecurrence" 
+                          type="RelativeYearlyRecurrencePatternType" />
+              <xs:element name="AbsoluteDate" type="xs:date" />
+            </xs:choice>
+          </xs:sequence>
+        </xs:group>
+
+        <xs:complexType name="RecurrencePatternBaseType" abstract="true" />
+
+        <xs:complexType name="RelativeYearlyRecurrencePatternType">
+          <xs:complexContent>
+            <xs:extension base="RecurrencePatternBaseType">
+              <xs:sequence>
+                <xs:element name="DaysOfWeek" type="DayOfWeekType" />
+                <xs:element name="DayOfWeekIndex" type="DayOfWeekIndexType" />
+                <xs:element name="Month" type="MonthNamesType" />
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:simpleType name="DayOfWeekType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="Sunday" />
+            <xs:enumeration value="Monday" />
+            <xs:enumeration value="Tuesday" />
+            <xs:enumeration value="Wednesday" />
+            <xs:enumeration value="Thursday" />
+            <xs:enumeration value="Friday" />
+            <xs:enumeration value="Saturday" />
+            <xs:enumeration value="Day" />
+            <xs:enumeration value="Weekday" />
+            <xs:enumeration value="WeekendDay" />
+          </xs:restriction>
+        </xs:simpleType>
+
+        <xs:simpleType name="DaysOfWeekType">
+          <xs:list itemType="DayOfWeekType" />
+        </xs:simpleType>
+
+        <xs:simpleType name="DayOfWeekIndexType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="First" />
+            <xs:enumeration value="Second" />
+            <xs:enumeration value="Third" />
+            <xs:enumeration value="Fourth" />
+            <xs:enumeration value="Last" />
+          </xs:restriction>
+        </xs:simpleType>
+
+        <xs:simpleType name="MonthNamesType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="January" />
+            <xs:enumeration value="February" />
+            <xs:enumeration value="March" />
+            <xs:enumeration value="April" />
+            <xs:enumeration value="May" />
+            <xs:enumeration value="June" />
+            <xs:enumeration value="July" />
+            <xs:enumeration value="August" />
+            <xs:enumeration value="September" />
+            <xs:enumeration value="October" />
+            <xs:enumeration value="November" />
+            <xs:enumeration value="December" />
+          </xs:restriction>
+        </xs:simpleType>
+
+      </XSD>
+
+      <CURL> <!-- NOTE: DateTime does not roundtrip as xs:date -->
+{Test.from-keywords
+  offset = {XMLDurationString "1H"},
+  anonymous-choice-value = 
+    {DateTime.date "2009-06-09"},
+  time = {XMLTimeString "2:00PM"},
+  time-zone-name = "EST"
+}
+      </CURL>
+      <CURL>
+{Test.from-keywords
+  offset = {XMLDurationString "1H"},
+  anonymous-choice-value = 
+    {RelativeYearlyRecurrencePatternType.from-keywords
+       || days-of-week = {DayOfWeekType value = "tuesday"},
+       || days-of-week = DayOfWeekType.tuesday,
+       days-of-week = "tuesday",
+       day-of-week-index = "second",
+       month = "june"},
+  time = {XMLTimeString "2:00PM"},
+  time-zone-name = "EST"
+}
+      </CURL>
+    </CASE>
+
+    <!-- EXAMPLE 4a -->
+    <CASE name='example4a'> 
+      <XSD>
+        <!--<xs:complexType name="TimeChangeType">-->
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="Offset" type="xs:duration" />
+            <!-- INLINING GROUP AS SEQUENCE -->
+            <xs:sequence>
+              <xs:choice>
+                <xs:element name="RelativeYearlyRecurrence" 
+                            type="RelativeYearlyRecurrencePatternType" />
+                <xs:element name="AbsoluteDate" type="xs:date" />
+              </xs:choice>
+            </xs:sequence>
+            <xs:element name="Time" type="xs:time" />
+          </xs:sequence>
+          <xs:attribute name="TimeZoneName" type="xs:string" use="optional" />
+        </xs:complexType>
+
+        <xs:complexType name="RecurrencePatternBaseType" abstract="true" />
+
+        <xs:complexType name="RelativeYearlyRecurrencePatternType">
+          <xs:complexContent>
+            <xs:extension base="RecurrencePatternBaseType">
+              <xs:sequence>
+                <xs:element name="DaysOfWeek" type="DayOfWeekType" />
+                <xs:element name="DayOfWeekIndex" type="DayOfWeekIndexType" />
+                <xs:element name="Month" type="MonthNamesType" />
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:simpleType name="DayOfWeekType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="Sunday" />
+            <xs:enumeration value="Monday" />
+            <xs:enumeration value="Tuesday" />
+            <xs:enumeration value="Wednesday" />
+            <xs:enumeration value="Thursday" />
+            <xs:enumeration value="Friday" />
+            <xs:enumeration value="Saturday" />
+            <xs:enumeration value="Day" />
+            <xs:enumeration value="Weekday" />
+            <xs:enumeration value="WeekendDay" />
+          </xs:restriction>
+        </xs:simpleType>
+
+        <xs:simpleType name="DaysOfWeekType">
+          <xs:list itemType="DayOfWeekType" />
+        </xs:simpleType>
+
+        <xs:simpleType name="DayOfWeekIndexType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="First" />
+            <xs:enumeration value="Second" />
+            <xs:enumeration value="Third" />
+            <xs:enumeration value="Fourth" />
+            <xs:enumeration value="Last" />
+          </xs:restriction>
+        </xs:simpleType>
+
+        <xs:simpleType name="MonthNamesType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="January" />
+            <xs:enumeration value="February" />
+            <xs:enumeration value="March" />
+            <xs:enumeration value="April" />
+            <xs:enumeration value="May" />
+            <xs:enumeration value="June" />
+            <xs:enumeration value="July" />
+            <xs:enumeration value="August" />
+            <xs:enumeration value="September" />
+            <xs:enumeration value="October" />
+            <xs:enumeration value="November" />
+            <xs:enumeration value="December" />
+          </xs:restriction>
+        </xs:simpleType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords
+  offset = {XMLDurationString "1H"},
+  anonymous-choice-value = 
+    {DateTime.date "2009-06-09"},
+  time = {XMLTimeString "2:00PM"},
+  time-zone-name = "EST"
+}
+      </CURL>
+      <CURL>
+{Test.from-keywords
+  offset = {XMLDurationString "1H"},
+  anonymous-choice-value = 
+    {RelativeYearlyRecurrencePatternType.from-keywords
+       || days-of-week = {DayOfWeekType value = "tuesday"},
+       || days-of-week = DayOfWeekType.tuesday,
+       days-of-week = "tuesday",
+       day-of-week-index = "second",
+       month = "june"},
+  time = {XMLTimeString "2:00PM"},
+  time-zone-name = "EST"
+}
+      </CURL>
+    </CASE>
+
+    <!-- EXAMPLE 4b -->
+    <CASE name='example4b'> 
+      <XSD>
+        <!--<xs:complexType name="TimeChangeType">-->
+        <xs:complexType name="test">
+          <xs:sequence>
+            <xs:element name="Offset" type="xs:duration" />
+            <!-- INLINING GROUP AS CHOICE -->
+            <!-- NOTE: this avoids the "anonymous-choice" name -->
+            <xs:choice>
+              <xs:element name="RelativeYearlyRecurrence" 
+                          type="RelativeYearlyRecurrencePatternType" />
+              <xs:element name="AbsoluteDate" type="xs:date" />
+            </xs:choice>
+            <xs:element name="Time" type="xs:time" />
+          </xs:sequence>
+          <xs:attribute name="TimeZoneName" type="xs:string" use="optional" />
+        </xs:complexType>
+
+        <xs:complexType name="RecurrencePatternBaseType" abstract="true" />
+
+        <xs:complexType name="RelativeYearlyRecurrencePatternType">
+          <xs:complexContent>
+            <xs:extension base="RecurrencePatternBaseType">
+              <xs:sequence>
+                <xs:element name="DaysOfWeek" type="DayOfWeekType" />
+                <xs:element name="DayOfWeekIndex" type="DayOfWeekIndexType" />
+                <xs:element name="Month" type="MonthNamesType" />
+              </xs:sequence>
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+
+        <xs:simpleType name="DayOfWeekType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="Sunday" />
+            <xs:enumeration value="Monday" />
+            <xs:enumeration value="Tuesday" />
+            <xs:enumeration value="Wednesday" />
+            <xs:enumeration value="Thursday" />
+            <xs:enumeration value="Friday" />
+            <xs:enumeration value="Saturday" />
+            <xs:enumeration value="Day" />
+            <xs:enumeration value="Weekday" />
+            <xs:enumeration value="WeekendDay" />
+          </xs:restriction>
+        </xs:simpleType>
+
+        <xs:simpleType name="DaysOfWeekType">
+          <xs:list itemType="DayOfWeekType" />
+        </xs:simpleType>
+
+        <xs:simpleType name="DayOfWeekIndexType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="First" />
+            <xs:enumeration value="Second" />
+            <xs:enumeration value="Third" />
+            <xs:enumeration value="Fourth" />
+            <xs:enumeration value="Last" />
+          </xs:restriction>
+        </xs:simpleType>
+
+        <xs:simpleType name="MonthNamesType">
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="January" />
+            <xs:enumeration value="February" />
+            <xs:enumeration value="March" />
+            <xs:enumeration value="April" />
+            <xs:enumeration value="May" />
+            <xs:enumeration value="June" />
+            <xs:enumeration value="July" />
+            <xs:enumeration value="August" />
+            <xs:enumeration value="September" />
+            <xs:enumeration value="October" />
+            <xs:enumeration value="November" />
+            <xs:enumeration value="December" />
+          </xs:restriction>
+        </xs:simpleType>
+
+      </XSD>
+
+      <CURL>
+{Test.from-keywords
+  offset = {XMLDurationString "1H"},
+  test-value = 
+    {DateTime.date "2009-06-09"},
+  time = {XMLTimeString "2:00PM"},
+  time-zone-name = "EST"
+}
+      </CURL>
+      <CURL>
+{Test.from-keywords
+  offset = {XMLDurationString "1H"},
+  test-value = 
+    {RelativeYearlyRecurrencePatternType.from-keywords
+       || days-of-week = {DayOfWeekType value = "tuesday"},
+       || days-of-week = DayOfWeekType.tuesday,
+       days-of-week = "tuesday",
+       day-of-week-index = "second",
+       month = "june"},
+  time = {XMLTimeString "2:00PM"},
+  time-zone-name = "EST"
+}
+      </CURL>
+    </CASE>
+
+  </GROUP>
+
+  <!-- ======================================== -->
+  <!-- EXHANGE UNION -->
+  <GROUP name='ExchangeUnionExamples'>
+
+    <!-- EXAMPLE 1 -->
+    <CASE name='example1'> 
+      <XSD>
+        <!--<xs:simpleType name="PropertyTagType">-->
+        <xs:simpleType name="test">
+          <xs:annotation>
+            <xs:documentation>
+              This type represents the property tag (MINUS the type part).  There are two options
+              for representation:
+              1.  Hex ==> 0x3fa4
+              2.  Decimal ==> 0-65535
+            </xs:documentation>
+          </xs:annotation>
+          <xs:union memberTypes ="xs:unsignedShort">
+            <xs:simpleType id="HexPropertyTagType">
+              <xs:restriction base="xs:string">
+                <xs:pattern value="(0x|0X)[0-9A-Fa-f]{1,4}"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:union>
+        </xs:simpleType>
+
+      </XSD>
+
+      <CURL>256 asa int16</CURL>
+      <CURL>0x3fa4 asa int16</CURL>
+      <CURL>"Ox3fa4"</CURL>
+      <CURL>"Ox3FA4"</CURL>
+    </CASE>
+
+    <!-- EXAMPLE 2 -->
+    <CASE name='example2'> 
+      <XSD>
+        <!--<xs:simpleType name="ReminderMinutesBeforeStartType">-->
+        <xs:simpleType name="test">
+          <xs:union>
+            <xs:simpleType id="ReminderMinutesBeforeStartType" >
+              <xs:restriction base="xs:int">
+                <xs:minInclusive value="0" />
+                <xs:maxInclusive value="2629800" />
+              </xs:restriction>
+            </xs:simpleType>
+            <xs:simpleType id="ReminderMinutesBeforeStartMarkerType">
+              <xs:restriction base="xs:int">
+                <xs:minInclusive value="1525252321" />
+                <xs:maxInclusive value="1525252321" />
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:union>
+        </xs:simpleType>
+
+      </XSD>
+
+      <CURL>0</CURL>
+      <CURL>2629800</CURL>
+      <CURL>1525252321</CURL>
+    </CASE>
+
+  </GROUP>
+
+</ROOT>

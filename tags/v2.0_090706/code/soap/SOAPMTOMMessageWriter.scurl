@@ -1,0 +1,301 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open SOAPMTOMMessageWriter
+
+  field public constant soap-version:SOAPVersion
+  field public constant character-encoding:CharEncoding
+  field private constant content-id-generator:ContentIDGenerator
+  field private attachments:{Array-of SOAPMTOMAttachment}
+  field private mtom-threshold:int
+
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          mtom-threshold:int = 0
+                      }
+    set self.soap-version = soap-version
+    set self.character-encoding = character-encoding
+    set self.content-id-generator = {ContentIDGenerator}
+    set self.attachments = {{Array-of SOAPMTOMAttachment}}
+    set self.mtom-threshold = mtom-threshold
+  }
+
+  {method public open {get-marshal-context}:SOAPMarshalContext
+    def context = {DefaultSOAPMarshalContext
+                      soap-version = self.soap-version
+                  }
+    {context.register-mtom-writer self}
+    {return context}
+  }
+
+  {method public open {get-request-data}:SOAPHTTPRPCPostCallerRequestData
+    def req-data = {SOAPMTOMRequestData
+                       soap-version = self.soap-version,
+                       start = {self.content-id-generator.get-root-content-id}
+                   }
+    {req-data.append
+        {self.compose-mime-part
+            {format |"%s; charset=%s; type="%s""|,
+                SOAPMTOMRequestData.xop-type,
+                {char-encoding-to-http-charset self.character-encoding},
+                req-data.start-info
+            },
+            {self.get-content-transfer-encoding},
+            {if-non-null start = req-data.start then
+                start
+             else
+                {self.content-id-generator.get-root-content-id}
+            },
+            {{Array-of byte}}
+        }
+    }
+    {return req-data}
+  }
+
+  {method protected open {get-content-transfer-encoding}:String
+    || FIXME: Return applicable encoding depends on charset
+||--    {return
+||--        {switch self.character-encoding
+||--         case CharEncoding.utf8 do
+||--            "8bit"
+||--         else
+||--            "7bit"
+||--        }
+||--    }
+    {return "binary"}
+  }
+
+  {method protected open {compose-mime-part
+                             content-type:String,
+                             content-transfer-encoding:String,
+                             content-id:String,
+                             body:{Array-of byte}
+                         }:MIMEPart
+    {return
+        {MIMEPart
+            body,
+            headers = 
+                {HttpHeaders
+                    "Content-Type", content-type,
+                    "Content-Transfer-Encoding", content-transfer-encoding,
+                    "Content-ID", {format "<%s>", content-id}
+                }
+        }
+    }
+  }
+
+  {method package {register-binary-data
+                      val:ByteArray,
+                      type:SOAPObjectType,
+                      content-id:String = ""
+                  }:(id:#String, registered?:bool)
+    {if self.mtom-threshold <= val.size then
+        {if content-id.empty? then
+            set content-id =
+                {self.content-id-generator.get-content-id}
+        }
+        {self.attachments.append
+            {SOAPMTOMAttachment
+                content-id,
+                type.expected-content-types,
+                null,
+                val
+            }
+        }
+        {return content-id, true}
+     else
+        {return null, false}
+    }
+  }
+  
+  {method package {append-remaining-attachments
+                      req-data:SOAPMTOMRequestData
+                  }:void
+    {for at in self.attachments do
+        {req-data.append
+            {self.compose-mime-part
+                {SOAPMTOMMessageWriter.get-suitable-type
+                    at.expected-content-types
+                },
+                "binary",
+                at.content-id,
+                at.content
+            }
+        }
+    }
+    {self.attachments.clear}
+  }
+
+  {define-proc package {get-suitable-type type:#String}:String
+    {if type != null and
+        {type.find ','} == -1 and
+        {type.find-string "/*"} == -1 and
+        {type.find-string "; q="} == -1
+     then
+        {return {non-null type}}
+     else
+        {return "application/octet-stream"}
+    }
+  }
+  
+  {define-proc package {write-xop-element
+                           stream:{OutputStream-of XMLToken},
+                           val:ByteArray,
+                           type:SOAPObjectType,
+                           marshal-context:SOAPMarshalContext
+                       }:bool
+    {if-non-null ct = type.expected-content-types then
+        || TODO: Handle expected-content-types
+        {stream.write-one
+            {XMLAttribute
+                SOAPMTOMRequestData.xmime-content-type-name,
+                {SOAPMTOMMessageWriter.get-suitable-type ct}
+            }
+        }
+    }
+
+    def (id, registered?) =
+        {marshal-context.register-binary-data val, type}
+
+    {if registered? then
+        {stream.write-one
+            {XMLStartElement SOAPMTOMRequestData.xop-include-name}}
+        {stream.write-one
+            {XMLAttribute
+||--                marshal-context.reference-attribute-name,
+                {XMLName "", "href"},
+                {format "cid:%s", id}
+            }
+        }
+        {stream.write-one {XMLEndElement}}
+        {return true}
+     else
+        {return false}
+    }
+  }
+}
+
+{define-class public open SOAPMTOMRequestData
+  {inherits SOAPHTTPRPCPostCallerRequestData, MultipartMessage}
+
+  let public constant mtom-type:String = "multipart/related"
+  let public constant xop-type:String = "application/xop+xml"
+  let public constant xop-namespace-uri:String =
+      "http://www.w3.org/2004/08/xop/include"
+  let public constant xop-include-name:XMLName =
+      {XMLName SOAPMTOMRequestData.xop-namespace-uri, "Include"}
+  let public constant xmime-content-type-name:XMLName =
+      {XMLName "http://www.w3.org/2005/05/xmlmime", "contentType"}
+
+  field public constant soap-version:SOAPVersion
+
+  field public constant start:#String
+  field public constant start-info:String
+
+  field private multipart-writer:MultipartMessageWriter
+
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          start:#String = null
+                      }
+    set self.soap-version = soap-version
+    set self.start-info = {switch self.soap-version
+                           case SOAPVersion.soap-1-1 do
+                              "text/xml"
+                           case SOAPVersion.soap-1-2 do
+                              "application/soap+xml"
+                           else
+                              {error "Invalid SOAP version"}
+                          }
+    set self.start = start
+
+    set self.multipart-writer = {MultipartMessageWriter}
+    {self.add-mtom-parameters
+        self.multipart-writer.boundary,
+        start = self.start
+    }
+    {construct-super.SOAPHTTPRPCPostCallerRequestData
+        SOAPMTOMRequestData.mtom-type}
+    {construct-super.MultipartMessage}
+  }
+
+  {method public open {request-data}:{Array-of byte}
+    def bos = {ByteArrayOutputStream self.request-data-bytes}
+    {self.multipart-writer.write-message bos, self}
+    {return self.request-data-bytes}
+  }
+
+  {method protected open {add-mtom-parameters
+                             multipart-boundary:String,
+                             start:#String = null
+                         }:void
+    {self.add-parameter-to-content-type
+        {format "type=\"%s\"", SOAPMTOMRequestData.xop-type}
+    }
+    {if-non-null start then
+        {self.add-parameter-to-content-type
+            {format "start=\"<%s>\"", start}}
+    }
+    {self.add-parameter-to-content-type
+        {format "start-info=\"%s\"", self.start-info}
+    }
+    {self.add-parameter-to-content-type
+        {format "boundary=\"%s\"", multipart-boundary}}
+  }
+}
+
+{define-class package ContentIDGenerator
+  field private constant base-content-id:int
+  field private part-count:int
+  field private _root-id:#String
+
+  {constructor package {default}
+    set self.base-content-id = {{Random}.next-int32}
+    set self.part-count = 1
+  }
+
+  {method public open {get-root-content-id}:String
+    {if self._root-id == null then
+        set self._root-id = {self.get-internal-id 0}
+    }
+    {return {non-null self._root-id}}
+  }
+  
+  {method public open {get-content-id}:String
+    def id = {self.get-internal-id self.part-count}
+    {inc self.part-count}
+    {return id}
+  }
+
+  {method private {get-internal-id idx:int}:String
+    def id = {format "%x.%d@wsdk-soap.curl.com",
+                 self.base-content-id, idx}
+    {return id}
+  }
+}
+
+{doc-next
+    {purpose
+        Indicate when MTOM should be supported for SOAP 1.2 messages.
+    }
+}
+{define-enum public SOAPMTOMSupportRange
+    none,
+    request,
+    response,
+    both
+}

@@ -1,0 +1,1242 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPMarshalContext
+|| SOAPUnmarshalContext
+|| SOAPUnmarshalObjectState
+|| DefaultSOAPMarshalContext
+|| DefaultSOAPUnmarshalContext
+
+
+|| class used to keep track of id's for multiple reference objects as
+|| they are written out, and to keep track of objects that have references
+|| to them, but have not been written out yet.  (And need to be written
+|| out before the message is complete.)
+{doc-next
+    {purpose
+        This is the abstract class for the interface that handles keeping
+        track of ids and objects for multiple referenced objects during
+        marshaling.  And this supports writting out any referenced objects
+        that have not already been written out at the end of a SOAP
+        message.
+    }
+    {notes
+        {docref DefaultSOAPMarshalContext} provides a basic implemenation 
+        of this interface.
+    }
+}
+{define-class public abstract open SOAPMarshalContext
+
+  field public constant soap-version:SOAPVersion
+
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }
+    set self.soap-version = soap-version
+  }
+
+  {doc-next
+    {purpose
+        Return the stored id for an object, if there is one,
+        possibly creating it if there isn't one.
+    }
+    {parameter object,
+        The object to look up the id for.
+    }
+    {parameter create-if-missing?,
+        Indicates if a unique id should be created, if the
+        {docref Object} did not already have a key.
+    }
+    {return-vals
+        Returns the id string, or {ctext null} if there is not already
+        an id for {param object}, and {param create-if-missing?} is
+        {ctext false}.  The id string may start with a '#', and when
+        creating a reference to something, that '#' should be used.
+        However, when writting out an instance, the '#' should not be
+        included in the id string.
+    }
+  }
+  {method public abstract open {get-id
+                                   object:any,
+                                   create-if-missing?:bool = false
+                               }:#String
+  }
+
+  || used for things which set the ids externally, such as when using
+  || multipart messages, and there is a binary file in some other part.
+  {doc-next
+    {purpose
+        Set the stored id for {param object}.
+    }
+    {parameter object,
+        The object to set the id for.
+    }
+    {parameter id,
+        The {docref String} to set the id for {param object} to.
+    }
+    {notes
+        This will only normally be used when the instance of the object
+        will not end up in the XML part of the SOAP message, but will
+        instead be somewhere else, such as in another part of a multipart
+        message, or at an http: URL.  The id should be some sort of URN.
+        If the id were being set for something with will be written out
+        as an instance in the XML part of the SOAP message, the id
+        should start with a '#'.
+    }
+  }
+  {method public abstract open {set-id object:any, id:String}:void
+  }
+
+  || also makes an id if needed
+  {doc-next
+    {purpose
+        Sets the proc to be called to marshal a given object, when
+        it comes time to write out any multiply referenced objects whose
+        instances have not yet been written out.  This is normally
+        called in {docref SOAPTypeMapper.marshal} when a reference to
+        an object is first being written out.
+    }
+    {parameter object,
+        The object to set the marshaler for.
+    }
+    {parameter marshaler,
+        The {docref SOAPTypeMapper.MarshalProc} to be called to marshal
+        {param object}.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} of {param object}.  This will be passed
+        to {param marshaler} when it is called to marshal {param object}.
+    }
+    {parameter encoding,
+        The encoding to use to marshal of {param object}.  This will be passed
+        to {param marshaler} when it is called to marshal {param object}.
+    }
+    {parameter write-type-attribute?,
+        Whether or not type attributes should be written when marshaling
+        {param object}.  This will be passed
+        to {param marshaler} when it is called to marshal {param object}.
+    }
+  }
+  {method public abstract open {set-marshaler
+                                   object:any,
+                                   || same type as SOAPTypeMapper.MarshalProc
+                                   marshaler:
+
+            {proc-type {
+                   || stream must be just after the XMLStartElement, so that
+                   || it can look at the attributes of the element for type
+                   || information.  It will read through to the characters
+                   || but not the XMLEndElement.
+                   stream:{OutputStream-of XMLToken},
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nilable possibly important.
+                   type:SOAPObjectType,
+                   element:XMLName,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   || should mapper do this?
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+            },
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+
+                                   encoding:#String, ||default? (multiple urls poss.)
+                                   write-type-attribute?:bool = true
+                               }:void
+  }
+
+  {method package abstract {register-mtom-writer
+                               writer:#SOAPMTOMMessageWriter
+                           }:void
+  }
+
+  {method package abstract {register-binary-data
+                               val:{Array-of byte},
+                               type:SOAPObjectType
+                           }:(#String, bool)
+  }
+
+  {method package abstract {append-remaining-attachments
+                               request-data:SOAPMTOMRequestData
+                           }:void
+  }
+
+  {getter public open abstract {supports-mtom?}:bool}
+
+  {doc-next
+    {purpose
+        Clears out the marshaler stored with a previous call to
+        {docref SOAPMarshalContext.set-marshaler}.
+    }
+    {notes
+        Normally called by a marshaler after it has marshaled an instance
+        of an object that is multiple referenceable, to make sure that
+        there is no later attempt to marshal out another instance of
+        the same object.
+    }
+    {parameter object,
+        The object to clear the marshaler for.
+    }
+  }
+  {method public abstract open {clear-marshaler object:any}:void
+  }
+
+  {doc-next
+    {purpose
+        Marshal out any objects which have been referenced, but have not
+        had an instance written out yet.
+    }
+    {notes
+        The marshalers that this will be calling were ussually provided
+        by {docref SOAPMarshalContext.set-marshaler}, and will be
+        cleared out by {docref SOAPMarshalContext.clear-marshaler} as
+        called by the marshaler.
+    }
+    {parameter stream,
+        {docref XMLOutputStream} that will be passed to the marshalers for
+        them to write XML into.  Normally this {docref XMLOutputStream}
+        will be right before the end of a SOAP Body, when this
+        is called.
+    }
+    {parameter type-mapper,
+        {docref SOAPTypeMapper} that will be passed to the marshalers.
+    }
+    {parameter context,
+        {docref SOAPMarshalContext} that will be passed to the marshalers.
+    }
+    {parameter curl-type-to-xml-type,
+        {docref SOAPCurlTypeToXMLTypeMapper} that will be passed to the
+        marshalers.  And it will be used to fill in {param type} that
+        was saved with the marshaler with
+        {docref SOAPMarshalContext.set-marshaler}.
+    }
+    {parameter xml-type-to-element-name,
+        {docref SOAPCurlTypeToXMLTypeMapper} that will be used to fill in
+        {param type} that was saved with the marshaler with
+        {docref SOAPMarshalContext.set-marshaler}.
+    }
+  }
+  {method public abstract open {marshal-remaining-objects
+                                   stream:{OutputStream-of XMLToken},
+                                   || should these be saved with marshaler?
+                                   type-mapper:SOAPTypeMapper,
+                                   context:SOAPMarshalContext,
+                                   curl-type-to-xml-type:
+                                       SOAPCurlTypeToXMLTypeMapper =
+                                       builtin-soap-curl-type-to-xml-type-mapper,
+                                   xml-type-to-element-name:
+                                        SOAPXMLTypeToElementNameMapper =
+                                       builtin-soap-xml-type-to-element-name-mapper
+                               }:void
+  }
+
+  {doc-next
+    {purpose
+        The name of the attribute used for multiple referencing.
+        For SOAP 1.1 this will normally be
+        {docref SOAPMarshalContext.soap-1-1-reference-attribute-name}.
+    }
+  }
+  {getter public open {reference-attribute-name}:XMLName
+    {return
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-reference-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-reference-attribute-name
+         else
+            {unreachable}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        The name of the attribute used for the id for multiple
+        referencable objects when marshaled into XML.
+    }
+  }
+  {getter public open {id-attribute-name}:XMLName
+    {return
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-id-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-id-attribute-name
+         else
+            {unreachable}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        SOAP 1.1 reference attribute name, one possible value for
+        {docref SOAPMarshalContext.reference-attribute-name}
+        to return.  This is equal to "href" with no namespace.
+    }
+  }
+  {let public constant soap-1-1-reference-attribute-name:XMLName =
+    {XMLName "", "href"}
+  }
+
+  {doc-next
+    {purpose
+        SOAP 1.2 reference attribute name, one possible value for
+        {docref SOAPMarshalContext.reference-attribute-name}
+        to return.
+    }
+  }
+  {def public soap-1-2-reference-attribute-name =
+    {XMLName SOAPTypeMapper.soap-1-2-encoding-uri, "ref"}
+  }
+
+  {doc-next
+    {purpose
+        SOAP 1.1 id attribute name, one possible value for
+        {docref SOAPMarshalContext.id-attribute-name}
+        to return.  This is equal to "id" with no namespace.
+    }
+  }
+  {let public constant soap-1-1-id-attribute-name:XMLName =
+    {XMLName "", "id"}
+  }
+
+  {let public constant soap-1-2-id-attribute-name:XMLName =
+    {XMLName SOAPTypeMapper.soap-1-2-encoding-uri, "id"}
+  }
+
+}
+
+
+{doc-next
+    {purpose
+        Object used to store data about a multiple referencable object,
+        its id and marshaler, used by {docref DefaultSOAPMarshalContext}.
+    }
+}
+{define-class package sealed SOAPMarshalObjectState
+  || HashTable holds object
+  || field public object:any
+  field package id:String
+  field package marshaler:SOAPTypeMapper.MarshalProc
+
+  || marshal arguments
+
+  || xml-type and curl-type required
+  field package type:SOAPObjectType
+
+  field package encoding:#String ||default? (multiple urls poss.)
+  field package write-type-attribute?:bool
+
+  {constructor package {default
+                          id:String,
+                          marshaler:SOAPTypeMapper.MarshalProc,
+                          type:SOAPObjectType,
+                          encoding:#String, ||default? (multiple urls poss.)
+                          write-type-attribute?:bool = true
+                      }
+    set self.id = id
+    set self.marshaler = marshaler
+    set self.type = type
+    set self.encoding = encoding
+    set self.write-type-attribute? = write-type-attribute?
+  }
+
+  {method package {set-marshaler
+                      marshaler:SOAPTypeMapper.MarshalProc,
+                      type:SOAPObjectType,
+                      encoding:#String, ||default? (multiple urls poss.)
+                      write-type-attribute?:bool = true
+                  }:void
+    set self.marshaler = marshaler
+    set self.type = type
+    set self.encoding = encoding
+    set self.write-type-attribute? = write-type-attribute?
+  }
+
+}
+{define-class package sealed SOAPMTOMAttachment
+  field package content-id:String
+  field package expected-content-types:#String
+  field package content-type:#String
+  field package content:{Array-of byte}
+
+  {constructor package {default
+                           content-id:String,
+                           expected-content-types:#String,
+                           content-type:#String,
+                           content:{Array-of byte}
+                       }
+    set self.content-id = content-id
+    set self.expected-content-types = expected-content-types
+    set self.content-type = content-type
+    set self.content = content
+  }
+}
+
+|| user extendable class, and probably default internal implemenation
+|| as well.
+|| SOAPMarshalObjectState is package right now, is that right?
+{doc-next
+    {purpose
+        A basic implementation of a {docref SOAPMarshalContext}.
+    }
+}
+{define-class public open DefaultSOAPMarshalContext
+  {inherits SOAPMarshalContext}
+
+  field private id-table:{HashTable-of any, String}
+  field private marshal-table:{HashTable-of any, SOAPMarshalObjectState}
+  field private prefix:String
+  field private prefix-count:int = 0
+  field private mtom-writer:#SOAPMTOMMessageWriter
+
+    || should # be implicit for generated ids, but not for set ids?
+    || what is returned? # or non#?
+  {doc-next
+    {purpose
+        Create a {docref DefaultSOAPMarshalContext} for marshaling a
+        single SOAP message.
+    }
+    {parameter prefix,
+        String which will be used as the prefix for the ids that
+        this class generates inside of
+        {docref DefaultSOAPMarshalContext.get-id} and
+        {docref DefaultSOAPMarshalContext.set-marshaler}.  It should
+        not start with a '#'.
+    }
+  }
+  {constructor public {default
+                          prefix:String = "id",
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }
+    set self.marshal-table =
+        {new {HashTable-of any, SOAPMarshalObjectState}}
+    set self.id-table = {new {HashTable-of any, String}}
+    set self.prefix =
+        {switch soap-version
+         case SOAPVersion.soap-1-1 do
+            "#" & prefix
+         case SOAPVersion.soap-1-2 do
+            prefix
+         else
+            {unreachable}
+        }
+         
+    {construct-super
+        soap-version = soap-version
+    }
+  }
+
+  {method package {register-mtom-writer writer:#SOAPMTOMMessageWriter}:void
+    set self.mtom-writer = writer
+  }
+
+  {method package {register-binary-data
+                      val:ByteArray,
+                      type:SOAPObjectType
+                  }:(id:#String, registered?:bool)
+    {if-non-null writer = self.mtom-writer then
+        {return {writer.register-binary-data val, type}}
+     else
+        {error {lmessage not support MTOM}}
+    }
+  }
+
+  {method package {append-remaining-attachments
+                      req-data:SOAPMTOMRequestData
+                  }:void
+    {if-non-null writer = self.mtom-writer then
+        {writer.append-remaining-attachments req-data}
+     else
+        {error {lmessage need MTOM Writer}}
+    }
+  }
+
+  {getter public open {supports-mtom?}:bool
+    {return self.mtom-writer != null}
+  }
+
+  {method public open {get-id
+                          object:any,
+                          create-if-missing?:bool = false
+                      }:#String
+    let (id:String, id-found?:bool) =
+        {self.id-table.get-if-exists object}
+    {if id-found? then
+        {return id}
+     else
+        let (state:SOAPMarshalObjectState, state-found?:bool) =
+            {self.marshal-table.get-if-exists object}
+        {if state-found? then
+            {return state.id}
+        }
+        {if create-if-missing? then
+            let constant new-id:String = {self.generate-id object}
+            {self.id-table.set object, new-id}
+            {return new-id}
+        }
+    }
+    {return null}
+  }
+
+  || used for things which set the ids externally, such as when using
+  || multipart messages, and there is a binary file in some other part.
+  {method public open {set-id object:any, id:String}:void
+    let (old-id:String, id-found?:bool) =
+        {self.id-table.get-if-exists object}
+    {if id-found? then
+        {self.id-table.set object, id}
+        {return}
+    }
+    let (state:SOAPMarshalObjectState, state-found?:bool) =
+        {self.marshal-table.get-if-exists object}
+    {if state-found? then
+        set state.id = id
+     else
+        || we don't know anything about the object, so just create a holder
+        || to be filled in later
+        {self.id-table.set object, id}
+    }
+  }
+
+  {method public open {set-marshaler
+                          object:any,
+
+                          || same type as SOAPTypeMapper.MarshalProc
+                          marshaler:
+            {proc-type {
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write attributes and characters.
+                   stream:{OutputStream-of XMLToken},
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nilable possibly important.
+                   type:SOAPObjectType,
+                   element:XMLName,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+            },
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          write-type-attribute?:bool = true
+                      }:void
+    let (old-id:String, id-found?:bool) =
+        {self.id-table.get-if-exists object}
+    {if id-found? then
+        || remove from id table, we are adding it to the marshal-table
+        {self.id-table.remove object}
+    }
+    {if not id-found? then
+        let (state:SOAPMarshalObjectState, found?:bool) =
+            {self.marshal-table.get-if-exists object}
+        {if found? then
+            {state.set-marshaler
+                marshaler,
+                type,
+                encoding,
+                write-type-attribute? = write-type-attribute?
+            }
+            {return}
+        }
+    }
+    let constant new-id:String =
+        {if id-found? then
+            || already assigned id from id-table
+            old-id
+         else
+            {self.generate-id object}
+        }
+    {self.marshal-table.set
+        object,
+        {new SOAPMarshalObjectState,
+            new-id,
+            marshaler,
+            type,
+            encoding,
+            write-type-attribute? = write-type-attribute?
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        The routine which generates unique id strings for 
+        {docref DefaultSOAPMarshalContext.get-id} and
+        {docref DefaultSOAPMarshalContext.set-marshaler}
+        based on the prefix supplied in
+        {docref DefaultSOAPMarshalContext.default}.
+    }
+  }
+  {method public open {generate-id object:any}:String
+    let constant new-id:String =
+        {format "%s-%d", self.prefix, self.prefix-count}
+    set self.prefix-count = self.prefix-count + 1
+    {if self.prefix-count < 0 then
+        set self.prefix = self.prefix & "x"
+        set self.prefix-count = 0
+    }
+    {return new-id}
+  }
+
+  {method public open {clear-marshaler object:any}:void
+    let (state:SOAPMarshalObjectState, found?:bool) =
+        {self.marshal-table.get-if-exists object}
+    {if found? then
+        let constant id:String = state.id
+        {self.marshal-table.remove object}
+        {self.id-table.set object, id}
+    }
+  }
+
+  {method public open {marshal-remaining-objects
+                          stream:{OutputStream-of XMLToken},
+                          || should these be saved with marshaler?
+                          type-mapper:SOAPTypeMapper,
+                          context:SOAPMarshalContext,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:
+                              SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper
+                      }:void
+    {while self.marshal-table.size > 0 do
+        let constant marshal-table-size:int = self.marshal-table.size
+        let constant keys:{FastArray-of any} =
+            {new {FastArray-of any}, max-size = marshal-table-size}
+        let constant values:{FastArray-of SOAPMarshalObjectState} =
+            {new {FastArray-of SOAPMarshalObjectState},
+                max-size = marshal-table-size
+            }
+        || extract contents of hashtable so that we can iterate over
+        || them while still allowing the marshalers to add or remove
+        || things from the tables.
+        {for state key object in self.marshal-table do
+            {keys.append object}
+            {values.append state}
+        }
+        || now call all the marshallers
+        {for state key i in values do
+            let constant type:SOAPObjectType =
+                {SOAPObjectType.fill-in-from-curl-type-mapper
+                    state.type,
+                    curl-type-to-xml-type,
+                    xml-type-to-element-name
+                }
+            || do start element
+            let constant element-name:XMLName =
+                {if-non-null en = type.element-name then
+                    en
+                 else
+                    {if-non-null xml-type = type.xml-type then
+                        xml-type
+                     else
+                        {throw-soap-exception
+                            {lformat
+                                "No element name for %y.", type.xml-type}
+                        }
+                    }
+                }
+            {if not type.marshaler-handled-element? then
+                {stream.write-one
+                    {XMLStartElement element-name}
+                }
+            }
+            {state.marshaler
+                stream,
+                keys[i],
+                state.type,
+                element-name,
+                state.encoding,
+                context,
+                type-mapper,
+                curl-type-to-xml-type,
+                write-type-attribute? = state.write-type-attribute?,
+                multiple-reference = SOAPTypeMultipleReference.multiple-instance
+            }
+            || do end element
+            {if not type.marshaler-handled-element? then
+                {stream.write-one
+                    {XMLEndElement element = element-name}
+                }
+            }
+        }
+    }
+  }
+}
+
+
+{doc-next
+    {purpose
+        An enum which is used in {docref SOAPUnmarshalContext} to
+        indicate how far unmarshaled a multiple referencable object
+        is.
+    }
+    {details
+        Possible values are:
+        {itemize
+            {item not-created{em-dash}The object has not been created
+                yet because there is not enough information to create it.
+            }
+            {item created{em-dash}The object has been created, but
+                some of its data has not yet be unmarshaled.
+            }
+            {item contents-changed{em-dash}The object has been created,
+                and some of its contents have been changed, but it is
+                not complete.
+            }
+            {item complete{em-dash}The object has been created, and all
+                of its data has been unmarshaled.
+            }
+        }
+    }
+}
+{define-enum public SOAPUnmarshalObjectStatus
+    || object does not exist yet
+    not-created,
+    || object was created, but is not complete
+    created,
+    || object got some new field value, but is not complete, this state
+    || may happen repeatedly.
+    contents-changed,
+    || object is totally filled in.
+    complete
+}
+
+
+|| Used to keep track of object ids for handling multiple reference
+|| objects, and for keeping track of work to be done to finish incomplete
+|| multiple reference objects.  (i.e. objects with fields that are still
+|| just references, because the actual instance hasn't been seen yet.)
+||
+|| need to define if id includes a # or not...(if not, this can be a
+|| problem for adding multipart support, if it does, it is a little bit
+|| confusing that you need to remove that for the id attributed.)
+{doc-next
+    {purpose
+        This is the abstract class for the interface that handles keeping
+        track of ids and objects for multiple referenced objects during
+        unmarshaling.  And this supports informing interested code
+        when an object that they reference is unmarshaled.
+    }
+    {notes
+        {docref DefaultSOAPUnmarshalContext} provides a basic implemenation 
+        of this interface.
+    }
+}
+{define-class public abstract open SOAPUnmarshalContext
+
+  field public constant soap-version:SOAPVersion
+
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }
+    set self.soap-version = soap-version
+  }
+
+  {doc-next
+    {purpose
+        Returns the object for a given id, or returns a
+        {docref SOAPUnmarshalObjectState} which can be used to be informed
+        about the object at a later time, when it is unmarshaled.
+    }
+    {parameter id,
+        The id of the object that something has a reference to and wants
+        to find.
+    }
+    {return-vals
+        Returns the object, or if the object has not been unmarshaled yet,
+        a {docref SOAPUnmarshalObjectState}.
+        
+        Returns a {docref SOAPUnmarshalObjectStatus} indicating how
+        much the object has been unmarshaled.
+    }
+    {notes
+        Code which needs to be informed about an object being unmarshaled
+        at a later time should use {docref SOAPUnmarshalContext.append-callback}
+        when {docref SOAPUnmarshalContext.get-object} returns an
+        {docref SOAPUnmarshalObjectState}.
+    }
+  }
+  {method public abstract open {get-object
+                                   id:String
+                               }:(any, status:SOAPUnmarshalObjectStatus)
+  }
+
+  || Used when an object has made some progress, or by external objects
+  || like other parts of a multipart message.
+  {doc-next
+    {purpose
+        Used by thing which unmarshal objects either inside the XML part of
+        a SOAP message or externally, to set the status and possibly object
+        for a given id.
+    }
+    {parameter id,
+        The id of the object being set.
+    }
+    {parameter object,
+        The value of the object being set.  Can be {ctext null} if the
+        object has not been created yet.
+    }
+    {parameter status,
+        The {docref SOAPUnmarshalObjectStatus} of 
+        the object.  If it is not
+        {docref SOAPUnmarshalObjectStatus}{ctext .not-created}, then
+        {param object} should not be null, unless the value of the
+        object is null.
+    }
+    {notes
+        This may trigger calls to callbacks previously registered with
+        {docref SOAPUnmarshalContext.append-callback}.
+    }
+  }
+  {method public abstract open {set-object
+                                   id:String,
+                                   object:any,
+                                   status:SOAPUnmarshalObjectStatus
+                               }:void
+  }
+
+  || Note that state for incomplete objects live through the callbacks
+  || registered on incomplete children, could store this state some other way.
+  {doc-next
+    {purpose
+        Append a proc that should be called when the object for the id
+        is unmarshaled.
+    }
+    {parameter id,
+        id for the object that the proc is interested in.
+    }
+    {parameter proc,
+        The proc to be called when the object is further unmarshaled.
+        The proc gets the object and the status for the object as
+        parameters, and returns a {ctext bool} indicating if
+        the proc should be called again when the object next
+        changes.  The proc should return {ctext true} if the
+        {param status} is {docref SOAPUnmarshalObjectStatus}{ctext .complete}.
+    }
+    {parameter min-status,
+        The minimum {docref SOAPUnmarshalObjectStatus} that the object
+        needs to be at before the proc can do anything with the
+        object.  The {docref SOAPUnmarshalContext} may call the proc
+        before the object is at {param min-status}.
+    }
+  }
+  {method public abstract open {append-callback
+                                   id:String,
+                                   proc:{proc-type
+                                            {object:any,
+                                             status:SOAPUnmarshalObjectStatus
+                                            }:bool
+                                        },
+                                   || optimization not implemented in below
+                                   || data structures.
+                                   min-status:SOAPUnmarshalObjectStatus =
+                                       SOAPUnmarshalObjectStatus.created
+                               }:void
+  }
+
+  {doc-next
+    {purpose
+        Called when a SOAP message is beleived to be complete, to make
+        sure that there are no incomplete or referenced but
+        not yet unmarshaled objects left.
+    }
+    {notes
+        Throws a {docref SOAPUnmarshalException} if there are incomplete
+        or unmarshaled objects left.
+    }
+  }
+  {method public abstract open {check-leftover-unmarshaled-objects}:void
+  }
+
+  {method package abstract {register-mtom-reader
+                               reader:SOAPMTOMMessageReader
+                           }:void
+  }
+
+  {method package abstract {set-binary-data
+                               content-id:String,
+                               content-type:#String,
+                               bytes:{Array-of byte}
+                           }:void
+  }
+
+  {method package abstract {get-binary-data
+                               content-id:String
+                           }:SOAPMTOMAttachment
+  }
+
+  {getter public abstract open {supports-mtom?}:bool
+  }
+  
+  {doc-next
+    {purpose
+        The name of the attribute used for multiple referencing.
+        For SOAP 1.1 this will normally be
+        {docref SOAPMarshalContext.soap-1-1-reference-attribute-name}.
+    }
+    {override
+        Non-abstract subclasses must provide this.
+    }
+  }
+  {getter public open {reference-attribute-name}:XMLName
+    {return
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-reference-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-reference-attribute-name
+        else
+            {unreachable}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        The name of the attribute used for the id for multiple
+        referencable objects when marshaled into XML.
+        For SOAP 1.1 this will normally be
+        {docref SOAPMarshalContext.soap-1-1-id-attribute-name}.
+    }
+    {notes
+        The default implementation of this returns
+        {docref SOAPMarshalContext.soap-1-1-id-attribute-name}.
+    }
+  }
+  {getter public open {id-attribute-name}:XMLName
+    {return 
+        {switch self.soap-version
+         case SOAPVersion.soap-1-1 do
+            SOAPMarshalContext.soap-1-1-id-attribute-name
+         case SOAPVersion.soap-1-2 do
+            SOAPMarshalContext.soap-1-2-id-attribute-name
+        else
+            {unreachable}
+        }
+    }
+  }
+}
+
+
+{doc-next
+    {purpose
+        Class holding information about a partially unmarshaled
+        object.
+    }
+    {notes
+        Instances of these are returned by
+        {docref SOAPUnmarshalContext.get-object}.
+    }
+}
+{define-class public open SOAPUnmarshalObjectState
+
+  {doc-next
+    {purpose
+        The id of the object.
+    }
+  }
+  field public id:String
+
+  {doc-next
+    {purpose
+        The object, or {ctext null} if it has not been created yet.
+    }
+  }
+  field public object:any
+
+  {doc-next
+    {purpose
+        The status of unmarshaling of the object.
+    }
+  }
+  field public status:SOAPUnmarshalObjectStatus
+
+  || if it returns true, this callback can be removed
+  {doc-next
+    {purpose
+        The type of callback procs.
+    }
+  }
+  {let public constant CallbackProc:ProcType =
+    {proc-type {object:any, status:SOAPUnmarshalObjectStatus}:bool}
+  }
+
+  {doc-next
+    {purpose
+        The array of callbacks to be called when the object is
+        further unmarshaled.
+    }
+  }
+  field public callbacks:{Array-of SOAPUnmarshalObjectState.CallbackProc}
+
+  {doc-next
+    {purpose
+        Cosntruct a {docref SOAPUnmarshalObjectState}.
+    }
+    {notes
+        Normally only used by {docref DefaultSOAPUnmarshalContext}.
+    }
+    {parameter id,
+        The id of the object.
+    }
+    {parameter id,
+        The object or {ctext null} if the object has not been unmarshaled yet.
+    }
+    {parameter status,
+        The status of unmarshaling the object.
+    }
+  }
+  {constructor public {default
+                          id:String,
+                          object:any,
+                          status:SOAPUnmarshalObjectStatus
+                      }
+    set self.id = id
+    set self.object = object
+    set self.status = status
+    set self.callbacks =
+        {new {Array-of SOAPUnmarshalObjectState.CallbackProc}}
+  }
+
+  {doc-next
+    {purpose
+        Append a proc that should be called when the object for the id
+        is unmarshaled.
+    }
+    {parameter proc,
+        The proc to be called when the object is further unmarshaled.
+        The proc gets the object and the status for the object as
+        parameters, and returns a {ctext bool} indicating if
+        the proc should be called again when the object next
+        changes.  The proc should return {ctext true} if the
+        {param status} is {docref SOAPUnmarshalObjectStatus}{ctext .complete}.
+    }
+    {parameter min-status,
+        The minimum {docref SOAPUnmarshalObjectStatus} that the object
+        needs to be at before the proc can do anything with the
+        object.  The {docref SOAPUnmarshalContext} may call the proc
+        before the object is at {param min-status}.
+    }
+    {notes
+        Called by {docref SOAPUnmarshalContext.append-callback}.
+    }
+  }
+  {method public open {append-callback
+                          proc:{proc-type
+                                   {object:any,
+                                    status:SOAPUnmarshalObjectStatus
+                                   }:bool
+                               },
+                          || optimization not implemented in below
+                          || data structures.
+                          min-status:SOAPUnmarshalObjectStatus =
+                              SOAPUnmarshalObjectStatus.created
+                      }:void
+    {self.callbacks.append proc}
+  }
+
+  {doc-next
+    {purpose
+        Call all of the callbacks (added with
+        {docref SOAPUnmarshalObjectState.append-callback}) indicating
+        that the object has been updated in some way.  Removing any
+        callbacks that return {ctext true}.
+    }
+    {notes
+        Normally just called by {docref SOAPUnmarshalContext.set-object}.
+    }
+  }
+  {method public open {call-callbacks}:void
+    {if-non-null object = self.object then
+        let constant callbacks:{Array-of SOAPUnmarshalObjectState.CallbackProc} = self.callbacks
+        {for i:int = (callbacks.size - 1) downto 0 do
+            let constant c:SOAPUnmarshalObjectState.CallbackProc =
+                callbacks[i]
+            {if {c object, self.status} then
+                {callbacks.remove i}
+            }
+        }
+    }
+  }
+
+}
+
+
+|| user extendable class implementing the above, and possibly the internal
+|| default implementation as well.
+{doc-next
+    {purpose
+        A basic implementation of a {docref SOAPUnmarshalContext}.
+    }
+}
+{define-class public open DefaultSOAPUnmarshalContext
+  {inherits SOAPUnmarshalContext}
+
+  field private table:{HashTable-of String, SOAPUnmarshalObjectState}
+  field private mtom-reader:#SOAPMTOMMessageReader
+
+  {doc-next
+    {purpose
+        Construct a {docref DefaultSOAPUnmarshalContext}.
+    }
+  }
+  {constructor public {default
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }
+    set self.table = {new {HashTable-of String, SOAPUnmarshalObjectState}}
+    {construct-super
+        soap-version = soap-version
+    }
+  }
+
+  {method public open {get-object
+                          id:String
+                      }:(any, status:SOAPUnmarshalObjectStatus)
+    let (state:SOAPUnmarshalObjectState, found?:bool) =
+        {self.table.get-if-exists id}
+    {if found? then
+        {if state.status != SOAPUnmarshalObjectStatus.not-created then
+            {return state.object, state.status}
+         else
+            {return state, state.status}
+        }
+     else
+        || must create state object here...
+        set state =
+            {new SOAPUnmarshalObjectState,
+                id, null, SOAPUnmarshalObjectStatus.not-created
+            }
+        {self.table.set id, state}
+        {return state, SOAPUnmarshalObjectStatus.not-created}
+    }
+  }
+
+  {method public open {set-object
+                          id:String,
+                          object:any,
+                          status:SOAPUnmarshalObjectStatus
+                      }:void
+    {if self.soap-version == SOAPVersion.soap-1-1 then
+        set id = "#" & id
+    }
+    let (state:SOAPUnmarshalObjectState, found?:bool) =
+        {self.table.get-if-exists id}
+    {if found? then
+        set state.status = status
+        {if-non-null object then
+            set state.object = object
+            {state.call-callbacks}
+        }
+     else
+        {self.table.set
+            id,
+            {new SOAPUnmarshalObjectState, id, object, status}
+        }
+    }
+  }
+
+  {method package {register-mtom-reader
+                      reader:SOAPMTOMMessageReader
+                  }:void
+    set self.mtom-reader = reader
+  }
+
+  {method package {set-binary-data
+                      content-id:String,
+                      content-type:#String,
+                      bytes:{Array-of byte}
+                  }:void
+    {if-non-null reader = self.mtom-reader then
+        {reader.set-binary-data
+            content-id, content-type, bytes
+        }
+     else
+        {error {lmessage MTOM Not Supported}} || TODO: message
+    }
+  }
+
+  {method package {get-binary-data
+                      content-id:String
+                  }:SOAPMTOMAttachment
+    {if-non-null reader = self.mtom-reader then
+        {return {reader.get-binary-data content-id}}
+     else
+        {error {lmessage MTOM Not Supported}}
+    }
+  }
+
+  {getter public open {supports-mtom?}:bool
+    {return self.mtom-reader != null}
+  }
+
+  {method public open {append-callback
+                          id:String,
+                          proc:{proc-type
+                                   {object:any,
+                                    status:SOAPUnmarshalObjectStatus
+                                   }:bool
+                               },
+                          || optimization not implemented in below
+                          || data structures.
+                          min-status:SOAPUnmarshalObjectStatus =
+                              SOAPUnmarshalObjectStatus.created
+                          }:void
+    let (state:SOAPUnmarshalObjectState, found?:bool) =
+        {self.table.get-if-exists id}
+    {if not found? then
+        {self.table.set
+            id,
+            {new SOAPUnmarshalObjectState,
+                id, null, SOAPUnmarshalObjectStatus.not-created
+            }
+        }
+    }
+    {state.append-callback proc, min-status = min-status}
+  }
+
+  {method public open {check-leftover-unmarshaled-objects}:void
+    {for s key id in self.table do
+        {if s.status != SOAPUnmarshalObjectStatus.complete then
+            {throw-unmarshal-exception
+                {lformat "Left over unresolved object id=%s Object=%s.", id, s.object}
+            }
+        }
+    }
+  }
+
+}

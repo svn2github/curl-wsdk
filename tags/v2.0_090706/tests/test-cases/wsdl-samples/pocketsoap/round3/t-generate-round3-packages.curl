@@ -1,0 +1,245 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+{applet manifest = "../manifest.mcurl"}
+
+{import * from COM.CURL.WSDK.POCKETSOAP-SUPPORT}
+
+{include "r-round3.scurl"}
+
+{define-proc {generate m:ComponentManifest, res-rs:RecordSet}:Url
+    let tloc:Url = {url "./foo"}
+    {for r in res-rs do
+        {try
+            let loc:Url = {url r["wsdl"]}
+            let server:String = r["server"]
+            set tloc = {url "./" & server & "/"}
+            let fname:String = r["file"]
+
+            let w:WSDL = {WSDL loc}
+            let sloc:Url = 
+                {{tloc.set-filename fname}.set-extension ".scurl"}
+
+            let ndx:int = {server.find '/', search-direction = "backward"}
+            let server-name:String =
+                {if ndx != -1 and ndx < server.size - 1 then
+                    {server.tail ndx + 1}
+                 else
+                    server
+                }
+
+            let package-name:String =
+                server-name & "." &
+            {if-non-null name = w.name then
+                name
+             elseif not w.services.empty? then
+                w.services[0].name
+             else
+                tloc.basename
+            }
+            let group:String = r["group"]
+            let subgroup:String = r["subgroup"]
+            {write-wsdl w, package-name, group, subgroup, sloc} 
+            let pname:String = "COM.CURL.WSDL." & package-name
+            {m.add
+                {make-package-selector
+                    pname,
+                    location = sloc,
+                    group = group,
+                    subgroup = subgroup
+                }
+            }
+||--            set r["WSDL"] = w
+            set r["package"] = package-name
+            set r["code"] = {{read-from sloc}.to-String}
+            || NOTE: Don't update r["status"] because the load code checks
+            ||       for successful generation with r["status"].empty?
+         catch e:Throwable do
+            set r["status"] = {String "GENERATE: " & e}
+        }
+        {dispatch-events false}
+    }
+    let mloc:Url = {{get-the-applet}.url.merge "round3-manifest.mcurl"}
+    {write-manifest m, mloc}
+    {return mloc}
+}
+
+{define-proc {load mloc:Url, m:ComponentManifest, res-rs:RecordSet}
+    set m = {import-manifest mloc, check-out-of-date? = true}
+    {for data in res-rs do
+        {if not data["status"].empty? then
+            {continue}
+        }
+        {try
+            let pname:String = "COM.CURL.WSDL." & data["package"]
+            set data["pkg"] = 
+                {import-package 
+                    manifest = m,
+                    {make-package-selector pname}
+                }
+            set data["status"] = "LOAD: Successfully imported " & pname
+         catch e:Throwable do
+            set data["status"] = {String "LOAD: " & e}
+        }
+        {dispatch-events false}
+    }
+}
+
+{value
+    let tloc:Url = {url "./foo"}
+    let results:RecordSet =
+        {RecordSet
+            {RecordFields
+                {RecordField "Generate?", domain = bool, default-value = true},
+                {RecordField "group", domain = String},
+                {RecordField "subgroup", domain = String},
+                {RecordField "server", domain = String, caption = "Server"},
+                {RecordField "wsdl", domain = String},
+                {RecordField "file", domain = String},
+||--                {RecordField "WSDL", domain = any, nullable? = true},
+                {RecordField "package", domain = String},
+                {RecordField "code", domain = String},
+                {RecordField "pkg", domain = any, nullable? = true},
+                {RecordField "status", domain = String}
+            }
+        }
+
+    let m:ComponentManifest = {ComponentManifest}
+    set m.direct-delegates =
+        {{ReadOnlyArray-of ComponentManifest}
+            {get-default-manifest}
+        }
+
+    {for r in round3-impls do
+        let group:String = r["group"]
+        let subgroup:String = r["subgroup"]
+        let loc:Url = {url r["wsdl"]}
+        let server:String = r["server"]
+        let fname:String =
+            {if not loc.filename.empty? then
+                loc.filename
+             else
+                let index:int =
+                    {server.find search-direction = "backward", '/'}
+                {if index != -1 then
+                    {if index < server.size then
+                        {server.tail index + 1}
+                     else
+                        {server.tail index}
+                    }
+                 else
+                    server
+                }
+            }
+        let data:RecordData = {RecordData
+                                   group = group,
+                                   subgroup = subgroup,
+                                   wsdl = loc.name,
+                                   server = server,
+                                   file = fname
+                               }
+        {results.append data}
+    }
+
+    let rg:RecordGrid = 
+        {RecordGrid 
+||--            record-source =  {RecordView modifiable? = false, results},
+            record-source =  results,
+            height = 3.5in,
+            width = {make-elastic},
+            automatic-columns? = false,
+            {RecordGridColumn "Generate?", width = .75in},
+            {RecordGridColumn "file", width = 1.5in},
+||--            {RecordGridColumn "WSDL", width = .5in},
+            {RecordGridColumn "package", width = 1.5in},
+            {RecordGridColumn "status", width = {make-elastic}}
+        }
+    {VBox
+        spacing = 3px,
+        hstretch? = true,
+        {text-width-display rg},
+        {HBox
+            {Fill},
+            {CommandButton label = "Select All",
+                {on Action do
+                    {for res in results do
+                        set res["Generate?"] = true
+                    }
+                }
+            },
+            {CommandButton label = "Deselect All",
+                {on Action do
+                    {for res in results do
+                        set res["Generate?"] = false
+                    }
+                }
+            },
+            {Fill}
+        },
+        {HBox
+            {Fill},
+            {CommandButton label = "Generate & Load",
+                {on Action do
+                    {for res in results do
+                        set res["package"]= ""
+                        set res["status"]= ""
+                    }
+                    {dispatch-events false}
+                    let rv:RecordView =
+                        {new RecordView,
+                            results,
+                            filter = {new RecordData, Generate? = true}
+                        }
+                    || Generate & Load
+                    let mloc:Url = {generate m, rv}
+                    {load mloc, m, rv}
+                    {for i:int = m.size - 1 downto 0 do
+                        {m.remove i}
+                    }
+                }
+            },
+            {Fill}
+        },
+        {hrule},
+        {RecordForm 
+            record-source = rg.records,
+            {VBox
+                background = "white",
+                hstretch? = true,
+||--                {bind user-data to "WSDL"},
+                {HBox
+                    valign = "top",
+                    {TextDisplay 
+                        {bind value to "file"},
+                        font-weight = "bold",
+                        width = 2in
+                    },
+                    {TextArea 
+                        {bind value to "status"},
+                        height = .375in,
+                        width = {add-stretch}
+                    }
+                },
+                {TextArea
+                    width = {add-stretch},
+                    height = 1.5in,
+                    {bind value to "code"}
+                }
+            }
+        }
+    }
+}

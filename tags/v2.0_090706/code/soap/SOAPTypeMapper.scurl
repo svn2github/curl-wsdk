@@ -1,0 +1,2398 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| FIXME: some marshallers would like access to the xml-type mappers,
+|| but can't get at them right now, how do we fix that, add mappers to
+|| args?  Add all mappers to SOAPTypeMapper?  Or just require marshallers
+|| to know them via their own means (ie get them when they are created)?
+
+|| SOAPTypeMapper
+|| SOAPElementNameToXMLTypeMapper
+|| SOAPXMLTypeToElementNameMapper
+|| SOAPXMLTypeToCurlTypeMapper
+|| SOAPCurlTypeToXMLTypeMapper
+
+|| Knows how to marshal and unmarshal values between Curl types
+|| and XML types, also can return some possibly not what you want, but
+|| legal (i.e. marshal/unmarshalable) mapping from XML type to Curl type
+|| and visa versa.
+||
+|| Most implementations of this will be based on some sort of hashtable or
+|| some such of mappings/marshalers.
+||
+
+|| NOTE: not presently used
+|| - would be needed to find procs registered for superclasses
+|| - if used, should register once found, to avoid redundant searches
+
+||--{define-proc package {for-each-super 
+||--                         c:ClassType,
+||--                         f:{proc-type {ClassType}:bool}
+||--                     }:bool
+||--||--    || to disable
+||--||--    {return false}
+||--    let seen:{Set-of ClassType} = {{Set-of ClassType}}
+||--    let g:{proc-type {ClassType}:bool} =
+||--        {proc {c:ClassType}:bool
+||--            let c?:bool = true
+||--            {c.for-each-base-class
+||--                {proc {c:ClassType}:bool
+||--                    set c? =
+||--                        {if {seen.member? c} then
+||--                            true
+||--                         else
+||--                            {seen.insert c}
+||--                            {f c} and {g c}}
+||--                    {return c?}}}
+||--            {return c?}}
+||--    {return {g c}}
+||--}
+
+{doc-next
+    {purpose
+        This is the abstract class for the interface that handles marshaling
+        and unmarshaling data from SOAP messages.  Normally the
+        non-abstract subclasses will have a hash table of marshaling
+        and unmarshaling routines or classes that they can select
+        from based on the type of data being handled.
+    }
+    {notes
+        See {docref DefaultSOAPTypeMapper} for a basic implementation
+        of this interface.
+    }
+}
+{define-class public abstract open SOAPTypeMapper
+  {let public constant xml-schema-uri:String =
+    "http://www.w3.org/2001/XMLSchema"
+  }
+  {let public constant xml-schema-instance-uri:String =
+    "http://www.w3.org/2001/XMLSchema-instance"
+  }
+  {let public constant soap-1-1-encoding-uri:String =
+    "http://schemas.xmlsoap.org/soap/encoding/"
+  }
+  {let public constant soap-1-2-encoding-uri:String =
+    "http://www.w3.org/2003/05/soap-encoding"
+  }
+
+  {let public constant xml-schema-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-instance-uri, "type"},
+  }
+  {let public constant xml-schema-instance-nil:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-instance-uri, "nil"}
+  }
+
+  {let public constant xml-schema-float-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "float"}
+  }
+  {let public constant xml-schema-double-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "double"}
+  }
+
+  {let public constant xml-schema-decimal-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "decimal"}
+  }
+
+  {let public constant xml-schema-integer-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "integer"}
+  }
+  {let public constant xml-schema-long-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "long"}
+  }
+  {let public constant xml-schema-int-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "int"}
+  }
+  {let public constant xml-schema-short-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "short"}
+  }
+  {let public constant xml-schema-byte-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "byte"}
+  }
+  {let public constant xml-schema-non-negative-integer-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "nonNegativeInteger"}
+  }
+  {let public constant xml-schema-unsigned-long-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "unsignedLong"}
+  }
+  {let public constant xml-schema-positive-integer-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "positiveInteger"}
+  }
+  {let public constant xml-schema-unsigned-int-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "unsignedInt"}
+  }
+  {let public constant xml-schema-unsigned-short-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "unsignedShort"}
+  }
+  {let public constant xml-schema-unsigned-byte-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "unsignedByte"}
+  }
+  {let public constant xml-schema-non-positive-integer-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "nonPositiveInteger"}
+  }
+  {let public constant xml-schema-negative-integer-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "negativeInteger"}
+  }
+  {let public constant xml-schema-boolean-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "boolean"}
+  }
+
+  {let public constant xml-schema-string-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "string"}
+  }
+
+  || various things that we treat as any's
+  {let public constant xml-schema-any-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "anyType"}
+  }
+  {let public constant xml-schema-any-simple-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "anySimpleType"}
+  }
+  {let public constant xml-schema-simple-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "simpleType"}
+  }
+  {let public constant xml-schema-complex-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "complexType"}
+  }
+
+  {let public constant xml-schema-base64-binary-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "base64Binary"}
+  }
+  {let public constant soap-1-1-encoding-base64-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "base64"}
+  }
+  {let public constant xml-schema-hex-binary-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "hexBinary"}
+  }
+  {let public constant xml-schema-datetime-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "dateTime"}
+  }
+  {let public constant xml-schema-date-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "date"}
+  }
+  {let public constant xml-schema-anyuri-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "anyURI"}
+  }
+  {let public constant xml-schema-qname-type:XMLName =
+    {new XMLName, SOAPTypeMapper.xml-schema-uri, "QName"}
+  }
+
+  || return indicates if it actually knows how to do the marshaling...
+  || If it returns false, then the Mapper should look elsewhere or throw
+  || an error.
+  || (But errors are thrown if it thinks that it can, but the data is
+  || malformed.)
+  {doc-next
+    {purpose
+        Proc type stored in hash tables keyed by {docref SOAPObjectType},
+        by subclasses of {docref SOAPTypeMapper} like
+        {docref DefaultSOAPTypeMapper}.  {docref SOAPTypeMapper.marshal}
+        in subclasses look these up and call them.
+    }
+    {details
+        The type signature is the same as {docref SOAPTypeMapper.marshal}
+        except that this has a {ctext bool} return value that indicates
+        if the routine knows how to do the marshaling at all.
+    }
+  }
+  {let public constant MarshalProc:ProcType =
+    {proc-type {
+                   || stream must be just after the XMLStartElement, so that
+                   || it can write attributes and characters.
+                   stream:{OutputStream-of XMLToken},
+                   value:any,
+
+                   || xml-type and curl-type required, multi-reference
+                   || and nillable possibly important.
+                   type:SOAPObjectType,
+                   element:XMLName,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPMarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                   write-type-attribute?:bool = true,
+                   multiple-reference:SOAPTypeMultipleReference =
+                       SOAPTypeMultipleReference.unknown
+               }:(worked?:bool)
+    }
+  }
+  || note: value might be an SOAPUnmarshalObjectState if the thing could
+  || not be totally unmarshaled, and the bool
+  || indicates if this thing actually knows how to unmarshal this element,
+  || If it returns false, then the Mapper should look elsewhere or throw
+  || an error.
+  || (But errors are thrown if it thinks that it can, but the data is
+  || malformed.)
+  {doc-next
+    {purpose
+        Proc type stored in hash tables keyed by {docref SOAPObjectType},
+        by subclasses of {docref SOAPTypeMapper} like
+        {docref DefaultSOAPTypeMapper}.  {docref SOAPTypeMapper.unmarshal}
+        in subclasses look these up and call them.
+    }
+    {details
+        The type signature is the same as {docref SOAPTypeMapper.unmarshal}
+        except that this has an additional {ctext bool} return value that
+        indicates if the routine knows how to do the unmarshaling at all.
+    }
+  }
+  {let public constant UnmarshalProc:ProcType =
+    {proc-type {
+                   || stream must be after the XMLStartElement, and
+                   || XMLAttribute's so that
+                   || it can read the XMLCharacters.
+                   || The attributes will be in {param attributes}.
+                   stream:XMLInputStream,
+                   attributes:#{Array-of XMLAttribute},
+
+                   || xml-type and curl-type required
+                   type:SOAPObjectType,
+
+                   encoding:#String, || default? (multiple urls poss.)
+                   marshal-context:SOAPUnmarshalContext,
+                   current-mapper:SOAPTypeMapper,
+                   xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                   check-type-attribute?:bool = false
+               }:(value:any, worked?:bool)
+    }
+  }
+
+  {doc-next
+    {purpose
+        This is the method used to convert a Curl value into
+        {docref XMLToken}s in an {docref XMLOutputStream}.
+    }
+    {override
+        In most implementations of {docref SOAPTypeMapper} this routine
+        will look up a {docref SOAPTypeMapper.MarshalProc} based
+        on the {param type}, from some sort of hash table, and then call 
+        the proc.
+    }
+    {notes
+        This method is called after the {docref XMLStartElement} and
+        possibly some {docref XMLAttribute}s have been written to
+        {param stream}, and it may write {docref XMLAttribute}s and
+        {docref XMLCharacters}, but should not write the
+        {docref XMLEndElement}.
+    }
+    {parameter stream,
+        {docref XMLOutputStream} where the {docref XMLToken}s from
+        convert {param value} into SOAP XML data will be written.
+    }
+    {parameter value,
+        The data which will be written out.  The type of the data
+        should be equal to {ctext type.curl-type} or be a subclass
+        of {ctext type.curl-type}.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} which type information for how
+        to convert {param value} into XML.  {ctext type.xml-type}
+        and {ctext type.curl-type} must be filled in by the time
+        this is called.
+    }
+    {parameter encoding,
+        The encoding to use for the conversion of {param value} into
+        XML.  {ctext null} means any encoding, or the default for
+        this {docref SOAPTypeMapper}.
+    }
+    {parameter marshal-context,
+        The {docref SOAPMarshalContext} which is used to keep track
+        of ids and such for multiple reference support.  So, when writing
+        out the value, if the value needs an id,
+        {docref SOAPMarshalContext.get-id} should be called with
+        {param create-if-missing?} set to {ctext true} to get
+        the id.  And if the the marshaler needs to find out if the
+        object has already been marshaled in this message, 
+        {docref SOAPMarshalContext.get-id} can be called with
+        {param create-if-missing?} set to {ctext false}.
+    }
+    {parameter current-mapper,
+        The top level {docref SOAPTypeMapper} for this marshal call,
+        any {docref SOAPTypeMapper} which is calling other marshal routines
+        should pass through whatever value it receives.  This is used
+        to marshal subvalues of {param value}.  (Eg. If {param value} is
+        an array this would be used to do {docref SOAPTypeMapper.marshal}
+        calls for each item in the array.)
+    }
+    {parameter curl-type-to-xml-type,
+        The {docref SOAPCurlTypeToXMLTypeMapper} which the marshaler
+        can use to fill in any auxilary {docref SOAPObjectType}s which
+        it ends up with that are missing {docref SOAPObjectType.xml-type}.
+    }
+    {parameter write-type-attribute?,
+        A {ctext bool} that indicates if type attributes should be
+        written out by the marshal routine.  For SOAP 1.1 that
+        mostly means an attribute named
+        {ctext {XMLName SOAPTypeMapper.xml-schema-instance-uri, "type"}}
+        with the name of the XML type as its value.
+    }
+    {parameter multiple-reference,
+        A {docref SOAPTypeMultipleReference} that combined with
+        {ctext type.multiple-reference} determines how multiple
+        referencing will be done for this conversion.
+        The decision will vary depending on the type of the
+        object being marshaled, but generally if
+        {param multiple-reference} is 
+        {docref SOAPTypeMultipleReference}{ctext .multiple} or
+        {docref SOAPTypeMultipleReference}{ctext .multiple-reference}
+        and the type is legal for multiple reference, it will be done
+        as an XML reference, if it is
+        {docref SOAPTypeMultipleReference}{ctext .multiple-instance} it
+        will be written as an instance, with an id, and if
+        {param multiple-reference} is
+        {docref SOAPTypeMultipleReference}{ctext .single} it will be
+        written as an instance with no id.  If 
+        {param multiple-reference} is
+        {docref SOAPTypeMultipleReference}{ctext .unknown} then the type
+        specific marshaling code will choose which of the above behaviors
+        should occur.
+    }
+    {throws
+        {exception SOAPMarshalException,
+            if a marshaler can not be found,
+            for problems with the types being marshaled 
+            and for most other failures.
+        }
+        {exception SOAPException,
+            for some other failures.
+        }
+    }
+  }
+  {method public abstract open {marshal
+                          stream:{OutputStream-of XMLToken},
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+                          element:XMLName,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          marshal-context:SOAPMarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:void
+  }
+
+  || note: value: might be an SOAPUnmarshalObjectState
+  {doc-next
+    {purpose
+        This is the method used to convert an XML element which is available
+        as {docref XMLToken}s from an {docref XMLInputStream}.
+    }
+    {override
+        In most implementations of {docref SOAPTypeMapper} this routine
+        will look up a {docref SOAPTypeMapper.UnmarshalProc} based
+        on the {param type}, from some sort of hash table, and then call 
+        the proc.
+    }
+    {notes
+        This method is called after the {docref XMLStartElement} and
+        the {docref XMLAttribute}s have been read from
+        {param stream}, and it gets the {docref XMLAttribute}s as a
+        parameter, and reads the {docref XMLCharacters} from {param stream},
+        but should not read the {docref XMLEndElement}.  Or it should
+        unread the {docref XMLEndElement} if it reads it.
+    }
+    {parameter stream,
+        {docref XMLInputStream} where the {docref XMLToken}s of SOAP
+        XML data to be converted into a Curl value are read from.
+    }
+    {parameter attributes,
+        If there are attributes for this XML element, then this will
+        an {ctext {Array-of XMLAttribute}}, otherwise it will be
+        {ctext null}.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} which type information for how
+        to convert {param value} into XML.  {ctext type.xml-type}
+        and {ctext type.curl-type} must be filled in by the time
+        this is called.
+    }
+    {parameter encoding,
+        The encoding to use for the conversion of {param value} into
+        XML.  {ctext null} means any encoding, or the default for
+        this {docref SOAPTypeMapper}.
+    }
+    {parameter unmarshal-context,
+        The {docref SOAPUnmarshalContext} which is used to keep track
+        of ids and such for multiple reference support.  So, when reading
+        in the value, if the value is a reference, 
+        {docref SOAPUnmarshalContext.get-object} should be called.
+        For values with sub-objects (like an array), the unmarshaler
+        may also need to call {docref SOAPUnmarshalContext.append-callback}
+        to get the value for the sub-object which is a reference at
+        a later time when the instance is actually unmarshaled.
+    }
+    {parameter current-mapper,
+        The top level {docref SOAPTypeMapper} for this unmarshal call,
+        any {docref SOAPTypeMapper} which is calling other unmarshal routines
+        should pass through whatever value it receives.  This is used
+        to unmarshal sub-values of {param value}.  (Eg. If {param value} is
+        an array this would be used to do {docref SOAPTypeMapper.unmarshal}
+        calls for each item in the array.)
+    }
+    {parameter check-type-attribute?,
+        A {ctext bool} that indicates if the type attributes should be
+        checked against {param type} by the unmarshal routine.  For
+        SOAP 1.1 that mostly means an attribute named
+        {ctext {XMLName SOAPTypeMapper.xml-schema-instance-uri, "type"}}
+        with the name of the XML type as its value.
+    }
+    {parameter xml-type-to-curl-type,
+        The {docref SOAPXMLTypeToCurlTypeMapper} which the unmarshaler
+        can use to fill in any auxilary {docref SOAPObjectType}s which
+        it ends up with that are missing {docref SOAPObjectType.curl-type}.
+    }
+    {return-vals
+        One {docref any} with either the value unmarshaled or
+        a {docref SOAPUnmarshalObjectState} if there is
+        the value was a reference and the instance for this
+        has not been unmarshaled yet.  (The caller of
+        the {docref SOAPTypeMapper.unmarshal} will presumably
+        call {docref SOAPUnmarshalContext.append-callback}
+        when ever a {docref SOAPUnmarshalObjectState} is
+        returned so that it can handle the value when it is
+        unmarshaled later.
+    }
+    {throws
+        {exception SOAPUnmarshalException,
+            if a unmarshaler can not be found,
+            for XML data format errors and for most other failures.
+        }
+        {exception SOAPException,
+            for some other failures.
+        }
+    }
+  }
+  {method public abstract open {unmarshal
+                                   stream:XMLInputStream,
+                                   attributes:#{Array-of XMLAttribute},
+
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+
+                                   encoding:#String, ||default? (multiple urls poss.)
+                                   unmarshal-context:SOAPUnmarshalContext,
+                                   current-mapper:SOAPTypeMapper,
+                                   xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                                   check-type-attribute?:bool = false
+                          }:(value:any)
+  }
+
+  {method public abstract open {get-marshal-proc
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+                                   encoding:#String ||default? (multiple urls poss.)
+                                }:#SOAPTypeMapper.MarshalProc
+  }
+
+  {method public abstract open {get-unmarshal-proc
+                                   || xml-type and curl-type required
+                                   type:SOAPObjectType,
+                                   encoding:#String ||default? (multiple urls poss.)
+                               }:#SOAPTypeMapper.UnmarshalProc
+  }
+}
+
+
+
+{define-class package final TableSOAPTypeMapperKey
+  field package constant xml-type:XMLName
+  field package constant curl-type:Type
+  field package constant encoding:#String
+  {constructor package {default
+                          xml-type:XMLName,
+                          curl-type:Type,
+                          encoding:#String
+                      }
+    set self.xml-type = xml-type
+    set self.curl-type = curl-type
+    set self.encoding = encoding
+  }
+}
+
+{define-proc public {table-key-hash-proc k:TableSOAPTypeMapperKey}:int
+    {return
+        {value-hash k.encoding} +
+        {value-hash k.curl-type} +
+        {value-hash k.xml-type}
+    }
+}
+
+{define-proc public {table-key-equal-proc
+                        k1:TableSOAPTypeMapperKey,
+                        k2:TableSOAPTypeMapperKey
+                    }:bool
+    {return
+        k1.encoding == k2.encoding and
+        k1.curl-type == k2.curl-type and
+        k1.xml-type == k2.xml-type
+    }
+}
+
+|| a class that users can use to install their own marshal/unmarshal routines,
+|| which they will have to do to use structs
+{define-class package TableSOAPTypeMapper
+  {inherits SOAPTypeMapper}
+
+  field package marshal-table:
+    {HashTable-of TableSOAPTypeMapperKey, SOAPTypeMapper.MarshalProc,
+        key-hash-proc = table-key-hash-proc,
+        key-equality-proc = table-key-equal-proc
+    }
+
+  field package unmarshal-table:
+    {HashTable-of TableSOAPTypeMapperKey, SOAPTypeMapper.UnmarshalProc,
+        key-hash-proc = table-key-hash-proc,
+        key-equality-proc = table-key-equal-proc
+    }
+
+  {constructor package {default
+                       }
+    set self.marshal-table =
+        {new
+            {HashTable-of TableSOAPTypeMapperKey, SOAPTypeMapper.MarshalProc,
+                key-hash-proc = table-key-hash-proc,
+                key-equality-proc = table-key-equal-proc
+            }
+        }
+    set self.unmarshal-table =
+        {new
+            {HashTable-of TableSOAPTypeMapperKey, SOAPTypeMapper.UnmarshalProc,
+                key-hash-proc = table-key-hash-proc,
+                key-equality-proc = table-key-equal-proc
+            }
+        }
+  }
+
+  {method package sealed {set-marshal-proc
+                             type:SOAPObjectType,
+                             encoding:#String,
+                             marshal-proc:SOAPTypeMapper.MarshalProc
+                         }:void
+    {self.marshal-table.set
+        {TableSOAPTypeMapperKey
+            {non-null type.xml-type},
+            {if type.curl-type.non-null-variant != null and
+                type.curl-type.non-null-variant != type.curl-type
+             then
+                {non-null type.curl-type.non-null-variant}
+             else
+                {non-null type.curl-type}
+            },
+            encoding
+        },
+        marshal-proc
+    }
+  }
+
+  {method package {remove-marshal-proc
+                          type:SOAPObjectType,
+                          encoding:#String
+                      }:void
+    {self.marshal-table.remove
+        {TableSOAPTypeMapperKey
+            {non-null type.xml-type},
+            {if type.curl-type.non-null-variant != null and
+                type.curl-type.non-null-variant != type.curl-type
+             then
+                {non-null type.curl-type.non-null-variant}
+             else
+                {non-null type.curl-type}
+            },
+            encoding
+        }
+    }
+  }
+
+  {method package sealed {set-unmarshal-proc
+                             type:SOAPObjectType,
+                             encoding:#String,
+                             unmarshal-proc:SOAPTypeMapper.UnmarshalProc
+                         }:void
+    {self.unmarshal-table.set
+        {TableSOAPTypeMapperKey
+            {non-null type.xml-type},
+            {if type.curl-type.non-null-variant != null and
+                type.curl-type.non-null-variant != type.curl-type
+             then
+                {non-null type.curl-type.non-null-variant}
+             else
+                {non-null type.curl-type}
+            },
+            encoding
+        },
+        unmarshal-proc
+    }
+  }
+
+  {method package {remove-unmarshal-proc
+                          type:SOAPObjectType,
+                          encoding:#String
+                      }:void
+    {self.unmarshal-table.remove
+        {TableSOAPTypeMapperKey
+            {non-null type.xml-type},
+            {if type.curl-type.non-null-variant != null and
+                type.curl-type.non-null-variant != type.curl-type
+             then
+                {non-null type.curl-type.non-null-variant}
+             else
+                {non-null type.curl-type}
+            },
+            encoding
+        }
+    }
+  }
+
+||--  {method package sealed {get-marshal-proc
+  {method public sealed {get-marshal-proc
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String ||default? (multiple urls poss.)
+                       }:#SOAPTypeMapper.MarshalProc
+    let new-type:SOAPObjectType = type
+    {if type.curl-type.can-be-null? and type.curl-type.non-null-variant != null
+     then
+        set new-type =
+            {SOAPObjectType.clone-with
+                type,
+                curl-type = type.curl-type.non-null-variant,
+                nillable? = true
+            }
+    }
+    
+    let mproc:#SOAPTypeMapper.MarshalProc = null
+    let exists?:bool = false
+    let curl-type:Type = {non-null new-type.curl-type}
+    let xml-type:XMLName = {non-null new-type.xml-type}
+
+    || look for direct entry in specified encoding
+    set (mproc, exists?) =
+        {self.marshal-table.get-if-exists
+            {TableSOAPTypeMapperKey
+                xml-type,
+                curl-type,
+                encoding
+            }
+        }
+    
+    || check superclasses
+||--    {if not exists? and (curl-type isa ClassType) then        
+||--||--        {if curl-type != any then
+||--||--            {dump self, curl-type, encoding}}
+||--        {for-each-super 
+||--            (curl-type asa ClassType),
+||--            {proc {c:ClassType}:bool
+||--                set (mproc, exists?) =
+||--                    {self.marshal-table.get-if-exists
+||--                        {TableSOAPTypeMapperKey
+||--                            xml-type,
+||--                            c,
+||--                            encoding
+||--                        }
+||--                    }
+||--||--                {if exists? then {dump exists?, c}}
+||--                {return not exists?}
+||--            }
+||--        }
+||--    }
+            
+    || look for direct entry in default encoding
+    {if not exists? and encoding != null then
+        set (mproc, exists?) =
+            {self.marshal-table.get-if-exists
+                {TableSOAPTypeMapperKey
+                    xml-type,
+                    curl-type,
+                    null
+                }
+            }
+    }
+    {return
+        {if exists? then
+            mproc
+         else
+            null
+        }
+    }
+  }
+  
+||--  {method package sealed {get-unmarshal-proc
+  {method public sealed {get-unmarshal-proc
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String ||default? (multiple urls poss.)
+                       }:#SOAPTypeMapper.UnmarshalProc
+    let new-type:SOAPObjectType = type
+    {if type.curl-type.can-be-null? and type.curl-type.non-null-variant != null
+        and type.curl-type.non-null-variant != type.curl-type
+     then
+        set new-type =
+            {SOAPObjectType.clone-with
+                type,
+                curl-type = type.curl-type.non-null-variant,
+                nillable? = true
+            }
+    }
+    let mproc:#SOAPTypeMapper.UnmarshalProc = null
+    let exists?:bool = false
+    let curl-type:Type = {non-null new-type.curl-type}
+    let xml-type:XMLName = {non-null new-type.xml-type}
+
+    || look for direct entry in specified encoding
+    set (mproc, exists?) =
+        {self.unmarshal-table.get-if-exists
+            {TableSOAPTypeMapperKey
+                xml-type,
+                curl-type,
+                encoding
+            }
+        }
+    
+    || check superclasses
+||--    {if not exists? and (curl-type isa ClassType) then      
+||--||--        {if curl-type != any then
+||--||--            {dump self, curl-type, encoding}}
+||--        {for-each-super 
+||--            (curl-type asa ClassType),
+||--            {proc {c:ClassType}:bool
+||--                set (mproc, exists?) =
+||--                    {self.unmarshal-table.get-if-exists
+||--                        {TableSOAPTypeMapperKey
+||--                            xml-type,
+||--                            c,
+||--                            encoding
+||--                        }
+||--                    }
+||--||--                {if exists? then {dump exists?, c}}
+||--                {return not exists?}
+||--            }
+||--        }
+||--    }
+    
+    || look for direct entry in specified encoding
+    {if not exists? and encoding != null then
+        set (mproc, exists?) =
+            {self.unmarshal-table.get-if-exists
+                {TableSOAPTypeMapperKey
+                    {non-null new-type.xml-type},
+                    {non-null new-type.curl-type},
+                    null
+                }
+            }
+    }
+    {return
+        {if exists? then
+            mproc
+         else
+            null
+        }
+    }
+  }
+
+  {method public open {unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          unmarshal-context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper, || NOT in unmarshal
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:any
+    let unmarshal-proc:#SOAPTypeMapper.UnmarshalProc =
+        {self.get-unmarshal-proc type, encoding}
+
+    || if we found an unmarshal-proc, try and run it
+    {if-non-null unmarshal-proc then
+        let (ret:any, worked?:bool) =
+            {unmarshal-proc
+                stream,
+                attributes,
+                type,
+                encoding,
+                unmarshal-context,
+                current-mapper,
+                xml-type-to-curl-type,
+                check-type-attribute? = check-type-attribute?
+            }
+        || if it worked, return value unmarshaled
+        {if worked? then
+            {return ret}
+        }
+    }
+    {throw-unmarshal-exception
+        {lformat
+            "No unmarshal proc found for %y to %s.",
+            type.xml-type, type.curl-type.name
+        }
+    }
+  }
+
+  {method public open {marshal
+                          stream:{OutputStream-of XMLToken},
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+                          element:XMLName,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          marshal-context:SOAPMarshalContext,
+                            || should this default to self?
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          || should mapper do this?
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                      }:void
+    let marshal-proc:#SOAPTypeMapper.MarshalProc =
+        {self.get-marshal-proc type, encoding}
+
+    || if we found a marshal-proc, try and run it
+    {if-non-null marshal-proc then
+        let worked?:bool =
+            {marshal-proc
+                stream,
+                value,
+                type,
+                element,
+                encoding,
+                marshal-context,
+                current-mapper,
+                curl-type-to-xml-type,
+                write-type-attribute? = write-type-attribute?,
+                multiple-reference = multiple-reference
+            }
+        || if it worked, return
+        {if worked? then
+            {return}
+        }
+    }
+    {throw-marshal-exception
+        {lformat
+            "Could not find a way to marshal %s to %s.",
+            type.curl-type.name, type.xml-type
+        }
+    }
+  }
+
+}
+
+|| SOAPTypeMapper that users can use and add mappings to.
+{doc-next
+    {purpose
+        An implementation of the {docref SOAPTypeMapper} interface.
+        This implementation uses a hash table to hold mappings from
+        {docref SOAPObjectType} and encoding to
+        {docref SOAPTypeMapper.MarshalProc} and
+        {docref SOAPTypeMapper.UnmarshalProc}.  Mappings can be added
+        to it.  It also has an optional {docref SOAPObjectType}
+        which it will pass the {docref SOAPTypeMapper.marshal} and
+        {docref SOAPTypeMapper.unmarshal} calls on to if it has
+        no mapping for the given type and encoding.
+    }
+}
+{define-class public open DefaultSOAPTypeMapper
+  {inherits TableSOAPTypeMapper}
+
+  {doc-next
+    {purpose
+        A {docref SOAPTypeMapper} that {docref SOAPTypeMapper.marshal} and
+        {docref SOAPTypeMapper.unmarshal} calls will be passed on to if
+        it is not {ctext null} and this object does not have any mappings for
+        the given {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-type-mapper}, provides support for the basic
+        SOAP types.  This field should generally either be 
+        {docref builtin-soap-type-mapper}, or something which eventually
+        chains to {docref builtin-soap-type-mapper}.
+    }
+  }
+  field public chain:#SOAPTypeMapper
+
+  {doc-next
+    {purpose
+        Create a new {docref DefaultSOAPTypeMapper} which can then
+        be given various {docref SOAPObjectType} to
+        {docref SOAPTypeMapper.MarshalProc} and
+        {docref SOAPTypeMapper.UnmarshalProc} mappings.
+    }
+    {parameter chain,
+        A {docref SOAPTypeMapper} that {docref SOAPTypeMapper.marshal} and
+        {docref SOAPTypeMapper.unmarshal} calls will be passed on to if
+        it is not {ctext null} and this object does not have any mappings for
+        the given {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-type-mapper}, provides support for the basic
+        SOAP types.  This parameter should generally either be 
+        {docref builtin-soap-type-mapper}, or something which eventually
+        chains to {docref builtin-soap-type-mapper}.
+    }
+  }
+  {constructor public {default
+                          chain:#SOAPTypeMapper = builtin-soap-type-mapper
+                      }
+    set self.chain = chain
+    {construct-super.TableSOAPTypeMapper}
+  }
+
+
+  || FIXME: this and all similar ones should be on TableSOAPTypeMapper
+  || but the doc string does not get inherited right if you do that.
+  {doc-next
+    {purpose
+        Set the mapping from {docref SOAPObjectType} to a
+        {docref SOAPTypeMapper.MarshalProc} for a given encoding.
+        This proc will then be called when
+        {docref DefaultSOAPTypeMapper.marshal} is called with the same
+        {docref SOAPObjectType}.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that {param marshal-proc} knows how
+        to convert from a Curl type to XML.  In this class only
+        {docref SOAPObjectType.curl-type} and {docref SOAPObjectType.xml-type}
+        actually become part of the key in the hash table.  
+        {docref SOAPObjectType.curl-type} will be turned into a
+        {ctext non-null} type if it isn't already for
+        {docref DefaultSOAPTypeMapper.set-marshal-proc} as well as
+        {docref DefaultSOAPTypeMapper.get-marshal-proc}.
+    }
+    {parameter encoding,
+        An encoding of the data into XML that the {param marshal-proc}
+        knows how to write.  The same proc may be registered multiple times
+        for the same type, with different encodings, if the proc knows how
+        to do multiple encodings.
+        A {ctext null} encoding for a mapping means that it is the default
+        mapping for that type (i.e. when searching for the marshal proc
+        for a type and encoding, if nothing is found with the encoding,
+        it will search again for one with a {ctext null} encoding.
+    }
+    {parameter marshal-proc,
+        The {docref SOAPTypeMapper.MarshalProc} that knows how to
+        convert {docref SOAPObjectType.curl-type} into
+        {docref SOAPObjectType.xml-type}.
+    }
+  }
+  {method public open {set-marshal-proc
+                          type:SOAPObjectType,
+                          encoding:#String,
+                          marshal-proc:SOAPTypeMapper.MarshalProc
+                      }:void
+    {super.set-marshal-proc type, encoding, marshal-proc}
+  }
+
+  {doc-next
+    {purpose
+        Remove the mapping from {docref SOAPObjectType} to a
+        {docref SOAPTypeMapper.MarshalProc} for a given encoding.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that a {docref SOAPTypeMapper.MarshalProc}
+        was set with {docref DefaultSOAPTypeMapper.set-marshal-proc}.
+    }
+    {parameter encoding,
+        An encoding of the data that a {docref SOAPTypeMapper.MarshalProc}
+        was set with {docref DefaultSOAPTypeMapper.set-marshal-proc}.
+    }
+  }
+  {method public open {remove-marshal-proc
+                          type:SOAPObjectType,
+                          encoding:#String
+                      }:void
+    {super.remove-marshal-proc type, encoding}
+  }
+
+  {doc-next
+    {purpose
+        Set the mapping from {docref SOAPObjectType} to a
+        {docref SOAPTypeMapper.UnmarshalProc} for a given encoding.
+        This proc will then be called when
+        {docref DefaultSOAPTypeMapper.unmarshal} is called with the same
+        {docref SOAPObjectType}.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that {param unmarshal-proc} knows how
+        to convert from XML to a Curl type.  In this class only
+        {docref SOAPObjectType.curl-type} and {docref SOAPObjectType.xml-type}
+        actually become part of the key in the hash table.  
+        {docref SOAPObjectType.curl-type} will be turned into a
+        {ctext non-null} type if it isn't already for
+        {docref DefaultSOAPTypeMapper.set-unmarshal-proc} as well as
+        {docref DefaultSOAPTypeMapper.get-unmarshal-proc}.
+    }
+    {parameter encoding,
+        An encoding of the data into XML that the {param unmarshal-proc}
+        knows how to convert.  The same proc may be registered multiple times
+        for the same type, with different encodings, if the proc knows how
+        to do multiple encodings.
+        A {ctext null} encoding for a mapping means that it is the default
+        mapping for that type (i.e. when searching for the unmarshal proc
+        for a type and encoding, if nothing is found with the encoding,
+        it will search again for one with a {ctext null} encoding.
+    }
+    {parameter unmarshal-proc,
+        The {docref SOAPTypeMapper.UnmarshalProc} that knows how to
+        convert {docref SOAPObjectType.xml-type} into
+        {docref SOAPObjectType.curl-type}.
+    }
+  }
+  {method public open {set-unmarshal-proc
+                          type:SOAPObjectType,
+                          encoding:#String,
+                          unmarshal-proc:SOAPTypeMapper.UnmarshalProc
+                      }:void
+    {super.set-unmarshal-proc type, encoding, unmarshal-proc}
+  }
+
+  {doc-next
+    {purpose
+        Remove the mapping from {docref SOAPObjectType} to a
+        {docref SOAPTypeMapper.UnmarshalProc} for a given encoding.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that a {docref SOAPTypeMapper.UnmarshalProc}
+        was set with {docref DefaultSOAPTypeMapper.set-unmarshal-proc}.
+    }
+    {parameter encoding,
+        An encoding of the data that a {docref SOAPTypeMapper.UnmarshalProc}
+        was set with {docref DefaultSOAPTypeMapper.set-unmarshal-proc}.
+    }
+  }
+  {method public open {remove-unmarshal-proc
+                          type:SOAPObjectType,
+                          encoding:#String
+                      }:void
+    {super.remove-unmarshal-proc type, encoding}
+  }
+
+  {doc-next
+    {purpose
+        Look up a {docref SOAPTypeMapper.MarshalProc} based on a
+        {docref SOAPObjectType} and an encoding.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} used to look for a
+        {docref SOAPTypeMapper.MarshalProc} that can convert from a Curl
+        type to XML.  In this class only
+        {docref SOAPObjectType.curl-type} and {docref SOAPObjectType.xml-type}
+        actually become part of the key in the hash table.  
+        {docref SOAPObjectType.curl-type} will be turned into a
+        {ctext non-null} type if it isn't already for
+        {docref DefaultSOAPTypeMapper.set-marshal-proc} as well as
+        {docref DefaultSOAPTypeMapper.get-marshal-proc}.
+    }
+    {parameter encoding,
+        An encoding of the data in XML that the
+        {docref SOAPTypeMapper.MarshalProc} knows how to write.
+        A {ctext null} encoding for a mapping means that it is the default
+        mapping for that type (i.e. when searching for the marshal proc
+        for a type and encoding, if nothing is found with the encoding,
+        it will search again for one with a {ctext null} encoding.
+    }
+    {notes
+        Used by {docref DefaultSOAPTypeMapper.marshal}.
+    }
+  }
+  {method public open {get-marshal-proc
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String ||default? (multiple urls poss.)
+                       }:#SOAPTypeMapper.MarshalProc
+    {return
+        {if-non-null mp = {super.get-marshal-proc type, encoding} then
+            mp
+         else
+            {if-non-null chain = self.chain then
+                {chain.get-marshal-proc type, encoding}
+             else
+                null
+            }
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Look up a {docref SOAPTypeMapper.UnmarshalProc} based on a
+        {docref SOAPObjectType} and an encoding.
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that {docref SOAPTypeMapper.UnmarshalProc}
+        knows how to convert from XML to a Curl type.  In this class only
+        {docref SOAPObjectType.curl-type} and {docref SOAPObjectType.xml-type}
+        actually become part of the key in the hash table.  
+        {docref SOAPObjectType.curl-type} will be turned into a
+        {ctext non-null} type if it isn't already for
+        {docref DefaultSOAPTypeMapper.set-unmarshal-proc} as well as
+        {docref DefaultSOAPTypeMapper.get-unmarshal-proc}.
+    }
+    {parameter encoding,
+        An encoding of the data into XML that the
+        {docref SOAPTypeMapper.UnmarshalProc}
+        knows how to convert.
+        A {ctext null} encoding for a mapping means that it is the default
+        mapping for that type (i.e. when searching for the unmarshal proc
+        for a type and encoding, if nothing is found with the encoding,
+        it will search again for one with a {ctext null} encoding.
+    }
+    {notes
+        Used by {docref DefaultSOAPTypeMapper.unmarshal}.
+    }
+  }
+  {method public open {get-unmarshal-proc
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String ||default? (multiple urls poss.)
+                       }:#SOAPTypeMapper.UnmarshalProc
+    {return
+        {if-non-null up = {super.get-unmarshal-proc type, encoding} then
+            up
+         else
+            {if-non-null chain = self.chain then
+                {chain.get-unmarshal-proc type, encoding}
+             else
+                null
+            }
+        }
+    }
+  }
+
+  {method public open {unmarshal
+                              stream:XMLInputStream,
+                              attributes:#{Array-of XMLAttribute},
+
+                              || xml-type and curl-type required
+                              type:SOAPObjectType,
+
+                              encoding:#String, ||default? (multiple urls poss.)
+                              unmarshal-context:SOAPUnmarshalContext,
+                              current-mapper:SOAPTypeMapper, || NOT in unmarshal
+                              xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                              check-type-attribute?:bool = false
+                          }:(value:any)
+    let unmarshal-proc:#SOAPTypeMapper.UnmarshalProc =
+        {super.get-unmarshal-proc type, encoding}
+
+    || if we found an unmarshal-proc, try and run it
+    {if-non-null unmarshal-proc then
+        let (ret:any, worked?:bool) =
+            {unmarshal-proc
+                stream,
+                attributes,
+                type,
+                encoding,
+                unmarshal-context,
+                current-mapper,
+                xml-type-to-curl-type,
+                check-type-attribute? = check-type-attribute?
+            }
+        || if it worked, return value unmarshaled
+        {if worked? then
+            {return ret}
+        }
+    }
+    || we either didn't find a proc, or it didn't work, see if we can chain
+    {if-non-null chain = self.chain then
+        {return
+            {chain.unmarshal
+                stream,
+                attributes,
+                type,
+                encoding,
+                unmarshal-context,
+                current-mapper,
+                xml-type-to-curl-type,
+                check-type-attribute? = check-type-attribute?
+            }
+        }
+     else
+        {throw-unmarshal-exception
+            {lformat
+                "No unmarshal proc found for %y to %s." ,
+                type.xml-type, type.curl-type.name
+            }
+        }
+    }
+  }
+
+  {method public open {marshal
+                          stream:{OutputStream-of XMLToken},
+                          value:any,
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+                          element:XMLName,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          marshal-context:SOAPMarshalContext,
+                            || should this default to self?
+                          current-mapper:SOAPTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                          || should mapper do this?
+                          write-type-attribute?:bool = true,
+                          multiple-reference:SOAPTypeMultipleReference =
+                              SOAPTypeMultipleReference.unknown
+                        }:void
+    let marshal-proc:#SOAPTypeMapper.MarshalProc =
+        {super.get-marshal-proc type, encoding}
+
+    || if we found a marshal-proc, try and run it
+    {if-non-null marshal-proc then
+        let worked?:bool =
+            {marshal-proc
+                stream,
+                value,
+                type,
+                element,
+                encoding,
+                marshal-context,
+                current-mapper,
+                curl-type-to-xml-type,
+                write-type-attribute? = write-type-attribute?,
+                multiple-reference = multiple-reference
+            }
+        || if it worked, return value unmarshaled
+        {if worked? then
+            {return}
+        }
+    }
+    || we either didn't find a proc, or it didn't work, see if we can chain
+    {if-non-null chain = self.chain then
+        {chain.marshal
+            stream,
+            value,
+            type,
+            element,
+            encoding,
+            marshal-context,
+            current-mapper,
+            curl-type-to-xml-type,
+            write-type-attribute? = write-type-attribute?,
+            multiple-reference = multiple-reference
+        }
+        || above will have thrown if it couldn't complete.
+     else
+        {throw-marshal-exception
+            {lformat
+                "Could not find a way to marshal %s to %s.",
+                type.curl-type.name, type.xml-type
+            }
+        }
+    }
+  }
+
+}
+
+
+{doc-next
+    {purpose
+        The abstract class for the interface that handles possibly creating a
+        new {docref SOAPObjectType}, filling in
+        {docref SOAPObjectType.xml-type} from
+        {docref SOAPObjectType.element-name} based on a table with
+        that sort of information in it.
+    }
+    {notes
+        See {docref DefaultSOAPElementNameToXMLTypeMapper} for a basic
+        implementation of this interface.
+    }
+}
+{define-class public abstract open SOAPElementNameToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        Returns a new {docref SOAPObjectType} with
+        {docref SOAPObjectType.xml-type} filled in based on
+        {param type}{ctext .element-name}, or if it has no
+        information about the {docref SOAPObjectType.xml-type} that is
+        appropriate for the {docref SOAPObjectType.element-name} then
+        it returns {param type}
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that is missing some
+        information.  It must have a {ctext non-null} 
+        {docref SOAPObjectType.element-name}, and any
+        {docref SOAPObjectType.xml-type} will be ignored.
+    }
+    {return-vals
+        Returns either {param type} if no new information
+        was found in its tables, or a new {docref SOAPObjectType}
+        with a new {docref SOAPObjectType.xml-type} and
+        maybe a new {docref SOAPObjectType.multiple-reference} in it.
+    }
+  }
+  {method public abstract open {element-name-to-xml-type
+                              || element-name must be set, xml-type may be ignored
+                              || xml-type filled in, and curl type might be.
+                              || multiple-reference may be set
+                              type:SOAPObjectType
+                          }:SOAPObjectType
+  }
+}
+
+||--{define-value-class package final TableSOAPElementNameToXMLTypeValue
+||--  field package constant xml-type:XMLName
+||--  field package constant multiple-reference:SOAPTypeMultipleReference
+||--}
+{define-class package final TableSOAPElementNameToXMLTypeValue
+  field package constant xml-type:XMLName
+  field package constant multiple-reference:SOAPTypeMultipleReference
+  {constructor package {default 
+                           xml-type:XMLName,
+                           multiple-reference:SOAPTypeMultipleReference}
+    set self.xml-type = xml-type
+    set self.multiple-reference = multiple-reference
+  }
+}
+
+||== no apparent need for it to be value compared ...
+||--{define-proc {TableSOAPElementNameToXMLTypeValue-hash
+||--                 k:TableSOAPElementNameToXMLTypeValue}:int
+||--    {return
+||--        {value-hash k.xml-type} +
+||--        {value-hash k.multiple-reference}
+||--    }
+||--}
+||--
+||--{define-proc {TableSOAPElementNameToXMLTypeValue-equal?
+||--                 k1:TableSOAPElementNameToXMLTypeValue,
+||--                 k2:TableSOAPElementNameToXMLTypeValue,
+||--             }:bool
+||--    {return
+||--        k1.xml-type == k2.xml-type and
+||--        k1.multiple-reference == k2.multiple-reference 
+||--    }
+||--}
+
+{define-class package sealed TableSOAPElementNameToXMLTypeMapper
+  {inherits SOAPElementNameToXMLTypeMapper}
+
+  field package table:{HashTable-of XMLName, TableSOAPElementNameToXMLTypeValue}
+
+  {constructor package {default}
+    set self.table =
+        {new {HashTable-of XMLName, TableSOAPElementNameToXMLTypeValue}}
+  }
+
+  {method public open {element-name-to-xml-type
+                          || element-name must be set, xml-type may be ignored
+                          || xml-type filled in, and curl type might be.
+                          || multiple-reference may be set
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant element-name:XMLName =
+        {if-non-null en = type.element-name then
+            en
+         else
+            {throw-soap-exception
+                {localize
+                    "Can't map element name if element-name is null."
+                }
+            }
+        }
+    let (value:TableSOAPElementNameToXMLTypeValue, found?:bool) =
+        {self.table.get-if-exists element-name}
+    {return
+        {if found? then
+            {if value.multiple-reference != SOAPTypeMultipleReference.unknown
+             then
+                {SOAPObjectType.clone-with
+                    type,
+                    xml-type = value.xml-type,
+                    multiple-reference = value.multiple-reference
+                }
+             else
+                {SOAPObjectType.clone-with type, xml-type = value.xml-type}
+            }
+         else
+            type
+        }
+    }
+  }
+
+  {method package sealed {set-element-name-to-xml-type
+                             element-name:XMLName,
+                             xml-type:XMLName,
+                             multiple-reference:SOAPTypeMultipleReference
+                         }:void
+    {if element-name == SOAPArrayMarshaler.soap-1-1-array-type-name and
+        xml-type != SOAPArrayMarshaler.soap-1-1-array-type-name then
+        {error "bogus element-name set"}
+    }
+    {self.table.set
+        element-name,
+        {new TableSOAPElementNameToXMLTypeValue,
+            xml-type,
+            multiple-reference
+        }
+    }
+  }
+}
+
+{doc-next
+    {purpose
+        A non-abstract {docref SOAPElementNameToXMLTypeMapper} that users
+        can add mappings to, and that can chain to other
+        {docref SOAPElementNameToXMLTypeMapper}s.
+    }
+}
+{define-class public open DefaultSOAPElementNameToXMLTypeMapper
+  {inherits TableSOAPElementNameToXMLTypeMapper}
+
+  {doc-next
+    {purpose
+        A {docref SOAPElementNameToXMLTypeMapper} that 
+        {docref SOAPElementNameToXMLTypeMapper.element-name-to-xml-type} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-element-name-to-xml-type-mapper}, provides
+        support for the basic SOAP types.  This field should generally
+        either be {docref builtin-soap-element-name-to-xml-type-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-element-name-to-xml-type-mapper}.
+    }
+  }
+  field public chain:#SOAPElementNameToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        Construct a {docref DefaultSOAPElementNameToXMLTypeMapper} which
+        can then be given mappings with
+        {docref DefaultSOAPElementNameToXMLTypeMapper.set-element-name-to-xml-type}.
+    }
+    {parameter chain,
+        A {docref SOAPElementNameToXMLTypeMapper} that 
+        {docref SOAPElementNameToXMLTypeMapper.element-name-to-xml-type} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-element-name-to-xml-type-mapper}, provides
+        support for the basic SOAP types.  This parameter should generally
+        either be {docref builtin-soap-element-name-to-xml-type-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-element-name-to-xml-type-mapper}.
+    }
+  }
+  {constructor public {default
+                           chain:#SOAPElementNameToXMLTypeMapper =
+                               builtin-soap-element-name-to-xml-type-mapper
+                      }
+    {construct-super.TableSOAPElementNameToXMLTypeMapper}
+    set self.chain = chain
+  }
+
+  {method public open {element-name-to-xml-type
+                          || element-name must be set, xml-type may be ignored
+                          || xml-type filled in, and curl type might be.
+                          || multiple-reference may be set
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant new-type:SOAPObjectType = {super.element-name-to-xml-type type}
+    {if new-type != type then
+        {return new-type}
+     else
+        {if-non-null chain = self.chain then
+            {return {chain.element-name-to-xml-type type}}
+        }
+    }
+    {return type}
+  }
+
+  {doc-next
+    {purpose
+        Set up a mapping from {docref SOAPObjectType.element-name} to
+        {docref SOAPObjectType.xml-type}.  Mappings are used by
+        {docref DefaultSOAPElementNameToXMLTypeMapper.element-name-to-xml-type}.
+    }
+    {parameter element-name,
+        The {docref XMLName} of an XML element that can then be
+        looked up.
+    }
+    {parameter xml-type,
+        The {docref XMLName} of an XML type that {param element-name}
+        maps to.
+    }
+    {parameter multiple-reference,
+        If not {docref SOAPTypeMultipleReference}{ctext .unknown} then
+        when {docref DefaultSOAPElementNameToXMLTypeMapper.element-name-to-xml-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.multiple-reference} to this value as
+        well as setting {docref SOAPObjectType.xml-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+  }
+  {method public open {set-element-name-to-xml-type
+                           element-name:XMLName,
+                           xml-type:XMLName,
+                           multiple-reference:SOAPTypeMultipleReference
+                       }:void
+    {super.set-element-name-to-xml-type element-name, xml-type, multiple-reference}
+  }
+}
+
+{doc-next
+    {purpose
+        The abstract class for the interface that handles possibly
+        creating a new {docref SOAPObjectType}, filling in
+        {docref SOAPObjectType.element-name} from
+        {docref SOAPObjectType.xml-type} based on a table with
+        that sort of information in it.
+    }
+    {notes
+        See {docref DefaultSOAPXMLTypeToElementNameMapper} for a basic
+        implementation of this interface.
+    }
+}
+{define-class public abstract open SOAPXMLTypeToElementNameMapper
+
+  {doc-next
+    {purpose
+        Returns a new {docref SOAPObjectType} with
+        {docref SOAPObjectType.element-name} filled in based on
+        {param type}{ctext .xml-type}, or if it has no
+        information about the {docref SOAPObjectType.element-name} that is
+        appropriate for the {docref SOAPObjectType.xml-type} then
+        it returns {param type}
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that is missing some
+        information.  It must have a {ctext non-null} 
+        {docref SOAPObjectType.xml-type}, and any
+        {docref SOAPObjectType.element-name} will be ignored.
+    }
+    {return-vals
+        Returns either {param type} if no new information
+        was found in its tables, or a new {docref SOAPObjectType}
+        with a new {docref SOAPObjectType.element-name} and
+        maybe a new {docref SOAPObjectType.multiple-reference} in it.
+    }
+  }
+  {method public abstract open {xml-type-to-element-name
+                                   || xml-type must be set, fills in xml-name,
+                                   || may change multi-ref
+                                   type:SOAPObjectType
+                               }:SOAPObjectType
+  }
+}
+
+||--{define-value-class package final TableSOAPXMLTypeToElementNameValue
+||--  field package constant element-name:XMLName
+||--  field package constant multiple-reference:SOAPTypeMultipleReference
+||--}
+{define-class package final TableSOAPXMLTypeToElementNameValue
+  field package constant element-name:XMLName
+  field package constant multiple-reference:SOAPTypeMultipleReference
+  {constructor package {default 
+                           element-name:XMLName,
+                           multiple-reference:SOAPTypeMultipleReference}
+    set self.element-name = element-name
+    set self.multiple-reference = multiple-reference
+  }
+}
+
+||== no apparent need for it to be value compared ...
+||--{define-proc {TableSOAPXMLTypeToElementNameValue-hash
+||--                 k:TableSOAPXMLTypeToElementNameValue}:int
+||--    {return
+||--        {value-hash k.element-name} +
+||--        {value-hash k.multiple-reference}
+||--    }
+||--}
+||--
+||--{define-proc {TableSOAPXMLTypeToElementNameValue-equal?
+||--                 k1:TableSOAPXMLTypeToElementNameValue,
+||--                 k2:TableSOAPXMLTypeToElementNameValue,
+||--             }:bool
+||--    {return
+||--        k1.element-name == k2.element-name and
+||--        k1.multiple-reference == k2.multiple-reference 
+||--    }
+||--}
+
+{define-class package sealed TableSOAPXMLTypeToElementNameMapper
+  {inherits SOAPXMLTypeToElementNameMapper}
+
+  field package table:{HashTable-of XMLName, TableSOAPXMLTypeToElementNameValue}
+
+  {constructor package {default}
+    set self.table = {new {HashTable-of XMLName, TableSOAPXMLTypeToElementNameValue}}
+  }
+
+  {method public open {xml-type-to-element-name
+                          || xml-type must be set, fills in xml-name, may
+                          || change multi-ref (?)
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant xml-type:XMLName =
+        {if-non-null xt = type.xml-type then
+            xt
+         else
+            {throw-soap-exception
+                {localize
+                    "Can't map xml-type if xml-type is null."
+                }
+            }
+        }
+    let (value:TableSOAPXMLTypeToElementNameValue, found?:bool) =
+        {self.table.get-if-exists xml-type}
+    {return
+        {if found? then
+            {if value.multiple-reference != SOAPTypeMultipleReference.unknown
+             then
+                {SOAPObjectType.clone-with
+                    type,
+                    element-name = value.element-name,
+                    multiple-reference = value.multiple-reference
+                }
+             else
+                {SOAPObjectType.clone-with
+                    type, element-name = value.element-name
+                }
+            }
+         else
+            type
+        }
+    }
+  }
+
+  {method package sealed {set-xml-type-to-element-name
+                             type-xml-name:XMLName,
+                             element-xml-name:XMLName,
+                             multiple-reference:SOAPTypeMultipleReference
+                         }:void
+    {self.table.set
+        type-xml-name,
+        {new TableSOAPXMLTypeToElementNameValue,
+            element-xml-name,
+            multiple-reference
+        }
+    }
+  }
+}
+
+{doc-next
+    {purpose
+        A non-abstract {docref SOAPXMLTypeToElementNameMapper} that users
+        can add mappings to, and that can chain to other
+        {docref SOAPXMLTypeToElementNameMapper}s.
+    }
+}
+{define-class public open DefaultSOAPXMLTypeToElementNameMapper
+  {inherits TableSOAPXMLTypeToElementNameMapper}
+
+  {doc-next
+    {purpose
+        A {docref SOAPXMLTypeToElementNameMapper} that 
+        {docref SOAPXMLTypeToElementNameMapper.xml-type-to-element-name} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-xml-type-to-element-name-mapper}, provides
+        support for the basic SOAP types.  This field should generally
+        either be {docref builtin-soap-xml-type-to-element-name-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-element-name-to-xml-type-mapper}.
+    }
+  }
+  field public chain:#SOAPXMLTypeToElementNameMapper
+
+  {doc-next
+    {purpose
+        Construct a {docref DefaultSOAPXMLTypeToElementNameMapper} which
+        can then be given mappings with
+        {docref DefaultSOAPXMLTypeToElementNameMapper.set-xml-type-to-element-name}.
+    }
+    {parameter chain,
+        A {docref SOAPXMLTypeToElementNameMapper} that 
+        {docref SOAPXMLTypeToElementNameMapper.xml-type-to-element-name} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-xml-type-to-element-name-mapper}, provides
+        support for the basic SOAP types.  This parameter should generally
+        either be {docref builtin-soap-xml-type-to-element-name-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-element-name-to-xml-type-mapper}.
+    }
+  }
+  {constructor public {default
+                           chain:#SOAPXMLTypeToElementNameMapper =
+                               builtin-soap-xml-type-to-element-name-mapper
+                       }
+    {construct-super.TableSOAPXMLTypeToElementNameMapper}
+    set self.chain = chain
+  }
+
+  {method public open {xml-type-to-element-name
+                          || xml-type must be set, fills in element-name, may
+                          || change multi-ref (?)
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant new-type:SOAPObjectType = {super.xml-type-to-element-name type}
+    {if new-type != type then
+        {return new-type}
+     else
+        {if-non-null chain = self.chain then
+            {return {chain.xml-type-to-element-name type}}
+        }
+    }
+    {return type}
+  }
+
+  {doc-next
+    {purpose
+        Set up a mapping from {docref SOAPObjectType.xml-type} to
+        {docref SOAPObjectType.element-name}.  Mappings are used by
+        {docref DefaultSOAPXMLTypeToElementNameMapper.xml-type-to-element-name}.
+    }
+    {parameter xml-type,
+        The {docref XMLName} of an XML type that can then be looked up.
+    }
+    {parameter element-name,
+        The {docref XMLName} of an XML element that {param xml-type}
+        maps to.
+    }
+    {parameter multiple-reference,
+        If not {docref SOAPTypeMultipleReference}{ctext .unknown} then
+        when {docref DefaultSOAPXMLTypeToElementNameMapper.xml-type-to-element-name}
+        finds this entry, it will set
+        {docref SOAPObjectType.multiple-reference} to this value as
+        well as setting {docref SOAPObjectType.element-name} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+  }
+  {method public open {set-xml-type-to-element-name
+                          xml-type:XMLName,
+                          element-name:XMLName,
+                          multiple-reference:SOAPTypeMultipleReference
+                      }:void
+    {super.set-xml-type-to-element-name
+        xml-type,
+        element-name,
+        multiple-reference
+    }
+  }
+}
+
+|| what about nil-ing int/float/etc.? just use any abilities?
+{doc-next
+    {purpose
+        The abstract class for the interface that handles possibly
+        creating a new {docref SOAPObjectType}, filling in
+        {docref SOAPObjectType.curl-type} from
+        {docref SOAPObjectType.xml-type} based on a table with
+        that sort of information in it.
+    }
+    {notes
+        See {docref DefaultSOAPXMLTypeToCurlTypeMapper} for a basic
+        implementation of this interface.
+    }
+}
+{define-class public abstract open SOAPXMLTypeToCurlTypeMapper
+
+  {doc-next
+    {purpose
+        Returns a new {docref SOAPObjectType} with
+        {docref SOAPObjectType.curl-type} filled in based on
+        {param type}{ctext .xml-type}, or if it has no
+        information about the {docref SOAPObjectType.curl-type} that is
+        appropriate for the {docref SOAPObjectType.xml-type} then
+        it returns {param type}
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that is missing some
+        information.  It must have a {ctext non-null} 
+        {docref SOAPObjectType.xml-type}, {docref SOAPObjectType.nillable?}
+        should be right and any {docref SOAPObjectType.curl-type} will be
+        ignored.
+    }
+    {return-vals
+        Returns either {param type} if no new information
+        was found in its tables, or a new {docref SOAPObjectType}
+        with a new {docref SOAPObjectType.curl-type} in it.
+    }
+  }
+  {method public abstract open {xml-type-to-curl-type
+                                   || xml-type required, nillable, multi-ref should be
+                                   || right, curl-type may be ignored
+                                   || fills in curl-type
+                                   type:SOAPObjectType
+                               }:SOAPObjectType
+  }
+}
+
+||--{define-value-class package final TableSOAPXMLTypeToCurlTypeValue
+||--  field package constant curl-type:Type
+||--  field package constant multiple-reference:SOAPTypeMultipleReference
+||--  field package constant nillable?:bool
+||--}
+{define-class package final TableSOAPXMLTypeToCurlTypeValue
+  field package constant curl-type:Type
+  field package constant multiple-reference:SOAPTypeMultipleReference
+  field package constant nillable?:bool
+  {constructor package {default
+                           curl-type:Type,
+                           multiple-reference:SOAPTypeMultipleReference,
+                           nillable?:bool
+                       }
+    set self.curl-type = curl-type
+    set self.multiple-reference = multiple-reference
+    set self.nillable? = nillable?
+  }
+}
+
+||== no apparent need for it to be value compared ...
+||--{define-proc {TableSOAPXMLTypeToCurlTypeValue-hash
+||--                 k:TableSOAPXMLTypeToCurlTypeValue}:int
+||--    {return
+||--        {value-hash k.curl-type} +
+||--        {value-hash k.multiple-reference} * 0x80 +
+||--        {value-hash k.nillable?} * 0x800
+||--    }
+||--}
+||--
+||--{define-proc {TableSOAPXMLTypeToCurlTypeValue-equal?
+||--                 k1:TableSOAPXMLTypeToCurlTypeValue, 
+||--                 k2:TableSOAPXMLTypeToCurlTypeValue
+||--             }:bool
+||--    {return
+||--        k1.curl-type == k2.curl-type and
+||--        k1.multiple-reference == k2.multiple-reference  and
+||--        k1.nillable? == k2.nillable?
+||--    }
+||--}
+
+
+{define-class package sealed TableSOAPXMLTypeToCurlTypeMapper
+  {inherits SOAPXMLTypeToCurlTypeMapper}
+  field package table:{HashTable-of XMLName, TableSOAPXMLTypeToCurlTypeValue}
+
+  {constructor package {default}
+    set self.table =
+        {new {HashTable-of XMLName, TableSOAPXMLTypeToCurlTypeValue}}
+  }
+
+  {method public open {xml-type-to-curl-type
+                          || xml-type required, nillable, multi-ref should be
+                          || right, curl-type may be ignored
+                          || fills in curl-type
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant xml-type:XMLName =
+        {if-non-null xt = type.xml-type then
+            xt
+         else
+            {throw-soap-exception
+                {localize
+                    "Can't map a null xml-type."
+                }
+            }
+        }
+    let (value:TableSOAPXMLTypeToCurlTypeValue, found?:bool) =
+        {self.table.get-if-exists xml-type}
+    {if found? then
+        let constant curl-type:#Type =
+            {if value.nillable? and
+                value.curl-type.can-be-null? and
+                value.curl-type != value.curl-type.null-variant and
+                value.curl-type.null-variant != null
+            then
+                value.curl-type.null-variant
+             else
+                value.curl-type
+            }
+        set type =
+            {if value.multiple-reference != SOAPTypeMultipleReference.unknown
+             then
+                {SOAPObjectType.clone-with
+                    type,
+                    curl-type = curl-type,
+                    multiple-reference = value.multiple-reference,
+                    nillable? = value.nillable?
+                }
+             else
+                {SOAPObjectType.clone-with
+                    type,
+                    curl-type = curl-type,
+                    nillable? = value.nillable?
+                }
+            }
+    }
+
+    {return type}
+  }
+
+  {method package sealed {set-xml-type-to-curl-type
+                             xml-type:XMLName,
+                             curl-type:Type,
+                             multiple-reference:SOAPTypeMultipleReference,
+                             nillable?:bool
+                         }:void
+    {self.table.set
+        xml-type,
+        {new TableSOAPXMLTypeToCurlTypeValue,
+            curl-type,
+            multiple-reference,
+            nillable?
+        }
+    }
+  }
+
+}
+
+{doc-next
+    {purpose
+        A non-abstract {docref SOAPXMLTypeToCurlTypeMapper} that users
+        can add mappings to, and that can chain to other
+        {docref SOAPXMLTypeToCurlTypeMapper}s.
+    }
+}
+{define-class public open DefaultSOAPXMLTypeToCurlTypeMapper
+  {inherits TableSOAPXMLTypeToCurlTypeMapper}
+
+  {doc-next
+    {purpose
+        A {docref SOAPXMLTypeToCurlTypeMapper} that 
+        {docref SOAPXMLTypeToCurlTypeMapper.xml-type-to-curl-type} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-xml-type-to-curl-type-mapper}, provides
+        support for the basic SOAP types.  This field should generally
+        either be {docref builtin-soap-xml-type-to-curl-type-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-xml-type-to-curl-type-mapper}.
+    }
+  }
+  field public chain:#SOAPXMLTypeToCurlTypeMapper
+
+  {doc-next
+    {purpose
+        Construct a {docref DefaultSOAPXMLTypeToCurlTypeMapper} which
+        can then be given mappings with
+        {docref DefaultSOAPXMLTypeToCurlTypeMapper.set-xml-type-to-curl-type}.
+    }
+    {parameter chain,
+        A {docref SOAPXMLTypeToCurlTypeMapper} that 
+        {docref SOAPXMLTypeToCurlTypeMapper.xml-type-to-curl-type} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-xml-type-to-curl-type-mapper}, provides
+        support for the basic SOAP types.  This parameter should generally
+        either be {docref builtin-soap-xml-type-to-curl-type-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-xml-type-to-curl-type-mapper}.
+    }
+  }
+  {constructor public {default
+                          chain:#SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper
+                      }
+    {construct-super.TableSOAPXMLTypeToCurlTypeMapper}
+    set self.chain = chain
+  }
+
+  {method public open {xml-type-to-curl-type
+                          || xml-type required, nillable, multi-ref should be
+                          || right, curl-type may be ignored
+                          || fills in curl-type
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant new-type:SOAPObjectType = {super.xml-type-to-curl-type type}
+    {if new-type != type then
+        {return new-type}
+     else
+        {if-non-null chain = self.chain then
+            {return {chain.xml-type-to-curl-type type}}
+        }
+    }
+    {return type}
+  }
+
+  {doc-next
+    {purpose
+        Set up a mapping from {docref SOAPObjectType.xml-type} to
+        {docref SOAPObjectType.curl-type}.  Mappings are used by
+        {docref DefaultSOAPXMLTypeToCurlTypeMapper.xml-type-to-curl-type}.
+    }
+    {parameter xml-type,
+        The {docref XMLName} of an XML type that can then be looked up.
+    }
+    {parameter curl-type,
+        The {docref Type} that {param xml-type} maps to.
+    }
+    {parameter multiple-reference,
+        If not {docref SOAPTypeMultipleReference}{ctext .unknown} then
+        when {docref DefaultSOAPXMLTypeToCurlTypeMapper.xml-type-to-curl-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.multiple-reference} to this value as
+        well as setting {docref SOAPObjectType.curl-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+    {parameter nillable?,
+        When {docref DefaultSOAPXMLTypeToCurlTypeMapper.xml-type-to-curl-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.nillable?} to this value as
+        well as setting {docref SOAPObjectType.curl-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+  }
+  {method public open {set-xml-type-to-curl-type
+                          xml-type:XMLName,
+                          curl-type:Type,
+                          multiple-reference:SOAPTypeMultipleReference,
+                          nillable?:bool
+                      }:void
+    {super.set-xml-type-to-curl-type
+        xml-type,
+        curl-type,
+        multiple-reference,
+        nillable?
+    }
+  }
+}
+
+{doc-next
+    {purpose
+        The abstract class for the interface that handles possibly creating a
+        new {docref SOAPObjectType}, filling in
+        {docref SOAPObjectType.xml-type} from
+        {docref SOAPObjectType.curl-type} based on a table with
+        that sort of information in it.
+    }
+    {notes
+        See {docref DefaultSOAPCurlTypeToXMLTypeMapper} for a basic
+        implementation of this interface.
+    }
+}
+|| FIXME: [bardwell 5-27-2009] This, and anything mapping to the xml-type
+|| should also fill in the other parameters in the SOAPObjectType like
+|| the choice and mtom and element-handling stuff.
+{define-class public abstract open SOAPCurlTypeToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        Returns a new {docref SOAPObjectType} with
+        {docref SOAPObjectType.xml-type} filled in based on
+        {param type}{ctext .curl-type}, or if it has no
+        information about the {docref SOAPObjectType.xml-type} that is
+        appropriate for the {docref SOAPObjectType.curl-type} then
+        it returns {param type}
+    }
+    {parameter type,
+        The {docref SOAPObjectType} that is missing some
+        information.  It must have a {ctext non-null} 
+        {docref SOAPObjectType.curl-type}
+        and any {docref SOAPObjectType.curl-type} will be
+        ignored.  It may fill in {docref SOAPObjectType.nillable?}
+        {docref SOAPObjectType.multiple-reference}.
+    }
+    {return-vals
+        Returns either {param type} if no new information
+        was found in its tables, or a new {docref SOAPObjectType}
+        with a new {docref SOAPObjectType.xml-type} in it.
+    }
+  }
+  {method public abstract open {curl-type-to-xml-type
+                                   || curl-type required, xml-type may be ignored
+                                   || fills in xml-type, multi-ref, nillable
+                                   type:SOAPObjectType
+                               }:SOAPObjectType
+  }
+  {method public abstract open {curl-type-registered? curl-type:Type}:bool
+  }
+}
+
+||--{define-value-class package final TableSOAPCurlTypeToXMLTypeValue
+||--  field package constant xml-type:XMLName
+||--  field package constant multiple-reference:SOAPTypeMultipleReference
+||--  field package constant nillable?:bool
+||--}
+{define-class package final TableSOAPCurlTypeToXMLTypeValue
+  field package constant xml-type:XMLName
+  field package constant multiple-reference:SOAPTypeMultipleReference
+  field package constant nillable?:bool
+  field package constant marshaler-handled-element?:bool
+  {constructor package {default
+                           xml-type:XMLName,
+                           multiple-reference:SOAPTypeMultipleReference,
+                           nillable?:bool,
+                           marshaler-handled-element?:bool
+                       }
+    set self.xml-type = xml-type
+    set self.multiple-reference = multiple-reference
+    set self.nillable? = nillable?
+    set self.marshaler-handled-element? = marshaler-handled-element?
+  }
+}
+
+||== no apparent need for it to be value compared ...
+||--{define-proc {TableSOAPCurlTypeToXMLTypeValue-hash
+||--                 k:TableSOAPCurlTypeToXMLTypeValue}:int
+||--    {return
+||--        {value-hash k.xml-type} +
+||--        {value-hash k.multiple-reference} * 0x80 +
+||--        {value-hash k.nillable?} * 0x800
+||--    }
+||--}
+||--
+||--{define-proc {TableSOAPCurlTypeToXMLTypeValue-equal?
+||--                 k1:TableSOAPCurlTypeToXMLTypeValue,
+||--                 k2:TableSOAPCurlTypeToXMLTypeValue
+||--             }:bool
+||--    {return
+||--        k1.xml-type == k2.xml-type and
+||--        k1.multiple-reference == k2.multiple-reference  and
+||--        k1.nillable? == k2.nillable?
+||--    }
+||--}
+
+{define-class package sealed TableSOAPCurlTypeToXMLTypeMapper
+  {inherits SOAPCurlTypeToXMLTypeMapper}
+
+  field package table:{HashTable-of Type, TableSOAPCurlTypeToXMLTypeValue}
+
+  {constructor package {default}
+    set self.table =
+        {new {HashTable-of Type, TableSOAPCurlTypeToXMLTypeValue}}
+  }
+
+  {method private {condition-curl-type curl-type:Type}:Type
+    {return 
+        {if curl-type.can-be-null? and
+            curl-type.non-null-variant != null and
+            curl-type.non-null-variant != curl-type.null-variant
+         then
+            {non-null curl-type.non-null-variant}
+        else
+            curl-type
+        }
+    }
+  }
+
+  {method public open {curl-type-registered? curl-type:Type}:bool
+    {return {self.table.key-exists? {self.condition-curl-type curl-type}}}
+  }
+
+  {method public open {curl-type-to-xml-type
+                          || curl-type required, xml-type may be ignored
+                          || fills in xml-type, multi-ref, nillable
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant initial-curl-type:Type =
+        {if-non-null ct = type.curl-type then
+            ct
+         else
+            {throw-soap-exception
+                {localize
+                    "Can't map curl-type if curl-type is null."
+                }
+            }
+        }
+    let curl-type:Type = {self.condition-curl-type initial-curl-type}
+
+    let (value:TableSOAPCurlTypeToXMLTypeValue, found?:bool) =
+        {self.table.get-if-exists curl-type}
+    
+||--    {if not found? and curl-type isa ClassType then
+||--||--        {dump self, curl-type}
+||--        {for-each-super curl-type asa ClassType,
+||--            {proc {c:ClassType}:bool
+||--                set (value, found?) = 
+||--                    {self.table.get-if-exists c}
+||--||--                {if found? then {dump value}}
+||--                {return not found?}}}}
+    
+    
+    {if found? then
+
+        {if initial-curl-type != curl-type then
+            set curl-type = initial-curl-type
+        }
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                curl-type = curl-type,
+                xml-type = value.xml-type,
+                multiple-reference =
+                    {if value.multiple-reference !=
+                        SOAPTypeMultipleReference.unknown
+                     then
+                        value.multiple-reference
+                     else
+                        type.multiple-reference
+                    },
+                nillable? = value.nillable?,
+                marshaler-handled-element? = value.marshaler-handled-element?
+            }
+    }
+
+    {return type}
+  }
+
+  {method package sealed {set-curl-type-to-xml-type
+                             curl-type:Type,
+                             xml-type:XMLName,
+                             multiple-reference:SOAPTypeMultipleReference,
+                             nillable?:bool,
+                             marshaler-handled-element?:bool = false
+                         }:void
+    {self.table.set
+        {self.condition-curl-type curl-type},
+        {TableSOAPCurlTypeToXMLTypeValue
+            xml-type,
+            multiple-reference,
+            nillable?,
+            marshaler-handled-element?
+        }
+    }
+  }
+}
+
+{doc-next
+    {purpose
+        A non-abstract {docref SOAPCurlTypeToXMLTypeMapper} that users
+        can add mappings to, and that can chain to other
+        {docref SOAPCurlTypeToXMLTypeMapper}s.
+    }
+}
+{define-class public open DefaultSOAPCurlTypeToXMLTypeMapper
+  {inherits TableSOAPCurlTypeToXMLTypeMapper}
+
+  {doc-next
+    {purpose
+        A {docref SOAPCurlTypeToXMLTypeMapper} that 
+        {docref SOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-curl-type-to-xml-type-mapper}, provides
+        support for the basic SOAP types.  This field should generally
+        either be {docref builtin-soap-curl-type-to-xml-type-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-curl-type-to-xml-type-mapper}.
+    }
+  }
+  field public chain:#SOAPCurlTypeToXMLTypeMapper
+
+  {doc-next
+    {purpose
+        Construct a {docref DefaultSOAPCurlTypeToXMLTypeMapper} which
+        can then be given mappings with
+        {docref DefaultSOAPCurlTypeToXMLTypeMapper.set-curl-type-to-xml-type}.
+    }
+    {parameter chain,
+        A {docref SOAPCurlTypeToXMLTypeMapper} that 
+        {docref SOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type} calls
+        will get passed to if this object has no mappings for the given
+        {docref SOAPObjectType}.  The default value for this,
+        {docref builtin-soap-curl-type-to-xml-type-mapper}, provides
+        support for the basic SOAP types.  This parameter should generally
+        either be {docref builtin-soap-curl-type-to-xml-type-mapper}, or
+        something which eventually chains to
+        {docref builtin-soap-curl-type-to-xml-type-mapper}.
+    }
+  }
+  {constructor public {default
+                          chain:#SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper
+                      }
+    {construct-super.TableSOAPCurlTypeToXMLTypeMapper}
+    set self.chain = chain
+  }
+
+  {method public open {curl-type-to-xml-type
+                          || curl-type required, xml-type may be ignored
+                          || fills in xml-type, multi-ref, nillable
+                          type:SOAPObjectType
+                      }:SOAPObjectType
+    let constant new-type:SOAPObjectType = {super.curl-type-to-xml-type type}
+    {if new-type != type then
+        {return new-type}
+     else
+        {if-non-null chain = self.chain then
+            let chain-type:SOAPObjectType =
+                {chain.curl-type-to-xml-type type}
+            {if-non-null chain-type.xml-type then
+                {return chain-type}
+             else
+                {return
+                    {SOAPObjectType.fill-in-for-array-type chain-type,
+                        curl-type-to-xml-type = self}
+                }
+            }
+        }
+    }
+    {return type}
+  }
+
+  {doc-next
+    {purpose
+        Set up a mapping from {docref SOAPObjectType.curl-type} to
+        {docref SOAPObjectType.xml-type}.  Mappings are used by
+        {docref DefaultSOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type}.
+    }
+    {parameter curl-type,
+        The {docref Type} that can then be looked up.
+    }
+    {parameter xml-type,
+        The {docref XMLName} of an XML type that {param curl-type} maps to.
+    }
+    {parameter multiple-reference,
+        If not {docref SOAPTypeMultipleReference}{ctext .unknown} then
+        when {docref DefaultSOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.multiple-reference} to this value as
+        well as setting {docref SOAPObjectType.xml-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+    {parameter nillable?,
+        When {docref DefaultSOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.nillable?} to this value as
+        well as setting {docref SOAPObjectType.xml-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+    {parameter marshaler-handled-element?,
+        When {docref DefaultSOAPCurlTypeToXMLTypeMapper.curl-type-to-xml-type}
+        finds this entry, it will set
+        {docref SOAPObjectType.marshaler-handled-element?} to this value as
+        well as setting {docref SOAPObjectType.xml-type} in the new
+        {docref SOAPObjectType} which it creates.
+    }
+  }
+  {method public open {set-curl-type-to-xml-type
+                          curl-type:Type,
+                          xml-type:XMLName,
+                          multiple-reference:SOAPTypeMultipleReference,
+                          nillable?:bool,
+                          marshaler-handled-element?:bool = false
+                      }:void
+    {super.set-curl-type-to-xml-type
+        curl-type,
+        xml-type,
+        multiple-reference,
+        nillable?,
+        marshaler-handled-element? = marshaler-handled-element?
+    }
+  }
+}

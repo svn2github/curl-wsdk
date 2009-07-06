@@ -1,0 +1,105 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 applet}
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{define-proc {example-href which:String}:Url
+    {return
+        {url "generic-example.curl?" & which}}
+}
+
+{chapter
+    index= {HeadingIndex primary-key="WSDK Examples"},
+    WSDK Examples Summary
+}
+
+{heading 
+    level = 1,
+    XML Document Model
+}
+
+{link href = {example-href "examples/ex-build-xml.curl"},
+WSDK XML Input}
+
+{link href = {example-href "examples/ex-create-rss2.curl"},
+WSDK XML Creation -- RSS2}
+
+{link href = {example-href "examples/ex-create-rss1.curl"},
+WSDK XML Creation -- RSS1}
+
+{link href = {example-href "examples/ex-create-rss1-without.curl"},
+WSDK XML Creation -- RSS1 namespace declarations}
+
+{link href = {url "examples/ex-tree-0.curl"},
+WSDK XML Display}
+
+{link href = {example-href "examples/ex-process-rss.curl"},
+WSDK XML Processing with methods}
+
+{link href = {example-href "examples/ex-query-rss.curl"},
+WSDK XML Processing with path expressions}
+
+{link href = {url "examples/ex-path.curl"},
+WSDK XML Path Expressions}
+
+{link href = {example-href "examples/ex-data-binding-rss.curl"},
+WSDK XML Data Binding}
+
+{link href = {url "examples/ex-tree-1.curl"},
+WSDK XML Settings using Data Binding}
+
+{link href = {example-href "examples/ex-stock-quote.curl"},
+WSDK XML Request}
+
+{link href = {example-href "examples/ex-stock-quote-async.curl"},
+WSDK XML Asynchronous Request}
+
+{link href = {url "examples/ex-change-management.curl"},
+WSDK XMLDocument Change Management}
+
+{link href = {example-href "examples/ex-elaborate-rss.curl"},
+WSDK XML Elaboration -- RSS Presentation}
+
+{link href = {example-href "examples/ex-elaborate-rss-data.curl"},
+WSDK XML Elaboration -- RSS Data}
+
+|| ====================
+{heading 
+    level = 1,
+    Using Web Services
+}
+
+{link href = {example-href "examples/ex-generate-service-package.curl"},
+WSDK Generating a Service Package}
+
+{link href = {example-href "examples/ex-invoke-stock-quote.curl"},
+WSDK Calling a Service Method}
+
+{link href = {example-href "examples/ex-trace-stock-quote.curl"},
+WSDK Tracing a Service Method}
+
+{link href = {url"examples/ex-google-search.curl"},
+WSDK Simple Google Web Service}
+
+{link href = {url"examples/google/start.curl"}, 
+WSDK Google Web Service}
+
+{curl-copyright}
+

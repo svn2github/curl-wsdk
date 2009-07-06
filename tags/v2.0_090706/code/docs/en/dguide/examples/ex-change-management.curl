@@ -1,0 +1,162 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+{import * from COM.CURL.WSDK.XML-DISPLAY}
+
+{value
+    let loc:Url = {url "wsdk-dguide.rss"}
+    let xmldoc:XDMDocument = {build-xml loc, preserve-whitespace? = false}
+    let xml:XDMElement = xmldoc.root
+    let xml-tree:XDMTreeModel = {XDMTreeModel xml}
+    let xml-display:XDMTreeControl = {XDMTreeControl width = 3in, xml-tree}
+    let orig:XDMElement = {xml.clone}
+    let orig-tree:XDMTreeModel = {XDMTreeModel orig}
+    let orig-display:XDMTreeControl = 
+        {XDMTreeControl 
+            orig-tree,
+            width = 3in, 
+            background = "#DDD",
+            selection-policy = "disabled"}
+    
+    let log:RecordSet =
+        {RecordSet 
+            {RecordFields 
+                {RecordField "event", domain = any, modifiable? = false},
+                {RecordField "timestamp", domain = DateTime, modifiable? = false}}} 
+    {xmldoc.add-event-handler
+        {on e:XDMEvent do
+            {log.append {RecordData event = e}}
+            {log.commit}}}
+    let log-display:RecordGrid =
+        {RecordGrid 
+            record-source = log,
+            width = 4.5in,
+            {RecordGridColumn "event",
+                header-spec = {message Event},
+                format-spec = 
+                    {proc {x:any}:String
+                        {return {type-of x}.name}}},
+            {RecordGridColumn "event",
+                header-spec = {message Path},
+                width = 2in,
+                format-spec = 
+                    {proc {x:any}:String
+                        {return 
+                            {type-switch x
+                             case x:XDMNodeModified do
+                                {XDMPath.from-node x.node}
+                             else ""}}}},
+            {RecordGridColumn "timestamp",
+                width = .75in,
+                format-spec =
+                    {proc {x:any}:String
+                        {return x.info.iso-time}}}} 
+    
+    let xdbc:XDMDataBindingContext = {StandardXDMDataBindingContext}            
+    let edit:VBox =
+        {VBox
+            data-binding-context = xdbc,
+            {TextDisplay
+                {bind value to ".",
+                    {format x:XDMNodeSet as
+                        {XDMPath.from-node x.as-XDMNode}}}},
+            {TextField
+                {on ValueFinished at c:TextField do
+                    {c.update-data-binding "value"}},
+                {bind value to "."}}}
+    {xml-display.add-event-handler 
+        {on e:CurrentNodeChanged at c:TreeControl do
+            {if-non-null n = c.current-node then
+                let s:#XDMNode =
+                    {type-switch n.node-data
+                     case a:XDMAttribute do a
+                     case t:XDMText do t
+                     case e:XDMElement do
+                        || atomic?
+                        {if e.children.empty? or
+                            (e.children.size == 1 and 
+                             e.children[0] isa XDMText) 
+                         then e
+                         else null}
+                     else null}
+                set xdbc.model = s}}}  
+    
+    || some programmatic modifications
+    let now:String = {DateTime}.info.iso-date
+    {xml.add-attribute {XDMAttribute "date", now}}
+    {xml.insert-child {XDMElement "date", now}, 0}
+    
+    let desc1:XDMText = 
+        {xml.search 
+            {xpath "channel/item[1]/description/text()"}
+        }.as-XDMNode asa XDMText
+    set desc1.content = {desc1.content.to-upper-clone}
+    
+    let item3:XDMNode =
+        {non-null {xml.search {xpath "channel/item[3]"}}.as-XDMNode}
+    {item3.detach}
+    
+    let channel:XDMElement = 
+        {xml.search {xpath "channel"}}.as-XDMNode asa XDMElement
+    {channel.append item3}
+    
+    {xml-display.expand-node {non-null xml-tree.root},
+        expand-descendants? = true}    
+    {orig-display.expand-node {non-null orig-tree.root},
+        expand-descendants? = true}
+    
+    {log-display.add-event-handler
+        {on CurrentRecordChanged at g:RecordSetDisplay do
+            {if-non-null r = g.current-record then
+                {type-switch r["event"]
+                 case e:XDMNodeModified do
+                    {if-non-null n = {xml-tree.get-if-exists e.node} then
+                        {xml-display.set-category n, "highlight"}}}
+            }}}
+    let show-changes-command:CommandButton =
+        {CommandButton label = {message Highlight Changes},
+            {on Action do
+                {for r in log do
+                    {type-switch r["event"]
+                     case e:XDMNodeModified do
+                        {if-non-null n = {xml-tree.get-if-exists e.node} then
+                            {xml-display.set-category n, "highlight"}}}}
+            }}
+    let clear-changes-command:CommandButton =
+        {CommandButton label = {message Clear Highlight},
+            {on Action do
+                {xml-display.clear-categories category = "highlight"}
+            }}
+    
+    {HBox
+        valign = "top",
+        {VBox
+            {bold Current},
+            xml-display},
+        {VBox
+            margin = 3pt,
+            spacing = 6pt,
+            {bold Changes},
+            log-display,
+            edit,
+            {HBox show-changes-command, clear-changes-command, {Fill}}},
+        {VBox
+            {bold Original},
+            orig-display}}
+}

@@ -1,0 +1,91 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class package WSDLNameTable
+  {inherits {HashTable-of XMLName, Object}}
+  
+  || used for unresolved forward references during resolve-types
+  field package unresolved-placeholders:{Set-of WSDLSchemaMember} =
+      {{Set-of WSDLSchemaMember}}
+  || used to prevent cycles during resolve-types
+  field package seen:{Set-of XMLName} = 
+      {{Set-of XMLName}}
+
+  {method package {resolve-qname
+                         node:WSDLDOMNode,
+                         qname:String,
+                         prefix:String
+                     }:#Object
+    let val:#Object
+    {try
+        set val = {self.get {WSDLNameTable.make-qname node, qname, prefix}}
+     catch e:KeyNotFoundException do
+        let constant (p:String, local-name:String) = {WSDLNameTable.split-qname qname}
+        let constant ns:String = {node.get-namespace-uri p}
+        {wsdl-exception node = node,
+            {hlmessage {WSDL.format-name name = {XMLName ns, local-name}, node} not found.}
+        }
+    }
+    {return val}
+  }
+
+  {method package {set-name
+                      target-namespace:String,
+                      prefix:String,
+                      name:String,
+                      val:Object,
+                      error-if-exists?:bool = true
+                  }:void
+    let k:XMLName = {XMLName.unchecked target-namespace, prefix & name}
+    {if error-if-exists? and {self.key-exists? k} then
+        {wsdl-exception ||node = node,
+            {hlmessage Duplicate name {value name} found.}}
+     else
+        set self[k] = val
+    }
+  }
+  
+  {method package {name-exists?
+                         target-namespace:String,
+                         prefix:String,
+                         name:String
+                  }:bool
+    let k:XMLName = {XMLName.unchecked target-namespace, prefix & name}
+    {return
+        {self.key-exists? k}
+    }
+  }
+
+
+  {define-proc package {split-qname name:String}:(ns:String, local-name:String)
+    let constant ix:int = {name.find ':'}
+    {if ix != -1 then
+        {return {name.substr 0, ix}, {name.tail ix + 1}}
+     else
+        {return "", name}
+    }
+  }
+
+  {define-proc package {make-qname
+                         node:WSDLDOMNode,
+                         qname:String,
+                         prefix:String
+                     }:XMLName
+    let constant (ns:String, local-name:String) =
+        {WSDLNameTable.split-qname qname}
+    {return {XMLName.unchecked {node.get-namespace-uri ns}, prefix & local-name}}
+  }
+}

@@ -1,0 +1,172 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| contains the classes:
+|| WSDLSchemaMember
+|| WSDLSchemaElement
+|| WSDLSchemaAttribute
+
+|| Also uses classes in WSDLSchemaType.curl
+
+|| common to WSDLSchemaElement and WSDLSchemaAttribute
+{define-class public open WSDLSchemaMember
+  field public constant xml-name:#XMLName
+  field protected _type:#WSDLSchemaType
+  field public constant node:WSDLDOMNode
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          node:WSDLDOMNode
+                      }
+    set self.xml-name = xml-name
+    set self._type = type
+    set self.node = node
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {type-switch self.type
+     case pt:WSDLSchemaPlaceholderType do
+        let rt:WSDLSchemaType = {pt.resolve-type names}
+        || "forward references" may not be resolved yet
+        {if rt isa WSDLSchemaPlaceholderType then
+            {names.unresolved-placeholders.insert self}
+         else
+            set self._type = rt}
+    }
+    {self.type.resolve-types names}
+  }
+
+  {getter package {type}:WSDLSchemaType
+    {return
+        {if-non-null t = self._type then
+            t
+         else
+            {if-non-null xml-name = self.xml-name then
+                {wsdl-exception
+                    {hlmessage
+                        Early use of null type in item '{value self.node}'.}
+                }
+             else
+                {wsdl-exception
+                    {hlmessage
+                        Early use of null type in item.
+                    }
+                }
+            }
+        }
+    }
+  }
+}
+
+{define-class public open WSDLSchemaElement {inherits WSDLSchemaMember}
+  field public-get min-occurs:int
+  field public-get max-occurs:int
+  field public-get nillable?:bool
+  field public-get expected-content-types:#String
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          min-occurs:int = 1,
+                          max-occurs:int = 1,
+                          nillable?:bool = false,
+                          expected-content-types:#String = null,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, node}
+    set self.min-occurs = min-occurs
+    set self.max-occurs = max-occurs
+    set self.nillable? = nillable?
+    set self.expected-content-types = expected-content-types
+  }
+
+  {method package {resolve-types names:WSDLNameTable}:void
+    {type-switch self.type
+     case pe:WSDLSchemaElementPlaceholderType do
+        || NOTE: special treatment for elements
+        || -- "merge" characteristics of referenced element
+        let re:WSDLSchemaElement = {pe.resolve-element names}
+        || "forward references" may not be resolved yet
+        {if re isa WSDLSchemaPlaceholderType then
+            {names.unresolved-placeholders.insert self}
+         else
+            {re.resolve-types names}
+            || merge only if unspecified
+            {if not self.nillable-specified? then
+                set self.nillable? = re.nillable?}
+            {if not self.min-occurs-specified? then
+                set self.min-occurs = re.min-occurs}
+            {if not self.max-occurs-specified? then
+                set self.max-occurs = re.max-occurs}
+            {if not self.expected-content-types-specified? then
+                set self.expected-content-types = re.expected-content-types}
+            set self._type = re.type}
+        
+     case pt:WSDLSchemaPlaceholderType do
+        let rt:WSDLSchemaType = {pt.resolve-type names}
+        || "forward references" may not be resolved yet
+        {if rt isa WSDLSchemaPlaceholderType then
+            {names.unresolved-placeholders.insert self}
+         else
+            set self._type = rt}
+    }
+    {self.type.resolve-types names}
+  }
+
+  || NOTE:  parsing code does not distinguish
+  || -- whether value specified or default
+  {getter package {nillable-specified?}:bool
+    {return {self.specified? "nillable"}}
+  }
+
+  {getter package {min-occurs-specified?}:bool
+    {return {self.specified? "minOccurs"}}
+  }
+
+  {getter package {max-occurs-specified?}:bool
+    {return {self.specified? "maxOccurs"}}
+  }
+
+  {getter package {expected-content-types-specified?}:bool
+    {return
+        {self.specified?
+            "expectedContentTypes",
+            namespace = WSDL.xmime-namespace-uri
+        }
+    }
+  }
+
+  {method package {specified?
+                      attribute:String,
+                      namespace:String = ""
+                  }:bool
+    {return
+        {self.node.get-attribute attribute, namespace = namespace} != null}
+  }
+
+}
+
+{define-class public open WSDLSchemaAttribute {inherits WSDLSchemaMember}
+
+  {constructor public {default
+                          xml-name:#XMLName,
+                          type:#WSDLSchemaType,
+                          node:WSDLDOMNode
+                      }
+    {construct-super xml-name, type, node}
+  }
+}

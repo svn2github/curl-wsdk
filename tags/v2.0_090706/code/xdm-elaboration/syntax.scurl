@@ -1,0 +1,132 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-proc {comma-append 
+                 xs:{Array-of CurlSource},  
+                 x:CurlSource
+             }:void
+    {if not xs.empty? then
+        {xs.append {Operator OperatorKind.Comma}}}
+    {xs.append x}    
+}
+{define-proc {name-or-default
+                 name:Literal
+             }:CurlSource
+    {return
+        {if name.value == "*" then
+            {expand-template
+                default-action = }
+         else
+            {expand-template 
+                {XDMName.from-String ?name},
+            }}
+    }}
+{doc-next ||=== xml-elaboration
+    {purpose
+        Simple macro form for creating an {docref XmlElaboration}}
+    {syntax
+        The "xml-elaboration" macro uses the following syntax:
+        
+        {ctext
+            {xml-elaboration
+                {metavar prefix} = {metavar "namespace"}
+                [, {metavar prefix} = {metavar "namespace"}]*
+                {{metavar "tag"} {metavar spec}}*
+            }}
+        
+        where each {metavar "tag"} is either an XML element qualified name,
+        or {ctext "*"} to indicate the default elabration expression.
+        
+        and each {metavar spec} is one of
+        {itemize
+            {item a function specification
+                
+                {ctext {{metavar signature}} {metavar body}}
+            }
+            {item a class specification
+                
+                {ctext {metavar classtype}}
+            }
+        }
+    }
+    {details
+        XML elaboration allows an entire XML structure 
+        to be systematically transformed into native Curl objects. 
+        A mapping is defined associating element names 
+        with elaboration expressions which produce Curl content.
+    }
+    {for-example
+        {curl-code
+            let e:XMLElaboration =
+                {xml-elaboration
+                    {"channel" VBox}
+                    {"item" TextFlowBox}
+                    {"title" Frame}
+                    {"rss" {version:String = "", channel:any}:Graphic
+                        || just return the channel, ignoring the version
+                        channel}
+                }
+            {e.elaborate model}
+        }}
+}
+{define-macro public
+    {xml-elaboration
+        ?keys:{comma-sequence ?:identifier = ?:{literal String}}
+        ?specs:{sequence {?:verbatim}}
+    }
+    
+    let src:{Array-of CurlSource} = {{Array-of CurlSource}}
+    {for spec in specs do
+        {syntax-switch spec, must-match? = true
+            
+         case {pattern
+                  {?tag:{literal String}
+                      || TODO: how restrict this to ClassType literals ?
+                      ?type:{one-of {pattern ?:identifier},
+                                {pattern {?:tokens}}}}
+              } 
+         do
+            {comma-append src,
+                {expand-template 
+                    ?{name-or-default tag}
+                    {XmlElaborationType ?type}
+                }}
+            
+         case {pattern
+                  {?tag:{literal String}
+                      ?sig:{pattern {?:verbatim}:?:token}
+                      ?body:verbatim}
+              } 
+         do            
+            {comma-append src,
+                {expand-template
+                    ?{name-or-default tag}
+                    {XmlElaborationFunction
+                        {proc ?sig
+                            {return 
+                                {value ?body}}}}
+                }}
+        }}
+    
+    let result:CurlSource =
+        {expand-template 
+            {with-namespace-declarations ?keys do
+                {XmlElaborationDispatch
+                    {XmlElaborationTable ?src}}
+            } asa XmlElaborationDispatch
+        }
+    {return result}
+}

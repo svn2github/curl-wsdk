@@ -1,0 +1,385 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| TODO: rethink 'limit'
+|| - force element mismatch when reaching limit
+|| TODO: use edit-distance in compare-xdm-nodeset
+|| TODO: speed up edit-distance computation 
+|| -- use "shortest path" algorithm and heap of pending comparisons
+
+{define-class public XDMMismatch
+  field public constant a:#XDMNode
+  field public constant b:#XDMNode
+  field public constant kind:XDMMismatchKind
+  field public constant message:String
+  {constructor public {default
+                          a:#XDMNode,
+                          b:#XDMNode,
+                          kind:XDMMismatchKind,
+                          message:#String = null}
+    set self.a = a
+    set self.b = b
+    set self.kind = kind
+    set self.message =
+        {if-non-null message then message
+         else {lmessage {value kind.name} : {value a} !=  {value b}}}
+  }
+  {method public {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, locale = locale, self.message}
+  }
+}
+{define-enum public XDMMismatchKind
+    Element,
+    ElementSize,
+    ElementType,
+    AttributeName,
+    AttributeValue,
+    Characters,
+    NamespaceDeclaration,
+    ProcessingInstructionTarget,
+    ProcessingInstructionData,
+    Children,
+    NodeType,
+    Unspecified
+}
+{let constant aligner:{Aligner-for XDMNode} =
+    {{Aligner-for XDMNode} equal? =
+        {proc {a:XDMNode, b:XDMNode}:bool
+            {return a.xmlname == b.xmlname}}}
+}
+{define-proc public {compare-xdm-node
+                        a:XDMNode,
+                        b:XDMNode,
+                        diffs:{Array-of XDMMismatch} = {{Array-of XDMMismatch}},
+                        compare-whitespace?:bool = true,
+                        compare-namespace-declarations?:bool = true,
+                        limit:int = 100
+                    }:(bool, {Array-of XDMMismatch})
+    let constant max-array-size:int = limit * limit
+    
+    let constant log:{proc-type {XDMMismatch}:void} =
+        {proc {m:XDMMismatch}:void
+            {if true then ||diffs.size < limit then
+                {diffs.append m}}} 
+    || propagate mismatch to ancestors
+    let constant check-diffs:{proc-type {XDMNode, XDMNode, int}:void} =
+        {proc {a:XDMNode, b:XDMNode, ndiff:int}:void
+            {if diffs.size > ndiff then
+                let logged?:bool = false
+                {for i = ndiff below diffs.size do
+                    let d:XDMMismatch = diffs[i]
+                    {if d.a == a or d.b == b then
+                        set logged? = true
+                        {break}}}
+                {if not logged? then
+                    {log {XDMMismatch a, b, "Children"}}}}}
+    let constant compare-node:{proc-type {XDMNode, XDMNode}:void} =
+        {proc {a:XDMNode, b:XDMNode}:void
+            let ndiff:int = diffs.size
+            {compare-xdm-node a, b,
+                diffs = diffs, 
+                limit = limit,
+                compare-namespace-declarations? = compare-namespace-declarations?,
+                compare-whitespace? = compare-whitespace?}
+            {check-diffs a, b, ndiff}}
+    let constant compare-children:{proc-type {XDMNode, XDMNode}:void} =
+        {proc {a:XDMNode, b:XDMNode}:void
+            let as:{Sequence-of XDMNode} = a.children
+            let bs:{Sequence-of XDMNode} = b.children                
+            {if not compare-whitespace? then
+                set as = {as.filter-clone non-whitespace?}
+                set bs = {bs.filter-clone non-whitespace?}} 
+            
+            let ndiff:int = diffs.size            
+            {if as.empty? then
+                {for b in bs do
+                    {log {XDMMismatch null, b, "Element"}}}
+             elseif bs.empty? then
+                {for a in as do
+                    {log {XDMMismatch a, null, "Element"}}}
+             elseif as.size * bs.size <= max-array-size then
+                || align by element type before comparison
+                || TODO: consider alignment by full comparison
+                {aligner.alignments as, bs,
+                    mismatch =
+                        {proc {i:int, j:int}:void
+                            {log {XDMMismatch
+                                     {if i >= 0 then as[i] else null},
+                                     {if j >= 0 then bs[j] else null},
+                                     "Element"}}},
+                    match =
+                        {proc {i:int, j:int}:void
+                            {compare-node as[i], bs[j]}}}
+             else
+                || too many children: require exact match
+                {if as.size != bs.size then
+                    {log {XDMMismatch a, b,  "ElementSize"}}
+                 else
+                    {for a key i in as do
+                        let b:XDMNode = bs[i]
+                        {compare-node a, b}}}
+            }
+            {check-diffs a, b, ndiff}}    
+    let constant compare-element:{proc-type {XDMElement, XDMElement}:void} =
+        {proc {a:XDMElement, b:XDMElement}:void
+            || compare element type
+            {if a.xmlname != b.xmlname then
+                {log {XDMMismatch a, b, "ElementType"}}
+             else
+                || compare prefix declarations
+                {if compare-namespace-declarations? then
+                    {if-non-null as = a.namespace-declarations then
+                        {for k in {as.get-prefixes} do
+                            let aa:XDMNamespaceDeclaration = {as.get-declaration k}
+                            let bb:#XDMNamespaceDeclaration = 
+                                {if-non-null bs = b.namespace-declarations then
+                                    {if {bs.key-exists? k} then {bs.get-declaration k}
+                                     else null}
+                                 else null}
+                            let diff?:bool = 
+                                {if-non-null bb 
+                                 then aa.namespace != bb.namespace
+                                 else true}
+                            {if diff? then
+                                {log {XDMMismatch aa, bb, "NamespaceDeclaration"}}}}}
+                    {if-non-null bs = b.namespace-declarations then
+                        {for k in {bs.get-prefixes} do
+                            let bb:XDMNamespaceDeclaration = {bs.get-declaration k}
+                            let aa:#XDMNamespaceDeclaration = 
+                                {if-non-null as = a.namespace-declarations then
+                                    {if {as.key-exists? k} then {as.get-declaration k}
+                                     else null}
+                                 else null}
+                            {if aa == null then
+                                {log {XDMMismatch aa, bb, "NamespaceDeclaration"}}}}}}
+                || compare attributes
+                {if-non-null as = a.attributes then
+                    {for key k in as do
+                        let aa:XDMAttribute = {as.get-attribute k}
+                        let bb:#XDMAttribute = {b.get-attribute k}
+                        let diff?:bool = 
+                            {if-non-null bb 
+                             then aa.value != bb.value 
+                             else true}
+                        {if diff? then
+                            {log {XDMMismatch aa, bb, "AttributeValue"}}}}}
+                {if-non-null bs = b.attributes then
+                    {for key k in bs do
+                        let bb:XDMAttribute = {bs.get-attribute k}
+                        let aa:#XDMAttribute = {a.get-attribute k}
+                        {if aa == null then
+                            {log {XDMMismatch aa, bb, "AttributeValue"}}}}} 
+                || short-circuit after limit exceeded
+                {if diffs.size >= limit then
+                    {diffs.append {XDMMismatch a, b, "Unspecified"}}
+                    {return}}
+                || compare children
+                {compare-children a, b}}
+        }
+    
+    || dispatch by type
+    || NOTE: there might (in theory) be different subtypes of any of these
+    {type-switch a
+     case a:XDMText do
+        {type-switch b
+         case b:XDMText do
+            let diff?:bool =
+                {if compare-whitespace? 
+                 then a.content != b.content
+                 else {a.content.trim-clone} != {b.content.trim-clone}}
+            {if diff? then
+                {log {XDMMismatch a, b, "Characters"}}}            
+         else {log {XDMMismatch a, b, "NodeType"}}} 
+        
+     case a:XDMAttribute do
+        {type-switch b
+         case b:XDMAttribute do
+            {if a.xmlname != b.xmlname then
+                {log {XDMMismatch a, b, "AttributeName"}}}
+            {if a.value != b.value then
+                {log {XDMMismatch a, b, "AttributeValue"}}}            
+         else {log {XDMMismatch a, b, "NodeType"}}} 
+        
+     case a:XDMProcessingInstruction do
+        {type-switch b
+         case b:XDMProcessingInstruction do
+            {if a.target != b.target then
+                {log {XDMMismatch a, b, "ProcessingInstructionTarget"}}}
+            {if a.data != b.data then
+                {log {XDMMismatch a, b, "ProcessingInstructionData"}}}           
+         else {log {XDMMismatch a, b, "NodeType"}}}
+        
+     case a:XDMDocument do
+        {type-switch b
+         case b:XDMDocument do
+            {compare-children a, b}            
+         else {log {XDMMismatch a, b, "NodeType"}}}           
+        
+     case a:XDMElement do
+        {type-switch b
+         case b:XDMElement do
+            {compare-element a, b}
+         else
+            {log {XDMMismatch a, b, "NodeType"}}}   
+     else
+        {error {message Unexpected type {value a}}}}
+    
+    {return diffs.empty?, diffs}
+}
+{define-proc {non-whitespace? n:XDMNode}:bool
+    {return
+        {type-switch n
+         case t:XDMText do
+            not {xml-whitespace? t.content}
+         else
+            true}}
+}
+{define-proc public {compare-xdm-nodeset
+                        a:XDMNodeSet,
+                        b:XDMNodeSet,
+                        diffs:{Array-of XDMMismatch} = {{Array-of XDMMismatch}},
+                        compare-whitespace?:bool = true,
+                        limit:int = 100
+                    }:(bool, {Array-of XDMMismatch})
+    let log:{proc-type {XDMMismatch}:void} =
+        {proc {m:XDMMismatch}:void
+            {if diffs.size < limit then
+                {diffs.append m}}} 
+    
+    || compare contents
+    || -------------------
+    let as:{Iterator-of XDMNode} = {a.to-Iterator}
+    let bs:{Iterator-of XDMNode} = {b.to-Iterator}
+    
+    || NOTE: iterative version
+    || - doesn't check size first
+    {while true do
+        let (a:XDMNode, a?:bool) = {as.read-one}
+        let (b:XDMNode, b?:bool) = {bs.read-one}
+        || filter whitepace text if requested
+        || NOTE: untested and ugly
+        {if not compare-whitespace? then
+            {while not a? and not {non-whitespace? a} do
+                set (a, a?) = {as.read-one}}}
+        {if not compare-whitespace? then
+            {while not b? and not {non-whitespace? b} do
+                set (b, b?) = {bs.read-one}}}
+        {if a? and b? then {break}
+         elseif a? or b? then 
+            {log {XDMMismatch a, b, "Element"}}
+         else
+            {compare-xdm-node a, b, 
+                diffs = diffs, 
+                compare-whitespace? = compare-whitespace?, 
+                limit = limit}
+            {if diffs.size > limit then
+                {return diffs.empty?, diffs}}}
+    }
+    {return diffs.empty?, diffs}
+}
+|| minimum edit distance comparison
+|| --------------------
+{define-class {Aligner-for T:Type}
+  field constant equal?:{proc-type {T, T}:bool}
+  {constructor {default 
+                   equal?:{proc-type {T, T}:bool} = 
+                       {proc {a:T, b:T}:bool
+                           {return a == b}}}
+    set self.equal? = equal?
+  }
+  {method {alignments 
+              a:{Sequence-of T}, 
+              b:{Sequence-of T},
+              match:#{proc-type {int, int}:void} = null,
+              mismatch:#{proc-type {int, int}:void} = null
+          }:void
+    {self.alignments-for
+        {self.edit-distances a, b},
+        match = match,
+        mismatch = mismatch}
+  }
+  {method {edit-distances 
+              a:{Sequence-of T}, 
+              b:{Sequence-of T}
+          }:{Map-of int}
+    let na:int = a.size
+    let nb:int = b.size
+    let D:{Map-of int} = {{Map-of int} na + 1, nb + 1}
+    || initialize boundary conditions
+    {for i = 0 to na do
+        set D[i,0] = i}
+    {for j = 0 to nb do
+        set D[0,j] = j}
+    || dynamic programming recursion
+    {for i = 0 below na do
+        let ii:int = i + 1
+        {for j = 0 below nb do
+            let jj:int = j + 1
+            let m:int = {if {self.equal? a[i], b[j]} then 0 else 1}
+            set D[ii,jj] =
+                {min
+                    || insertion or deletion
+                    D[i,jj] + 1,
+                    D[ii,j] + 1,
+                    || match or substitution
+                    D[i,j] + m}
+        }}
+    || return result
+    {return D}
+  }
+  {method {alignments-for D:{Map-of int},
+              match:#{proc-type {int, int}:void} = null,
+              mismatch:#{proc-type {int, int}:void} = null
+          }:void
+    let ii:int = D.width - 1
+    let jj:int = D.height - 1
+    {while ii > 0 and jj > 0 do
+        let i:int = ii - 1
+        let j:int = jj - 1
+        {switch D[ii,jj]
+         case D[i,j]+1 do
+            || substitution
+            {dec ii}
+            {dec jj}
+            {if-non-null mismatch then
+                {mismatch ii, jj}}
+         case D[ii,j]+1 do
+            || deletion
+            {dec jj}
+            {if-non-null mismatch then
+                {mismatch -1, jj}}
+         case D[i,jj]+1 do
+            || insertion
+            {dec ii}
+            {if-non-null mismatch then
+                {mismatch ii, -1}}
+         case D[ii,jj] do
+            || match
+            {dec ii}
+            {dec jj}
+            {if-non-null match then
+                {match ii, jj}}
+         else
+            {error "Hosed"}}}
+    {if-non-null mismatch then
+        {if ii > 0 then
+            {for i = ii - 1 downto 0 do
+                {mismatch i, -1}}}
+        {if jj > 0 then
+            {for j = jj - 1 downto 0 do
+                {mismatch -1, j}}}}
+  }
+}

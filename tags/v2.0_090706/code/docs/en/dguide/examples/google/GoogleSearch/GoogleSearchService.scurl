@@ -1,0 +1,616 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl
+
+{define-class public GoogleSearchService {inherits WSDLHTTPRPCPostClient}
+
+  {method public {doGetCachedPage key:#String, url:#String}:(_return:#{Array-of byte})
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "doGetCachedPage",
+            {{Array-of any}
+                key,
+                url
+            },
+            {splice self.operations["doGetCachedPage"]}
+        }
+    {return
+        responses[0] asa #{Array-of byte}
+    }
+  }
+
+
+  {method public {async-doGetCachedPage key:#String, url:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "doGetCachedPage",
+            {{Array-of any}
+                key,
+                url
+            },
+            {splice self.operations["doGetCachedPage"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-doGetCachedPage}:void
+    set self.operations["doGetCachedPage"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "key"},
+                {XMLName "", "url"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "base64Binary"},
+                    curl-type = {Array-of byte},
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "urn:GoogleSearchAction",
+            request-operation = {XMLName "urn:GoogleSearch", "doGetCachedPage"},
+            default-namespace = "urn:GoogleSearch",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+    }
+  }
+
+
+  {method public {doSpellingSuggestion key:#String, phrase:#String}:(_return:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "doSpellingSuggestion",
+            {{Array-of any}
+                key,
+                phrase
+            },
+            {splice self.operations["doSpellingSuggestion"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {async-doSpellingSuggestion key:#String, phrase:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "doSpellingSuggestion",
+            {{Array-of any}
+                key,
+                phrase
+            },
+            {splice self.operations["doSpellingSuggestion"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-doSpellingSuggestion}:void
+    set self.operations["doSpellingSuggestion"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "key"},
+                {XMLName "", "phrase"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "urn:GoogleSearchAction",
+            request-operation = {XMLName "urn:GoogleSearch", "doSpellingSuggestion"},
+            default-namespace = "urn:GoogleSearch",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+    }
+  }
+
+
+  {method public {doGoogleSearch key:#String, q:#String, start:int, maxResults:int, filter:bool, restrict:#String, safeSearch:bool, lr:#String, ie:#String, oe:#String}:(_return:#GoogleSearchResult)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "doGoogleSearch",
+            {{Array-of any}
+                key,
+                q,
+                start,
+                maxResults,
+                filter,
+                restrict,
+                safeSearch,
+                lr,
+                ie,
+                oe
+            },
+            {splice self.operations["doGoogleSearch"]}
+        }
+    {return
+        responses[0] asa #GoogleSearchResult
+    }
+  }
+
+
+  {method public {async-doGoogleSearch key:#String, q:#String, start:int, maxResults:int, filter:bool, restrict:#String, safeSearch:bool, lr:#String, ie:#String, oe:#String, event-handler:EventHandler, ...:EventHandler}:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.async-call
+            "doGoogleSearch",
+            {{Array-of any}
+                key,
+                q,
+                start,
+                maxResults,
+                filter,
+                restrict,
+                safeSearch,
+                lr,
+                ie,
+                oe
+            },
+            {splice self.operations["doGoogleSearch"]},
+            event-handler,
+            ...
+        }
+    }
+  }
+
+
+  {method public {define-doGoogleSearch}:void
+    set self.operations["doGoogleSearch"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "key"},
+                {XMLName "", "q"},
+                {XMLName "", "start"},
+                {XMLName "", "maxResults"},
+                {XMLName "", "filter"},
+                {XMLName "", "restrict"},
+                {XMLName "", "safeSearch"},
+                {XMLName "", "lr"},
+                {XMLName "", "ie"},
+                {XMLName "", "oe"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "urn:GoogleSearch", "GoogleSearchResult"},
+                    curl-type = GoogleSearchResult,
+                    nillable? = true
+                }
+            },
+            "http://schemas.xmlsoap.org/soap/encoding/",
+            soap-action = "urn:GoogleSearchAction",
+            request-operation = {XMLName "urn:GoogleSearch", "doGoogleSearch"},
+            default-namespace = "urn:GoogleSearch",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-doGetCachedPage}
+     {self.define-doSpellingSuggestion}
+     {self.define-doGoogleSearch}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "", "directoryCategory"},
+                xml-type = {XMLName "urn:GoogleSearch", "DirectoryCategory"},
+                curl-type = DirectoryCategory,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "fullViewableName"},
+                {XMLName "", "specialEncoding"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                }
+            },
+            {{Array-of String}
+                "fullViewableName",
+                "specialEncoding"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "urn:GoogleSearch", "GoogleSearchResult"},
+                curl-type = GoogleSearchResult,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "documentFiltering"},
+                {XMLName "", "searchComments"},
+                {XMLName "", "estimatedTotalResultsCount"},
+                {XMLName "", "estimateIsExact"},
+                {XMLName "", "resultElements"},
+                {XMLName "", "searchQuery"},
+                {XMLName "", "startIndex"},
+                {XMLName "", "endIndex"},
+                {XMLName "", "searchTips"},
+                {XMLName "", "directoryCategories"},
+                {XMLName "", "searchTime"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "", "resultElements"},
+                    xml-type = {XMLName.unchecked "urn:GoogleSearch", "ResultElement[]"},
+                    curl-type = {Array-of ResultElement}
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "", "directoryCategories"},
+                    xml-type = {XMLName.unchecked "urn:GoogleSearch", "DirectoryCategory[]"},
+                    curl-type = {Array-of DirectoryCategory}
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                }
+            },
+            {{Array-of String}
+                "documentFiltering",
+                "searchComments",
+                "estimatedTotalResultsCount",
+                "estimateIsExact",
+                "resultElements",
+                "searchQuery",
+                "startIndex",
+                "endIndex",
+                "searchTips",
+                "directoryCategories",
+                "searchTime"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                xml-type = {XMLName "urn:GoogleSearch", "ResultElement"},
+                curl-type = ResultElement,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "summary"},
+                {XMLName "", "URL"},
+                {XMLName "", "snippet"},
+                {XMLName "", "title"},
+                {XMLName "", "cachedSize"},
+                {XMLName "", "relatedInformationPresent"},
+                {XMLName "", "hostName"},
+                {XMLName "", "directoryCategory"},
+                {XMLName "", "directoryTitle"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                },
+                {SOAPObjectType
+                    element-name = {XMLName "", "directoryCategory"},
+                    xml-type = {XMLName "urn:GoogleSearch", "DirectoryCategory"},
+                    curl-type = DirectoryCategory
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String
+                }
+            },
+            {{Array-of String}
+                "summary",
+                "uRL",
+                "snippet",
+                "title",
+                "cachedSize",
+                "relatedInformationPresent",
+                "hostName",
+                "directoryCategory",
+                "directoryTitle"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "urn:GoogleSearch", "DirectoryCategory"},
+                        curl-type = DirectoryCategory
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "directoryCategories"},
+                        xml-type = {XMLName.unchecked "urn:GoogleSearch", "DirectoryCategory[]"},
+                        curl-type = {Array-of DirectoryCategory},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "urn:GoogleSearch", "DirectoryCategory[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        xml-type = {XMLName "urn:GoogleSearch", "ResultElement"},
+                        curl-type = ResultElement
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "", "resultElements"},
+                        xml-type = {XMLName.unchecked "urn:GoogleSearch", "ResultElement[]"},
+                        curl-type = {Array-of ResultElement},
+                        nillable? = true
+                    }
+                },
+                array-types =
+                    {{Array-of #XMLName}
+                        {XMLName.unchecked "urn:GoogleSearch", "ResultElement[]"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://api.google.com/search/beta2"},
+            ...
+    }
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
+    }
+  }
+}
+

@@ -1,0 +1,58 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/google/GoogleSearch.wsdl
+
+{define-class public open GoogleSearchResult
+
+  field public documentFiltering:bool
+  field public searchComments:String = ""
+  field public estimatedTotalResultsCount:int
+  field public estimateIsExact:bool
+  field public resultElements:{Array-of ResultElement} = {uninitialized-value-for-type {Array-of ResultElement}}
+  field public searchQuery:String = ""
+  field public startIndex:int
+  field public endIndex:int
+  field public searchTips:String = ""
+  field public directoryCategories:{Array-of DirectoryCategory} = {uninitialized-value-for-type {Array-of DirectoryCategory}}
+  field public searchTime:double
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      documentFiltering:bool = {uninitialized-value-for-type bool},
+      searchComments:String = {required-keyword "GoogleSearchResult.searchComments"} asa String,
+      estimatedTotalResultsCount:int = {uninitialized-value-for-type int},
+      estimateIsExact:bool = {uninitialized-value-for-type bool},
+      resultElements:{Array-of ResultElement} = {required-keyword "GoogleSearchResult.resultElements"} asa {Array-of ResultElement},
+      searchQuery:String = {required-keyword "GoogleSearchResult.searchQuery"} asa String,
+      startIndex:int = {uninitialized-value-for-type int},
+      endIndex:int = {uninitialized-value-for-type int},
+      searchTips:String = {required-keyword "GoogleSearchResult.searchTips"} asa String,
+      directoryCategories:{Array-of DirectoryCategory} = {required-keyword "GoogleSearchResult.directoryCategories"} asa {Array-of DirectoryCategory},
+      searchTime:double = {uninitialized-value-for-type double}
+    }
+    {if {keyword-supplied? documentFiltering} then
+        set self.documentFiltering = documentFiltering}
+    {if {keyword-supplied? searchComments} then
+        set self.searchComments = searchComments}
+    {if {keyword-supplied? estimatedTotalResultsCount} then
+        set self.estimatedTotalResultsCount = estimatedTotalResultsCount}
+    {if {keyword-supplied? estimateIsExact} then
+        set self.estimateIsExact = estimateIsExact}
+    {if {keyword-supplied? resultElements} then
+        set self.resultElements = resultElements}
+    {if {keyword-supplied? searchQuery} then
+        set self.searchQuery = searchQuery}
+    {if {keyword-supplied? startIndex} then
+        set self.startIndex = startIndex}
+    {if {keyword-supplied? endIndex} then
+        set self.endIndex = endIndex}
+    {if {keyword-supplied? searchTips} then
+        set self.searchTips = searchTips}
+    {if {keyword-supplied? directoryCategories} then
+        set self.directoryCategories = directoryCategories}
+    {if {keyword-supplied? searchTime} then
+        set self.searchTime = searchTime}
+  }
+
+}
+

@@ -1,0 +1,179 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 applet}
+{applet manifest = "../tests/manifest.mcurl"}
+{import * from COM.CURL.WSDK.WSDL}
+
+{def wsdk-root =
+    {url ".."}
+}
+{def wsdk-dguide-root =
+    {wsdk-root.concat "code/docs/en/dguide/examples"}
+}
+{def wsdk-test-services-root =
+    {wsdk-root.concat "tests/test-cases/wsdl-services"}
+}
+{def wsdk-test-samples-root =
+    {wsdk-root.concat "tests/test-cases/wsdl-services/whitemesa-soap12"}
+}
+
+|| DGuide
+|| ====================
+|| GoogleService
+|| --------------------
+{generate-wsdl-package
+    include-async-methods? = true,
+    {wsdk-dguide-root.concat "google/GoogleSearch.wsdl"},
+    || NOTE: svn friendly
+    preserve-existing-files? = true
+}
+
+|| PowerQuote
+|| --------------------
+{generate-wsdl-package
+    curlify-names? = true,
+    {wsdk-dguide-root.concat "PowerQuote.wsdl"},
+    target-url = {wsdk-dguide-root.concat "PowerQuote.scurl"}
+}
+
+|| Samples (unadvertised)
+|| ====================
+|| WSConnection
+|| --------------------
+{generate-wsdl-code
+    {wsdk-dguide-root.concat "WSConnection/WSConnectionService.wsdl"}
+}
+
+|| Test Suites
+|| ====================
+|| standard
+|| --------------------
+{generate-wsdl-code
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "TerraService.wsdl"}
+}
+
+{generate-wsdl-code
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "GoogleSearchAPI.wsdl"}
+}
+
+{generate-wsdl-code
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "DailyDilbert.wsdl"}
+}
+
+{generate-wsdl-code
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "PowerQuote.wsdl"}
+}
+
+{generate-wsdl-code
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "StockQuotesWebService.wsdl"}
+}
+
+{generate-wsdl-code
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "AmazonSearch.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "BNPriceWS.wsdl"}
+}
+
+|| SOAP12
+|| --------------------
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-samples-root.concat "Soap12-add-test-doc.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-samples-root.concat "Soap12-add-test-int.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-samples-root.concat "Soap12-add-test-rpc.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-samples-root.concat "Soap12-add-test-uc.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-samples-root.concat "Round5BaseTypes.wsdl"}
+}
+
+|| extended
+|| --------------------
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "TranslationEngine.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WSConnection.wsdl"}
+}
+
+|| extended: WS-I
+|| --------------------
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/ManufacturerA.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/ManufacturerB.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/ManufacturerC.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/Retailer.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/WarehouseA.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/WarehouseB.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/WarehouseC.wsdl"}
+}
+
+{generate-wsdl-code 
+    include-async-methods? = false,
+    {wsdk-test-services-root.concat "WS-I/WarehouseCallback.wsdl"}
+}

@@ -1,0 +1,107 @@
+COM.CURL.WSDL.GoogleSearchAPI,GoogleSearchService,do-get-cached-page,"{Arguments     
+    ""uNhT2O/NtQgF69QyAIrCYybjfkB4dVH5"",
+    ""foo""
+}
+",,ByteArray,
+COM.CURL.WSDL.GoogleSearchAPI,GoogleSearchService,do-spelling-suggestion,"{Arguments     
+    ""uNhT2O/NtQgF69QyAIrCYybjfkB4dVH5"",
+    ""foo""
+}
+",,String,
+COM.CURL.WSDL.GoogleSearchAPI,GoogleSearchService,do-google-search,"{Arguments     
+    ""uNhT2O/NtQgF69QyAIrCYybjfkB4dVH5"",
+    ""Curl Surge"",
+    1,
+    10,
+    true,
+    ""foo"",
+    true,
+    ""foo"",
+    ""foo"",
+    ""foo""
+}",,,
+COM.CURL.WSDL.DailyDilbert,DailyDilbert,daily-dilbert-image,,,,,
+COM.CURL.WSDL.PowerQuote,DelayedStockQuote,get-quote,"{Arguments ""MSFT"", ""NASDAQ""}",,,
+COM.CURL.WSDL.StockQuotesWebService,StockQuotes,get-latest-stock-value,"{Arguments ""NASDAQ"", ""MSFT""}",,,
+COM.CURL.WSDL.TerraService,TerraService,convert-lon-lat-pt-to-nearest-place,"{Arguments     
+    {LonLatPt.from-keywords        
+        lon = -71.11,
+        lat = 42.36
+    }
+}",,,
+COM.CURL.WSDL.TerraService,TerraService,convert-lon-lat-pt-to-utm-pt,,,,,
+COM.CURL.WSDL.TerraService,TerraService,convert-utm-pt-to-lon-lat-pt,"{Arguments     
+    {UtmPt.from-keywords        
+        zone = 1,
+        x = 0.0,
+        y = 0.0
+    }
+}
+",,LonLatPt,Object
+COM.CURL.WSDL.TerraService,TerraService,convert-place-to-lon-lat-pt,"{Arguments     
+    {Place.from-keywords        
+        city = ""Cambridge"",
+        state = ""MA"",
+        country = ""USA""
+    }
+}
+",,LonLatPt,
+COM.CURL.WSDL.TerraService,TerraService,count-places-in-rect,,,,,
+COM.CURL.WSDL.TerraService,TerraService,get-area-from-pt,,,,,
+COM.CURL.WSDL.TerraService,TerraService,get-area-from-rect,,,,,
+COM.CURL.WSDL.TerraService,TerraService,get-area-from-tile-id,"{Arguments     
+    {TileId.from-keywords        
+        theme = Theme.photo,
+        scale = Scale.scale1mm,
+        scene = 1,
+        x = 1,
+        y = 1
+    },
+    1,
+    1
+}
+",,SOAP-1-1-FaultException,Fault
+COM.CURL.WSDL.TerraService,TerraService,get-lat-lon-metrics,,,,,
+COM.CURL.WSDL.TerraService,TerraService,get-place-facts,"{Arguments     
+    {Place.from-keywords        
+        city = ""Cambridge"",
+        state = ""MA"",
+        country = ""USA""
+    }
+}
+",,PlaceFacts,Object
+COM.CURL.WSDL.TerraService,TerraService,get-place-list,,,,
+COM.CURL.WSDL.TerraService,TerraService,get-place-list-in-rect,,,,
+COM.CURL.WSDL.TerraService,TerraService,get-theme,"{Arguments     
+    Theme.photo
+}
+",,ThemeInfo,Object
+COM.CURL.WSDL.TerraService,TerraService,get-tile-meta-from-lon-lat-pt,"{Arguments     
+    {LonLatPt.from-keywords        
+        lon = -71.11,
+        lat = 42.36
+    },
+    Theme.photo,
+    Scale.scale1m
+}",,,
+COM.CURL.WSDL.TerraService,TerraService,get-tile-meta-from-tile-id,"{Arguments     
+   {TileId.from-keywords        
+        theme = Theme.photo,
+        scale = Scale.scale1mm,
+        scene = 1,
+        x = 1,
+        y = 1
+    }
+}
+",,SOAP-1-1-FaultException,Fault
+COM.CURL.WSDL.TerraService,TerraService,get-tile,"{Arguments     
+    {TileId.from-keywords        
+        theme = Theme.photo,
+        scale = Scale.scale1m,
+        scene = 19,
+        x = 1631,
+        y = 23459
+    }
+}
+",,ByteArray,
+COM.CURL.WSDL.BNPriceWS,BNPrice,get-bnquote,"{Arguments ""0764549421""}",,,

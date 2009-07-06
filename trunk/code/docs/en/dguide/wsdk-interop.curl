@@ -226,7 +226,7 @@ represented as fields in the class.
 
 Elements specified in {xml-node xs:choice} model groups are represented using
 {docref any}, or {docref XMLElementValue} 
-(depending on whether the alternatives can be disciminated by their
+(depending on whether the alternatives can be discriminated by their
 type, or need to be tagged with their element name).
 
 When model groups have nested structure, the elements will
@@ -278,11 +278,11 @@ be specified using the {xml-node xsi:type} attribute.
 
 Some Curl types (primitives and enums) do not admit the null value.
 When the schema definition specifies an optional (or nillable) value
-for one of these types, they are wrapped wiht {docref Nullable}, and
+for one of these types, they are wrapped with {docref Nullable}, and
 the generated class provides accessors to query and assign the
 unspecified value:
 {itemize
-    {item {ctext {metavar<element-name>}-specifed?}}
+    {item {ctext {metavar<element-name>}-specified?}}
     {item {ctext unset-{metavar<element-name>}}
     }
 }
@@ -352,7 +352,7 @@ and addition of namespace prefixes or numeric suffixes.
 
 Furthermore, when code generation directive {ctext curlify-names? = true}
 is specified, names are converted to follow standard Curl conventions
-(using using hypenated lower case words for variables, and "CamelCase"
+(using hyphenated lower case words for variables, and "CamelCase"
 names for class names).
 
 

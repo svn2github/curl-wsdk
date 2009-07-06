@@ -411,12 +411,12 @@
     {ctext curlify-names? = true} is specified,
     names are converted to follow standard Curl conventions.
     Thus, for example,
-    the operation {monospace doSpellingSuggestion} woukd become
+    the operation {monospace doSpellingSuggestion} would become
     {monospace do-spelling-suggestion}.
 
     The service-package name is derived from the target-namespace,
     and the service-class name is derived from the service (or port) name.
-    Code genereration directives can be used to modify these defaults.
+    Code generation directives can be used to modify these defaults.
     
     Each operation corresponds to a method on the service class,
     with arguments corresponding to input message definitions,
@@ -517,7 +517,7 @@
     
     SOAP web services can signal errors using Fault messages.
     These result in Curl {docref SOAPFaultException} exceptions,
-    which contain the Fault contents.  Dependeing on SOAP version,
+    which contain the Fault contents.  Depending on SOAP version,
     one of {docref SOAP-1-1-FaultException}
     or {docref SOAP-1-2-FaultException} will be used.
     
@@ -572,7 +572,7 @@
             for identifiers in generated code. The default is {ctext false}.
             
             {ctext include-async-methods?}:
-            indicates whether asynchronous service methods will ge generated,
+            indicates whether asynchronous service methods will get generated,
             in addition to the usual synchronous methods. The default is {ctext false}.
             
             {ctext use-bignum-types?}:
@@ -655,7 +655,7 @@
         {item standard primitives correspond to Curl primitives}
         {item enumerated simple types correspond to Curl enums}
         {item complex types correspond to Curl classes}
-        {item repeating elements corrspond to Curl arrays}
+        {item repeating elements correspond to Curl arrays}
     }
     Otherwise, specialized Curl types are used:
     {itemize
@@ -670,7 +670,7 @@
             {ctext {metavar name}-specified?} getter}
         {item nested structures are represented using {docref XMLElementValues}
             as arrays of tagged values}
-        {item arbitrary structures (wildcards, mixed) are represebted
+        {item arbitrary structures (wildcards, mixed) are represented
             using {docref XDMElement}}
     }
         

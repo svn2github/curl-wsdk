@@ -1,0 +1,74 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open PhonebookRequest
+
+  field package _offset:{Nullable uint32} = null
+  {getter public {offset}:uint32
+    {return self._offset.value-or-default}
+  }
+  {setter public {offset val:uint32}:void
+    set self._offset = val
+  }
+  {getter public {offset-specified?}:bool
+    {return self._offset.value?}
+  }
+  {method public {unset-offset}:void
+    set self._offset = null
+  }
+  field package _count:{Nullable uint32} = null
+  {getter public {count}:uint32
+    {return self._count.value-or-default}
+  }
+  {setter public {count val:uint32}:void
+    set self._count = val
+  }
+  {getter public {count-specified?}:bool
+    {return self._count.value?}
+  }
+  {method public {unset-count}:void
+    set self._count = null
+  }
+  field public fileType:#String
+  field package _sortBy:{Nullable PhonebookSortOption} = null
+  {getter public {sortBy}:PhonebookSortOption
+    {return self._sortBy.value-or-default}
+  }
+  {setter public {sortBy val:PhonebookSortOption}:void
+    set self._sortBy = val
+  }
+  {getter public {sortBy-specified?}:bool
+    {return self._sortBy.value?}
+  }
+  {method public {unset-sortBy}:void
+    set self._sortBy = null
+  }
+  field public locId:#String
+  field public category:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      offset:uint32 = {uninitialized-value-for-type uint32},
+      count:uint32 = {uninitialized-value-for-type uint32},
+      fileType:#String = {uninitialized-value-for-type #String},
+      sortBy:PhonebookSortOption = {uninitialized-value-for-type PhonebookSortOption},
+      locId:#String = {uninitialized-value-for-type #String},
+      category:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? offset} then
+        set self.offset = offset}
+    {if {keyword-supplied? count} then
+        set self.count = count}
+    {if {keyword-supplied? fileType} then
+        set self.fileType = fileType}
+    {if {keyword-supplied? sortBy} then
+        set self.sortBy = sortBy}
+    {if {keyword-supplied? locId} then
+        set self.locId = locId}
+    {if {keyword-supplied? category} then
+        set self.category = category}
+  }
+
+}
+

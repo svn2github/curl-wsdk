@@ -15,39 +15,30 @@
 ||| limitations under the License.
 
 {curl 7.0, 6.0 manifest}
+{manifest PROJECT}
 
-{manifest COM.CURL.WSDL.GoogleSearch}
+||--|| all dguide material should use dguide root manifest
+||--{delegate-to COM.CURL.WSDK,
+||--    location = "../../../../../manifest.mcurl"}
 
-|| all dguide material should use dguide root manifest
-{delegate-to COM.CURL.WSDK,
-    location = "../../../../../manifest.mcurl"}
-
-{component file GoogleSearch.wsdl,
-    location = "GoogleSearch.wsdl"
+{delegate-to COM.CURL.WSDK}
+{component manifest COM.CURL.WSDK,
+    location = "curl://user-data/8/libraries/COM.CURL.WSDK.2.0/manifest.mcurl"
 }
-
+|| service package
+{component package COM.MICROSOFT.SCHEMAS.LIVESEARCH._2008._03.SEARCH.search,
+    location = "search/load.scurl"
+}
+{component file search.wsdl,
+    location = "search.wsdl"
+}
 {component file generate.curl,
     location = "generate.curl"
 }
-
+|| examples
 {component file start.curl,
     location = "start.curl"
 }
-
-{component file logo_sm.gif,
-    location = "logo_sm.gif"
+{component file ex-search.curl,
+    location = "ex-search.curl"
 }
-
-{component package GOOGLESEARCH.GoogleSearch,
-    location = "GoogleSearch/load.scurl"
-}
-
-
-
-
-
-
-
-
-
-

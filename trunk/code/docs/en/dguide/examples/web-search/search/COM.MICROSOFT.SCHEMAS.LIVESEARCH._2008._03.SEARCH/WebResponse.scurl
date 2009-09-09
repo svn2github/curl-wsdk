@@ -1,0 +1,50 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open WebResponse
+
+  field package _total:{Nullable uint32} = null
+  {getter public {total}:uint32
+    {return self._total.value-or-default}
+  }
+  {setter public {total val:uint32}:void
+    set self._total = val
+  }
+  {getter public {total-specified?}:bool
+    {return self._total.value?}
+  }
+  {method public {unset-total}:void
+    set self._total = null
+  }
+  field package _offset:{Nullable uint32} = null
+  {getter public {offset}:uint32
+    {return self._offset.value-or-default}
+  }
+  {setter public {offset val:uint32}:void
+    set self._offset = val
+  }
+  {getter public {offset-specified?}:bool
+    {return self._offset.value?}
+  }
+  {method public {unset-offset}:void
+    set self._offset = null
+  }
+  field public results:#{Array-of WebResult}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      total:uint32 = {uninitialized-value-for-type uint32},
+      offset:uint32 = {uninitialized-value-for-type uint32},
+      results:#{Array-of WebResult} = {uninitialized-value-for-type #{Array-of WebResult}}
+    }
+    {if {keyword-supplied? total} then
+        set self.total = total}
+    {if {keyword-supplied? offset} then
+        set self.offset = offset}
+    {if {keyword-supplied? results} then
+        set self.results = results}
+  }
+
+}
+

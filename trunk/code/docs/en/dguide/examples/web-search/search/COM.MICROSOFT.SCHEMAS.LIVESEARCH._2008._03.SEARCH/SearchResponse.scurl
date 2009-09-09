@@ -1,0 +1,66 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open SearchResponse
+
+  field public version:String = ""
+  field public query:#Query
+  field public spell:#SpellResponse
+  field public web:#WebResponse
+  field public image:#ImageResponse
+  field public relatedSearch:#RelatedSearchResponse
+  field public phonebook:#PhonebookResponse
+  field public video:#VideoResponse
+  field public instantAnswer:#InstantAnswerResponse
+  field public news:#NewsResponse
+  field public mobileWeb:#MobileWebResponse
+  field public translation:#TranslationResponse
+  field public errors:#{Array-of Error}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      version:String = {required-keyword "SearchResponse.version"} asa String,
+      query:#Query = {uninitialized-value-for-type #Query},
+      spell:#SpellResponse = {uninitialized-value-for-type #SpellResponse},
+      web:#WebResponse = {uninitialized-value-for-type #WebResponse},
+      image:#ImageResponse = {uninitialized-value-for-type #ImageResponse},
+      relatedSearch:#RelatedSearchResponse = {uninitialized-value-for-type #RelatedSearchResponse},
+      phonebook:#PhonebookResponse = {uninitialized-value-for-type #PhonebookResponse},
+      video:#VideoResponse = {uninitialized-value-for-type #VideoResponse},
+      instantAnswer:#InstantAnswerResponse = {uninitialized-value-for-type #InstantAnswerResponse},
+      news:#NewsResponse = {uninitialized-value-for-type #NewsResponse},
+      mobileWeb:#MobileWebResponse = {uninitialized-value-for-type #MobileWebResponse},
+      translation:#TranslationResponse = {uninitialized-value-for-type #TranslationResponse},
+      errors:#{Array-of Error} = {uninitialized-value-for-type #{Array-of Error}}
+    }
+    {if {keyword-supplied? version} then
+        set self.version = version}
+    {if {keyword-supplied? query} then
+        set self.query = query}
+    {if {keyword-supplied? spell} then
+        set self.spell = spell}
+    {if {keyword-supplied? web} then
+        set self.web = web}
+    {if {keyword-supplied? image} then
+        set self.image = image}
+    {if {keyword-supplied? relatedSearch} then
+        set self.relatedSearch = relatedSearch}
+    {if {keyword-supplied? phonebook} then
+        set self.phonebook = phonebook}
+    {if {keyword-supplied? video} then
+        set self.video = video}
+    {if {keyword-supplied? instantAnswer} then
+        set self.instantAnswer = instantAnswer}
+    {if {keyword-supplied? news} then
+        set self.news = news}
+    {if {keyword-supplied? mobileWeb} then
+        set self.mobileWeb = mobileWeb}
+    {if {keyword-supplied? translation} then
+        set self.translation = translation}
+    {if {keyword-supplied? errors} then
+        set self.errors = errors}
+  }
+
+}
+

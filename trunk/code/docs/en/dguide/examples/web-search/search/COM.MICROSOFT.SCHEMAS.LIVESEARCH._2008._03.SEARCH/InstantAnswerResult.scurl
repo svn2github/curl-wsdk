@@ -1,0 +1,38 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open InstantAnswerResult
+
+  field public contentType:#String
+  field public title:#String
+  field public clickThroughUrl:#String
+  field public url:#String
+  field public attribution:#String
+  field public instantAnswerSpecificData:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      contentType:#String = {uninitialized-value-for-type #String},
+      title:#String = {uninitialized-value-for-type #String},
+      clickThroughUrl:#String = {uninitialized-value-for-type #String},
+      url:#String = {uninitialized-value-for-type #String},
+      attribution:#String = {uninitialized-value-for-type #String},
+      instantAnswerSpecificData:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? contentType} then
+        set self.contentType = contentType}
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? clickThroughUrl} then
+        set self.clickThroughUrl = clickThroughUrl}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+    {if {keyword-supplied? attribution} then
+        set self.attribution = attribution}
+    {if {keyword-supplied? instantAnswerSpecificData} then
+        set self.instantAnswerSpecificData = instantAnswerSpecificData}
+  }
+
+}
+

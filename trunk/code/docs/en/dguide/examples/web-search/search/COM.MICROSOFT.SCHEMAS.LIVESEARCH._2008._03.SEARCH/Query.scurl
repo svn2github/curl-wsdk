@@ -1,0 +1,26 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open Query
+
+  field public searchTerms:#String
+  field public alteredQuery:#String
+  field public alterationOverrideQuery:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      searchTerms:#String = {uninitialized-value-for-type #String},
+      alteredQuery:#String = {uninitialized-value-for-type #String},
+      alterationOverrideQuery:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? searchTerms} then
+        set self.searchTerms = searchTerms}
+    {if {keyword-supplied? alteredQuery} then
+        set self.alteredQuery = alteredQuery}
+    {if {keyword-supplied? alterationOverrideQuery} then
+        set self.alterationOverrideQuery = alterationOverrideQuery}
+  }
+
+}
+

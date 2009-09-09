@@ -1,0 +1,18 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open TranslationResponse
+
+  field public results:#{Array-of TranslationResult}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      results:#{Array-of TranslationResult} = {uninitialized-value-for-type #{Array-of TranslationResult}}
+    }
+    {if {keyword-supplied? results} then
+        set self.results = results}
+  }
+
+}
+

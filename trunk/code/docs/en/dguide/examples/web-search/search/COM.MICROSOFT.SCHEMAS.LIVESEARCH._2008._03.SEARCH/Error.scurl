@@ -1,0 +1,66 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open Error
+
+  field package _code:{Nullable uint32} = null
+  {getter public {code}:uint32
+    {return self._code.value-or-default}
+  }
+  {setter public {code val:uint32}:void
+    set self._code = val
+  }
+  {getter public {code-specified?}:bool
+    {return self._code.value?}
+  }
+  {method public {unset-code}:void
+    set self._code = null
+  }
+  field public message:#String
+  field public parameter:#String
+  field public value:#String
+  field public helpUrl:#String
+  field public sourceType:#String
+  field package _sourceTypeErrorCode:{Nullable uint32} = null
+  {getter public {sourceTypeErrorCode}:uint32
+    {return self._sourceTypeErrorCode.value-or-default}
+  }
+  {setter public {sourceTypeErrorCode val:uint32}:void
+    set self._sourceTypeErrorCode = val
+  }
+  {getter public {sourceTypeErrorCode-specified?}:bool
+    {return self._sourceTypeErrorCode.value?}
+  }
+  {method public {unset-sourceTypeErrorCode}:void
+    set self._sourceTypeErrorCode = null
+  }
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      code:uint32 = {uninitialized-value-for-type uint32},
+      message:#String = {uninitialized-value-for-type #String},
+      parameter:#String = {uninitialized-value-for-type #String},
+      value:#String = {uninitialized-value-for-type #String},
+      helpUrl:#String = {uninitialized-value-for-type #String},
+      sourceType:#String = {uninitialized-value-for-type #String},
+      sourceTypeErrorCode:uint32 = {uninitialized-value-for-type uint32}
+    }
+    {if {keyword-supplied? code} then
+        set self.code = code}
+    {if {keyword-supplied? message} then
+        set self.message = message}
+    {if {keyword-supplied? parameter} then
+        set self.parameter = parameter}
+    {if {keyword-supplied? value} then
+        set self.value = value}
+    {if {keyword-supplied? helpUrl} then
+        set self.helpUrl = helpUrl}
+    {if {keyword-supplied? sourceType} then
+        set self.sourceType = sourceType}
+    {if {keyword-supplied? sourceTypeErrorCode} then
+        set self.sourceTypeErrorCode = sourceTypeErrorCode}
+  }
+
+}
+

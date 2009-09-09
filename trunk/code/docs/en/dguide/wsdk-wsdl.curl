@@ -180,12 +180,12 @@
     Sample Applets
 }
 {heading level = 3,
-    Google Search
+    Web Search
 }
 {paragraph
-    This {link href = {url "examples/google/start.curl"}, example} uses the 
-    {link href = {url "http://code.google.com/apis/soapsearch/reference.html"}, Google Search Service}.
-    The {link href = {url "curl://edit/" & {url "examples/google/project.cprj"}.name},
+    This {link href = {url "examples/web-search/start.curl"}, example} uses the 
+    {link href = {url "http://www.bing.com/developers"}, Bing Search Service}.
+    The {link href = {url "curl://edit/" & {url "examples/web-search/project.cprj"}.name},
     project file} contains the implementation.    
     
     {Frame background = "beige",
@@ -205,35 +205,28 @@
         {item asynchronous calls}
     }
     
-    Processing the {link href = {url "examples/google/GoogleSearch.wsdl"}, WSDL file}
+    Processing the {link href = {url "examples/websearch/search.wsdl"}, WSDL file}
     yields a service class including the method 
-    {monospace doGoogleSearch}, which is used
+    {monospace search}, which is used
     to request search results.
     
     {code-box
         {curl-code
-            {method public {doGoogleSearch
-                               key:#String, 
-                               q:#String, 
-                               start:int, 
-                               maxResults:int, 
-                               filter:bool, 
-                               restrict:#String, 
-                               safeSearch:bool, 
-                               lr:#String, 
-                               ie:#String, 
-                               oe:#String
-                           }:(_return:#GoogleSearchResult)
+            {method public {search
+                               parameters:SearchRequest
+                           }:SearchResponse
             }}}    
     
-    The positional parameters correspond to search options,
-    and are required.  It would be more natural in Curl
-    for such options to be keyword parameters, with default values,
+    The parameters argument specifies search options,
+    some required, many optional, and nested.
+    It would be natural in Curl to consolidate commmon
+    options as parameters, with default values,
     so you may choose to provide a wrapper that does so.
     
-    The result is a {monospace GoogleSearchResult}, which has
-    a {monospace result-elements} field, containing
-    an {ctext {Array-of ResultElement}}.  It is common
+    The response is a {ctext SearchResponse}, 
+    which includes a {ctext web} field, containing
+    a {ctext results} field, containing
+    an {ctext {Array-of WebResult}}.  It is common
     for "result sets" to be represented as arrays of structures.
     Classes corresponding to these datatypes are created
     by {docref generate-wsdl-code}, and can be seen using
@@ -245,51 +238,36 @@
     
     {code-box
         {curl-code
-            {define-proc {google-search 
+            {define-proc {web-search 
                              query:String,
-                             start:int = 0,
-                             max-results:int = 10,                
-                             filter?:bool = false,
-                             restrict:#String = null,
-                             safe-search?:bool = false,
-                             language-restrict:#String = null,
-                             input-encoding:#String = null,
-                             output-encoding:#String = null         
-                         }:(RecordSet, GoogleSearchResult)
-                
-                || get the results (most they allow at a time is 10)
-                def result =
-                    {non-null
-                        {gss.doGoogleSearch
-                            gss-key, query,
-                            start, {min 10, max-results},
-                            filter?, restrict, safe-search?, language-restrict, 
-                            input-encoding, output-encoding}}
-                
-                || construct recordset
-                let result-recordset:RecordSet =
-                    {{RecordSet-for ResultElement} 
-                        {splice result.resultElements}}
-                
-                || return
-                {return result-recordset, result}
-            }}}
+                             offset:uint = 0,
+                             count:uint = 10                
+                         }:(RecordSet, SearchResponse)
+                def request = 
+                    {SearchRequest.from-keywords 
+                        query = query, 
+                        appId = APPID,
+                        web = {WebRequest.from-keywords count = count, offset = offset},
+                        sources = {{Array-of SourceType} SourceType.web}}
+                def response = {SERVICE.search request}
+                def results = {non-null response.web.results} 
+                def rs = {{RecordSet-for WebResult}}
+                {with rs.batch-events? = true do
+                    {for result in results do
+                        {rs.append result}}
+                    {rs.commit}}            
+                {return rs, response}
+            }
+        }}
     
     This gives an 
-    {link href = {url "examples/ex-google-search.curl"}, 
+    {link href = {url "examples/ex-search.curl"}, 
     immediate visualization} of the results,
     which may then be customized using standard Curl techniques.
     
     The service API is constructed to allow accumulation of results incrementally, 
     from the (possibly very large) set of results, 
-    using the {monospace start} and {monospace max-results} parameters.
-    However, it will return no more than 10 at a time.
-    
-    (Calling it with more will yield a SOAP Fault.    
-    {small {monospace SOAP-1-1-FaultException: 
-    {br}SOAP 1.1 Fault (Server): 
-    {br} Exception from service object: 
-    maxResults must be 10 or less.}})
+    using the {monospace offset} and {monospace count} parameters.
 
     The client application can easily make multiple calls,
     and accumulate more results into the results collection.
@@ -297,26 +275,20 @@
     the application is immediately responsive,
     while the complete response is being obtained behind the scenes.
     
-    A {docref WSDLHTTPRPCPostClient} always contains asynchronous 
-    versions of each service method, in this case:
+    A {docref WSDLHTTPRPCPostClient} may contains asynchronous 
+    versions of each service method, 
+    (per {docref generate-wsdl-package} {ctext include-async-methods?} parameter),
+    in this case:
     
     {code-box margin = 6pt,
         {curl-code
-            {method public {async-doGoogleSearch 
-                               key:#String, 
-                               q:#String, 
-                               start:int, 
-                               maxResults:int, 
-                               filter:bool, 
-                               restrict:#String, 
-                               safeSearch:bool, 
-                               lr:#String, 
-                               ie:#String, 
-                               oe:#String, 
-                               event-handler:EventHandler,
+            {method public {async-search 
+                               parameters:SearchRequest, 
+                               event-handler:EventHandler, 
                                ...:EventHandler
-                           }:SOAPHTTPRPCPostAsyncWorker
-            }}}
+                           }:SOAPHTTPRPCPostAsyncWorker  
+            }
+        }}        
     
     This allows the results to be processed when they become available
     (or for requests to be cancelled after some delay).
@@ -325,12 +297,15 @@
         {curl-code
             {on e:SOAPHTTPRPCPostAsyncEvent do
                 {if-non-null responses = e.responses then
-                    def next = responses[0] asa GoogleSearchResult
+                    def next = responses[0] asa SearchResponse
+                    def results = {non-null next.web.results}
                     || append results to recordset
-                    def n = next.result-elements.size
+                    def n = results.size
                     {if n > 0 then
-                        {for element in next.resultElements do
-                            {result-recordset.append element}}}
+                        {with rs.batch-events? = true do
+                            {for result in results do
+                                {rs.append result}}
+                            {rs.commit}}}
                 }}}}
 }
 
@@ -356,7 +331,7 @@
     
     This table shows the correspondence between
     elements of the WSDL definition and the Curl equivalent,
-    using examples in the GoogleSearch service example above.
+    using examples in the web search service example above.
     
     {Table
         columns = 4,
@@ -371,34 +346,33 @@
             {italic example}},
         {row-prototype 
             {text service},
-            {xml-node <service name="GoogleSearchService">},
+            {xml-node <service name="LiveSearchService">},
             {text package},
-            {ctext GOOGLESEARCH.GoogleSearchService}},
+            {ctext COM.MICROSOFT.SCHEMAS.LIVESEARCH._2008._03.SEARCH}},
         {row-prototype 
             {text port},
-            {xml-node <service name="GoogleSearchServicePort">},
+            {xml-node <service name="LiveSearchServicePort">},
             {text class},
-            {curl-code {define-class GoogleSearchService ...}}},
+            {curl-code {define-class LiveSearchService ...}}},
         {row-prototype 
             {text operation},
-            {xml-node <operation name="doSpellingSuggestion">},
+            {xml-node <operation name="Search">},
             {text method},
-            {curl-code {method {doSpellingSuggestion ...}}}},
+            {curl-code {method {search ...}}}},
         {row-prototype 
             {text input},
-            {xml-node <message name="doSpellingSuggestion">{br}
-                \ <part name="key" type="xsd:string"/>{br}
-                \ <part name="phrase" type="xsd:string"/>{br}
+            {xml-node <message name="SearchRequestMessage">{br}
+                \ <part name="parameters"  element="tns:SearchRequest"/>{br}
                 </message>},
             {text argument},
-            {curl-code key:String, phrase:String}},
+            {curl-code parameters:SearchRequest}},
         {row-prototype 
             {text output},
-            {xml-node <message name="doSpellingSuggestion">{br}
-                \ <part name="return" type="xsd:string"/>{br}
+            {xml-node <message name="SearchResponseMessage">{br}
+                \ <part name="parameters" element="tns:SearchResponse"/>{br}
                 </message>},
             {text return value},
-            {curl-code :(String)}},
+            {curl-code :(parameters:SearchResponse)}},
         {row-prototype 
             {text primitive type},
             {xml-node xsd:boolean},
@@ -406,9 +380,9 @@
             {curl-code bool}},
         {row-prototype 
             {text complexType},
-            {xml-node <xsd:complexType name="DirectoryCategory">},
+            {xml-node <xsd:complexType name="SearchRequest">},
             {text type},
-            {curl-code {define-class DirectoryCategory ...}}}
+            {curl-code {define-class SearchRequest ...}}}
     }
     
     Usually each service contains a single port,
@@ -619,21 +593,26 @@
     corresponding to namespaces and types defined by the WSDL file.
 
     For example, this is the directory structure produced by
-    {link href = {url "curl://edit/" & {url "examples/google/project.cprj"}.name},
-    Google Search example project}.
+    {link href = {url "curl://edit/" & {url "examples/web-search/project.cprj"}.name},
+    Web Search example project}.
 
 
     {itemize font-size = 9pt,
-        {item {monospace GoogleSearch/} {em-dash} service directory}
+        {item {monospace search/} {em-dash} service directory}
         {itemize
             {item {ctext load.scurl} {em-dash} package definition }
-            {item {ctext GoogleSearch.scurl} {em-dash} service class}
-            {item {ctext GOOGLESEARCH/} {em-dash} namespace}
+            {item {ctext LiveSearch.scurl} {em-dash} service class}
+            {item {ctext COM.MICROSOFT.SCHEMAS.LIVESEARCH._2008._03.SEARCH/} {em-dash} namespace}
             {itemize
                 {item {ctext load.scurl} {em-dash} includes each type}
-                {item {ctext DirectoryCategory.scurl} {em-dash} class}
-                {item {ctext GoogleSearchResult.scurl} {em-dash} class}
-                {item {ctext ResultElement.scurl} {em-dash} class}
+                {item {ctext ...} {em-dash} class}
+                {item {ctext SearchRequest.scurl} {em-dash} class}
+                {item {ctext SearchResponse.scurl} {em-dash} class}
+                {item {ctext ...} {em-dash} class}
+                {item {ctext WebhRequest.scurl} {em-dash} class}
+                {item {ctext WebResponse.scurl} {em-dash} class}
+                {item {ctext WebhResult.scurl} {em-dash} class}
+                {item {ctext ...} {em-dash} class}
             }
         }
     }

@@ -15,169 +15,151 @@
 ||| limitations under the License.
 
 {curl 7.0, 6.0 applet}
-            
-{applet manifest = "manifest.mcurl"}
+{applet manifest = "manifest.mcurl",
+    {compiler-directives careful? = true}
+}
+{import * from COM.MICROSOFT.SCHEMAS.LIVESEARCH._2008._03.SEARCH.search}
 {import * from COM.CURL.WSDK.RECORDSET-FOR}
 {import * from COM.CURL.WSDK.SOAP}
-{import * from GOOGLESEARCH.GoogleSearch}
 
+|| instantiate the service class
+{def SERVICE = 
+    {LiveSearchService}
+}
 || developed applications will need their own key
 || you can use this for a few tests while
 || you're getting your own key
-
-{let gss-key:String = 
-    "uNhT2O/NtQgF69QyAIrCYybjfkB4dVH5"
+{def APPID = 
+    "7255C27169150569FD65DC4EA7B1583D7A5E8232"
 }
-{let gss:GoogleSearchService = 
-    {GoogleSearchService}
-}
-
-|| keyword arguments for 'optional' parameters
-{define-proc {do-google-search 
+|| simplified parameters
+{define-proc {do-web-search 
                  query:String,
-                 start:int = 0,
-                 max-results:int = 10,                 
-                 filter?:bool = false,
-                 restrict:#String = null,
-                 safe-search?:bool = false,
-                 language-restrict:#String = null,
-                 input-encoding:#String = null,
-                 output-encoding:#String = null                 
-             }:GoogleSearchResult
-    def gss = {GoogleSearchService}
-    def result =
-        {gss.doGoogleSearch        
-            gss-key, query, 
-            start, max-results, 
-            filter?, restrict, safe-search?, 
-            language-restrict, input-encoding, output-encoding}
-    {return {non-null result}}
+                 offset:uint = 0,
+                 count:uint = 10                
+             }:SearchResponse
+    def request = 
+        {SearchRequest.from-keywords 
+            query = query, 
+            appId = APPID,
+            web = {WebRequest.from-keywords count = count, offset = offset},
+            sources = {{Array-of SourceType} SourceType.web}}
+    def response = {SERVICE.search request}
+    {return response}
 }
-
 || accumulate results
-{define-proc {google-search 
+{define-proc {web-search 
                  query:String,
-                 start:int = 0,
-                 max-results:int = 50,                
-                 filter?:bool = false,
-                 restrict:#String = null,
-                 safe-search?:bool = false,
-                 language-restrict:#String = null,
-                 input-encoding:#String = null,
-                 output-encoding:#String = null         
-             }:(RecordSet, GoogleSearchResult)
+                 offset:uint = 0,
+                 count:uint = 10        
+             }:(RecordSet, SearchResponse)
     
-    def gss = {GoogleSearchService}
     || recordset for organizing results
-    let result-recordset =
-        {{RecordSet-for ResultElement}}
+    def rs = {{RecordSet-for WebResult}}
     
-    || get first 10 (most they allow)
-    def result =
-        {non-null
-            {gss.doGoogleSearch  
-                gss-key, query,
-                start, {min 10, max-results}, 
-                filter?, restrict, safe-search?, language-restrict, 
-                input-encoding, output-encoding}}
-    set max-results = 
-        {min max-results, result.estimatedTotalResultsCount}
-    {for element in result.resultElements do
-        {result-recordset.append element}}
+    || get first chunk 
+    def icount = 10 asa uint
+    def response =
+        {do-web-search query,
+            offset = offset, 
+            count = {min icount, count}}
+    def results = {non-null response.web.results} 
+    || TODO: what if its unspecified?
+    set count = {min count, response.web.total}
+    {with rs.batch-events? = true do
+        {for result in results do
+            {rs.append result}}
+        {rs.commit}}
     
     || incrementally get more
-    {while result-recordset.size < max-results do
-        def size = result-recordset.size
+    {while rs.size < count do
+        def size = rs.size asa uint
         def from = size
-        def count = {min 10, max-results - size}
+        def ncount = {min icount, count - size}
         def next = 
-            {non-null
-                {gss.doGoogleSearch
-                    gss-key, query,
-                    from, count, 
-                    filter?, restrict, safe-search?, language-restrict,
-                    input-encoding, output-encoding}}
+            {do-web-search query,
+                offset = offset,
+                count = ncount}
         || merge with results
-        def n = next.resultElements.size
+        def results = {non-null response.web.results} 
+        def n = results.size
         {if n > 0 then
-            {for element in result.resultElements do
-                {result-recordset.append element}}}
+            {with rs.batch-events? = true do
+                {for result in results do
+                    {rs.append result}}
+                {rs.commit}}}
         || got less than requested ==> must be done
         {if n < count then
             {break}}
-    }    
+        }
     
     || return accumulated results
-    {return result-recordset, result}
+    {return rs, response}
 }
 || incremental results
-{define-proc {async-google-search
-                 query:String,
-                 start:int = 0,
-                 max-results:int = 50,                
-                 filter?:bool = false,
-                 restrict:#String = null,
-                 safe-search?:bool = false,
-                 language-restrict:#String = null,
-                 input-encoding:#String = null,
-                 output-encoding:#String = null         
-             }:(RecordSet, GoogleSearchResult)
+{define-proc {async-web-search
+                     query:String,
+                     offset:uint = 0,
+                     count:uint = 10       
+             }:(RecordSet, SearchResponse)
     
-    def result-recordset =
-        {{RecordSet-for ResultElement}}
+    def rs = {{RecordSet-for WebResult}}
     
-    || get first 10 (most they allow)
-    def result =
-        {non-null
-            {gss.doGoogleSearch
-                gss-key, query,
-                start, {min 10, max-results},
-                filter?, restrict, safe-search?, language-restrict, 
-                input-encoding, output-encoding}}
-    set max-results = 
-        {min max-results, result.estimatedTotalResultsCount}
-    {for element in result.resultElements do
-        {result-recordset.append element}}
-
+    || get first chunk
+    def icount = 10 asa uint
+    def response =
+        {do-web-search query,
+            offset = offset, 
+            count = {min icount, count}}
+    def results = {non-null response.web.results}
+    set count = {min count, response.web.total}
+    {with rs.batch-events? = true do
+        {for result in results do
+            {rs.append result}}
+        {rs.commit}}
+    
     || get more, asynchronously    
     let extend-results:{proc-type {}:void} =
         {proc {}:void
-            def size = result-recordset.size
-            {if size < max-results then
+            def size = rs.size asa uint
+            {if size < count then
                 def from = size
-                def count = {min 10, max-results - size}
+                def ncount = {min icount, count - size}
                 def handler =
                     {on e:SOAPHTTPRPCPostAsyncEvent do
                         {if-non-null responses = e.responses then
-                            def next = responses[0] asa GoogleSearchResult
+                            def next = responses[0] asa SearchResponse
+                            def results = {non-null next.web.results}
                             || append results to recordset
-                            def n = next.resultElements.size
+                            def n = results.size
                             {if n > 0 then
-                                {for element in next.resultElements do
-                                    {result-recordset.append element}}}
+                                {with rs.batch-events? = true do
+                                    {for result in results do
+                                        {rs.append result}}
+                                    {rs.commit}}}
                             || request more if necessary
-                            def need = max-results - result-recordset.size
+                            def need = count - rs.size asa uint
                             {if need > 0 and
                                 || we must be done if got less than requested
-                                n == count 
+                                n == ncount 
                              then
                                 {extend-results}}
                          else
                             || TODO: notify of failure
                             {dump e.exception, e.canceled?}}}
                 || TODO: cancel after some time limit
-                def worker =
-                    {gss.async-doGoogleSearch
-                        gss-key, query,
-                        from, count,
-                        filter?, restrict, safe-search?, language-restrict,
-                        input-encoding, output-encoding,
-                        handler}
+                def request = 
+                    {SearchRequest.from-keywords 
+                        query = query, 
+                        appId = APPID,
+                        web = {WebRequest.from-keywords count = ncount, offset = from},
+                        sources = {{Array-of SourceType} SourceType.web}}
+                def worker = {SERVICE.async-search request, handler}
             }}
     {extend-results}
     
     || return initial results
-    {return result-recordset, result}
+    {return rs, response}
 }
 || strip html markup
 {define-proc {get-text x:any}:String
@@ -196,6 +178,7 @@
         {format out = buf, "%s", x}}
     {return {buf.to-String}}
 }
+|| specialized cell to show entire contents
 {define-class public ExposeGridCell
   {inherits StandardRecordGridCell}  
   field display:ExposeFrame = 
@@ -217,6 +200,7 @@
         {self.display.add ref}}
   }
 }
+|| specialized cell to show link
 {define-class public LinkGridCell
   {inherits ExposeGridCell}  
   {constructor public {default}
@@ -231,6 +215,7 @@
                 {value ref}}}}
   }
 }
+|| applet layout
 {document-style PlainDocument}
 {set-document-properties 
     hstretch? = true, 
@@ -242,20 +227,23 @@
         {RecordGrid 
             width = {add-stretch},
             height = {add-stretch},
+            automatic-columns? = false,
             {RecordGridColumn "title",
                 width = 2in,
                 cell-spec = ExposeGridCell,
                 format-spec = get-text},
-            {RecordGridColumn "uRL",
+            {RecordGridColumn "url",
                 header-spec = "URL",
                 cell-spec = LinkGridCell,
                 width = 2in},
-            {RecordGridColumn "snippet",
+            {RecordGridColumn "description",
                 width = 3in,
                 cell-spec = ExposeGridCell,
-                format-spec = get-text}}
+                format-spec = get-text},
+            {RecordGridColumn "dateTime",
+                width = 1.5in}}
     let subject:String = "Curl Web 2.0"
-    let max-results:int = 10
+    let count:uint = 10
     def display =
         {VBox
             hstretch? = true,
@@ -263,7 +251,7 @@
             {HBox
                 valign = "top",
                 {VBox
-                    {bold WSDK Google Search Web Service},
+                    {bold WSDK Search Service},
                     {Table 
                         columns = 2,
                         {text Subject},
@@ -274,22 +262,23 @@
                                 set subject = c.value}},
                         {text Max Results},
                         {DropdownList 1, 5, 10, 20, 50, 100,
-                            value = max-results,
+                            value = count,
                             vorigin = 70%,
                             {on ValueFinished at c:DropdownList do
-                                set max-results = c.value}},
+                                set count = c.value asa uint}},
                         {skip},
                         {CommandButton label = {message Submit},
                             {on Action do
                                 {with-busy-cursor
                                     def (rs, result) =
-                                        {async-google-search subject,
-                                            max-results = max-results} 
+                                        {async-web-search subject,
+                                            count = count} 
                                     set rg.user-data = result
                                     set rg.record-source = rs
                                 }}}}},
                 {Fill},
-                {image source = {url "logo_sm.gif"}}},
+                {text Results from {link href = {url "http://www.live.com"}, bing}}
+            },
             {hrule height = 3pt},
             rg}    
     display

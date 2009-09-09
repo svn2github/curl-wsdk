@@ -1,0 +1,22 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open NewsCollection
+
+  field public name:#String
+  field public newsArticles:#{Array-of NewsArticle}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      name:#String = {uninitialized-value-for-type #String},
+      newsArticles:#{Array-of NewsArticle} = {uninitialized-value-for-type #{Array-of NewsArticle}}
+    }
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? newsArticles} then
+        set self.newsArticles = newsArticles}
+  }
+
+}
+

@@ -1,0 +1,786 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open WSDLNode
+  field public constant node:WSDLDOMNode
+  {constructor public {default node:WSDLDOMNode}
+    set self.node = node
+  }
+}
+{define-class public open WSDLDocumentedNode
+  {inherits WSDLNode}
+  field public-get protected-set documentation:String = ""
+
+  {constructor public {default node:WSDLDOMNode}
+    {construct-super node}
+  }
+
+  {method public open {append-documentation-node node:WSDLDOMNode}:void
+    let constant buf:StringBuf = {new StringBuf, self.documentation}
+    {if not buf.empty? then
+        {buf.append '\n'}
+    }
+    {node.dump-text buf}
+    set self.documentation = {buf.to-String}
+  }
+}
+
+{define-class public open WSDLMessage {inherits WSDLDocumentedNode}
+  field public-get protected-set name:String
+  field public-get protected-set parts:{Array-of WSDLMessagePart} =
+    {new {Array-of WSDLMessagePart}}
+  field public constant wsdl:WSDL
+
+  {constructor public {default
+                          name:String,
+                          wsdl:WSDL,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.name = name
+    set self.wsdl = wsdl
+  }
+
+  {method public open {parts-as-params 
+                          soap-style:WSDLSOAPStyle, 
+                          operation:XMLName, 
+                          parts:#StringArray = null,
+                          || looser nullability if true
+                          for-response?:bool = false
+                      }:(WSDLParamArray, operation:#XMLName)
+    let constant params:WSDLParamArray = {new WSDLParamArray}
+|| Isn't element ok?  We can pull type in, but what is param's name then?
+|| WSDL SPEC mixes element and type freely.
+    let constant name-scope:String =
+        operation.local-name
+    let return-operation:#XMLName
+    {if soap-style == WSDLSOAPStyle.rpc then
+        || == RPC style
+        {for part in self.parts do
+            {if-non-null parts then
+                || if part isn't in the list, then just skip this part
+                {if {parts.find part.name} < 0 then
+                    {continue}
+                }
+            }
+            || FIXME: if has element instead, do those as elements under
+            || parameter...(use NameFields maybe)
+            || Or could do them as the type is element.type
+            {if part.element != null then
+                {wsdl-exception node = part.node,
+                    {hlmessage message parts with an element are not supported for rpc style.}
+                }
+            }
+            let constant type:WSDLSchemaType = 
+                {if-non-null pt = part.type then
+                    pt
+                 else
+                    {wsdl-exception node = part.node,
+                        {hlmessage message parts without a type are not supported for rpc style.}
+                    }
+                }
+            let constant element-name:#XMLName =
+                {if-non-null xml-name = type.xml-name then
+                    {self.wsdl.type-to-element-name.get-if-exists xml-name}
+                 else
+                    null
+                }
+            {params.append
+                {WSDLSOAPParam
+                    {new XMLName, "", part.name},
+                    {self.wsdl.curl-namer.get-curl-name
+                        {new XMLName, "", part.name},
+                        scope = name-scope,
+                        curl-type = "parameter"
+                    },
+                    type,
+                    element-name,
+                    type.nullable?
+                }
+            }
+        }
+        set return-operation = operation
+     else        
+        || == document style
+        || FIXME: do them as proper args otherwise
+        {if self.parts.size == 1 and
+            {self.parts[0].element.xml-name.local-name.prefix? operation.local-name}
+         then
+            || There is a single part with a "type" attr
+            let constant part:WSDLMessagePart = self.parts[0]
+
+            {if-non-null parts then
+                || if part isn't in the list, then nothing to do
+                {if {parts.find part.name} < 0 then
+                    {return params, null}
+                }
+            }
+
+            || FIXME: WSDL 1.2 has a proposed behavior for this case
+            {if part.type != null then
+                {wsdl-exception node = part.node,
+                    {hlmessage message parts with a type are not supported for document style.}
+                }
+            }
+            {type-switch part.element.type
+             case ct:WSDLSchemaClassType do
+                {for e key i in ct.elements do
+                    let constant element-name:#XMLName =
+                        {if-non-null xml-name = e.type.xml-name then
+                            {self.wsdl.type-to-element-name.get-if-exists xml-name}
+                         else
+                            e.xml-name
+                        }
+                    let param-name:XMLName =
+                        {if-non-null pn = e.xml-name then
+                            pn
+                         else
+                            {new XMLName, "", "param" & i}
+                        }
+                    {params.append
+                        {WSDLSOAPParam
+                            param-name,
+                            {self.wsdl.curl-namer.get-curl-name
+                                param-name,
+                                scope = name-scope,
+                                curl-type = "parameter"
+                            },
+                            e.type,
+                            element-name,
+                            (e.nillable? or
+                             (for-response? and e.min-occurs == 0)),
+                            content-types = e.expected-content-types
+                        }
+                    }
+                }
+                set return-operation = part.element.xml-name
+                
+                || TODO: refactor this to avoid duplication
+                
+             case ct:WSDLSchemaPrimitiveType do
+                let constant part-name:XMLName = {new XMLName, "", part.name}
+                let constant element-name:XMLName =
+                    {if-non-null element-name = part.element.xml-name
+                     then element-name
+                     else part-name}
+                {params.append
+                    {WSDLSOAPParam
+                        element-name,
+                        {self.wsdl.curl-namer.get-curl-name
+                            part-name,
+                            scope = name-scope,
+                            curl-type = "parameter"
+                        },
+                        part.element.type,
+                        element-name,
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0)),
+                        content-types = part.element.expected-content-types
+                    }
+                }
+             case ct:WSDLSchemaArrayType do
+                let constant part-name:XMLName = {new XMLName, "", part.name}
+                let constant element-name:XMLName =
+                    {if-non-null element-name = part.element.xml-name
+                     then element-name
+                     else part-name}
+                {params.append
+                    {WSDLSOAPParam
+                        element-name,
+                        {self.wsdl.curl-namer.get-curl-name
+                            part-name,
+                            scope = name-scope,
+                            curl-type = "parameter"
+                        },
+                        part.element.type,
+                        element-name,
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0))
+                    }
+                }
+             case ct:WSDLSchemaXMLDocumentType do
+                let constant part-name:XMLName = {new XMLName, "", part.name}
+                let constant element-name:XMLName =
+                    {if-non-null element-name = part.element.xml-name
+                     then element-name
+                     else part-name}
+                {params.append
+                    {WSDLSOAPParam
+                        element-name,
+                        {self.wsdl.curl-namer.get-curl-name
+                            part-name,
+                            scope = name-scope,
+                            curl-type = "parameter"
+                        },
+                        part.element.type,
+                        element-name,
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0))
+                    }
+                }
+             else
+                || TODO: why are other types disallowed ?
+                {wsdl-exception node = part.node,
+                    {hlmessage
+                        Element type '{type-of part.element.type}'
+                        not supported in document style.}
+                }
+            }
+         else
+            || TODO test this.
+            {for part in self.parts do
+                {if-non-null parts then
+                    || if part isn't in the list, then just skip this part
+                    {if {parts.find part.name} < 0 then
+                        {continue}
+                    }
+                }
+                || NOTE: type->name mapping is not 1:1
+                let constant element-name:#XMLName =
+                    part.element.xml-name
+                let constant element-type:WSDLSchemaType = 
+                    part.element.type
+                {params.append
+                    {WSDLSOAPParam 
+                        || recommended change
+                        {if-non-null element-name
+                         then element-name
+                         else {new XMLName, "", part.name}},
+                        {self.wsdl.curl-namer.get-curl-name
+                            {new XMLName, "", part.name},
+                            scope = name-scope,
+                            curl-type = "parameter"
+                        },
+                        element-type,
+                        element-name,
+                        (part.element.nillable? or
+                         (for-response? and part.element.min-occurs == 0)),
+                        content-types = part.element.expected-content-types
+                    }
+                }
+            }
+            set return-operation = null
+        }
+    }
+    {return params, return-operation}
+  }
+}
+
+
+{define-class public open WSDLMessagePart {inherits WSDLDocumentedNode}
+  field public-get protected-set name:String
+  field public-get protected-set element:#WSDLSchemaElement
+  field public-get protected-set type:#WSDLSchemaType
+  field public-get protected-set message:#WSDLMessage
+
+  {constructor public {default
+                          name:String,
+                          element:#WSDLSchemaElement,
+                          type:#WSDLSchemaType,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.name = name
+    set self.element = element
+    set self.type = type
+  }
+}
+
+{define-class public open WSDLPortType {inherits WSDLDocumentedNode}
+  field public-get protected-set name:String
+  field public-get protected-set operations:{Array-of WSDLPortOperation} =
+      {new {Array-of WSDLPortOperation}}
+  field public constant wsdl:WSDL
+
+  {constructor public {default name:String, wsdl:WSDL, node:WSDLDOMNode}
+    {construct-super node}
+    set self.wsdl = wsdl
+    set self.name = name
+  }
+
+  {method public open {find-port-operation
+                          binding-operation:WSDLBindingOperation
+                      }:#WSDLPortOperation
+    {for op in self.operations do
+        {if op.name == binding-operation.name and
+            (op.input == binding-operation.input or
+             op.input.name == binding-operation.input.name or
+             binding-operation.input.name == null) and
+            (op.output == binding-operation.output or
+             op.output.name == binding-operation.output.name or
+             binding-operation.output.name == null)
+         then
+            {return op}
+        }
+    }
+    {return null}
+  }
+}
+
+{define-enum public WSDLPortOperationTransmissionPrimitive
+    one-way, || input only
+    request-response, || input then output
+    solicit-response, || output then input
+    notification || output only
+}
+
+{define-class public open WSDLPortOperation {inherits WSDLDocumentedNode}
+  field public constant name:String
+  field public constant parameter-order:#StringArray
+  field public input:#WSDLPortOperationMessage
+  field public output:#WSDLPortOperationMessage
+  field public faults:#{Array-of WSDLPortOperationMessage}
+  field public port-type:#WSDLPortType
+  field public transmission-primitive:WSDLPortOperationTransmissionPrimitive
+
+  {constructor public {default
+                          name:String,
+                          parameter-order:#StringArray,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.name = name
+    set self.parameter-order = parameter-order
+  }
+}
+
+{define-enum public WSDLKindOfMessage
+    input,
+    output,
+    fault
+}
+
+{define-class public open WSDLPortOperationMessage {inherits WSDLDocumentedNode}
+  field public constant name:#String
+  field public constant message:WSDLMessage
+  field public constant kind:WSDLKindOfMessage
+  field public operation:#WSDLPortOperation
+
+  {constructor public {default
+                          name:#String,
+                          message:WSDLMessage,
+                          kind:WSDLKindOfMessage,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.name = name
+    set self.message = message
+    set self.kind = kind
+  }
+}
+{define-enum public MTOMAvailability
+    disable = 0,
+    enable = 1,
+    required = 2
+}
+
+{define-class public open WSDLBinding {inherits WSDLDocumentedNode}
+  field public constant name:String
+  field public constant type:WSDLPortType
+  field public extensions:{Array-of WSDLExtensionElement} =
+      {new {Array-of WSDLExtensionElement}}
+  field public operations:{Array-of WSDLBindingOperation} =
+      {new {Array-of WSDLBindingOperation}}
+  field public soap-version:SOAPVersion = SOAPVersion.soap-1-1
+  field public mtom-availability:MTOMAvailability = MTOMAvailability.disable
+
+  {constructor public {default name:String, type:WSDLPortType, node:WSDLDOMNode}
+    {construct-super node}
+    set self.name = name
+    set self.type = type
+  }
+}
+
+{define-class public open WSDLBindingOperation {inherits WSDLDocumentedNode}
+  field public constant name:String
+  field public extensions:{Array-of WSDLExtensionElement} =
+      {new {Array-of WSDLExtensionElement}}
+  field public input:#WSDLBindingOperationMessage
+  field public output:#WSDLBindingOperationMessage
+  field public faults:#{Array-of WSDLBindingOperationMessage} =
+      {new {Array-of WSDLBindingOperationMessage}}
+  field public binding:#WSDLBinding
+  field private _mtom-availability:MTOMAvailability = MTOMAvailability.disable
+
+  {constructor public {default name:String, node:WSDLDOMNode}
+    {construct-super node}
+    set self.name = name
+  }
+  {getter public open {mtom-availability}:MTOMAvailability
+    {if-non-null binding = self.binding then
+        {if binding.mtom-availability.value > self._mtom-availability.value then
+            {return binding.mtom-availability}
+         else
+            self._mtom-availability
+        }
+    }
+    {return self._mtom-availability}
+  }
+  {setter public open {mtom-availability val:MTOMAvailability}:void
+    set self._mtom-availability = val
+  }
+}
+
+{define-class public open WSDLBindingOperationMessage
+  {inherits WSDLDocumentedNode}
+
+  field public constant name:#String
+  field public extensions:{Array-of WSDLExtensionElement} =
+      {new {Array-of WSDLExtensionElement}}
+  field public kind:WSDLKindOfMessage
+  field public operation:#WSDLBindingOperation
+  field private _mtom-availability:MTOMAvailability = MTOMAvailability.disable
+
+  {constructor public {default name:#String, kind:WSDLKindOfMessage, node:WSDLDOMNode}
+    {construct-super node}
+    set self.name = name
+    set self.kind = kind
+  }
+  {getter public open {mtom-availability}:MTOMAvailability
+    {if-non-null op = self.operation then
+        {if op.mtom-availability.value > self._mtom-availability.value then
+            {return op.mtom-availability}
+         else
+            self._mtom-availability
+        }
+    }
+    {return self._mtom-availability}
+  }
+  {setter public open {mtom-availability val:MTOMAvailability}:void
+    set self._mtom-availability = val
+  }
+}
+
+{define-class public open WSDLService {inherits WSDLDocumentedNode}
+  field public constant name:String
+  field public ports:{Array-of WSDLServicePort} =
+      {new {Array-of WSDLServicePort}}
+  field public extensions:{Array-of WSDLExtensionElement} =
+      {new {Array-of WSDLExtensionElement}}
+  field public wsdl:#WSDL
+
+  {constructor public {default name:String, node:WSDLDOMNode}
+    {construct-super node}
+    set self.name = name
+  }
+}
+
+{define-class public open WSDLServicePort {inherits WSDLDocumentedNode}
+  field public constant name:String
+  field public constant binding:WSDLBinding
+  field public extensions:{Array-of WSDLExtensionElement} =
+      {new {Array-of WSDLExtensionElement}}
+  field public service:#WSDLService
+
+  {constructor public {default name:String, binding:WSDLBinding, node:WSDLDOMNode}
+    {construct-super node}
+    set self.name = name
+    set self.binding = binding
+  }
+}
+
+{define-class public open WSDLImport {inherits WSDLDocumentedNode}
+  field public constant namespace:String
+  field public constant location:#String
+  field public full-location:#Url
+  field public wsdl:#WSDL
+  field public loaded?:bool = false
+
+  {constructor public {default namespace:String, location:#String, node:WSDLDOMNode}
+    {construct-super node}
+    set self.namespace = namespace
+    set self.location = location
+    || location may not be absolute. If it isn't,
+    || merge it with the source-url of the WSDLImport node
+    set self.full-location =
+        {if-non-null location then
+            {parse-url location, relative-url = node.source-url.parent}
+         else
+            || not specifed: leave it unloaded for later resolution
+            null
+        }
+  }
+}
+
+{define-class public open WSDLExtensionElement
+  {inherits WSDLNode}
+
+  {constructor public {default node:WSDLDOMNode}
+    {construct-super node}
+  }
+
+}
+
+{define-enum public WSDLSOAPStyle
+    document,
+    rpc
+}
+
+{define-enum public WSDLSOAPUse
+    literal,
+    encoded
+}
+
+{define-class public open WSDLSOAPBinding {inherits WSDLExtensionElement}
+  field public constant style:WSDLSOAPStyle
+  field public constant transport:String
+  field public constant soap-version:SOAPVersion
+
+  {constructor public {default
+                          style:WSDLSOAPStyle,
+                          transport:String,
+                          node:WSDLDOMNode,
+                          soap-version:SOAPVersion
+                       }
+    {construct-super node}
+    set self.style = style
+    set self.transport = transport
+    set self.soap-version = soap-version
+  }
+}
+
+{define-class public open WSDLSOAPOperation {inherits WSDLExtensionElement}
+  field public constant style:WSDLSOAPStyle
+  field public constant soap-action:#String
+
+  {constructor public {default
+                          style:WSDLSOAPStyle,
+                          soap-action:#String,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.style = style
+    set self.soap-action = soap-action
+  }
+}
+
+{define-class package WSDLSOAPAttributes {inherits WSDLExtensionElement}
+  field public constant use:WSDLSOAPUse
+  field public constant encoding-style:#String
+  field public constant namespace:#String
+
+  {constructor package {default
+                          use:WSDLSOAPUse,
+                          encoding-style:#String,
+                          namespace:#String,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.use = use
+    set self.encoding-style = encoding-style
+    set self.namespace = namespace
+  }
+}
+
+{define-class public open WSDLSOAPBody {inherits WSDLSOAPAttributes}
+  field public constant parts:#StringArray
+
+  {constructor public {default
+                          parts:#StringArray,
+                          use:WSDLSOAPUse,
+                          encoding-style:#String,
+                          namespace:#String,
+                          node:WSDLDOMNode
+                      }
+    set self.parts = parts
+    {construct-super use, encoding-style, namespace, node}
+  }
+}
+
+{define-class package WSDLSOAPHeaderBase {inherits WSDLSOAPAttributes}
+  field public constant message:WSDLMessage
+  field public constant part:String
+
+  {constructor package {default
+                          message:WSDLMessage,
+                          part:String,
+                          use:WSDLSOAPUse,
+                          encoding-style:#String,
+                          namespace:#String,
+                          node:WSDLDOMNode
+                      }
+    set self.message = message
+    set self.part = part
+    {construct-super use, encoding-style, namespace, node}
+  }
+}
+
+{define-class public open WSDLSOAPHeader {inherits WSDLSOAPHeaderBase}
+  field public faults:{Array-of WSDLSOAPHeaderFault} =
+      {new {Array-of WSDLSOAPHeaderFault}}
+  field public constant required?:bool
+  field public constant wsdl:WSDL
+
+  {constructor public {default
+                          message:WSDLMessage,
+                          part:String,
+                          use:WSDLSOAPUse,
+                          encoding-style:#String,
+                          namespace:#String,
+                          required?:bool,
+                          wsdl:WSDL,
+                          node:WSDLDOMNode
+                      }
+    {construct-super
+        message, part, use, encoding-style, namespace, node
+    }
+    set self.required? = required?
+    set self.wsdl = wsdl
+  }
+
+  {method public open {append-header-as-params params:WSDLParamArray, operation:XMLName, call-name:String}:void
+|| Isn't element ok?  We can pull type in, but what is param's name then?
+|| WSDL SPEC mixes element and type freely.
+    let constant name-scope:String = operation.local-name '.' & call-name & '.'
+    let part-index:int = -1
+    {for p key i in self.message.parts do
+        {if p.name == self.part then
+            set part-index = i
+            {break}
+        }
+    }
+    {if part-index < 0 then
+        {wsdl-exception node = self.node,
+            {hlmessage
+                header's message part '{value self.part}'
+                in message '{value self.message.name}'.
+            }
+        }
+    }
+    let constant part:WSDLMessagePart = self.message.parts[part-index]
+
+    let constant type:WSDLSchemaType = 
+        {if-non-null pe = part.element then
+            pe.type
+         else
+            {if-non-null pt = part.type then
+                pt
+             else
+                {wsdl-exception node = part.node,
+                    {hlmessage
+                        header message part '{value self.part}' 
+                        without an element or type are not supported.
+                    }
+                }
+            }
+        }
+    
+    let constant maybe-element-name:#XMLName =
+        {if-non-null pe = part.element then
+            {non-null pe.xml-name}
+         else
+            {if-non-null xml-name = type.xml-name then
+                {if {self.wsdl.type-to-element-name.key-exists? xml-name} then
+                    self.wsdl.type-to-element-name[xml-name]
+                 else
+                    || TODO: not sure if this is right
+                    xml-name
+                }
+             else
+                null
+            }
+        }
+    let constant element-name:XMLName =
+        {if-non-null maybe-element-name then
+            maybe-element-name
+         else
+            {wsdl-exception node = part.node,
+                {hlmessage
+                    header message part '{value self.part}' 
+                    without an element name is not supported.
+                }
+            }                
+        }
+    
+    || NOTE: headers use element-name not part-name
+    let param-name:XMLName = element-name
+    {params.append
+        {WSDLSOAPParam
+            param-name,
+            {self.wsdl.curl-namer.get-curl-name
+                param-name,
+                scope = name-scope,
+                curl-type = "parameter"
+            },
+            type,
+            element-name,
+            type.nullable? or
+                (not self.required? and
+                 (type isa WSDLSchemaArrayType or
+                  type isa WSDLSchemaClassType)
+                )
+        }
+    }
+  }
+}
+
+{define-class public open WSDLSOAPHeaderFault {inherits WSDLSOAPHeaderBase}
+  {constructor public {default
+                          message:WSDLMessage,
+                          part:String,
+                          use:WSDLSOAPUse,
+                          encoding-style:#String,
+                          namespace:#String,
+                          node:WSDLDOMNode
+                      }
+    {construct-super message, part, use, encoding-style, namespace, node}
+  }
+}
+
+{define-class public open WSDLSOAPFault {inherits WSDLSOAPAttributes}
+  field public constant name:String
+
+  {constructor public {default
+                          name:String,
+                          use:WSDLSOAPUse,
+                          encoding-style:#String,
+                          namespace:#String,
+                          node:WSDLDOMNode
+                      }
+    set self.name = name
+    {construct-super use, encoding-style, namespace, node}
+  }
+}
+
+{define-class public open WSDLSOAPAddress {inherits WSDLExtensionElement}
+  field public constant location:String
+
+  {constructor public {default
+                          location:String,
+                          node:WSDLDOMNode
+                      }
+    {construct-super node}
+    set self.location = location
+  }
+}
+
+{define-class public open WSDLHttpBinding {inherits WSDLExtensionElement}
+  field public constant verb:String
+
+  {constructor public {default verb:String, node:WSDLDOMNode}
+    {construct-super node}
+    set self.verb = verb
+  }
+}
+
+{define-class public open WSDLHttpAddress {inherits WSDLExtensionElement}
+  field public constant location:String
+
+  {constructor public {default location:String, node:WSDLDOMNode}
+    {construct-super node}
+    set self.location = location
+  }
+}

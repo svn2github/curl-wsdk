@@ -1,0 +1,126 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open PhonebookResult
+
+  field public title:#String
+  field public url:#String
+  field public business:#String
+  field public phoneNumber:#String
+  field public address:#String
+  field public city:#String
+  field public stateOrProvince:#String
+  field public countryOrRegion:#String
+  field public postalCode:#String
+  field package _latitude:{Nullable double} = null
+  {getter public {latitude}:double
+    {return self._latitude.value-or-default}
+  }
+  {setter public {latitude val:double}:void
+    set self._latitude = val
+  }
+  {getter public {latitude-specified?}:bool
+    {return self._latitude.value?}
+  }
+  {method public {unset-latitude}:void
+    set self._latitude = null
+  }
+  field package _longitude:{Nullable double} = null
+  {getter public {longitude}:double
+    {return self._longitude.value-or-default}
+  }
+  {setter public {longitude val:double}:void
+    set self._longitude = val
+  }
+  {getter public {longitude-specified?}:bool
+    {return self._longitude.value?}
+  }
+  {method public {unset-longitude}:void
+    set self._longitude = null
+  }
+  field public uniqueId:#String
+  field public businessUrl:#String
+  field package _userRating:{Nullable double} = null
+  {getter public {userRating}:double
+    {return self._userRating.value-or-default}
+  }
+  {setter public {userRating val:double}:void
+    set self._userRating = val
+  }
+  {getter public {userRating-specified?}:bool
+    {return self._userRating.value?}
+  }
+  {method public {unset-userRating}:void
+    set self._userRating = null
+  }
+  field package _reviewCount:{Nullable uint32} = null
+  {getter public {reviewCount}:uint32
+    {return self._reviewCount.value-or-default}
+  }
+  {setter public {reviewCount val:uint32}:void
+    set self._reviewCount = val
+  }
+  {getter public {reviewCount-specified?}:bool
+    {return self._reviewCount.value?}
+  }
+  {method public {unset-reviewCount}:void
+    set self._reviewCount = null
+  }
+  field public displayUrl:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      title:#String = {uninitialized-value-for-type #String},
+      url:#String = {uninitialized-value-for-type #String},
+      business:#String = {uninitialized-value-for-type #String},
+      phoneNumber:#String = {uninitialized-value-for-type #String},
+      address:#String = {uninitialized-value-for-type #String},
+      city:#String = {uninitialized-value-for-type #String},
+      stateOrProvince:#String = {uninitialized-value-for-type #String},
+      countryOrRegion:#String = {uninitialized-value-for-type #String},
+      postalCode:#String = {uninitialized-value-for-type #String},
+      latitude:double = {uninitialized-value-for-type double},
+      longitude:double = {uninitialized-value-for-type double},
+      uniqueId:#String = {uninitialized-value-for-type #String},
+      businessUrl:#String = {uninitialized-value-for-type #String},
+      userRating:double = {uninitialized-value-for-type double},
+      reviewCount:uint32 = {uninitialized-value-for-type uint32},
+      displayUrl:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+    {if {keyword-supplied? business} then
+        set self.business = business}
+    {if {keyword-supplied? phoneNumber} then
+        set self.phoneNumber = phoneNumber}
+    {if {keyword-supplied? address} then
+        set self.address = address}
+    {if {keyword-supplied? city} then
+        set self.city = city}
+    {if {keyword-supplied? stateOrProvince} then
+        set self.stateOrProvince = stateOrProvince}
+    {if {keyword-supplied? countryOrRegion} then
+        set self.countryOrRegion = countryOrRegion}
+    {if {keyword-supplied? postalCode} then
+        set self.postalCode = postalCode}
+    {if {keyword-supplied? latitude} then
+        set self.latitude = latitude}
+    {if {keyword-supplied? longitude} then
+        set self.longitude = longitude}
+    {if {keyword-supplied? uniqueId} then
+        set self.uniqueId = uniqueId}
+    {if {keyword-supplied? businessUrl} then
+        set self.businessUrl = businessUrl}
+    {if {keyword-supplied? userRating} then
+        set self.userRating = userRating}
+    {if {keyword-supplied? reviewCount} then
+        set self.reviewCount = reviewCount}
+    {if {keyword-supplied? displayUrl} then
+        set self.displayUrl = displayUrl}
+  }
+
+}
+

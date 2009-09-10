@@ -1,0 +1,687 @@
+{curl 6.0, 7.0 package}
+{package COM.CURL.WSDL.Round5BaseTypes,
+    {compiler-directives careful? = true}}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/whitemesa-soap12/Round5BaseTypes.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{doc-next 
+    {details 
+        BaseTypes SOAP services
+    }
+}
+{define-class public BaseTypesInteropTests {inherits WSDLHTTPRPCPostClient}
+
+  {method public {echo-double input-double:double}:(_return:double)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-double",
+            {{Array-of any}
+                input-double
+            },
+            {splice self.operations["echo-double"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+  {method public {define-echo-double}:void
+    set self.operations["echo-double"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputDouble"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "double"},
+                    curl-type = double
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoDouble"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-date-time input-date-time:#DateTime}:(_return:#DateTime)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-date-time",
+            {{Array-of any}
+                input-date-time
+            },
+            {splice self.operations["echo-date-time"]}
+        }
+    {return
+        responses[0] asa #DateTime
+    }
+  }
+
+
+  {method public {define-echo-date-time}:void
+    set self.operations["echo-date-time"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputDateTime"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "dateTime"},
+                    curl-type = DateTime,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "dateTime"},
+                    curl-type = DateTime,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoDateTime"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-time input-time:#XMLTimeString}:(_return:#XMLTimeString)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-time",
+            {{Array-of any}
+                input-time
+            },
+            {splice self.operations["echo-time"]}
+        }
+    {return
+        responses[0] asa #XMLTimeString
+    }
+  }
+
+
+  {method public {define-echo-time}:void
+    set self.operations["echo-time"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputTime"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "time"},
+                    curl-type = XMLTimeString,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "time"},
+                    curl-type = XMLTimeString,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoTime"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-any-uri input-any-uri:#Url}:(_return:#Url)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-any-uri",
+            {{Array-of any}
+                input-any-uri
+            },
+            {splice self.operations["echo-any-uri"]}
+        }
+    {return
+        responses[0] asa #Url
+    }
+  }
+
+
+  {method public {define-echo-any-uri}:void
+    set self.operations["echo-any-uri"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputAnyURI"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
+                    curl-type = Url,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "anyURI"},
+                    curl-type = Url,
+                    nillable? = true
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoAnyURI"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-long input-long:int64}:(_return:int64)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-long",
+            {{Array-of any}
+                input-long
+            },
+            {splice self.operations["echo-long"]}
+        }
+    {return
+        responses[0] asa int64
+    }
+  }
+
+
+  {method public {define-echo-long}:void
+    set self.operations["echo-long"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputLong"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "long"},
+                    curl-type = int64
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "long"},
+                    curl-type = int64
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoLong"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-int input-int:int}:(_return:int)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-int",
+            {{Array-of any}
+                input-int
+            },
+            {splice self.operations["echo-int"]}
+        }
+    {return
+        responses[0] asa int
+    }
+  }
+
+
+  {method public {define-echo-int}:void
+    set self.operations["echo-int"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputInt"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoInt"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-short input-short:int16}:(_return:int16)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-short",
+            {{Array-of any}
+                input-short
+            },
+            {splice self.operations["echo-short"]}
+        }
+    {return
+        responses[0] asa int16
+    }
+  }
+
+
+  {method public {define-echo-short}:void
+    set self.operations["echo-short"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputShort"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "short"},
+                    curl-type = int16
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "short"},
+                    curl-type = int16
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoShort"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-byte input-byte:int8}:(_return:int8)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-byte",
+            {{Array-of any}
+                input-byte
+            },
+            {splice self.operations["echo-byte"]}
+        }
+    {return
+        responses[0] asa int8
+    }
+  }
+
+
+  {method public {define-echo-byte}:void
+    set self.operations["echo-byte"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputByte"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "byte"},
+                    curl-type = int8
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "byte"},
+                    curl-type = int8
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoByte"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-unsigned-long input-unsigned-long:uint64}:(_return:uint64)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-long",
+            {{Array-of any}
+                input-unsigned-long
+            },
+            {splice self.operations["echo-unsigned-long"]}
+        }
+    {return
+        responses[0] asa uint64
+    }
+  }
+
+
+  {method public {define-echo-unsigned-long}:void
+    set self.operations["echo-unsigned-long"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputUnsignedLong"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedLong"},
+                    curl-type = uint64
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedLong"},
+                    curl-type = uint64
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoUnsignedLong"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-unsigned-int input-unsigned-int:uint32}:(_return:uint32)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-int",
+            {{Array-of any}
+                input-unsigned-int
+            },
+            {splice self.operations["echo-unsigned-int"]}
+        }
+    {return
+        responses[0] asa uint32
+    }
+  }
+
+
+  {method public {define-echo-unsigned-int}:void
+    set self.operations["echo-unsigned-int"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputUnsignedInt"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedInt"},
+                    curl-type = uint32
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedInt"},
+                    curl-type = uint32
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoUnsignedInt"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-unsigned-short input-unsigned-short:uint16}:(_return:uint16)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-short",
+            {{Array-of any}
+                input-unsigned-short
+            },
+            {splice self.operations["echo-unsigned-short"]}
+        }
+    {return
+        responses[0] asa uint16
+    }
+  }
+
+
+  {method public {define-echo-unsigned-short}:void
+    set self.operations["echo-unsigned-short"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputUnsignedShort"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedShort"},
+                    curl-type = uint16
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedShort"},
+                    curl-type = uint16
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoUnsignedShort"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+
+  {method public {echo-unsigned-byte input-unsigned-byte:uint8}:(_return:uint8)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "echo-unsigned-byte",
+            {{Array-of any}
+                input-unsigned-byte
+            },
+            {splice self.operations["echo-unsigned-byte"]}
+        }
+    {return
+        responses[0] asa uint8
+    }
+  }
+
+
+  {method public {define-echo-unsigned-byte}:void
+    set self.operations["echo-unsigned-byte"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputUnsignedByte"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedByte"},
+                    curl-type = uint8
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "unsignedByte"},
+                    curl-type = uint8
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoUnsignedByte"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-echo-double}
+     {self.define-echo-date-time}
+     {self.define-echo-time}
+     {self.define-echo-any-uri}
+     {self.define-echo-long}
+     {self.define-echo-int}
+     {self.define-echo-short}
+     {self.define-echo-byte}
+     {self.define-echo-unsigned-long}
+     {self.define-echo-unsigned-int}
+     {self.define-echo-unsigned-short}
+     {self.define-echo-unsigned-byte}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    {return builtin-soap-type-mapper,
+        builtin-soap-element-name-to-xml-type-mapper,
+        builtin-soap-xml-type-to-curl-type-mapper,
+        builtin-soap-curl-type-to-xml-type-mapper,
+        builtin-soap-xml-type-to-element-name-mapper
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://www.whitemesa.net/soap12/baseTypes"},
+            ...
+    }
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
+    }
+  }
+}
+

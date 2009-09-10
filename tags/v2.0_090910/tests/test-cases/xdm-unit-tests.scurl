@@ -1,0 +1,371 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+{TestSuite "XDM Unit Tests",
+    {TestSuite "value conversion",
+        || explicit construction
+        {test-case "bool",
+            {TestCondition.assert
+                {{XPathValue true}.equal? {XPathValue true}}}
+        },
+        {test-case "String",
+            {TestCondition.assert
+                {{XPathValue "foo"}.equal? {XPathValue "foo"}}}
+        },
+        {test-case "double",
+            {TestCondition.assert
+                {{XPathValue 1.0}.equal? {XPathValue 1.0}}}
+        },
+        {test-case "int",
+            {TestCondition.assert
+                {{XPathValue 1}.equal? {XPathValue 1}}}
+        },
+        {test-case "XDMNode",
+            let x:XDMNode = {XDMText "foo"}
+            {TestCondition.assert
+                {{XPathValue x}.equal? {XPathValue x}}}
+        },
+        {test-case "XDMNodeSet",
+            let xs:XDMNodeSet = {XDMNodeSet {XDMText "foo"}}
+            {TestCondition.assert
+                {{XPathValue xs}.equal? {XPathValue xs}}}
+        },
+        {test-case "null",
+            {require-exception XDMException do
+                {XPathValue null}}
+        },
+        || implicit construction
+        {test-case "bool implicit",
+            {TestCondition.assert
+                {{XPathValue true}.equal? true}}
+        },
+        {test-case "String implicit",
+            {TestCondition.assert
+                {{XPathValue "foo"}.equal? "foo"}}
+        },
+        {test-case "double implicit",
+            {TestCondition.assert
+                {{XPathValue 1.0}.equal? 1.0}}
+        },
+        {test-case "int implicit",
+            {TestCondition.assert
+                {{XPathValue 1}.equal? 1}}
+        },
+        {test-case "XDMNode implicit",
+            let x:XDMNode = {XDMText "foo"}
+            {TestCondition.assert
+                {(x asa XPathValue).type.subtype-of? XDMNodeSet}}
+        },
+        {test-case "XDMNodeSet implicit",
+            let xs:XDMNodeSet = {XDMNodeSet {XDMText "foo"}}
+            {TestCondition.assert
+                {(xs asa XPathValue).type.subtype-of? XDMNodeSet}}
+        },
+        || conversion
+        {test-case "String equal",
+            {TestCondition.assert "1" ==
+                {XPathValue {XDMText "1"}}.as-String}
+        },
+        {test-case "String double equal",
+            {TestCondition.assert "1" ==
+                {XPathValue 1.0}.as-String}
+        },
+        {test-case "String bool equal",
+            {TestCondition.assert "true" ==
+                {XPathValue true}.as-String}
+        },
+        {test-case "bool String equal",
+            {TestCondition.assert true ==
+                {XPathValue "true"}.as-bool}
+        },
+        {test-case "double equal",
+            {TestCondition.assert 1.0 ==
+                {XPathValue {XDMText "1"}}.as-double}
+        },
+        {test-case "int equal",
+            {TestCondition.assert 1 ==
+                {XPathValue {XDMText "1"}}.as-int}
+        },
+        {test-case "XDMNode equal",
+            let x:XDMNode = {XDMText "foo"}
+            {TestCondition.assert x ==
+                {XPathValue x}.as-XDMNode}
+        },
+        {test-case "bool nonempty",
+            {TestCondition.assert
+                {XPathValue {XDMNodeSet {XDMText "foo"}}}.as-bool}
+        },
+        {test-case "bool empty",
+            {TestCondition.assert 
+                not {XPathValue {XDMNodeSet}}.as-bool}
+        },
+        {test-case "XDMNode? empty",
+            {TestCondition.assert null ==
+                {XPathValue {XDMNodeSet}}.as-XDMNode?}
+        },
+        {test-case "XDMNode? nonempty",
+            let x:XDMNode = {XDMText "foo"}
+            {TestCondition.assert x ==
+                {XPathValue {XDMNodeSet x}}.as-XDMNode?}
+        },
+        {test-case "XDMNode nonempty",
+            let x:XDMNode = {XDMText "foo"}
+            {TestCondition.assert x ==
+                {XPathValue {XDMNodeSet x}}.as-XDMNode}
+        },
+        {test-case "XDMNode value",
+            {require-exception XDMException do
+                {XPathValue false}.as-XDMNode}
+        },
+        {test-case "XDMNode? value",
+            {require-exception XDMException do
+                {XPathValue false}.as-XDMNode?}
+        },
+        {test-case "XDMNodeSet",
+            let xs:XDMNodeSet = {XDMNodeSet}
+            {TestCondition.assert xs  ==
+                {XPathValue xs}.as-XDMNodeSet}
+        },
+        {test-case "XDMNodeSet value",
+            {require-exception XDMException do
+                {XPathValue false}.as-XDMNodeSet}
+        },
+        || equality
+        {test-case "bool comparison",
+            {TestCondition.assert
+                {{XPathValue true}.equal? true}}
+        },
+        {test-case "true double comparison",
+            {TestCondition.assert
+                {{XPathValue true}.equal? 1.0}}
+        },
+        {test-case "false double comparison",
+            {TestCondition.assert
+                {{XPathValue false}.equal? 0.0}}
+        },
+        {test-case "String comparison",
+            {TestCondition.assert
+                {{XPathValue "foo"}.equal? "foo"}}
+        },
+        {test-case "String bool comparison",
+            let xs:XDMNodeSet = 
+                {XDMNodeSet 
+                    {XDMText "true"},
+                    {XDMText "1"}}
+            {TestCondition.assert
+                not {{XPathValue xs}.equal? false}}
+        },
+        {test-case "String bool reverse comparison",
+            let xs:XDMNodeSet = 
+                {XDMNodeSet 
+                    {XDMText "true"},
+                    {XDMText "1"}}
+            {TestCondition.assert
+                not {{XPathValue false}.equal? {XPathValue xs}}}
+        },
+        {test-case "String double comparison",
+            {TestCondition.assert
+                {{XPathValue "1"}.equal? 1.0}}
+        },
+        {test-case "double comparison",
+            {TestCondition.assert
+                {{XPathValue 1.0}.equal? 1.0}}
+        },
+        {test-case "double true comparison",
+            {TestCondition.assert
+                {{XPathValue 1.0}.equal? true}}
+        },
+        {test-case "double false comparison",
+            {TestCondition.assert
+                {{XPathValue 0.0}.equal? false}}
+        },
+        {test-case "int comparison",
+            {TestCondition.assert
+                {{XPathValue 1}.equal? 1}}
+        },
+        {test-case "XDMNodeSet String comparison",
+            let xs:XDMNodeSet = 
+                {XDMNodeSet 
+                    {XDMText "foo"},
+                    {XDMText "1"}}
+            {TestCondition.assert
+                {{XPathValue xs}.equal? "foo"}}
+        },
+        {test-case "XDMNodeSet double comparison",
+            let xs:XDMNodeSet = 
+                {XDMNodeSet 
+                    {XDMText "foo"},
+                    {XDMText "1.0"}}
+            {TestCondition.assert
+                {{XPathValue xs}.equal? 1.0}}
+        },
+        {test-case "XDMNodeSet String reverse comparison",
+            let xs:XDMNodeSet = 
+                {XDMNodeSet 
+                    {XDMText "foo"},
+                    {XDMText "1"}}
+            {TestCondition.assert
+                {{XPathValue "foo"}.equal? {XPathValue xs}}}
+        },
+        {test-case "XDMNodeSet double reverse comparison",
+            let xs:XDMNodeSet = 
+                {XDMNodeSet 
+                    {XDMText "foo"},
+                    {XDMText "1.0"}}
+            {TestCondition.assert
+                {{XPathValue 1.0}.equal? {XPathValue xs}}}
+        },
+        || comparison
+        {test-case "String less",
+            {TestCondition.assert
+                {{XPathValue "1"}.compares? 
+                    XPathValueComparison.less, "2"}}
+        },
+        {test-case "double less",
+            {TestCondition.assert
+                {{XPathValue 1}.compares? 
+                    XPathValueComparison.less, 2}}
+        },
+        {test-case "bool less",
+            {TestCondition.assert
+                {{XPathValue false}.compares? 
+                    XPathValueComparison.less, true}}
+        },
+        {test-case "XDMNodeSet less",
+            {TestCondition.assert
+                {{XPathValue {XDMText "1"}}.compares? 
+                    XPathValueComparison.less, 2}}
+        },
+        {test-case "XDMNodeSet reverse less",
+            {TestCondition.assert
+                {{XPathValue 1}.compares? 
+                    XPathValueComparison.less, {XDMText "2"}}}
+        }
+    },
+    {value
+        let doc:XDMDocument = 
+            {XDMDocument modifiable? = false, 
+                {XDMElement "foo", 
+                    {XDMAttribute "bar", ""},
+                    {XDMNamespaceDeclaration "Q", "qqq"},
+                    "baz"}}
+        let node:XDMElement = doc.root
+        {TestSuite "not modifiable",
+            {test-case "append",
+                {require-exception XDMNotModifiableException do
+                    {node.append {XDMText "foo"}}}
+            },
+            {test-case "detach",
+                {require-exception XDMNotModifiableException do
+                    {node.detach}}
+            },
+            {test-case "insert-child",
+                {require-exception XDMNotModifiableException do
+                    {node.insert-child {XDMText "foo"}, 0}}
+            },
+            {test-case "splice-children",
+                {require-exception XDMNotModifiableException do
+                    {node.splice-children  
+                        {{Array-of XDMNode} {XDMText "foo"}}, 0}}
+            },
+            {test-case "remove-child",
+                {require-exception XDMNotModifiableException do
+                    {node.remove-child node.children[0]}}
+            },
+            {test-case "add-attribute",
+                {require-exception XDMNotModifiableException do
+                    {node.add-attribute {XDMAttribute "foo", ""}}}
+            },
+            {test-case "remove-attribute",
+                {require-exception XDMNotModifiableException do
+                    {node.remove-attribute "bar"}}
+            },
+            {test-case "set-namespace-declaration",
+                {require-exception XDMNotModifiableException do
+                    {node.set-namespace-declaration "P", "ppp"}}
+            },
+            {test-case "remove-namespace-declaration",
+                {require-exception XDMNotModifiableException do
+                    {node.remove-attribute "P"}}
+            },
+            {test-case "clear-namespace-declarations",
+                {require-exception XDMNotModifiableException do
+                    {node.clear-namespace-declarations}}
+            },
+            {test-case "add-declaration",
+                {require-exception XDMNotModifiableException do
+                    {node.namespace-declarations.add-declaration 
+                        {XDMNamespaceDeclaration "P", "ppp"}}}
+            },
+            {test-case "remove-declaration",
+                {require-exception XDMNotModifiableException do
+                    {node.namespace-declarations.remove-declaration "P"}}
+            },
+            {test-case "clear-declarations",
+                {require-exception XDMNotModifiableException do
+                    {node.namespace-declarations.clear-declarations}}
+            }
+        }},
+    {value
+        let suite:TestSuite = {TestSuite "XDMSpace"}
+        let tests:StringArray =
+            {StringArray
+                "<a> xx </a>", "xx",
+                "<a xml:space = 'default'> xx </a>", "xx",
+                "<a xml:space = 'preserve'> xx </a>", " xx ",
+                "<a> <b> xx </b> </a>", "xx",
+                "<a xml:space = 'preserve'> <b> xx </b> </a>", "  xx  ",
+                "<a xml:space = 'preserve'> <b xml:space = 'preserve'> xx </b> </a>", "  xx  ",
+                "<a> <b xml:space = 'preserve'> xx </b> </a>", " xx ",
+                "<a> x&amp;x </a>", "x&x",
+                "<a xml:space = 'default'> x&amp;x </a>", "x&x",
+                "<a xml:space = 'preserve'> x&amp;x </a>"," x&x ",
+                "<a> <b> x&amp;x </b> </a>","x&x",
+                "<a> <b xml:space = 'preserve'> x&amp;x </b> </a>"," x&x ",
+                "<a xml:space = 'preserve'> <b> x&amp;x </b> </a>","  x&x  ",
+                || "<a xml:space = 'preserve'> <b xml:space = 'default'> x&amp;x </b> </a>","  x&x  ",
+                "<a xml:space = 'preserve'> <b xml:space = 'preserve'> x&amp;x </b> </a>","  x&x  ",
+                "<a> x &amp; x </a>", "x & x",
+                "<a xml:space = 'default'> x &amp; x </a>", "x & x",
+                "<a xml:space = 'preserve'> x &amp; x </a>", " x & x ",
+                "<a> <b> x &amp; x </b> </a>", "x & x",
+                "<a> <b xml:space = 'preserve'> x &amp; x </b> </a>", " x & x ",
+                "<a xml:space = 'preserve'> <b> x &amp; x </b> </a>", "  x & x  ",
+                ||"<a xml:space = 'preserve'> <b xml:space = 'default'> x &amp; x </b> </a>", "  x & x  ",
+                "<a xml:space = 'preserve'> <b xml:space = 'preserve'> x &amp; x </b> </a>", "  x & x  ",
+                "<a>x <b>y</b> z</a>", "x y z",
+                "<a xml:space = 'default'>x <b>y</b> z</a>", "x y z",
+                "<a xml:space = 'preserve'>x <b>y</b> z</a>", "x y z",
+                "<a>x <b/> z</a>", "x  z",
+                "<a xml:space = 'default'>x <b/> z</a>", "x  z",
+                "<a xml:space = 'preserve'>x <b/> z</a>", "x  z"
+            }
+        {for i = 0 below tests.size step 2 do
+            let test:String = tests[i]
+            let standard:String = tests[i + 1]
+            {suite.add
+                {test-case test,
+                    let e:XDMElement = 
+                        {build-xml
+                            preserve-whitespace? = false,
+                            test}.root
+                    let result:String = {e.get-text}
+                    {TestCondition.assert result == standard}}}}
+        suite
+    }
+}

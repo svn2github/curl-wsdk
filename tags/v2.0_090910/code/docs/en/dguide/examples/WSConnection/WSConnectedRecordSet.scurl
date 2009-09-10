@@ -1,0 +1,362 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public WSConnectedRecordSet 
+  {inherits ConnectedRecordSet, BasicRecordSet}
+
+  || construction
+  {constructor public {default 
+                          connection:WSConnection,
+                          database-name:String,
+                          query:String,
+                          request-modifiable?:bool = true,
+                          size-limit:int = -1,
+                          ...:EventHandler}
+    
+    || ConnectedRecordSet protocol
+    {construct-super.ConnectedRecordSet
+        connection,
+        database-name,
+        query,
+        request-modifiable?,
+        size-limit}
+    
+    || BasicRecordSet protocol
+    let fields:RecordFields = 
+        {self.connection.get-fields self.database-name, self.query}
+    {construct-super.BasicRecordSet fields, ...} 
+    
+    || so it does not start empty
+    {self.load}
+
+    || confirm modifiablity    
+    set self.modifiable? =
+        (request-modifiable? and
+         || TODO: how determine modifiability?
+         self.modifiable?)
+  }
+  {getter public {connection}:WSConnection
+    {return super.connection asa WSConnection}
+  }
+  
+  || Connection protocol
+  {method public {load}:void
+    {with 
+        self.batch-events? = true,
+        self.modifiable? = true
+     do
+        set self.load-state = RecordSetLoadState.synchronizing
+        {self.load-internal}
+        set self.load-state = RecordSetLoadState.complete
+        {self.trigger-record-set-event {RecordsBulkChanges}}}
+  }
+  {method public {fill
+                     database-name:String = self.database-name,
+                     query:String = self.query,
+                     request-modifiable?:bool = self.request-modifiable?,
+                     size-limit:int = self.size-limit
+                 }:void
+    let changed?:bool = 
+        (self.database-name != database-name or
+         self.query != query)
+    set self.database-name = database-name
+    set self.query = query
+    set self.size-limit = size-limit
+    let fields:#RecordFields = 
+        {if changed? then
+            {self.connection.get-fields self.database-name, self.query}
+         else null}
+    set self.request-modifiable? = request-modifiable?
+    || refresh fields if necessary
+    || -- this fires proper notifications (RFC, RSBC)
+    {self.init fields = fields}
+    set self.load-state = RecordSetLoadState.unloaded
+    || refresh contents
+    || TODO: assure proper modifiability
+    {self.load}
+    || == EXPERIMENTAL == \\
+||--    {self.async-load}
+    || == EXPERIMENTAL == //
+  }
+  field _load-state:RecordSetLoadState
+  {setter public open {load-state value:RecordSetLoadState}:void
+    {if self._load-state != value then
+        set self._load-state = value
+        {self.trigger-record-set-event {RecordSetLoadStateChanged}}}
+  }
+  {getter public open {load-state}:RecordSetLoadState
+    {return self._load-state}
+  }
+  {method {load-internal}:void
+    let data:#String =
+        {self.connection.service.get-data 
+            self.database-name,
+            self.query,
+            self.size-limit}
+    {if-non-null data then
+        {self.read-csv {data.to-InputStream}}}
+  }
+  || bulk loading
+  || -- its much faster to use 'internal-set-value' etc 
+  || -- rather than create intermediate RecordData
+  || -- also reuses buffers to avoid allocation
+  {method {read-csv input:TextInputStream}:void
+    let constant size-limit:int = 
+        {if self.size-limit > 0 then
+            self.size-limit 
+         else max-int}
+    let constant fs:RecordFields = self.fields
+    {with-open-streams in = {CsvDataReader.from-stream input} do
+        let values:StringArray = {StringArray}
+        {while {in.read-record out = values} != null do
+            let r:BasicRecord = {self.allocate-record}
+            {for val key n in values do
+                let f:RecordField = {fs.get-by-index n}
+                let nval:any = 
+                    {if f.nullable? and val.empty? 
+                        and not {f.domain.type.subtype-of? StringInterface}
+                     then null
+                     else {f.domain.parse val}}
+                {r.internal-set-value n, nval, for-init? = true}}
+            {self.internal-store-record r, RecordState.original}
+            {if self.size >= size-limit then
+                {break}}
+        }}
+  }
+  || transactions
+  {method public {commit}:void
+    || NOTE: attempt proper two-phase commit
+    || -- do not commit curl recordset 
+    || -- until after successful external commit
+    
+    || confirm records changed
+    {unless self.pending-update? do
+        {return}}
+  
+    || first phase -- external commit
+    let sqls:StringArray = {StringArray}
+    let writer:SQLWriter = 
+        {SQLWriter 
+            self.table-name,
+            self.fields}
+    {for r in self do
+        {if r.pending-update? then
+            let sql:StringBuf = {StringBuf}
+            {writer.gen-sql-update sql, r}
+            {sqls.append {sql.to-String}}
+        }}
+    let result:int = -1
+    {try
+        set result = {self.connection.execute self.database-name, sqls}
+     catch e:SOAP-1-1-FaultException do
+        {throw {CommitFailed e.fault-string}}
+    }
+   
+    || second phase -- internal commit
+    {with self.batch-events? = true do
+        {for r in {self.select filter = RecordFilter.pending-update} do
+            {self.commit-record (r asa BasicRecord)}}}
+  } 
+  || derive table name (for update) from SQL query
+  || TODO: this is a hack
+  {getter {table-name}:String
+    let table:#String
+    let constant query:String = self.query
+    let constant pattern:String =
+        || 'w'ord characters 
+        || preceded by non-'W'ord character,
+        || followed by anything
+        || following case-'i'nsensitive "from"
+        || in string treated as 's'ingle line
+        || starting with case-'i'nsensitive "select"
+        |"(?s:(?i:select).*(?i:from)\W(\w*).*)"|
+    {return
+        {if {regexp-match? pattern, query, table} 
+         then {non-null table}
+         else query}}
+  }
+  || == EXPERIMENTAL == \\
+  {method public {async-load}:void
+    let handler:EventHandler =
+        {on e:SOAPHTTPRPCPostAsyncEvent do
+            {if-non-null responses = e.responses then
+                let data:String = responses[0] asa String
+                {with 
+                    self.batch-events? = true,
+                    self.modifiable? = true
+                 do
+                    {self.read-csv {data.to-InputStream}}                
+                    set self.load-state = RecordSetLoadState.complete
+                    {self.trigger-record-set-event {RecordsBulkChanges}}}
+             else
+                || TODO: how notify of failure
+                {dump e.exception, e.canceled?}                
+                set self.load-state = RecordSetLoadState.synchronize-failed
+            }}
+    set self.load-state = RecordSetLoadState.synchronizing
+    || TODO: consider cancel after some timeout
+    let worker:SOAPHTTPRPCPostAsyncWorker =
+        {self.connection.service.async-get-data 
+            self.database-name,
+            self.query,
+            self.size-limit,
+            handler}
+  || == EXPERIMENTAL == //
+  }
+}
+
+|| TODO: pass 'update intent' to server
+|| {WSConnection.update table, inserts, deletes, updates}
+
+|| NOTE: adapted from BasicConnection
+|| NOTE: dubious to generate SQL on client side
+|| -- different databases may have different dialects
+
+{define-class SQLWriter
+  field table-name:String
+  field fields:RecordFields  
+  {constructor {default
+                   table-name:String,
+                   fields:RecordFields}
+    set self.table-name = table-name
+    set self.fields = fields
+  }  
+  {method {gen-sql-values qs:StringBuf, record:Record}:void
+    {qs.concat "VALUES("} ||""
+    {for fi:int = 0 below self.fields.size do
+        let f:RecordField = {self.fields.get-by-index fi}
+        let v:any = {record.get f.name, pending?=true}
+        {if fi != 0 then 
+            {qs.concat ", "} ||""
+        }
+        {qs.concat 
+            {self.gen-sql-value f, v}
+        }
+    }
+    {qs.concat ")"} ||""
+  }
+  {method {gen-sql-assign qs:StringBuf, record:Record}:void
+    {qs.concat " SET\n"} ||""
+    let first?:bool = true
+    {for fi:int = 0 below self.fields.size do
+        let f:RecordField = 
+            {self.fields.get-by-index fi}
+        let fv:any = {record.get f.name, pending?=true}
+        {if fi != 0 then 
+            {qs.concat ",\n"} ||""
+        }
+        {qs.concat "  "} ||""
+        {qs.concat f.name}
+        {qs.concat "="} ||""
+        {qs.concat {self.gen-sql-value f, fv}}
+    }
+  }
+  {method {gen-sql-where 
+              qs:StringBuf, 
+              record:Record,
+              keys-only?:bool=false
+          }:void
+    {qs.concat "\n WHERE\n"} ||""
+    let first?:bool=true
+    let key-count:int = 0
+    {for fi:int = 0 below self.fields.size do
+        let f:RecordField = 
+            {self.fields.get-by-index fi}
+        {if {self.primary-key? f} then
+            {inc key-count}
+        }
+    }
+    {if key-count == 0 then
+        set keys-only? = false
+    }
+    {for fi:int = 0 below self.fields.size do
+        let f:RecordField = {self.fields.get-by-index fi}
+        let fv-old:any = {record.get f.name, pending?=false}
+        {if (not keys-only?) or {self.primary-key? f} then
+            {if not first? then
+                {qs.concat " AND\n"} ||""
+            }
+            {qs.concat "  "} ||""
+            {qs.concat f.name}
+            {if fv-old == null then
+                {qs.concat " IS NULL"} ||""
+             else
+                {qs.concat "="} ||""
+                {qs.concat {self.gen-sql-value f, fv-old}}
+            }
+            set first?=false
+        }
+    }
+  }
+  {method {gen-sql-update qs:StringBuf, record:Record}:void
+    {switch record.state
+     case RecordState.modified do
+        {qs.concat "UPDATE "} ||""
+        {qs.concat self.table-name}
+        {self.gen-sql-assign qs, record}
+        {self.gen-sql-where qs, record, keys-only?=true}
+        {qs.concat ";\n"} ||""
+        
+     case RecordState.appended, RecordState.new do
+        || INSERT INTO employee VALUES (DEFAULT,'foo', 'bar');
+        {qs.concat "INSERT INTO "} ||""
+        {qs.concat self.table-name}
+        {qs.concat "\n  "} ||""
+        {self.gen-sql-values qs, record}
+        {qs.concat ";\n"} ||""
+
+     case RecordState.deleted do
+        {qs.concat "DELETE FROM "} ||""
+        {qs.concat self.table-name}
+        {self.gen-sql-where qs, record, keys-only?=true}
+        {qs.concat " LIMIT 1;\n"} ||""
+    }
+  }
+  {method {gen-sql-value f:RecordField, v:any}:String
+    {if v == null then
+        {return "NULL"}}
+    let d:Domain = f.domain
+    let s:String = {d.format v}
+    || TODO: more types?
+    {return
+        {switch d.type
+         case double, float do
+            || override default lossy format
+            {format "%15.g", v}
+         case String, DateTime do
+            {{quoted-string s}.to-String}
+         else s}}
+  }
+  {method {primary-key? f:RecordField}:bool
+    {return 
+        {type-switch f
+         case f:WSRecordField do
+            f.primary-key?
+         else
+            false}}
+  }  
+}
+{define-proc {quoted-string s:String, out:StringBuf = {StringBuf}}:StringBuf
+    let constant q:char = '\''
+    {out.append q}
+    {for c in s do
+        {switch c
+         case '\'' do
+            {out.append c}}
+        {out.append c}}
+    {out.append q}
+    {return out}
+}

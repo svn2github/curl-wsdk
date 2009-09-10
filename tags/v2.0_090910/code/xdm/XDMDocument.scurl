@@ -1,0 +1,702 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+
+{define-class public serializable StandardXDMDocument
+  {inherits XDMDocument, StandardXDMNode}
+  field private _root:XDMElement = {uninitialized-value-for-type XDMElement}
+  field private _document-location:Url
+  field private _children:{Sequence-of XDMNode} = {new {Array-of XDMNode}}
+  
+  field private transient _character-encoding:CharEncoding = CharEncoding.utf8
+  field private _standalone?:bool = false
+  field private _version:String = "1.0"
+
+  {getter public {root}:XDMElement
+    {return self._root}
+  }
+  {setter protected {root root:XDMElement}:void
+    let i:int = {self.children.find self._root}
+    set self._root = root
+    {root.detach}
+    set root.document = self
+    {if i >= 0 then
+        set self.children[i] = root}
+  }
+
+  {getter public {document-location}:Url
+    {return self._document-location}
+  }
+  {setter private {document-location document-location:Url}:void
+    set self._document-location = document-location
+  }
+
+  {getter public {children}:{Sequence-of XDMNode}
+    {return self._children}
+  }
+  
+  || in infoset, need SAX2 extensions
+  {getter public {standalone?}:bool
+    {return self._standalone?}
+  }
+  {getter public {character-encoding}:CharEncoding
+    {return self._character-encoding}
+  }
+  {setter protected {character-encoding val:CharEncoding}:void
+    set self._character-encoding = val
+  }
+  {getter public {version}:String
+    {return self._version}
+  }
+  {setter protected {version val:String}:void
+    set self._version = val
+  }
+
+  {doc-next  ||=== StandardXDMDocument.default
+    {purpose Contructs an {docref XDMDocument}
+        with the specified root node and (optional) document-location.
+        {parameter root, The root of the XML tree.}
+        {parameter document-location, (optional) 
+            sets the location of the XML document.
+            If not specified, the URL of the applet.}
+        {parameter modifiable?, 
+            specifies {docref-abbr StandardXDMDocument.modifiable?}.}
+        {parameter pending-events-limit, 
+            specifies {docref-abbr StandardXDMDocument.pending-events-limit}.}
+        {parameter key-attribute,
+            specifies the attribute (if any) used for unique identifiers.
+            If specified, this enables {docref-abbr XDMDocument.get-element-by-id}
+            and the XPath equivalent ({monospace id()})}
+    }
+  }
+  {constructor public {default 
+                          root:XDMElement,
+                          document-location:Url = {get-working-directory-url},
+                          modifiable?:bool = true,
+                          pending-events-limit:int = 1,
+                          key-attribute:#XDMName = null,
+                          ...:EventHandler}
+    || change management
+    set self._modifiable? = modifiable?
+    set self._pending-events = {{Array-of XDMEvent}}
+    set self.pending-events-limit = {max 1, pending-events-limit}
+    {for h in ... do
+        {self.add-event-handler h}}
+    || construction
+    set self.key-attribute = key-attribute
+    set self._document-location = document-location
+    set self.root = root
+    set root.document = self
+    {self._children.append root}
+  }
+  || creates "phantom" document, not referenced by its root
+  || - used when search needs to synthesise "document" for fragment
+  || NOTE: this is invisible to the fragment
+  || TODO: check impact on node-index generation
+  {constructor {internal
+                   root:XDMElement,
+                   document-location:Url = {get-working-directory-url},
+                   key-attribute:#XDMName = null}
+    || change management
+    set self.modifiable? = true
+    set self._pending-events = {{Array-of XDMEvent}}
+    set self.pending-events-limit = 1 
+    set self.suppress-events? = true
+    || construction
+    set self.key-attribute = key-attribute
+    set self._document-location = document-location
+    set self._root = root
+    {self._children.append root}
+
+  } 
+  
+  || XDMNode protocol
+  || --------------------
+  {getter public {xmlname}:XDMName
+    {return self.root.xmlname}
+  }
+  {getter public {prefix}:String
+    {return self.root.prefix}
+  }
+  {getter public {document}:XDMDocument
+    {return self}
+  }
+  {method public {get-text}:String
+    {return {self.root.get-text}}
+  }
+        
+  {method public {clone}:StandardXDMDocument
+    || clone document and root
+    let doc:StandardXDMDocument =
+        {StandardXDMDocument
+            {self.root.clone} asa XDMElement,
+            document-location = self.document-location
+        }
+    || clone any children (processing instructions), preserving order
+    let root-index:int = {self.children.find self.root}
+    {for c key i in self.children do
+        {if i != root-index then
+            {doc.children.insert {c.clone}, i}
+        }
+    }
+    set doc.character-encoding = self.character-encoding
+    set doc.version = self.version
+    set doc._standalone? = self.standalone?
+    set doc.pending-events-limit = self.pending-events-limit
+    set doc.modifiable? = self.modifiable?
+    {return doc}
+  }
+
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+    
+    || Write out the XML declaration.
+    {format-xml-declaration {non-null out}}
+    
+    || Write out the entire XML tree.
+    {for x in self.children do
+        {x.to-XML out = out, indentation = indentation}
+        {if indentation >= 0 then
+            {out.write-one '\n'}}
+    }
+    
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+  
+  || change management
+  || --------------------
+  {method protected {trigger-xdm-event e:XDMEvent}:void
+    || maintain id index
+    {self.invalidate-id-index}
+    || maintain node index
+    {type-switch e
+        || NOTE: deletions and modifications don't alter the order
+        || -- although they leave extraneous entries
+     case e:XDMNodeAdded do
+        {self.invalidate-node-index}}
+    || propagate event
+    {if not self.suppress-events? then
+        {if self.batch-events? then
+            {if self.pending-events.size < self.pending-events-limit then
+                {self.pending-events.append e}}
+         else
+            {self.fire-event e}}}
+  }
+  field _modifiable?:bool
+  {getter public {modifiable?}:bool
+    {return self._modifiable?}
+  }
+  {setter public {modifiable? val:bool}:void
+    set self._modifiable? = val
+  }
+  field transient _pending-events:#{Array-of XDMEvent}
+  {getter public {pending-events}:{Array-of XDMEvent}
+    {if self._pending-events == null then
+        set self._pending-events = {{Array-of XDMEvent}}}
+    {return {non-null self._pending-events}}
+  }
+  field _pending-events-limit:int
+  {doc-next  ||=== StandardXDMDocument.suppress-events?
+    {purpose 
+        Prevent this object from firing {docref XDMEvent}s at itself.}
+    {details
+       Typically used by subclasses during construction.
+    }
+  }
+  field protected suppress-events?:bool
+  field _batch-events?:bool
+  {doc-next  ||=== StandardXDMDocument.batch-events?
+    {purpose 
+        Specifies whether {docref XDMEvent}s should be delivered individually.}
+    {details
+        Set this flag to true to request that this object suppress 
+        {docref XDMEvent}s that might otherwise be fired 
+        and deliver them in bulk when the flag is restored to false.
+    }
+  }
+  {getter public {batch-events?}:bool
+    {return self._batch-events?}
+  }
+  {setter public {batch-events? val:bool}:void
+    {if val != self._batch-events? then
+        {if val == false then
+            {self.fire-pending-events}}
+        set self._batch-events? = val}
+  }
+  {doc-next  ||=== StandardXDMDocument.pending-events-limit?
+    {purpose 
+        The maximum number of {docref XDMEvent}s which will be
+        individually reported during 
+        {docref-abbr StandardXDMDocument.batch-update?} processing.}
+  }
+  {getter public {pending-events-limit}:int
+    {return self._pending-events-limit}
+  }
+  {setter public {pending-events-limit val:int}:void
+    {if val != self._pending-events-limit then
+        {if val < self.pending-events.size then
+            {self.fire-pending-events}}
+        set self._pending-events-limit = val
+    }
+  }
+  {method {fire-pending-events}:void
+    {if not self.suppress-events? then
+        let n:int = self.pending-events.size
+        {if n >= self.pending-events-limit then
+            {self.fire-event {XDMNodesBulkChanges}}
+         elseif n == 1 then
+            {self.fire-event self.pending-events[0]}
+         elseif n > 0 then
+            {for e in self.pending-events do
+                {self.fire-event e}}}
+        {self.pending-events.clear}}
+  }
+  {method final inline {fire-event e:XDMEvent}:void
+    {self.handle-event e}
+  }
+  
+  || ID management
+  || --------------------
+  field transient _id-index:#{HashTable-of String, XDMElement}
+  {getter {id-index}:{HashTable-of String, XDMElement}
+    {if self._id-index == null then
+        let index:{HashTable-of String, XDMElement} =
+            {{HashTable-of String, XDMElement}}
+        || NOTE: requires DTD or XSD designation of 'ID' attribute
+        {if-non-null key = self.key-attribute then
+            let ns:String = key.namespace
+            let name:String = key.local-name
+            let query:XDMPath = 
+                {if ns.empty? then
+                    {XDMPath {format "//@%s", name}}
+                 else
+                    {XDMPath NS = ns, {format "//@NS:%s", name}}}
+            let xs:XDMNodeSet = {self.search query}
+            {for x in xs do
+                let id:String = {x.get-text}
+                let element:XDMElement = {non-null x.parent}
+                || verify uniqueness
+                {if {index.key-exists? id} then
+                    {output 
+                        {lmessage 
+                            More than one element has key attribute 
+                            {value name} = '{value id}'}}}
+                set index[id] = element}}
+        set self._id-index = index}
+    {return {non-null self._id-index}}
+  }
+  {method final inline {invalidate-id-index}:void
+    set self._id-index = null
+  }
+  {method public {get-element-by-id 
+                     id:String
+                 }:#XDMElement
+    {return
+        || NOTE: requires DTD or XSD designation of 'ID' attribute
+        {if-non-null key = self.key-attribute then
+            {self.id-index.get-if-exists id} asa #XDMElement
+         else null}}
+  }
+  field public-get constant key-attribute:#XDMName = null || {XDMName "id"}
+  
+  || document order
+  || --------------------
+  field transient _node-index:#XDMNodeIndex
+  {getter {node-index}:XDMNodeIndex
+    {if self._node-index == null then
+        set self._node-index = {XDMNodeIndex self}}
+    {return {non-null self._node-index}}
+  }
+  {method final inline {invalidate-node-index}:void
+    set self._node-index = null
+  }
+  {getter public final inline {nodes-ordered?}:{proc-type {XDMNode, XDMNode}:bool}
+    {return self.node-index.comparator}
+  }
+  
+  || XML Include processing
+  || --------------------
+  {method public {execute-xml-include
+                     preserve-whitespace?:bool = true
+                 }:void
+
+    || If we're instructed to execute the XML:Include nodes on this
+    || XDMDocument, we have to repeatedly:
+    || 1. Walk the entire tree to find the first XML:Include node
+    || 2. Execute it's inclusion (replace the node with it's
+    ||  include nodes or fallback node).
+    || 3. Stop and go to step 1. (because the included node(s) may
+    ||  themselves be or have XML:Include nodes)
+    || 4. Stop totally when you have walked the tree and found no
+    ||  XML:Includes whatsoever - you're then done.
+    {while true do
+        
+        let node-to-replace:#XDMElement
+        let new-nodes:#{Array-of XDMNode}
+
+        || Walk the tree searching for the first XML:Include node.
+        {self.root.walk-children
+            include-descendants? = true,
+            include-self? = true,
+            
+            {proc {node:XDMNode}:bool
+                || If this node is not a XDMElement node return, but
+                || keep searching.
+                {if not node isa XDMElement then {return true}}
+                
+                || Otherwise, check if its XDMName matches:
+                || (http://www.w3.org/2001/XInclude | include)
+                || If not, return, but keep searching.
+                let cast-node:XDMElement = (node asa XDMElement)
+                {if cast-node.xmlname != include-xmlname then
+                    {return true}
+                }
+                
+                || Otherwise, we have an XML:Include node so find
+                || out the resulting nodes which we should insert
+                || in place of this XML:Include node.
+                
+                set node-to-replace = cast-node
+                set new-nodes = 
+                    {self.get-xml-include-result-nodes 
+                        cast-node,
+                        preserve-whitespace? = preserve-whitespace?}
+                
+                || We found the first XML:Include node so return false
+                || so we stop searching the tree
+                {return false}
+            }
+        }
+        
+        || If we didn't find any include nodes then break out!
+        {if node-to-replace == null then 
+            {break}
+        }
+
+        || Otherwise, switch the nodes.
+        || First, find the index of the node-to-switch, then
+        || start inserting the nodes from the new-nodes.
+        let parent:#XDMElement = node-to-replace.parent
+        {if parent == null then
+            || Somehow this node is not in the tree?
+            {xdm-exception 
+                {lmessage While trying to replace a node with it's content 
+                    in an XML Include call, the node's parent is somehow null.
+                    The node's name is: {value node-to-replace.xmlname}}}
+        }
+        
+        let index:int = {parent.find {non-null node-to-replace}}
+        
+        {if index > -1 then
+            {parent.splice-children
+                {non-null new-nodes},
+                index
+            }
+         else
+            {xdm-exception 
+                {lmessage Attempted to find the index in the parent of the node to replace 
+                    in implementing XML Include and found illegal index: {value index}}}
+        }
+        
+        {parent.remove-child {non-null node-to-replace}}
+    }
+  }
+
+  
+  {method public {get-xml-include-result-nodes
+                     node:XDMElement,
+                     preserve-whitespace?:bool = true
+                 }:{Array-of XDMNode}
+    || If this node is not an XML:Include node, then just throw
+    || an exception.
+    {if node.xmlname != include-xmlname then
+        {xdm-exception {lmessage Attempted to parse XML:Include nodes on a non-XML:Include node}}
+    }
+
+    || The single supplied fallback node, if any.
+    let fallback-node:#XDMElement
+
+    || The array of result nodes which should replace this XML:Include
+    || node. Note that when xpointer is implemented this can be
+    || multiple nodes - as of right now, it'll be only a single node.
+    let result-nodes:{Array-of XDMNode} = {new {Array-of XDMNode}}
+    
+    || If it doesn't exist, then return empty string.
+    let val:#String = {node.get-attribute-value {XDMName "", "href"}}
+    let href:String = {if val == null then "" else {non-null val}}
+
+    || Determine the "parse" attribute value.
+    set val = {node.get-attribute-value {XDMName "", "parse"}}
+    let parse:String = 
+        {if val == null then
+            "xml"
+         elseif val != "xml" and val != "text" then
+            {xdm-exception {lmessage Illegal XML:Include 'parse' value: '{value val}'}}
+         else
+            {non-null val}
+        }
+    
+    || TODO: Have this return a mapped XPointer object - that'd be
+    || very useful.
+    let xpointer:#String =
+        {node.get-attribute-value
+            {XDMName "", "xpointer"}
+        }
+    
+    let encoding:#String =
+        {node.get-attribute-value
+            {XDMName "", "encoding"}
+        }
+
+    let accept:#String =
+        {node.get-attribute-value
+            {XDMName "", "accept"}
+        }
+    
+    let accept-language:#String =
+        {node.get-attribute-value
+            {XDMName "", "accept-language"}
+        }
+
+    || Find what location we are to use.
+    || Use the current href -- if empty string, it's the
+    || document itself!
+    let location-to-use:Url =
+        {if href == "" then
+            node.document.document-location
+||--            {if-non-null document = node.document then
+||--                document.document-location
+||--             else
+||--                {xdm-exception {lmessage Found a null Document in the root element in XML:Include}}
+||--            }
+         else
+            {{node.get-base-url}.merge href}
+        }
+
+    || The fallback procedure - created as a proc-type because we
+    || can call this at multiple spots below.
+    let do-fallback:{proc-type {}:void} =
+        {proc {}:void
+            || Do the fallback, if there is one.
+            {if fallback-node == null then
+                {xdm-exception 
+                    {lmessage No XML:Include fallback supplied when handling 
+                        resource error on: {value location-to-use.name}}}
+            }
+            
+            || Otherwise, load up the fallback's nodes!
+            {for child in fallback-node.children do
+                {result-nodes.push child}
+            }
+        }
+    
+    || Build our fallback node, if one exists.
+    {for child:XDMNode in node.children do
+        || TODO: What should happen with the other nodes?
+        {if child isa XDMElement and
+            {fallback-xmlname.equal? (child asa XDMElement).xmlname}
+            then
+            || This is our fallback node.
+            || If we already have one, throw an error.
+            {if fallback-node != null then
+                {xdm-exception {lmessage Encountered two fallback nodes in an XML Include node}}
+            }
+            set fallback-node = (child asa XDMElement)
+        }
+    }
+    
+    || Start the processing.
+    {if parse == "xml" then
+        {if xpointer != null then
+            {xdm-exception {lmessage XPointer is not implemented}}
+        }
+        
+        let builder:XDMBuilder = {XDMBuilder}
+        set builder.called-from-xml-include? = true
+        let doc:#XDMDocument
+        {try
+            set doc = 
+                {builder.build  
+                    preserve-whitespace? = preserve-whitespace?,
+                    location-to-use}
+            {doc.execute-xml-include}
+         catch io:IOException do
+            || TODO: Note that we need to catch the exception where
+            || the resource doesn't exist.
+            || Read the error or what?
+        }
+        
+        {if doc == null then
+            {do-fallback}
+         else
+            || Force the root node's base-url since it is going to be
+            || inserted into this document, which most likely has a
+            || different base-url, taking into account
+            || any base-url specified by the included document.
+            
+            let base-url:Url =
+                {if-non-null path = doc.root.assigned-base-url then
+                    {xml-url-merge doc.document-location, path}
+                 else
+                    doc.document-location
+                }
+            
+            {doc.root.add-attribute 
+                error-if-exists? = false,
+                {XDMAttribute xml-base, base-url.name}}
+            
+            || What should I do here? Just attach the node?
+            {result-nodes.push doc.root}
+        }
+        
+     else
+        || Textual!
+        || xpointer must not exist.
+        {if xpointer != null then
+            {xdm-exception {lmessage XPointer exists when doing a 'text' XML Include}}
+        }
+        
+        || Since this is a textual replacement we don't have
+        || to check for recursion - just install a text node
+        || here!
+        let sb:#StringBuf
+        {try
+            set sb = {read-from location-to-use}
+         catch th:IOException do
+            || Caught an error here - should we check to see if it
+            || is an IO error or just move on?
+        }
+        
+        || A null "sb" means it had an error.
+        {if sb == null then
+            {do-fallback}
+         else        
+            || Otherwise, we should make a text node and put it in
+            || our result nodes!
+            {result-nodes.push {XDMText {non-null sb}}}
+        }
+    }
+  
+    {return result-nodes}
+  }
+}
+{doc-next ||== XDMNodeIndex
+    {purpose
+        Records "document order" for an {docref XDMDocument}}
+}
+{define-class public XDMNodeIndex
+  field constant index:{HashTable-of XDMNode, int}
+  field constant comparator:{proc-type {XDMNode, XDMNode}:bool}
+  field public-get constant document:XDMDocument 
+  field id:int = 1
+  {factory public {default subject:XDMNode}:XDMNodeIndex
+    let document:XDMDocument = 
+        {if-non-null doc = subject.document 
+         then doc
+         else 
+            {type-switch subject
+             case element:XDMElement do
+                {StandardXDMDocument.internal element}
+             else {StandardXDMDocument {XDMElement XDMName.empty-name}}}}
+    {return {XDMNodeIndex.internal document}}
+  }
+  || XDMDocument protocol
+  {method final inline {nodes-ordered? a:XDMNode, b:XDMNode}:bool
+    let node-index:{HashTable-of XDMNode, int} = self.index
+    {return
+        {if a == b then true
+         else
+            let ai:int = {node-index.get-if-exists a}
+            let bi:int = {node-index.get-if-exists b}
+            || TODO: deterministic order for non-document nodes
+            {return ai <= bi}}}
+  }
+  || Association-of protocol
+  {getter public {size}:int
+    {return self.index.size}
+  }
+  {getter public {empty?}:bool
+    {return self.index.empty?}
+  }
+  {method public {get node:XDMNode}:int
+    {return self.index[node]}
+  }
+  {method public {get-if-exists node:XDMNode}:(int, bool)
+    {return {self.index.get-if-exists node}}
+  }
+  || construction
+  {constructor {internal document:XDMDocument}
+    || it seems faster to traverse twice to avoid rehashing
+    let n:int = {self.count-nodes document.root}
+    set self.index = {{HashTable-of XDMNode, int} efficient-size = n}
+    set self.document = document
+    {self.index-document document}
+    set self.comparator =
+        {proc {a:XDMNode, b:XDMNode}:bool
+            {return {self.nodes-ordered? a, b}}}
+  }
+  {method {index-document document:XDMDocument}:void
+    {self.index-node document}  
+    {for x in document.children do
+        {type-switch x
+         case x:XDMElement do
+            || root
+            {for-each-node 
+                {proc {x:XDMNode}:void
+                    {self.index-node x}},
+                x}
+         else
+            || processing instructions
+            {self.index-node x}}}
+  }
+  {method final inline {index-node node:XDMNode}:void
+    set self.index[node] = self.id
+    {inc self.id}
+    {type-switch node
+     case e:XDMElement do
+        {if-non-null atts = e.attributes then
+            || NOTE: attribute order is arbitrary
+            {for key k in atts do
+                let a:XDMAttribute = {atts.get-attribute k}
+                {self.index-node a}}}}
+  }
+  {method {count-nodes node:XDMElement}:int
+    let n:int = 0
+    {for-each-node 
+        {proc {x:XDMNode}:void
+            {type-switch x
+             case e:XDMElement do
+                {if-non-null atts = e.attributes then
+                    {inc n, atts.size}}}
+            {inc n}},
+        node}
+    {return n}
+  }
+  || test support
+  {method public {summarize-nodeset xs:XDMNodeSet}:{Array-of int}
+    let ks:{Array-of int} = {{Array-of int} efficient-size = xs.size}
+    {for x in xs do
+        let (k:int, k?:bool) =  {self.get-if-exists x}
+        {ks.append {if k? then k else -1}}}
+    {return ks}
+  }
+}

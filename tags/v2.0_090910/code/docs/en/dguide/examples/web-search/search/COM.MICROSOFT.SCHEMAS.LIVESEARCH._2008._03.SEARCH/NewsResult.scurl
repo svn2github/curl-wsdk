@@ -1,0 +1,54 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open NewsResult
+
+  field public title:#String
+  field public url:#String
+  field public source:#String
+  field public snippet:#String
+  field public date:#String
+  field package _breakingNews:{Nullable uint32} = null
+  {getter public {breakingNews}:uint32
+    {return self._breakingNews.value-or-default}
+  }
+  {setter public {breakingNews val:uint32}:void
+    set self._breakingNews = val
+  }
+  {getter public {breakingNews-specified?}:bool
+    {return self._breakingNews.value?}
+  }
+  {method public {unset-breakingNews}:void
+    set self._breakingNews = null
+  }
+  field public newsCollections:#{Array-of NewsCollection}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      title:#String = {uninitialized-value-for-type #String},
+      url:#String = {uninitialized-value-for-type #String},
+      source:#String = {uninitialized-value-for-type #String},
+      snippet:#String = {uninitialized-value-for-type #String},
+      date:#String = {uninitialized-value-for-type #String},
+      breakingNews:uint32 = {uninitialized-value-for-type uint32},
+      newsCollections:#{Array-of NewsCollection} = {uninitialized-value-for-type #{Array-of NewsCollection}}
+    }
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+    {if {keyword-supplied? source} then
+        set self.source = source}
+    {if {keyword-supplied? snippet} then
+        set self.snippet = snippet}
+    {if {keyword-supplied? date} then
+        set self.date = date}
+    {if {keyword-supplied? breakingNews} then
+        set self.breakingNews = breakingNews}
+    {if {keyword-supplied? newsCollections} then
+        set self.newsCollections = newsCollections}
+  }
+
+}
+

@@ -1,0 +1,477 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 applet}
+
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{chapter
+    index= {HeadingIndex primary-key="WSDK Overview"},
+    WSDK Overview
+}
+{summary
+    {paragraph
+        The Curl Web Services SDK (WSDK) library provides components
+        enabling development of Curl applications that make use of web services and data resources.
+
+        These include {link href = {url "wsdk-wsdl.curl"}, SOAP/WSDL Web Services},
+        and {link href = {url "wsdk-xdm.curl"}, an XML document model}. 
+        
+        We also include several {link href = {url "wsdk-examples.curl"}, implementation examples}
+    }
+}
+
+{heading level=2,
+    What's New in WSDK 2.0
+}
+
+{paragraph
+    
+    WSDK 2.0 contains several improvements.
+
+    {heading level = 3, SOAP 1.2 support}
+
+    WSDK 2.0 implements core functionality for web service clients.
+
+    {itemize
+        {item SOAP12 namespace, and conventions for envelope, body, header, fault}
+        {item SOAP12 HTTP binding}
+        {item WSDL 1.1 binding extension for SOAP 1.2}
+        {item {italic Not supported:} SOAP12 encoding}
+        {item {italic Not supported:} additional message exchange patterns}
+    }
+
+    {heading level = 3, SOAP Attachments}
+
+    WSDK 2.0 provides support for binary data encoded as multipart MIME.
+
+    {itemize
+        {item XOP (XML-binary Optimization Packaging)}
+        {item MTOM (Message Transmission Optimization Mechanism)}
+    }
+
+    {heading level = 3, Dynamic access to SOAP headers}
+
+    WSDK 2.0 provides API for service class to dynamically access
+    request and response headers, in addition to static access through
+    service method signature.
+
+    {heading level = 3, WSDL code generation flexibility}
+
+    WSDK 2.0 provides additional code generation directives.
+
+    {itemize
+        {item generated code can be organized into files and directories
+            (or consolidated in single file, as before)}
+        {item identifiers can match names specified in WSDL file
+            (or be modified to follow standard Curl naming conventions)}
+        {item generation of async methods can be suppressed}
+        {item configurable base class for generated service class}
+    }
+
+    {heading level = 3, XML Schema}
+
+    WSDK 2.0 provides support for additional advanced constructs.
+
+    {itemize
+        {item choice, derivation by restriction, nested elements, union }
+
+        {item eliminated use of type aliases for array and any types that can be
+            expressed directly as Curl types}
+    }
+
+    {heading level = 3, XML Schema Datatypes}
+
+    WSDK 2.0 provides support for arbitrary precision numeric types
+    available in new COM.CURL.UTIL library.
+
+    {itemize
+        {item 'BigDecimal' represents arbitrary-precision signed decimal numbers}
+        {item 'BigInt' represents arbitrary-precision signed integers}
+    }
+
+    {heading level = 3, WSDL IDE Tool}
+
+    {itemize
+        {item makes available additional code generation directives}
+        {item records directives used for later reference}
+        {item now included in 'docs-install' distribution}
+        {item see {link href = {url "wsdk-wsdl.curl#wsdl-ide-tool"}, installation note}}
+    }
+    
+    These changes affect the code generated for WSDL service packages,
+    so such packages should be regenerated for use with this release.
+    The 'WSDLHTTPRPCPostClient.generated-using-version' property has been 
+    incremented, so that incompatible service packages can be detected.
+
+    WSDK 2.0 is supported for both Curl API Version 7.0 and 6.0.
+    Get the appropriate distribution for your Curl API Version.
+
+}
+
+
+{heading level=2,
+    What Was New in WSDK 1.1
+}
+
+{paragraph
+    This WSDK Release is a maintenance release,
+    for use with Curl API Versions 7.0 and 6.0.
+    
+    The following changes have been made,
+
+    {itemize
+        {item WSDK 1.1 is supported for both Curl API Version 7.0 and 6.0.
+            {italic Get the appropriate distribution for your Curl API Version.}}
+        {item WSDL service classes contain methods for improved testability: 
+            format-request, parse-response}
+        {item WSDL service classes avoid name conflicts 
+            caused by nested local elements}
+        {item WSDL top level XML schema elements are always namespace qualified}
+        {item SOAP ArrayType descriptors now correctly parsed}
+        {item WSDL parsing uses correct namespace when reporting errors}
+        {item WSConnection package is now an example}
+        {item WSDK Developer's Guide is indexed for full text search}
+        {item XML documentation for 'XDMNamespace' improved}
+        {item long-deprecated 'xdm-search' API has been retired}
+    }
+    
+    These changes affect the code generated for WSDL service packages,
+    so such packages should be regenerated for use with this release.
+    The {docref WSDLHTTPRPCPostClient.generated-using-version} property 
+    has been incremented, so that incompatible service packages can be detected.
+}
+
+{expandable {heading level=2, What Was New in WSDK 1.0.6},
+{paragraph
+    This WSDK Release is a maintenance release,
+    for use with Curl API Version 6.0.
+    
+    The following changes have been made,
+
+    {itemize
+        {item WSDL arrays with attributes work correctly}
+        {item WSDL treatment of toplevel optional and nillable elements has improved.
+            A consequence of this change is that the nullability of curl types for
+            some fields and parameters in generated code may 
+            vary from what was generated in earlier WSDK versions.}
+        {item WSDL allows use of URN scheme in namespaces}
+    }
+    
+    These changes affect the code generated for WSDL service packages,
+    so such packages should be regenerated for use with this release.
+    The {docref WSDLHTTPRPCPostClient.generated-using-version} property 
+    has been incremented, so that incompatible service packages can be detected.
+}
+}
+
+{expandable {heading level=2, What Was New in WSDK 1.0.5},
+{paragraph
+    This WSDK Release is a maintenance release,
+    for use with Curl API Version 5.0.
+    
+    The following changes have been made,
+
+    {itemize
+        {item SOAP messages with use='document' 
+            never use 'multiref' representation
+            (only allowed with use='encoded'.)}
+        {item SOAP messages containing repeating elements are now supported}
+        {item SOAP messages containing arrays of {docref XDMElement}
+            are now supported}
+        {item SOAP responses containing structures with
+            unspecified primitives are now supported}
+        {item SOAP responses containing arrays with
+            unspecified primitives are now supported}
+        {item compressed responses may be requested from SOAP services}
+        {item XDM change notifications for XDMNode.detach
+            are now correctly issued}
+        {item {docref RecordSet-for} change notifications
+            (using {docref RecordSetEvent}) are now correctly issued}
+        {item correct treatment of SOAP fault detail elements}
+        {item minor changes for release 6.0 consistency}
+        {item experimental XHTML and CSS packages no longer included}
+        {item samples using defunct services have been replaced or excluded}
+    }
+}
+}
+
+{expandable {heading level=2, What Was New in WSDK 1.0.4},
+{paragraph
+    This WSDK Release is a maintenance release,
+    for use with Curl API Version 5.0.
+    
+    The following changes have been made,
+    
+    {itemize
+        {item SOAP messages containing runtime subtype declarations
+            (using the {monospace xsi:type} attribute) are now supported
+        }
+        {item classes representing SOAP structures represent
+            unspecified primitive values using the generated
+            {monospace <name>-specified?} getter
+        }
+        {item the {monospace xs:date} type is represented by
+            {docref DateTime.date#factory} rather than as {docref XMLSimpleType}
+        }
+        {item WSDL service package name generation has been adjusted
+            for cases where conflicting names are defined.
+        }        
+        {item 
+            Array types generated for nillable elements 
+            use nullable Curl types when appropriate
+        }
+        {item {docref RecordSet-for.default} constructor allows
+            explicit specification of RecordFields
+            using the {monospace fields} keyword
+        }       
+        {item
+            This WSDK Developer's Guide now includes an updated
+            {link href = {url "wsdk-interop.curl"}, 
+            Web Services Interoperability} document.
+            
+            (The docuemnt had been included in prior releases,
+            but was not accessible from the guide.)
+        }
+    }
+    
+    These changes affect the code generated for WSDL service packages,
+    so such packages should be regenerated for use with this release.
+    The {docref WSDLHTTPRPCPostClient.generated-using-version} property 
+    has been added, so that incompatible service packages can be detected.
+    
+    If an earlier version of WSDL Services IDE tool has been installed,
+    it must be replaced with the version in this distribution,
+    in order to function with the Curl Version 5.0 IDE.
+    The generated service packages will be marked with the curl version
+    defined by their project. 
+    provided-with your WSDK distribution.
+    
+    This can be installed in the Curl IDE with the 
+    {bold Tools>Configure Editors} command
+    using the editor description file
+    {monospace color = "purple", tools/wsdl/editor-info.txt}
+    provided-with your WSDK distribution.     
+    If for some reason you need to use the earlier version of the tool,
+    you can use the applet in 
+    {monospace color = "purple", tools/wsdl/start.curl}
+    
+    The WSDK Extras package COM.CURL.WSDK.FILEDB is deprecated,
+    as its functionality is provided by
+    {docref doc-tree = "CURL", FileConnection}, {docref ConnectedFileRecordSet},
+    {docref CsvRecordSet} and related classes.
+}
+}
+
+{expandable {heading level=2, What Was New in WSDK 1.0.3},
+{paragraph
+    This WSDK Release is a maintenance release,
+    which contains some documentation corrections,
+    and the following changes.    
+    
+    {itemize
+        {item WSDL service packages support repeating elements}
+        {item SOAP requests are transcoded properly when not UTF8}
+        {item WSDL service package name generation has been adjusted
+            for cases where conflicting names are defined.}
+    }
+
+}
+}
+
+{expandable {heading level=2, What Was New in WSDK 1.0},
+{paragraph
+    This WSDK Release is for use with Curl API Version 4.0.
+    
+    Core WSDK Release packages are marked as version 1.0.
+    
+    {itemize
+        {item
+            {link href = {url "wsdk-xdm.curl"},
+            WSDK XML Document Model}}
+        {item
+            {link href = {url "wsdk-wsdl.curl"},
+            WSDK Web Services}}
+    }
+
+    Some WSDK Extras packages remain in prototype form,
+    and are marked as version 0.9.
+    
+    {itemize
+        {item
+            {link href = {url "wsdk-extras.curl"},
+            WSDK Extras}}
+    }
+    
+    Some changes have been made since the WSDK 0.2 Beta.
+    
+    These include documentation updates,
+    final adjustments to accomodate the Version 4.0 API,
+    and fixes for several SOAP / WSDL bugs.
+    
+    {itemize
+        {item WSDL service packages support all XSD simple types}
+        {item WSDL service packages support elements containing anonymous types}
+        {item WSDL syntax errors include the name of the offending item}
+    }
+}
+}
+
+{expandable {heading level=2, What Was New in WSDK 0.2},
+{paragraph
+    This WSDK Beta is for use with Curl API Version 4.0.
+    A number of changes have been made since the WSDK 0.1 Beta
+    (which used Curl API Version 3.0.6).
+    
+    These include additional documentation and examples,
+    adjustments to accomodate the Version 4.0 API,
+    and fixes for several SOAP / WSDL bugs.
+    
+    A WSDL Services IDE tool is included,
+    which generates Curl web service packages from WSDL files. 
+    This can be installed in the Curl IDE with the 
+    {bold Tools>Configure Editors} command
+    using the editor description file
+    {monospace color = "purple", tools/wsdl/editor-info.txt}
+    provided-with your WSDK distribution.
+
+    There are substantial additions to XML Document Model, 
+    including the following:
+    
+    {itemize
+        {item fuller conformance to XPath 1.0 specification}
+        {item standardized API for path expressions
+            {itemize
+                {item use {docref xpath} or {docref XDMPath} to declare path expressions}
+                {item use {docref XDMNode.search} or {docref XDMPath.search} to apply path expressions}
+            }}
+        {item improved XML data data binding support
+            {itemize
+                {item use {docref XDMForm} as a container for properties bound to XML path expressions}
+                {item supports nested XML contexts using {docref XDMForm.ref}}
+                {item extends {docref XDMDataBindingContext}}
+            }}
+        {item display using {docref XDMTreeControl}}
+        {item change management using {docref StandardXDMDocument} and {docref XDMEvent}}
+        {item specialization using {docref GenericXDMBuilder}}
+        {item serialization support for {docref StandardXDMNode} subclasses}
+    }    
+    
+    The WSDK tests now use the new CurlUnit test framework.
+    The test suites may be run using the    
+    {monospace color = "purple", support/full-manual-test.dcurl} applet
+    provided-with your WSDK distribution.
+    
+    {preliminary
+        The {bold CurlUnit test framework} is
+        a preliminary release of new features. 
+        These features are not yet in final form, 
+        and are subject to revision.
+    }    
+}
+}
+
+{heading level=2,
+    index={HeadingIndex primary-key="WSDK Standards Conformance"},
+    Standards Conformance
+}
+
+{paragraph
+    This version of the WSDK implements the standard web services technologies as described in the 
+    following table:
+}
+{Table
+    columns = 4, cell-margin = 1pt,
+    border-width = 1pt, border-color = "black",
+    cell-border-width = 1pt, cell-border-color = "black", 
+    {row-prototype font-weight="bold", "Standard", "Version", "Focus"},
+    
+    {cell-prototype background = "#E3E3E3", colspan=4, font-style="italic", 
+        "XML Core"},
+    {row-prototype {bold XML 1.0}, 
+        "Released", {text font-size = 10pt, XML Document Model for XML Data Binding}},
+    {row-prototype {bold XML Schema 1.0}, 
+        "Released", {text font-size = 10pt, Handle data types used in Web Service messages}},
+    
+    {cell-prototype background = "#E3E3E3", colspan=4, font-style="italic", 
+        "Web Services"},
+    {row-prototype {bold WSDL 1.1}, 
+        "Released", {text font-size = 10pt, SOAP over HTTP: document / literal,  rpc / literal, rpc / encoded}},
+    {row-prototype {bold SOAP 1.1}, 
+        "Released", {text font-size = 10pt, Handle data types used in Web Service messages}},
+    {row-prototype {bold SOAP 1.2}, 
+        "Released", {text font-size = 10pt, Handle data types used in Web Service messages}},
+    
+    {cell-prototype background = "#E3E3E3", colspan=4, font-style="italic", 
+        "XML Processing"},
+    {row-prototype {bold XPath 1.0}, 
+        "Released", {text font-size = 10pt, Support XML Data Binding}},
+    {row-prototype {bold SAX 2.0}, 
+        "Released", {text font-size = 10pt, Parse XML documents}}  
+    
+}
+
+
+{heading level=2,
+    index={HeadingIndex primary-key="WSDK Web Services Components"},
+    Web Services Components
+}
+
+{paragraph
+    Basic web service support in Curl supports handling resources delivered as XML documents using web transport protocols, such as HTTP, 
+    and the use of SOAP messaging and WSDL service descriptors.
+}
+
+{HBox
+    valign="top",
+    {paragraph
+        Curl provides support at two levels.
+
+        {enumerate
+            {item The Curl language and run-time engine are technologies expressly designed for presenting information in web-based 
+                applications. High performance is obtained by JIT-compiling application code on the client, and a client-server 
+                model is usually adopted as the basis for building functionally rich applications. 
+                
+                The Curl RTE includes a powerful engine for rendering graphics and text, and the Curl language supports the rapid development of advanced user interfaces.
+                It provides all the building blocks necessary for building rich clients in general {em-dash} with extensive support for graphics, GUI and data access, as well as supporting as offline processing, 
+                client-side package caching, and internationalization. 
+
+                For web services, the RTE has a built-in SAX parser, and also basic SOAP support.
+            }
+            
+            {item Further support for connecting to web services is provided by the Web Services SDK {em-dash} provides application level code and packages for connecting to web services
+                {itemize
+                    {item WSDL}
+                    {item SOAP 1.0}
+                    {item XSD(Schema)}
+                }
+
+
+                And support for transforming the content:
+                {itemize
+                    {item XML DOM, XPath}
+                }
+            }
+        }
+    }
+}
+
+|| ====================
+
+{curl-copyright}

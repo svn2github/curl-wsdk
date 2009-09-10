@@ -1,0 +1,1525 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| Initially only will do non-multipart, but user could do a subclass that
+|| does multipart, or we could do it...you just write new
+|| request-data and handle-response
+|| Other similar classes can be written by users or us to do other styles of
+|| calls.
+
+{doc-next
+    {purpose
+        This is a class which does SOAP request/response RPC calls over
+        HTTP with rpc or document style SOAP messages.
+    }
+    {details
+        Construct one of these, and then call
+        {docref SOAPHTTPRPCPostCaller.call} to make SOAP request/response
+        calls.
+    }
+}
+{define-class public open SOAPHTTPRPCPostCaller
+
+  {doc-next
+    {purpose
+        The {docref SOAPRPCMessageWriter} that will be used to
+        write the messages for all requests by this
+        {docref SOAPHTTPRPCPostCaller}.
+    }
+  }
+  field public constant message-writer:SOAPRPCMessageWriter
+
+  {doc-next
+    {purpose
+        The {docref SOAPRPCMessageReader} that will be used to
+        read the messages for all responses by this
+        {docref SOAPHTTPRPCPostCaller}.
+    }
+  }
+  field public constant message-reader:SOAPRPCMessageReader
+
+  {doc-next
+    {purpose
+        If not {ctext null}, any additional headers that will
+        be sent with all requests by this {docref SOAPHTTPRPCPostCaller}.
+    }
+    {notes
+        SOAPAction is handled separately with a parameter to
+        {docref SOAPHTTPRPCPostCaller.call}.
+    }
+  }
+  field public request-http-headers:#HttpRequestHeaders
+  
+  {doc-next
+    {purpose
+        If not {ctext null}, SOAP requests and responses will
+        be output to this stream.
+    }
+  }
+  field public trace-stream:#TextOutputStream
+
+  {doc-next
+    {purpose
+        Construct a {docref SOAPHTTPRPCPostCaller} which can be used
+        for multiple request/response calls if they are all the same
+        version of SOAP and can share type mappers and message readers
+        and writers.
+    }
+    {notes
+        Once this is constructed, user code would call 
+        {docref SOAPHTTPRPCPostCaller.call} to start a SOAP
+        request/response.
+    }
+    {parameter message-writer,
+        The {docref SOAPRPCMessageWriter} that will be used to
+        write the messages for all requests by this
+        {docref SOAPHTTPRPCPostCaller}.
+        Note that any overriding
+        of the default type mappers should be done by providing the
+        appropriate mappers to the constructor of an instance of a
+        {docref SOAPRPCMessageWriter}.
+    }
+    {parameter message-reader,
+        The {docref SOAPRPCMessageReader} that will be used to
+        read the messages for all response by this
+        {docref SOAPHTTPRPCPostCaller}.
+        Note that any overriding
+        of the default type mappers should be done by providing the
+        appropriate mappers to the constructor of an instance of a
+        {docref SOAPRPCMessageReader}.
+    }
+  }
+  {constructor public {default
+                          request-http-headers:#HttpRequestHeaders = null,
+                          || user can supply non-default mappers via the
+                          || reader/writer
+                          message-writer:#SOAPRPCMessageWriter = null,
+                          message-reader:#SOAPRPCMessageReader = null,
+                          trace-stream:#TextOutputStream = null
+                      }
+    set self.request-http-headers = request-http-headers
+    set self.message-writer =
+        {if-non-null message-writer then   
+            message-writer
+         else
+            {new SOAPRPCMessageWriter}
+        }
+    set self.message-reader =
+        {if-non-null message-reader then   
+            message-reader
+         else
+            {new SOAPRPCMessageReader}
+        }
+    set self.trace-stream = trace-stream
+  }
+
+  {define-proc private {soap-version-to-content-type
+                           soap-version:SOAPVersion
+                       }:String
+    {return
+        {switch soap-version
+         case SOAPVersion.soap-1-1 do
+            "text/xml" ||""
+         case SOAPVersion.soap-1-2 do
+            "application/soap+xml" ||""
+         else
+            {unreachable}
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Called by {docref SOAPHTTPRPCPostCaller.call} to create and setup
+        the {param request-data} to be used for the HTTP POST.  This in turn
+        calls {docref SOAPHTTPRPCPostCaller.get-request-data-stream}
+        and then {docref SOAPRPCMessageWriter.write-rpc-request} on
+        {ctext self.message-writer}.  To finish up the {param request-data}
+        it calls {docref SOAPHTTPRPCPostCaller.close-request-data-stream}.
+        And finally it handles the {param soap-action}.
+    }
+    {parameter content-type,
+        The value to be used as base the "Content-Type" HTTP header
+        for all requests by this {docref SOAPHTTPRPCPostCaller}.
+        For SOAP 1.1 this should be the default {ctext "text/xml"}.
+    }
+    {notes
+        The parameters are a subset of the {docref SOAPHTTPRPCPostCaller.call}
+        parameters and have the same meanings.
+    }
+    {return-vals
+        A {docref HttpRequestData} that can supply the data to be POSTed
+        in the HTTP request, and can supply the complete Content-Type
+        HTTP header.
+
+        The {docref HttpRequestHeaders} to be sent with the HTTP request.
+        This will be based on the passed in {param request-http-headers} but
+        may have been modified.
+    }
+  }
+  {method public open {setup-request-data
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          encoding:#String,
+                          request-operation:#XMLName = null,
+                          write-type-attribute?:bool = true,
+                          ||scheme-instance-namespace:#String = null,
+                          write-encoding-attribute?:bool = true,
+                          headers:#{Array-of any} = null,
+                          header-names:#{Array-of #XMLName} = null,
+                          header-types:#{Array-of SOAPObjectType} = null,
+                          header-roles:#{Array-of #String} = null,
+                          header-must-understands:#{Array-of bool} = null,
+                          rpc-style?:bool = true,
+                          root-element-attributes:#{Array-of XMLToken} = null,
+                          request-http-headers:#HttpRequestHeaders = null,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          add-content-type-charset?:bool = true,
+                          soap-action:#String = null,
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          http-request-method:HttpRequestMethod =
+                              HttpRequestMethod.post,
+                          content-type:String =
+                              {SOAPHTTPRPCPostCaller.soap-version-to-content-type soap-version},
+                          mtom-support-range:SOAPMTOMSupportRange =
+                              SOAPMTOMSupportRange.none,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null
+                      }:(request-data:HttpRequestData,
+                         request-http-headers:#HttpRequestHeaders)
+    || could just save the arguments and do this when demanded by
+    || {request-data}
+    let xml-output-stream:#{OutputStream-of XMLToken}
+    let request-data:#HttpRequestData
+    {try
+        let marshal-context:#SOAPMarshalContext
+        set (request-data,
+             xml-output-stream,
+             marshal-context,
+             arguments,
+             argument-names,
+             argument-types,
+             request-http-headers
+            ) =
+            {self.get-request-data-stream
+                arguments,
+                argument-names,
+                argument-types,
+                request-http-headers = request-http-headers,
+                character-encoding = character-encoding,
+                content-type = content-type,
+                soap-version = soap-version,
+                mtom-support-range = mtom-support-range
+            }
+        || make a Writer, and write in the stream.
+        {self.message-writer.write-rpc-request
+            {non-null xml-output-stream},
+            operation = request-operation,
+            arguments,
+            argument-names,
+            argument-types,
+            encoding,
+            write-type-attribute? = write-type-attribute?,
+            write-encoding-attribute? = write-encoding-attribute?,
+            marshal-context = marshal-context,
+            headers = headers,
+            header-names = header-names,
+            header-types = header-types,
+            header-roles = header-roles,
+            header-must-understands = header-must-understands,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            soap-version = soap-version,
+            additional-request-headers = additional-request-headers
+        }
+        {type-switch request-data
+         case m:SOAPMTOMRequestData do
+            {marshal-context.append-remaining-attachments
+                m
+            }
+        }
+     finally
+        || close stream, and finish up request-data
+        {if-non-null xml-output-stream then
+            {self.close-request-data-stream
+                {non-null request-data},
+                xml-output-stream,
+                character-encoding = character-encoding,
+                add-content-type-charset? = add-content-type-charset?,
+                trace-stream = trace-stream
+            }
+        }
+    }
+
+    def new-headers =
+        {if-non-null request-http-headers then
+            {HttpRequestHeaders.clone-from request-http-headers}
+         else
+            {HttpRequestHeaders}
+        }
+    {if-non-null soap-action then
+        {switch soap-version
+         case SOAPVersion.soap-1-1 do
+            {new-headers.set "SOAPAction",
+                {if soap-action.size < 1 or soap-action[0] != '\"' then
+                    '\"' & soap-action & '\"'
+                 else
+                    soap-action
+                }
+            }
+         case SOAPVersion.soap-1-2 do
+            {type-switch request-data
+             case srd:SOAPHTTPRPCPostCallerRequestData do
+                {srd.add-soap-action-to-content-type soap-action}
+            }
+        }
+    }
+    {if soap-version == SOAPVersion.soap-1-2 then
+        || NOTE: should this include other types at lower priorities?
+        def accept-type =
+            {if mtom-support-range == SOAPMTOMSupportRange.response or
+                mtom-support-range == SOAPMTOMSupportRange.both
+             then
+                content-type & "; q=0.9, multipart/releated" ||""
+             else
+                content-type
+            }
+        {new-headers.set "Accept", accept-type}
+    }
+
+    {return
+        {non-null request-data},
+        {if new-headers.size > 0 then new-headers else null}
+    }
+  }
+
+  {doc-next
+    {purpose
+        Create the {docref HttpRequestData} and {docref XMLOutputStream} to
+     do this request with.
+        Called by {docref SOAPHTTPRPCPostCaller.setup-request-data}.
+    }
+    {override
+        A subclass that was handling multi-part messages might put
+        some of the arguments into non-SOAP parts of the message, add the
+        proper ids to a {docref SOAPMarshalContext} and remove them
+        from {param arguments}, {param argument-names} and
+        {param argument-types}.
+    }
+    {return-vals
+        A {docref HttpRequestData} that can supply the data to be POSTed
+        in the HTTP request, and can supply the complete Content-Type
+        HTTP header.
+
+        A {docref XMLOutputStream} into which {param arguments} should be
+        marshaled.
+
+        A {docref SOAPMarshalContext} to be used when marshaling the arguments
+        or {ctext null} if the default one is acceptable.
+
+        {param arguments}, {param argument-names}, and {param argument-types}
+        are returned, possibly modified.
+
+        The {docref HttpRequestHeaders} to be sent with the HTTP request.
+        This will be based on the passed in {param request-http-headers} but
+        may have been modified.
+    }
+  }
+  {method public open {get-request-data-stream
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          request-http-headers:#HttpRequestHeaders = null,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          content-type:String = "text/xml",
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
+                      }:(request-data:HttpRequestData,
+                         xml-stream:{OutputStream-of XMLToken},
+                         marshal-context:#SOAPMarshalContext,
+                         arguments:{Array-of any},
+                         argument-names:{Array-of #XMLName},
+                         argument-types:{Array-of SOAPObjectType},
+                         request-http-headers:#HttpRequestHeaders
+                        )
+    def (request-data, context) =
+        {if mtom-support-range == SOAPMTOMSupportRange.both or
+            mtom-support-range == SOAPMTOMSupportRange.request
+         then
+            def mw = {SOAPMTOMMessageWriter
+                         soap-version = soap-version,
+                         character-encoding = character-encoding
+                     }
+            ({mw.get-request-data}, {mw.get-marshal-context})
+         else
+            ({SOAPHTTPRPCPostCallerRequestData content-type}, null)
+        }
+    
+    def xml-stream =
+        {XMLOutputStream
+            {TranscodingTextOutputStream
+                {new {ByteOutputStream-into ByteArray},
+                    {type-switch request-data
+                     case mtom:SOAPMTOMRequestData do
+                        mtom[0].body
+                     case soap:SOAPHTTPRPCPostCallerRequestData do
+                        soap.request-data-bytes
+                     else
+                        {error ""}
+                    }
+                },
+                character-encoding,
+                false || No byte marker
+            }
+        }
+    {return
+        request-data,
+        xml-stream,
+        context,
+        arguments,
+        argument-names,
+        argument-types,
+        request-http-headers
+    }
+  }
+
+  || closes stream, and finishes setting up request-data
+  {doc-next
+    {purpose
+        Close up the {docref XMLOutputStream} and finish filling in
+        the {param request-data} so that it is ready for use with
+        {docref HttpFile.http-read-open-byte}.
+        Called by {docref SOAPHTTPRPCPostCaller.setup-request-data}.
+    }
+  }
+  {method public open {close-request-data-stream
+                          request-data:HttpRequestData,
+                          xml-stream:{OutputStream-of XMLToken},
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          add-content-type-charset?:bool = true,
+                          trace-stream:#TextOutputStream = self.trace-stream
+                      }:void
+    {xml-stream.close}
+    let soap-request-data:SOAPHTTPRPCPostCallerRequestData =
+        {type-switch request-data
+         case srd:SOAPHTTPRPCPostCallerRequestData do
+            srd
+         else
+            {throw-soap-exception
+                {localize
+                    "Incorrectly typed request-data, expected a " &
+                    "SOAPHTTPRPCPostCallerRequestData."
+                }
+            }
+        }
+    {if-non-null trace-stream then
+        {trace-stream.write-one-string "===POST data===\n"}
+        {with-open-streams tis =
+            {TranscodingTextInputStream
+                {new {ByteInputStream-from ByteArray},
+                    soap-request-data.request-data-bytes},
+                character-encoding = character-encoding}
+         do
+            {trace-stream.write {tis.read}}
+        }
+        {trace-stream.write-one '\n'}
+    }
+    {if add-content-type-charset? then
+        {soap-request-data.add-charset-to-content-type character-encoding}
+    }
+    {if-non-null trace-stream then
+        {format
+            out = trace-stream,
+            "===Content-Type: %s===\n",
+            soap-request-data.content-type
+        }
+    }
+  }
+
+  {doc-next
+    {purpose
+        Create a {docref XMLInputStream} based on the data being returned
+        from the HTTP request.  Called by {docref SOAPHTTPRPCPostCaller.call}.
+    }
+    {override
+        A subclass that was handling multi-part messages might get
+        some of the responses from non-SOAP parts of the message, add the
+        proper ids to a {docref SOAPUnmarshalContext} and remove them
+        from {param response-names} and
+        {param response-types}.  And add them to {param responses}
+        in {docref SOAPHTTPRPCPostCaller.close-response-stream}.
+    }
+  }
+  {method public open {get-response-stream
+                          bis:ByteInputStream,
+                          binding-url:Url,
+                          response-names:{Array-of #XMLName},
+                          response-types:{Array-of SOAPObjectType},
+                          response-headers:HttpResponseHeaders,
+                          mtom-support-range:SOAPMTOMSupportRange =
+                              SOAPMTOMSupportRange.none
+                      }:(xml-input-stream:XMLInputStream,
+                         response-names:{Array-of #XMLName},
+                         response-types:{Array-of SOAPObjectType},
+                         unmarshal-context:#SOAPUnmarshalContext)
+    let context:#SOAPUnmarshalContext = null
+    {if (mtom-support-range == SOAPMTOMSupportRange.both or
+         mtom-support-range == SOAPMTOMSupportRange.response) and
+        response-headers.mime-type == "multipart/related"
+     then
+        def mr = {SOAPMTOMMessageReader bis, response-headers}
+        set bis = {mr.get-root-stream}
+        set context = {mr.get-unmarshal-context}
+    }
+    let constant xml-input-stream:XMLInputStream =
+        {new XMLInputStream.from-InputSource,
+            {new InputSource, byte-stream = bis},
+            origin-url = binding-url
+        }
+    {return xml-input-stream, response-names, response-types, context}
+  }
+
+  {doc-next
+    {purpose
+        Close the {docref XMLInputStream} and finish any clean up
+        associated with it.
+        Called by {docref SOAPHTTPRPCPostCaller.call}.
+    }
+    {override
+        See {docref SOAPHTTPRPCPostCaller.get-response-stream}.
+    }
+  }
+  {method public open {close-response-stream
+                          xml-input-stream:XMLInputStream,
+                          responses:{Array-of any}
+                      }:(responses:{Array-of any})
+    {xml-input-stream.close}
+    {return responses}
+  }
+
+  {doc-next
+    {purpose
+        Perform a request/response SOAP call, sending over {param arguments}
+        and getting back {param responses}.
+    }
+    {details
+        This calles {docref SOAPHTTPRPCPostCaller.setup-request-data} to
+        create a {docref HttpRequestData} with all of the arguments in it.
+        ({docref SOAPHTTPRPCPostCaller.setup-request-data} may put some
+        of the arguments in the SOAP part of the message and some in
+        some other part of the {param request-data}.)
+        Then it starts an HTTP POST request using
+        {docref HttpFile.http-read-open-byte} and uses
+        {docref SOAPHTTPRPCPostCaller.get-response-stream} to get a
+        {docref XMLInputStream} with the SOAP response message in it.
+        And then it calls {docref SOAPRPCMessageReader.read-rpc-response}
+        to get {param responses} out of the SOAP message, and finally it
+        calls {docref SOAPHTTPRPCPostCaller.close-response-stream}
+        to clean up the {docref XMLInputStream} and possibly handle responses
+        that aren't in the SOAP part of the response.
+    }
+    {parameter binding-url,
+        The {docref Url} to make the HTTP POST request with the SOAP
+        message to.
+    }
+    {parameter arguments,
+        An {ctext {Array-of any}} with all of the arguments to be
+        written into the SOAP message.
+    }
+    {parameter argument-names,
+        An {ctext {Array-of #XMLName}} with names for the {param arguments},
+        or {ctext null} if no name is needed.  Each argument name in
+        {param argument-names} matches up with an argument in
+        {param arguments}, and an argument type in {param argument-types} of
+        the same index.  If there is no argument name for a given argument,
+        then it will be written with a name based on the
+        {docref SOAPObjectType.element-name} of the argument type.
+    }
+    {parameter argument-types,
+        An {ctext {Array-of #SOAPObjectType}} with types for the
+        {param arguments}, if a type is needed.  Each argument type in
+        {param argument-types} matches up with an argument in
+        {param arguments} and an argument name in {param argument-names}
+        of the same index.  If the type does not have enough information
+        to marshal the argument, it will be filled in based on the
+        type of the argument, and by using type mapping information.
+    }
+    {parameter response-names,
+        An {ctext {Array-of #XMLName}} with names for the response values,
+        or {ctext null} if no name is needed.  Each response name in
+        {param response-names} matches up with a response type in
+        {param response-types} of the same index.
+        If there is no response name for a given response,
+        then it will be read based on index.
+    }
+    {parameter response-types,
+        An {ctext {Array-of #SOAPObjectType}} with types for the
+        response values, if a type is needed.  Each response type in
+        {param response-types} matches up with a response name in
+        {param response-names} of the same index.  If the type does
+        not have enough information to unmarshal the response, it will
+        be filled in based on the element name of the response, and by
+        using type mapping information.
+    }
+    {parameter encoding,
+        The encoding to use for the conversion of arguments into
+        XML.  {ctext null} means any encoding, or the default for
+        the {docref SOAPMessageWriter}.
+    }
+    {parameter request-operation,
+        The name of the operation to write into the SOAP request message, or
+        {ctext null} if no operation.
+    }
+    {parameter response-operation,
+        The name of the operation expected in the SOAP response message, or
+        {ctext null} if no operation.
+    }
+    {parameter soap-action,
+        The value for the SOAPAction, this goes into the HTTP headers
+        of th request for SOAP 1.1.
+    }
+    {parameter headers,
+    }
+    {parameter write-type-attribute?,
+        A {ctext bool} that indicates if type attributes should be
+        written out by the marshal routines.  For SOAP 1.1 that
+        mostly means an attribute named
+        {ctext {XMLName SOAPTypeMapper.xml-schema-instance-uri, "type"}}
+        with the name of the XML type as its value.
+    }
+    {parameter check-type-attribute?,
+        A {ctext bool} that indicates if the type attributes should be
+        checked against {param parameter-types} by the unmarshal calls.  For
+        SOAP 1.1 that mostly means an attribute named
+        {ctext {XMLName SOAPTypeMapper.xml-schema-instance-uri, "type"}}
+        with the name of the XML type as its value.
+    }
+    {parameter default-namespace,
+        A namespace to use as the namespace for response elements with
+        no namespace if the element name then matches a response name.
+    }
+    {parameter write-encoding-attribute?,
+        A {ctext bool} that indicates if the encoding attribute should be
+        written out in the attributes for the Body.  For SOAP 1.1 that
+        mostly means an attribute named
+        {docref SOAPMessageWriter.soap-1-1-encoding-style-attribute-xml-name}.
+    }
+    {parameter rpc-style?,
+        Should the message be read and written as a document style or rpc style
+        SOAP message.  (rpc style messages have an element named after the
+        operation as the element in the Body that contains all of the
+        arguments.  document style messages have the arguments directly
+        under the Body element.)  
+    }
+    {parameter root-element-attributes,
+        Any attributes that need to be written out for the root
+        element of the request message (which will be a SOAP Envelope element.)
+    }
+    {parameter character-encoding,
+        The character encoding to be used for encoding the SOAP data into
+        message bytes.
+    }
+    {parameter add-content-type-charset?,
+        Indicates if a charset parameter for {param character-encoding} be added
+        to the Content-Type HTTP header.  The rest of the Content-Type
+        HTTP header comes from {docref SOAPHTTPRPCPostCaller.content-type}
+        and possibly {param soap-action}.
+    }
+    {return-vals
+        The response values in an {ctext {Array-of any}}, 
+        the SOAP message headers (if any) in an {ctext {Array-of XMLToken}},
+        and an array of any attributes that were read from the root
+        element of the message (which will be a SOAP Envelope element.)
+
+    }
+    {throws
+        {exception SOAPMarshalException,
+            if a there is a problem with the types being marshaled 
+            and for most other failures in sending the request.
+        }
+        {exception SOAPException,
+            for most other errors, and
+            if there is a Fault element in the Body of message.
+            For a SOAP 1.1 fault it would throw a
+            {docref SOAP-1-1-FaultException}.
+        }
+        {exception SOAPUnmarshalException,
+            if there is a problem with the types being unmarshaled
+            or if there is a problem with the format of the XML data of
+            the response.
+        }
+    }
+  }
+  {method public open {call
+                          binding-url:Url,
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          response-names:{Array-of #XMLName},
+                          response-types:{Array-of SOAPObjectType},
+                          encoding:#String,
+                          request-operation:#XMLName = null,
+                          response-operation:#XMLName = request-operation,
+                          soap-action:#String = null,
+                          write-type-attribute?:bool = true,
+                          check-type-attribute?:bool = false,
+                          ||scheme-instance-namespace:#String = null,
+                          default-namespace:#String = null,
+                          write-encoding-attribute?:bool = true,
+                          request-headers:#{Array-of any} = null,
+                          request-header-names:#{Array-of #XMLName} = null,
+                          request-header-types:#{Array-of SOAPObjectType} = null,
+                          request-header-roles:#{Array-of #String} = null,
+                          request-header-must-understands:#{Array-of bool} = null,
+                          response-header-names:#{Array-of #XMLName} = null,
+                          response-header-types:#{Array-of SOAPObjectType} = null,
+                          rpc-style?:bool = true,
+                          root-element-attributes:#{Array-of XMLToken} = null,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          add-content-type-charset?:bool = true,
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          mtom-support-range:SOAPMTOMSupportRange =
+                              SOAPMTOMSupportRange.none,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null
+                      }:(responses:{Array-of any},
+                         headers:#{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool},
+                         root-attributes:#{Array-of XMLAttribute})
+    || .. code in here to do this in terms of get-request-data-stream,
+    || setup-request-data and get-response-stream
+    || should we be passing in CharEncoding for data?
+    let (request-data:#HttpRequestData, request-http-headers:#HttpRequestHeaders) =
+        {self.setup-request-data
+            request-operation = request-operation,
+            arguments,
+            argument-names,
+            argument-types,
+            encoding,
+            write-type-attribute? = write-type-attribute?,
+            ||scheme-instance-namespace = scheme-instance-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            headers = request-headers,
+            header-names = request-header-names,
+            header-types = request-header-types,
+            header-roles = request-header-roles,
+            header-must-understands = request-header-must-understands,
+            request-http-headers = self.request-http-headers,
+            character-encoding = character-encoding,
+            add-content-type-charset? = add-content-type-charset?,
+            soap-action = soap-action,
+            trace-stream = trace-stream,
+            http-request-method = http-request-method,
+            soap-version = soap-version,
+            mtom-support-range = mtom-support-range,
+            additional-request-headers = additional-request-headers
+        }
+    let constant file:HttpFile =
+        {binding-url.instantiate-File} asa HttpFile
+
+    {if-non-null trace-stream then
+        {if-non-null request-http-headers then
+            {trace-stream.write-one-string "===Request Headers===\n"}
+            {for v key k in request-http-headers do
+                {trace-stream.write-one-string k}
+                {trace-stream.write-one-string ": "}
+                {trace-stream.write-one-string v}
+                {trace-stream.write-one '\n'}
+            }
+        }
+    }
+
+    || self had better already be ready to supply request-data
+    let constant bis:HttpByteInputStream =
+        {file.http-read-open-byte
+            request-method = http-request-method,
+            request-data =
+                {if http-request-method != HttpRequestMethod.get and
+                    http-request-method != HttpRequestMethod.head
+                 then
+                    request-data
+                 else
+                    null
+                },
+            request-headers = request-http-headers,
+            always-return-response-headers? = true,
+            unread-size =
+                {if trace-stream != null then
+                    4096
+                 else
+                    4
+                }
+        }
+    {return
+        {self.read-message-from-stream
+            bis,
+            binding-url,
+            response-names,
+            response-types,
+            encoding,
+            response-operation = response-operation,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            header-names = response-header-names,
+            header-types = response-header-types,
+            rpc-style? = rpc-style?,
+            character-encoding = character-encoding,
+            trace-stream = trace-stream,
+            soap-version = soap-version,
+            mtom-support-range = mtom-support-range
+        }
+    }
+  }
+
+  {method public open {async-call
+                          binding-url:Url,
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          response-names:{Array-of #XMLName},
+                          response-types:{Array-of SOAPObjectType},
+                          encoding:#String,
+                          event-handler:EventHandler,
+                          request-operation:#XMLName = null,
+                          response-operation:#XMLName = request-operation,
+                          soap-action:#String = null,
+                          write-type-attribute?:bool = true,
+                          check-type-attribute?:bool = false,
+                          ||scheme-instance-namespace:#String = null,
+                          default-namespace:#String = null,
+                          write-encoding-attribute?:bool = true,
+                          request-headers:#{Array-of any} = null,
+                          request-header-names:#{Array-of #XMLName} = null,
+                          request-header-types:#{Array-of SOAPObjectType} = null,
+                          request-header-roles:#{Array-of #String} = null,
+                          request-header-must-understands:#{Array-of bool} = null,
+                          response-header-names:#{Array-of #XMLName} = null,
+                          response-header-types:#{Array-of SOAPObjectType} = null,
+                          rpc-style?:bool = true,
+                          root-element-attributes:#{Array-of XMLToken} = null,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          add-content-type-charset?:bool = true,
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none,
+                          additional-request-headers:#{Array-of XDMElement} =
+                              null,
+                          ...:EventHandler
+                      }:SOAPHTTPRPCPostAsyncWorker
+    || .. code in here to do this in terms of get-request-data-stream,
+    || setup-request-data and get-response-stream
+    || should we be passing in CharEncoding for data?
+    let (request-data:#HttpRequestData, request-http-headers:#HttpRequestHeaders) =
+        {self.setup-request-data
+            request-operation = request-operation,
+            arguments,
+            argument-names,
+            argument-types,
+            encoding,
+            write-type-attribute? = write-type-attribute?,
+            ||scheme-instance-namespace = scheme-instance-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            headers = request-headers,
+            header-names = request-header-names,
+            header-types = request-header-types,
+            header-roles = request-header-roles,
+            header-must-understands = request-header-must-understands,
+            request-http-headers = self.request-http-headers,
+            character-encoding = character-encoding,
+            add-content-type-charset? = add-content-type-charset?,
+            soap-action = soap-action,
+            trace-stream = trace-stream,
+            http-request-method = http-request-method,
+            soap-version = soap-version,
+            mtom-support-range = mtom-support-range,
+            additional-request-headers = additional-request-headers
+        }
+    let constant file:HttpFile =
+        {binding-url.instantiate-File} asa HttpFile
+
+    {if-non-null trace-stream then
+        {if-non-null request-http-headers then
+            {trace-stream.write-one-string "===Request Headers===\n"}
+            {for v key k in request-http-headers do
+                {trace-stream.write-one-string k}
+                {trace-stream.write-one-string ": "}
+                {trace-stream.write-one-string v}
+                {trace-stream.write-one '\n'}
+            }
+        }
+    }
+
+    || self had better already be ready to supply request-data
+    let constant aw:SOAPHTTPRPCPostAsyncWorker =
+        {new SOAPHTTPRPCPostAsyncWorker, self, event-handler, ...}
+    let constant afo:AsyncFileOpener =
+        {file.http-async-read-open-byte
+            request-method = http-request-method,
+            request-data =
+                {if http-request-method != HttpRequestMethod.get and
+                    http-request-method != HttpRequestMethod.head
+                 then
+                    request-data
+                 else
+                    null
+                },
+            request-headers = request-http-headers,
+            always-return-response-headers? = true,
+            {on e:AsyncFileOpenEvent do
+                {if-non-null exception = e.exception then
+                    {aw.async-failed exception asa Exception}
+                 elseif not aw.done? then
+                    let constant bis:HttpByteInputStream = 
+                        e.stream asa HttpByteInputStream
+                    {self.async-read-data
+                        bis,
+                        aw,
+                        binding-url,
+                        response-names,
+                        response-types,
+                        encoding,
+                        response-operation = response-operation,
+                        check-type-attribute? = check-type-attribute?,
+                        default-namespace = default-namespace,
+                        write-encoding-attribute? = write-encoding-attribute?,
+                        header-names = response-header-names,
+                        header-types = response-header-types,
+                        rpc-style? = rpc-style?,
+                        character-encoding = character-encoding,
+                        trace-stream = trace-stream,
+                        soap-version = soap-version,
+                        mtom-support-range = mtom-support-range
+                    }
+                }
+            }
+        }
+    {aw.async-open-started afo}
+    {return aw}
+  }
+
+  {method protected open {async-read-data
+                             bis:HttpByteInputStream,
+                             aw:SOAPHTTPRPCPostAsyncWorker,
+                             binding-url:Url,
+                             response-names:{Array-of #XMLName},
+                             response-types:{Array-of SOAPObjectType},
+                             encoding:#String,
+                             response-operation:#XMLName = null,
+                             check-type-attribute?:bool = false,
+                             default-namespace:#String = null,
+                             write-encoding-attribute?:bool = true,
+                             header-names:#{Array-of #XMLName} = null,
+                             header-types:#{Array-of SOAPObjectType} = null,
+                             rpc-style?:bool = true,
+                             character-encoding:CharEncoding = CharEncoding.utf8,
+                             trace-stream:#TextOutputStream = self.trace-stream,
+                             soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                             mtom-support-range:SOAPMTOMSupportRange =
+                                 SOAPMTOMSupportRange.none
+                         }:void
+    {if {aw.async-open-finished bis} then
+        || now start reading...
+        let constant async-reader:AsyncStreamReader =
+            {bis.async-read
+                {on e:AsyncStreamReadEvent do
+                    {if-non-null exception = e.exception then
+                        {aw.async-failed exception asa Exception}
+                     else
+                        {if {aw.async-read-finished} then
+                            let responses:#{Array-of any},
+                            headers:#{Array-of any},
+                            header-roles:#{Array-of #String},
+                            header-must-understands:#{Array-of bool},
+                            root-element-attributes:#{Array-of XMLAttribute}
+                            || read responses
+                            {try
+                                set (responses,
+                                     headers,
+                                     header-roles,
+                                     header-must-understands,
+                                     root-element-attributes) =
+                                    {self.read-message-from-stream
+                                        {new SOAPHTTPHelperByteInputStream,
+                                            e.data asa {Array-of byte},
+                                            bis
+                                        },
+                                        binding-url,
+                                        response-names,
+                                        response-types,
+                                        encoding,
+                                        response-operation = response-operation,
+                                        check-type-attribute? = check-type-attribute?,
+                                        default-namespace = default-namespace,
+                                        write-encoding-attribute? = write-encoding-attribute?,
+                                        header-names = header-names,
+                                        header-types = header-types,
+                                        rpc-style? = rpc-style?,
+                                        character-encoding = character-encoding,
+                                        trace-stream = trace-stream,
+                                        soap-version = soap-version,
+                                        mtom-support-range = mtom-support-range
+                                    }
+                                || close data stream
+                                {aw.close}
+                                
+                             catch e:Exception do
+                                {aw.async-failed e}
+                            }
+                            {if-non-null responses then
+                                {aw.async-message-processed
+                                    responses,
+                                    headers,
+                                    header-roles,
+                                    header-must-understands,
+                                    root-element-attributes
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        {aw.async-read-started async-reader}
+    }
+  }
+
+  {method public sealed {read-message-from-stream
+                            bis:ByteInputStream,
+                            binding-url:Url,
+                            response-names:{Array-of #XMLName},
+                            response-types:{Array-of SOAPObjectType},
+                            encoding:#String,
+                            response-operation:#XMLName = null,
+                            check-type-attribute?:bool = false,
+                            default-namespace:#String = null,
+                            write-encoding-attribute?:bool = true,
+                            header-names:#{Array-of #XMLName} = null,
+                            header-types:#{Array-of SOAPObjectType} = null,
+                            rpc-style?:bool = true,
+                            character-encoding:CharEncoding = CharEncoding.utf8,
+                            trace-stream:#TextOutputStream = null,
+                            soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                            mtom-support-range:SOAPMTOMSupportRange = SOAPMTOMSupportRange.none
+                        }:(responses:{Array-of any},
+                           headers:#{Array-of any},
+                           header-roles:#{Array-of #String},
+                           header-must-understands:#{Array-of bool},
+                           root-attributes:#{Array-of XMLAttribute})
+
+    || NOTE: allows non HTTP stream for debugging
+    let constant response-headers:HttpResponseHeaders = 
+        {type-switch bis
+         case bis:HttpByteInputStream do bis.response-headers
+         else {HttpResponseHeaders "", -1, 200, binding-url}}
+    
+    || trace output
+    {if-non-null trace-stream then
+        {format
+            out = trace-stream,
+            "===opened %s, status %d===\n",
+            binding-url,
+            response-headers.status
+        }
+        let constant bbis:BufferedByteInputStream =
+            bis asa BufferedByteInputStream
+        let constant bytes:{Array-of byte} = {bis.read}
+        || reset for actual reading later
+        {for i = bytes.size - 1 downto 0 do
+            {bbis.unread-one bytes[i]}
+        }
+        let encoding:CharEncoding =
+            {if-non-null charset = response-headers.charset then
+                {http-charset-to-char-encoding charset}
+             else
+                CharEncoding.utf8}
+        {if encoding == CharEncoding.none-specified then
+            set encoding = CharEncoding.utf8}
+        let (bytes-used:int, s:String) =
+            {decode-characters bytes.underlying-FastArray, encoding}
+        {format out = trace-stream,
+            "===response data from %s===\n", binding-url
+        }
+        {trace-stream.write-one-string s}
+        {trace-stream.write-one '\n'}
+    }
+
+    {type-switch bis
+     case bis:HttpByteInputStream do
+        || check HTTP status
+        {self.verify-http-status bis, soap-version}
+        
+        || check HTTP content-type
+        {self.verify-mime-type bis}
+    }
+
+    || accept compressed data
+    {type-switch bis
+     case _bis:HttpByteInputStream do
+        set bis = {zstream-for _bis}
+    }
+
+    || FIXME: allow for some sort of monitoring of data received...
+    let (xml-input-stream:XMLInputStream,
+         new-response-names:{Array-of #XMLName},
+         new-response-types:{Array-of SOAPObjectType},
+         unmarshal-context:#SOAPUnmarshalContext
+        ) =
+        {self.get-response-stream
+            bis,
+            binding-url,
+            response-names,
+            response-types,
+            response-headers,
+            mtom-support-range = mtom-support-range
+        }
+    set response-names = new-response-names
+    set response-types = new-response-types
+    || do Reader calls
+    let (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-element-attributes:#{Array-of XMLAttribute}
+        ) =
+        {self.message-reader.read-rpc-response
+            xml-input-stream,
+            response-names,
+            response-types,
+            encoding,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            unmarshal-context = unmarshal-context,
+            rpc-style? = rpc-style?,
+            operation = response-operation,
+            header-names = header-names,
+            header-types = header-types,
+            soap-version = soap-version
+        }
+    set responses =
+        {self.close-response-stream
+            xml-input-stream,
+            responses
+        }
+    || if the status was bad, we expect to have already thrown a fault related
+    || exception, but if not, throw something now.
+    {if response-headers.status != HttpResponseHeaders.status-ok then
+        {throw-soap-exception
+            {lformat
+                "Error opening URL: %s, Response status: %d.",
+                binding-url, response-headers.status
+            }
+        }
+    }
+    {return
+        responses,
+        headers, header-roles, header-must-understands,
+        root-element-attributes
+    }
+  }
+  
+  {method package {verify-http-status
+                      bis:HttpByteInputStream,
+                      soap-version:SOAPVersion
+                  }:void
+    let status:int = bis.response-headers.status
+    {switch status
+     case 
+        HttpResponseHeaders.status-ok, || 200
+        HttpResponseHeaders.status-server-error || 500
+     do
+        || expected, with 500 being used with Body's with a Fault.
+     else
+        || expected, with 400 being used with SOAP 1.2 for Body's with a Sender Fault.
+        {if soap-version != SOAPVersion.soap-1-2 or
+            status != HttpResponseHeaders.status-bad-request || 400
+         then 
+            {bis.close}
+            {throw-soap-exception
+                {lmessage Unexpected SOAP HTTP status code {value status}}}
+        }
+    }
+  }
+
+  {method package {verify-mime-type bis:HttpByteInputStream}:void
+    let mime-type:#String = bis.response-headers.mime-type
+    {switch mime-type 
+     case "text/xml", "application/xml",
+        "application/soap+xml",
+        "multipart/related" || for MTOM support
+     do
+        || expected
+     else
+        {bis.close}
+        {throw-soap-exception
+            {lmessage Unexpected SOAP content-type {value mime-type}}}
+    }
+  }
+  
+}
+
+{doc-next
+    {purpose
+        A {docref HttpRequestData} used by {docref SOAPHTTPRPCPostCaller}
+        to hold the data for a request message.
+    }
+    {notes
+        All of the calls in {docref SOAPHTTPRPCPostCaller} that pass around
+        a {docref HttpRequestData} actually expect a
+        {docref SOAPHTTPRPCPostCallerRequestData}, although a subclass of
+        {docref SOAPHTTPRPCPostCaller} might not.
+    }
+}
+{define-class public open SOAPHTTPRPCPostCallerRequestData
+  {inherits HttpRequestData}
+  || these should only really be written by SOAPHTTPRPCPostCaller and
+  || subclasses of it.
+  field public constant request-data-bytes:ByteArray
+  field public content-type-add-on:#String
+  field public constant _content-type:String
+
+  {constructor public {default content-type:String}
+    set self._content-type = content-type
+    set self.request-data-bytes = {ByteArray}
+  }
+
+  {getter public open {content-type}:#String
+    {return
+        {if-non-null ctao = self.content-type-add-on then
+            self._content-type & ctao
+         else
+            self._content-type 
+        }
+    }
+  }
+
+  {method public open {request-data}:{Array-of byte}
+    {return self.request-data-bytes}
+  }
+
+  {doc-next
+    {purpose
+        Add a "charset" parameter to the content type that will be returned
+        by {docref SOAPHTTPRPCPostCallerRequestData.content-type} based
+        on {param character-encoding}.
+    }
+  }
+  {method public open {add-charset-to-content-type
+                          character-encoding:CharEncoding
+                      }:void
+    let constant charset-name:#String =
+        {char-encoding-to-http-charset character-encoding}
+    {if-non-null charset-name then
+        let constant charset-param:String = "charset=\"" & charset-name & '"' ||"
+        {self.add-parameter-to-content-type charset-param}
+    }
+  }
+
+  {method public open {add-soap-action-to-content-type soap-action:String}:void
+    {self.add-parameter-to-content-type "action=\"" & soap-action & '"'} ||"
+  }
+
+  {doc-next
+    {purpose
+        Add a parameter to the content type that will be returned
+        by {docref SOAPHTTPRPCPostCallerRequestData.content-type}.
+    }
+    {notes
+        Parameter strings normally look like {ctext param-name=\"value\"},
+        And this method will handle putting in the the "; " seperators
+        between parameters.
+    }
+  }
+  {method public open {add-parameter-to-content-type
+                          parameter:String
+                      }:void
+    set self.content-type-add-on =
+        {if-non-null content-type-add-on = self.content-type-add-on then
+            content-type-add-on & "; " & parameter
+         else
+            "; " & parameter
+        }
+  }
+}
+
+{define-class public open SOAPHTTPRPCPostAsyncEvent
+  {inherits AsyncWorkEvent}
+
+  field private constant _exception:#Exception
+  field private constant _canceled?:bool
+  field private constant _responses:#{Array-of any}
+  field private constant _headers:#{Array-of any}
+  field private constant _header-roles:#{Array-of #String}
+  field private constant _header-must-understands:#{Array-of bool}
+  field private constant _root-attributes:#{Array-of XMLAttribute}
+
+  {constructor public {default 
+                          exception:#Exception,
+                          canceled?:bool,
+                          responses:#{Array-of any},
+                          headers:#{Array-of any},
+                          header-roles:#{Array-of #String},
+                          header-must-understands:#{Array-of bool},
+                          root-attributes:#{Array-of XMLAttribute}
+                      }
+    || Should we abort or something if both exception and responses non-null?
+    set self._exception = exception
+    set self._canceled? = canceled?
+    set self._responses = responses
+    set self._headers = headers
+    set self._header-roles = header-roles
+    set self._header-must-understands = header-must-understands
+    set self._root-attributes = root-attributes
+  }
+
+  {getter public open {exception}:#Exception
+    {return self._exception}
+  }
+
+  {doc-next
+    {purpose
+        Indicates if this event happened because of a cancel or not.}
+    {notes
+        If {metavar exception} is not {ctext null}, then trying to look
+        at {metavar canceled?} will cause {metavar exception} to be thrown.
+    }
+  }
+  {getter public open {canceled?}:bool
+    {self.check-exception}
+    {return self._canceled?}
+  }
+
+  {getter public open {responses}:#{Array-of any}
+    {self.check-exception}
+    {return self._responses}
+  }
+
+  {getter public open {headers}:#{Array-of any}
+    {self.check-exception}
+    {return self._headers}
+  }
+
+  {getter public open {header-roles}:#{Array-of #String}
+    {self.check-exception}
+    {return self._header-roles}
+  }
+
+  {getter public open {header-must-understands}:#{Array-of bool}
+    {self.check-exception}
+    {return self._header-must-understands}
+  }
+
+
+  {getter public open {root-attributes}:#{Array-of XMLAttribute}
+    {self.check-exception}
+    {return self._root-attributes}
+  }
+
+}
+
+|| FIXME needs to handle sending events to proper event handlers
+{define-class public open SOAPHTTPRPCPostAsyncWorker
+  {inherits AsyncWorker}
+
+  field public constant caller:SOAPHTTPRPCPostCaller
+  field private async-worker:#AsyncWorker
+  field private stream:#ByteInputStream
+  field private _done?:bool
+  field private constant event-target:EventTarget
+
+  {constructor public {default
+                          caller:SOAPHTTPRPCPostCaller,
+                          event-handler:EventHandler,
+                          ...:EventHandler
+                      }
+    set self.caller = caller
+    set self.event-target = {new SOAPHTTPRPCPostAsyncEventTarget}
+
+    {self.event-target.add-event-handler event-handler}
+    {for a in ... do
+        {self.event-target.add-event-handler a}
+    }
+  }
+
+  {method public open {async-open-started async-opener:AsyncFileOpener}:void
+    set self.async-worker = async-opener
+  }
+
+  {method public open {async-open-finished stream:ByteInputStream}:bool
+    set self.async-worker = null
+    set self.stream = stream
+    {return not self._done?}
+  }
+
+  {method public open {async-failed e:Exception}:void
+    set self.async-worker = null
+    {self.close}
+    set self._done? = true
+    {self.event-target.enqueue-event
+        {new SOAPHTTPRPCPostAsyncEvent,
+            e, false, null, null, null, null, null
+        }
+    }
+  }
+
+  {method public open {async-read-started async-reader:AsyncStreamReader}:void
+    set self.async-worker = async-reader
+  }
+
+  {method public open {async-read-finished}:bool
+    set self.async-worker = null
+    || do NOT close stream -- hasnt been processed yet
+    {return not self.done?}
+  }
+
+  {method public open {async-message-processed
+                          responses:{Array-of any},
+                          headers:#{Array-of any},
+                          header-roles:#{Array-of #String},
+                          header-must-understands:#{Array-of bool},
+                          root-attributes:#{Array-of XMLAttribute}
+                      }:bool
+    set self.async-worker = null
+    let ret:bool = not self._done?
+    set self._done? = true
+    {self.event-target.enqueue-event
+        {new SOAPHTTPRPCPostAsyncEvent,
+            null, false,
+            responses,
+            headers, header-roles, header-must-understands,
+            root-attributes
+        }
+    }
+    {return ret}
+  }
+
+  {getter public open {done?}:bool
+    {return self._done?}
+  }
+
+  {method package sealed {close}:void
+    {if-non-null stream = self.stream then
+        set self.stream = null
+        {if stream.open? then
+            {stream.close}
+        }
+    }
+  }
+
+  {method public open {cancel}:bool
+    {if not self._done? then
+        {self.close}
+        {if-non-null async-worker = self.async-worker then
+            set self.async-worker = null
+            let ret:bool = {async-worker.cancel}
+            {if ret then
+                {self.event-target.enqueue-event
+                    {new SOAPHTTPRPCPostAsyncEvent,
+                        null, true, null, null, null, null, null
+                    }
+                }
+                set self._done? = true
+            }
+            {return ret}
+        }
+    }
+    {return false}
+  }
+
+}
+
+{define-class public open SOAPHTTPRPCPostAsyncEventTarget
+  {inherits EventTarget}
+
+  {constructor public {default}
+    {construct-super}
+  }
+
+  {method public open {add-event-handler event-handler:EventHandler}:void
+    {if event-handler.event-class != SOAPHTTPRPCPostAsyncEvent then
+        {throw
+            {new Exception,
+                {lformat
+                    "Illegal event-handler type added to SOAPHTTPRPCPostAsyncEventTarget %s.",
+                    event-handler.event-class ||==.name-or-null
+                }
+            }
+        }
+    }
+    {super.add-event-handler event-handler}
+  }
+
+}
+
+{define-class public open SOAPHTTPHelperByteInputStream
+  {inherits {ByteInputStream-from {Array-of byte}}, HttpByteInputStream}
+  field public constant http-input-stream:HttpByteInputStream
+
+  {constructor public {default
+                         array:{Array-of byte},
+                         http-input-stream:HttpByteInputStream
+                      }
+    {construct-super.{ByteInputStream-from {Array-of byte}} array}
+    set self.http-input-stream = http-input-stream
+  }
+
+  {getter public open {response-headers}:HttpResponseHeaders
+    {return self.http-input-stream.response-headers}
+  }
+
+  {getter public open {open?}:bool
+    {return
+        self.http-input-stream.open? and
+        super.{ByteInputStream-from {Array-of byte}}.open?
+    }
+  }
+
+  {method public open {close}:void
+    {self.http-input-stream.close}
+    || seems to have already been closed
+||--    {super.{ByteInputStream-from {Array-of byte}}.close}
+  }
+}
+{define-proc package {zstream-for in:HttpByteInputStream}:ByteInputStream
+    let (enc:String, enc?:bool) = 
+        {in.response-headers.get-if-exists "Content-Encoding"}
+    {return
+        {if enc? then 
+            {switch enc
+             case "gzip"do
+                {InflateByteInputStream in,
+                    compression-format = CompressionFormat.gzip}
+             case "deflate" do
+                {InflateByteInputStream in,
+                    compression-format = CompressionFormat.zlib}
+             else
+                || unrecognized encoding: hope for the best
+                in
+            }
+         else
+            in
+        }
+    }
+}

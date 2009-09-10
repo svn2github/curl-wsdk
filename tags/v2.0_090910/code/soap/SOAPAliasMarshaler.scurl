@@ -1,0 +1,185 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPAliasMarshaler
+
+|| FIXME should this be called DefaultSOAPAliasMarshaler
+
+{doc-next
+    {purpose
+        A class to handle marshaling and unmarshaling for a type
+        that is just another name for an existing type.
+    }
+    {notes
+        You must register one explicitly for the appropriate
+        {docref SOAPObjectType}.
+    }
+}
+{define-class public open SOAPAliasMarshaler
+  {inherits SOAPMarshaler}
+
+  field public constant destination-type:SOAPObjectType
+  field public constant use-type-attribute?:bool
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          destination-type:SOAPObjectType,
+                          use-type-attribute?:bool = true,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper
+                      }
+    {construct-super.SOAPMarshaler type}
+    set destination-type =
+        {SOAPObjectType.fill-in-from-curl-type-mapper
+            destination-type,
+            curl-type-to-xml-type,
+            builtin-soap-xml-type-to-element-name-mapper
+        }
+    set destination-type =
+        {SOAPObjectType.fill-in-from-element-name-mapper
+            destination-type,
+            null,
+            xml-type-to-curl-type
+        }
+
+    {if type.curl-type == null or type.xml-type == null or
+        destination-type.curl-type == null or destination-type.xml-type == null
+     then
+        {throw-soap-exception
+            {localize "Not enough type information."}
+        }
+    }
+    set self.destination-type = destination-type
+    set self.use-type-attribute? = use-type-attribute?
+  }
+
+  {method public open {default-marshal
+                            stream:{OutputStream-of XMLToken},
+                            value:any,
+
+                            || xml-type and curl-type required
+                            type:SOAPObjectType,
+                            element:XMLName,
+
+                            encoding:#String, ||default? (multiple urls poss.)
+                            context:SOAPMarshalContext,
+                            current-mapper:SOAPTypeMapper,
+                            curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                            marshal-proc:SOAPTypeMapper.MarshalProc,
+                            write-type-attribute?:bool = true,
+                            multiple-reference:SOAPTypeMultipleReference =
+                                SOAPTypeMultipleReference.unknown
+                        }:(worked?:bool)
+    {self.check-type type, true}
+
+    def write-type-now? =
+        write-type-attribute? and self.use-type-attribute? and
+        not type.marshaler-handled-element?
+    {if write-type-now?  then
+        {marshal-write-type-attribute stream, type}
+    }
+    || this will throw on failures...
+    {current-mapper.marshal
+        stream,
+        value,
+        {if type.curl-type != self.destination-type.curl-type then
+            {SOAPObjectType.clone-with
+                self.destination-type,
+                curl-type = type.curl-type
+            }
+         else
+            self.destination-type
+        },
+        element,
+        encoding,
+        context,
+        current-mapper,
+        curl-type-to-xml-type,
+        || we already handled writing out the type
+        write-type-attribute? =
+            not self.use-type-attribute? and write-type-attribute? and
+            not write-type-now?,
+        multiple-reference = multiple-reference
+    }
+    {return true}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+    {if type.curl-type == any or
+        type.curl-type == Object or type.curl-type == #Object
+     then
+        set type =
+            {SOAPObjectType.clone-with type, curl-type = self.type.curl-type}
+    }
+    {if-non-null attributes then
+        {if check-type-attribute? and self.use-type-attribute? then
+            {unmarshal-check-type-attribute
+                attributes, {non-null type.xml-type}
+            }
+        }
+    }
+    
+    def new-type =
+        {if type.curl-type != self.destination-type.curl-type then
+            {SOAPObjectType.clone-with
+                self.destination-type,
+                curl-type = type.curl-type,
+                element-name = type.element-name
+            }
+         else
+            {SOAPObjectType.clone-with
+                self.destination-type,
+                element-name = type.element-name
+            }
+        }
+    {return
+        || this can throw an exception on failure.
+        {current-mapper.unmarshal
+            stream,
+            attributes,
+            new-type,
+            encoding,
+            context,
+            current-mapper,
+            xml-type-to-curl-type,
+            || we have already handled this
+            check-type-attribute? =
+                not self.use-type-attribute? and check-type-attribute?
+        },
+        true
+    }
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {new {Array-of #String}, null, efficient-size = 1}}
+  }
+}

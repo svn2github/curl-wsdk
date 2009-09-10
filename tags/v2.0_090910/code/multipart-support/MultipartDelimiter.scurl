@@ -1,0 +1,109 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class package MultipartDelimiter
+  field private _character-encoding:CharEncoding
+  field private _boundary:#String
+  field private _boundary-bytes:#{Array-of byte}
+  field private _final-boundary-bytes:#{Array-of byte}
+  field private _cr-lf-bytes:#{Array-of byte}
+
+  {constructor package {default
+                           character-encoding:CharEncoding = CharEncoding.utf8,
+                           boundary:#String = null
+                       }
+    set self._character-encoding = character-encoding
+    set self._boundary = boundary
+  }
+
+  {getter package {character-encoding}:CharEncoding
+    {return self._character-encoding}
+  }
+
+  {setter package {character-encoding val:CharEncoding}:void
+    {if self._character-encoding != val then
+        set self._character-encoding = val
+        set self._boundary-bytes = null
+        set self._final-boundary-bytes = null
+        set self._cr-lf-bytes = null
+    }
+  }
+
+  {getter package {boundary}:String
+    {if self._boundary == null then
+        set self._boundary =
+            {MultipartDelimiter.random-multipart-boundary}
+    }
+    {return {non-null self._boundary}}
+  }
+
+  {setter package {boundary val:String}:void
+    {if self._boundary != val then
+        set self._boundary = val
+        set self._boundary-bytes = null
+        set self._final-boundary-bytes = null
+    }
+  }
+
+  {getter package {boundary-bytes}:{Array-of byte}
+    {if self._boundary-bytes == null then
+        set self._boundary-bytes =
+            {encode-string
+                {format "--%s\r\n", self.boundary}, ||""
+                character-encoding = self.character-encoding}} 
+    {return {non-null self._boundary-bytes}}
+  }
+
+  {getter package {final-boundary-bytes}:{Array-of byte}
+    {if self._final-boundary-bytes == null then
+        set self._final-boundary-bytes =
+            {encode-string
+                {format "--%s--", self.boundary}, ||""
+                character-encoding = self.character-encoding}}
+    {return {non-null self._final-boundary-bytes}}
+  }
+
+  {getter package {cr-lf-bytes}:{Array-of byte}
+    {if self._cr-lf-bytes == null then
+        set self._cr-lf-bytes =
+            {encode-string "\r\n",
+                character-encoding = self.character-encoding}}
+    {return {non-null self._cr-lf-bytes}}
+  }
+
+  {define-proc package {random-multipart-boundary}:String
+    let r:Random = {Random}
+    {return
+        {format "SEPARATOR%x-%x", ||""
+            {r.next-non-negative-int32},
+            {r.next-non-negative-int32}
+        }
+    }
+  }
+}
+
+{define-proc package inline {encode-string
+                                in:String,
+                                character-encoding:CharEncoding =
+                                    CharEncoding.utf8
+                            }:{Array-of byte}
+    def out =
+        {ByteVec
+            max-size =
+                character-encoding.transcode-max-expansion-factor * in.size}
+    {encode-characters in, out, character-encoding}
+    {return {{Array-of byte}.from-FastArray out}}
+}

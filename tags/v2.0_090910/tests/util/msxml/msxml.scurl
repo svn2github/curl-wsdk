@@ -1,0 +1,142 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| MSXML support
+|| --------------------
+{define-proc public {build-msxml in:any}:ActiveXObject
+    let which:String =
+        "MSXML2.DOMDocument.5.0" || NOW installed (most recent)
+||--        "MSXML2.DOMDocument.4.0" || NOW installed (most recent)
+||--        "MSXML2.DOMDocument.3.0" || installed before
+||--        "MSXML2.DOMDocument.2.6" || installed but doesnt work        
+||--        "MSXML2.DOMDocument"
+||--        "MSXML.DOMDocument"
+||--        "Microsoft.XMLDOM" || oldest
+    let xml:ActiveXObject = {ActiveXObject ProgId = which}
+    set xml.async = false
+    set xml.validateOnParse = false
+    {type-switch in
+     case loc:Url do {xml.load loc.full-filename}
+     case s:String do {xml.loadXML s}
+     else {error {message Bad type: {value in}}}}
+    {if xml.documentElement == null then
+        {with-compiler-directives 
+            allow-any-calls? = true,
+            allow-implicit-any-casts? = true
+         do
+            let e:ActiveXObject = xml.parseError
+            {error {message MSXML error
+                       {format "0x%08X", e.errorCode}
+                       (at line {value e.line}:{value e.linepos})
+                       : {value e.reason}}}}}
+    {return xml}
+}
+{define-proc public {msxml-search node:ActiveXObject, query:String}:XDMNodeSet
+    {with-compiler-directives
+        allow-implicit-any-casts? = true 
+     do
+        let nodes:ActiveXObject = {node.selectNodes query}
+        let result:XDMNodeSet = {XDMNodeSet}
+        {for i = 0 below nodes.Length do
+            {result.append
+                {elaborate-msxml-node {nodes.Item i}}}}
+        {return result}}
+}
+{define-proc public {msxml-xmlname node:ActiveXObject}:XDMName
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true 
+     do
+        {return
+            {switch node.nodeTypeString
+             case "text" do
+                || hack attack
+                {XDMText ""}.xmlname
+             case "document" do
+                {XDMName "", "__DOCUMENT__"}
+             else
+                {XDMName 
+                    {if-non-null ns = node.namespaceURI then ns else ""}, 
+                    node.baseName}}}
+    }}
+{define-proc public {elaborate-msxml-node node:ActiveXObject}:XDMNode
+    {with-compiler-directives
+        allow-any-calls? = true,
+        allow-implicit-any-casts? = true 
+     do
+        {switch node.nodeTypeString
+         case "text" do
+            {return {XDMText node.text}}
+         case "document" do
+            let root:XDMElement = 
+                {elaborate-msxml-node node.documentElement} asa XDMElement
+            {return {XDMDocument root}}
+         case "attribute" do
+            {return {XDMAttribute {msxml-xmlname node}, node.value}}
+         case "element" do
+            let element:XDMElement =
+                {XDMElement {msxml-xmlname node}}
+            || attributes
+            let atts:ActiveXObject = node.attributes
+            {for i = 0 below atts.Length do
+                let x:ActiveXObject = {atts.Item i}
+                {if x.prefix == "xmlns" then
+                    {element.set-namespace-declaration 
+                        x.baseName, x.text}
+                 elseif x.baseName == "xmlns" then
+                    {element.set-namespace-declaration 
+                        "", x.text}
+                 else
+                    let n:XDMName = {msxml-xmlname x}
+                    {element.add-attribute 
+                        {XDMAttribute n, x.text}}}}
+            || elements
+            let xs:ActiveXObject = node.childNodes
+            {for i = 0 below xs.Length do
+                let x:ActiveXObject = {xs.Item i}
+                let type:String = x.nodeTypeString
+                {switch type
+                 case "text" do
+                    {element.append {XDMText x.text}}
+                 case "element" do
+                    {element.append {elaborate-msxml-node x}}
+                 case "comment" do
+                    || ignore
+                 else
+                    {output {message Unrecognized node type '{value type}'}}
+                }}
+            {return element}
+         else
+            {return {XDMText {message __{value node.nodeTypeString}__}}}}
+    }}
+
+||--{define-proc public {transform-msxml-node
+||--                 data-node:ActiveXObject,
+||--                 transform-node:ActiveXObject
+||--             }:String
+||--||--             }:XDMElement
+||--    {with-compiler-directives
+||--        allow-any-calls? = true,
+||--        allow-implicit-any-casts? = true 
+||--     do 
+||--        let result:String =
+||--            {data-node.transformNode transform-node}
+||--        ||{data-node.transformNodeToObject transform-node, _targetObject_}
+||--||--        let result-node:XDMElement =
+||--||--            {build-xml result}.root
+||--||--        {return result-node}
+||--        {return result}
+||--    }}

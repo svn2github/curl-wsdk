@@ -1,0 +1,86 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open ImageResult
+
+  field public title:#String
+  field public mediaUrl:#String
+  field public url:#String
+  field public displayUrl:#String
+  field package _width:{Nullable uint32} = null
+  {getter public {width}:uint32
+    {return self._width.value-or-default}
+  }
+  {setter public {width val:uint32}:void
+    set self._width = val
+  }
+  {getter public {width-specified?}:bool
+    {return self._width.value?}
+  }
+  {method public {unset-width}:void
+    set self._width = null
+  }
+  field package _height:{Nullable uint32} = null
+  {getter public {height}:uint32
+    {return self._height.value-or-default}
+  }
+  {setter public {height val:uint32}:void
+    set self._height = val
+  }
+  {getter public {height-specified?}:bool
+    {return self._height.value?}
+  }
+  {method public {unset-height}:void
+    set self._height = null
+  }
+  field package _fileSize:{Nullable uint32} = null
+  {getter public {fileSize}:uint32
+    {return self._fileSize.value-or-default}
+  }
+  {setter public {fileSize val:uint32}:void
+    set self._fileSize = val
+  }
+  {getter public {fileSize-specified?}:bool
+    {return self._fileSize.value?}
+  }
+  {method public {unset-fileSize}:void
+    set self._fileSize = null
+  }
+  field public contentType:#String
+  field public thumbnail:#Thumbnail
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      title:#String = {uninitialized-value-for-type #String},
+      mediaUrl:#String = {uninitialized-value-for-type #String},
+      url:#String = {uninitialized-value-for-type #String},
+      displayUrl:#String = {uninitialized-value-for-type #String},
+      width:uint32 = {uninitialized-value-for-type uint32},
+      height:uint32 = {uninitialized-value-for-type uint32},
+      fileSize:uint32 = {uninitialized-value-for-type uint32},
+      contentType:#String = {uninitialized-value-for-type #String},
+      thumbnail:#Thumbnail = {uninitialized-value-for-type #Thumbnail}
+    }
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? mediaUrl} then
+        set self.mediaUrl = mediaUrl}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+    {if {keyword-supplied? displayUrl} then
+        set self.displayUrl = displayUrl}
+    {if {keyword-supplied? width} then
+        set self.width = width}
+    {if {keyword-supplied? height} then
+        set self.height = height}
+    {if {keyword-supplied? fileSize} then
+        set self.fileSize = fileSize}
+    {if {keyword-supplied? contentType} then
+        set self.contentType = contentType}
+    {if {keyword-supplied? thumbnail} then
+        set self.thumbnail = thumbnail}
+  }
+
+}
+

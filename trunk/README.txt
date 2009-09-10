@@ -15,10 +15,10 @@
 ||| limitations under the License.
 
 ====================
-WSDK Release 2.0.1 for Curl API Versions 7.0 and 6.0. 
+WSDK Release 2.0 for Curl API Versions 7.0 and 6.0. 
 ====================
 
-This directory contains the 2.0.1 release of the Curl
+This directory contains the 2.0 release of the Curl
 Web Services Software Development Kit (WSDK)
 
 The Curl Web Services SDK (WSDK) provides the technologies necessary
@@ -117,14 +117,6 @@ and thus require privilege and web access to succeed.
 
 CHANGES
 ====================
-
-WSDK 2.0.1 CHANGES
---------------------
-
-The WSDK 2.0.1 Release is a maintenance release,
-which contains some documentation improvements.
-
-- change WSDL web search examples to use LiveSearch service
 
 WSDK 2.0 CHANGES
 --------------------

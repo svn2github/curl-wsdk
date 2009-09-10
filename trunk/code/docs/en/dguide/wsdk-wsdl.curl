@@ -70,30 +70,6 @@
     
     The web service package can be generated programmatically
     using {docref generate-wsdl-package}.
-    
-    Use the {bold WSDL Services} IDE tool
-    to generate a Curl web service package from the WSDL file. 
-    The generated code provides a service class which calls methods corresponding to
-    SOAP bindings for a  web service described by a WSDL file.
-    
-    The {bold WSDL Services} IDE tool can be installed in the Curl IDE 
-    with the {bold {monospace Tools > Configure Editors...}}
-    command using the editor description file
-    {link href = {url "tools/wsdl/editor-info.txt"}, 
-    {monospace color = "purple", tools/wsdl/editor-info.txt}}
-    provided with this documentation.
-
-    {Frame background = "#DDD",
-        {paragraph
-            {bold Installation note:}
-            The WSDL IDE Tool must be installed using the files
-            installed with the Curl Documentation Viewer.
-            This assures it has access to the necessary libraries.
-            You can past this path into the
-            {bold {monospace Configure Editors...}} dialog:
-            
-            {monospace {value {url "tools/wsdl/editor-info.txt"}.local-filename}}
-        }}
 
     {code-box
         {curl-code
@@ -123,6 +99,35 @@
     title = "Generating WSDL code",
     {url "examples/ex-generate-service-package.curl"}
 }
+
+{heading level = 3,
+    destination-name = "wsdl-ide-tool",
+    The WSDL Services IDE Tool
+}
+
+Use the {bold WSDL Services} IDE tool
+to generate a Curl web service package from the WSDL file. 
+The generated code provides a service class which calls methods corresponding to
+SOAP bindings for a  web service described by a WSDL file.
+
+The {bold WSDL Services} IDE tool can be installed in the Curl IDE 
+with the {bold {monospace Tools > Configure Editors...}}
+command using the editor description file
+{link href = {url "tools/wsdl/editor-info.txt"}, 
+{monospace color = "purple", tools/wsdl/editor-info.txt}}
+provided with this documentation.
+
+{Frame background = "#DDD",
+    {paragraph
+        {bold Installation note:}
+        The WSDL IDE Tool must be installed using the files
+        installed with the Curl Documentation Viewer.
+        This assures it has access to the necessary libraries.
+        You can paste this path into the
+        {bold {monospace Configure Editors...}} dialog:
+        
+        {monospace {value {url "tools/wsdl/editor-info.txt"}.local-filename}}
+    }}
 
 {heading level = 3,
     Invoke the Service

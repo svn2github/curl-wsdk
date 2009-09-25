@@ -1,0 +1,22 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open TranslationRequest
+
+  field public sourceLanguage:String = ""
+  field public targetLanguage:String = ""
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      sourceLanguage:String = {required-keyword "TranslationRequest.sourceLanguage"} asa String,
+      targetLanguage:String = {required-keyword "TranslationRequest.targetLanguage"} asa String
+    }
+    {if {keyword-supplied? sourceLanguage} then
+        set self.sourceLanguage = sourceLanguage}
+    {if {keyword-supplied? targetLanguage} then
+        set self.targetLanguage = targetLanguage}
+  }
+
+}
+

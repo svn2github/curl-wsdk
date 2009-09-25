@@ -1,0 +1,1155 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class package WSDLSOAPParam
+  field package xml-name:XMLName
+  field package curl-name:String
+  field package type:WSDLSchemaType
+  field package element-name:#XMLName
+  field package nullable?:bool
+  field package content-types:#String
+
+  {constructor package {default
+                           xml-name:XMLName,
+                           curl-name:String,
+                           type:WSDLSchemaType,
+                           element-name:#XMLName,
+                           nullable?:bool,
+                           content-types:#String = null
+                       }
+    set self.xml-name = xml-name
+    set self.curl-name = curl-name
+    set self.type = type
+    set self.element-name = element-name
+    set self.nullable? = nullable?
+    set self.content-types = content-types
+  }
+}
+
+{let package constant WSDLParamArray:Type = {Array-of WSDLSOAPParam}}
+
+{define-class public open WSDL {inherits WSDLDocumentedNode}
+  field package top-node:WSDLDOMNode
+  field public constant source-url:Url 
+  field public name:#String
+  field public target-namespace:#String
+  field public constant bindings:{Array-of WSDLBinding} = {new {Array-of WSDLBinding}}
+  field public constant imports:{Array-of WSDLImport} = {new {Array-of WSDLImport}}
+  field public constant messages:{Array-of WSDLMessage} = {new {Array-of WSDLMessage}}
+  field public constant port-types:{Array-of WSDLPortType} = {new {Array-of WSDLPortType}}
+  field public constant services:{Array-of WSDLService} = {new {Array-of WSDLService}}
+  field public constant extensions:{Array-of WSDLExtensionElement} =
+      {new {Array-of WSDLExtensionElement}}
+
+  field public constant schema:WSDLSchema
+  || NOTE: transitional
+  {getter public sealed {curl-namer}:WSDLCurlNamer
+    {return self.schema.curl-namer}
+  }
+  {getter public sealed {names}:WSDLNameTable
+    {return self.schema.names}
+  }
+  {getter public sealed {type-to-element-name}:{HashTable-of XMLName, XMLName}
+    {return self.schema.type-to-element-name}
+  }
+  
+  field package constant local-namespaces:{Set-of String} = {{Set-of String}}
+  
+  || imports possibly defined by "forward references"
+  field public constant pending-imports:{Array-of WSDLImport} = 
+      {new {Array-of WSDLImport}}
+  || for debugging 
+  || - allow processing to continue after unhandled tag
+  || TODO: consider finer grained categorization
+  field package unexpected-tags-fatal?:bool = true
+  field package ignored-tags-reported?:bool = true
+  field public-get warnings:{Array-of Exception}
+  || - output diagnostic messages
+  field package debug?:bool = false
+
+  || namespaces
+  || --------------------
+  let package constant wsdl-namespace-uri:String =
+      "http://schemas.xmlsoap.org/wsdl/"
+
+  let package constant wsdl-soap-1-1-namespace-uri:String =
+      "http://schemas.xmlsoap.org/wsdl/soap/"
+
+  let package constant wsdl-soap-1-2-namespace-uri:String =
+      "http://schemas.xmlsoap.org/wsdl/soap12/"
+
+  let package constant soap-1-1-enc-namespace-uri:String =
+      "http://schemas.xmlsoap.org/soap/encoding/"
+
+  let package constant wsdl-http-namespace-uri:String =
+      "http://schemas.xmlsoap.org/wsdl/http/"
+
+  let package constant schema-namespace-uri:String =
+      "http://www.w3.org/2001/XMLSchema"
+
+  let package constant soap-transport-default:String =
+      "http://schemas.xmlsoap.org/soap/http"
+
+  let package constant xmime-namespace-uri:String =
+      "http://www.w3.org/2005/05/xmlmime"
+  
+  || WSDL items
+  let package constant message-prefix:String = "m:"
+  let package constant binding-prefix:String = "b:"
+  let package constant port-type-prefix:String = "pt:"
+  let package constant service-prefix:String = "s:"
+  let package constant port-prefix:String = "p:"
+  || XML Schema items
+  let package constant type-prefix:String = "t:"
+  let package constant element-prefix:String = "e:"
+  let package constant element-group-prefix:String = "g:"
+  let package constant attribute-prefix:String = "a:"
+  let package constant attribute-group-prefix:String = "ag:"
+
+  field package generic-document-type:WSDLSchemaType =
+      {uninitialized-value-for-type WSDLSchemaType}
+
+  || construction
+  || --------------------
+  {constructor public {default
+                          source-url:Url,
+                          curlify-names?:bool = true
+                      }
+
+    || main document
+    set self.source-url = source-url
+    let constant handler:WSDLDOMHandler = {WSDLDOMHandler source-url}
+    let constant top-node:#WSDLDOMNode = {handler.parse}
+    let constant def-node:WSDLDOMNode =
+        {if-non-null top-node then
+            set self.top-node = top-node
+            top-node
+         else
+            {wsdl-exception {hlmessage Unable to parse WSDL file '{value source-url}'}}
+        }
+    {construct-super def-node}
+    set self.warnings = {{Array-of Exception}}
+
+    set self.schema =
+        {WSDLSchema
+            self.top-node,
+            curlify-names? = curlify-names?} 
+
+    || parse document root
+    let error?:bool = false
+    {if not {self.wsdl-tag-match def-node.name, "definitions"} then
+        {wsdl-exception node = def-node,
+            {hlmessage Bad <definitions>}}
+    }
+    {if-non-null name = {def-node.get-attribute "name"} then
+        set self.name = name
+    }
+    let constant target-namespace:String =
+        {if-non-null tn = {def-node.get-attribute "targetNamespace"} then
+            tn
+         else
+            ""
+        }
+    set self.target-namespace = target-namespace
+
+    || parse definitions
+    {self.parse-definition def-node, target-namespace}
+
+    || resolve wsdl references
+    {self.resolve-imports}
+
+  }
+
+  {method private {parse-definition
+                      def-node:WSDLDOMNode,
+                      target-namespace:String
+                  }:void
+    || avoid WSDL forward references by sorting nodes
+    || WSDLSchema forward references are handled using placeholders
+    let constant ordering:StringArray =
+        {StringArray 
+            "types", "import", "documentation",
+            "message", "portType", "binding", "service"}
+    let order:{proc-type {WSDLDOMNode}:int} =
+        {proc {n:WSDLDOMNode}:int
+            let tag:String = 
+                {if-non-null name = n.name then name.local-name else ""}
+            let i:int = {ordering.find tag}
+            {return {if i < 0 then 100 else i}}}
+    let constant nodes:{Array-of WSDLDOMNode} = def-node.children
+    {nodes.sort comparison-proc =
+        {proc {a:WSDLDOMNode, b:WSDLDOMNode}:bool
+            {return {order a} <= {order b}}}}
+    
+    || process ordered children     
+    {for node in nodes do 
+        {if {self.wsdl-tag-match node.name, "types"} then
+            {self.parse-types node}
+         elseif {self.wsdl-tag-match node.name, "import"} then
+            || NOTE: wsdl:import != xs:import
+            {self.parse-import
+                node, target-namespace}
+         elseif {self.wsdl-tag-match node.name, "message"} then
+            {self.parse-message node, target-namespace}
+         elseif {self.wsdl-tag-match node.name, "portType"} then
+            {self.parse-port-type node, target-namespace}
+         elseif {self.wsdl-tag-match node.name, "binding"} then
+            {self.parse-binding node, target-namespace}
+         elseif {self.wsdl-tag-match node.name, "service"} then
+            {self.parse-service node, target-namespace}
+         elseif {self.wsdl-tag-match node.name, "documentation"} then
+            {self.ignored-tag node}
+         elseif node.name.namespace != WSDL.wsdl-namespace-uri then
+            || tags in other namespaces are for extensions, can be ignored
+            {self.ignored-tag node}
+         else
+            {self.unexpected-tag node}
+        }
+    }
+    || note this namespace
+    {self.local-namespaces.insert target-namespace}
+  }
+
+  || namespace tag matching
+  || --------------------
+  {method private {wsdl-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDL.wsdl-namespace-uri
+         else
+            false
+        }
+    }
+  }
+
+  {method private {schema-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDLSchema.schema-namespace-uri
+         else
+            false
+        }
+    }
+  }
+
+  {method private {wsdl-soap-1-1-tag-match
+                      qname:#XMLName, match-tag:String
+                  }:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDL.wsdl-soap-1-1-namespace-uri
+         else
+            false
+        }
+    }
+  }
+
+  {method private {wsdl-soap-1-2-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDL.wsdl-soap-1-2-namespace-uri
+         else
+            false
+        }
+    }
+  }
+
+  {method private {wsdl-http-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDL.wsdl-http-namespace-uri
+         else
+            false
+        }
+    }
+  }
+
+  {method private {soap-1-1-enc-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDL.soap-1-1-enc-namespace-uri
+         else
+            false
+        }
+    }
+  }
+      
+  || XML Schema tags
+  || --------------------
+  {method private {parse-types
+                      node:WSDLDOMNode
+                  }:void
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "schema"} then
+            {self.schema.parse-schema child}
+
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {self.append-documentation-node child}
+
+         elseif {self.wsdl-tag-match child.name, "annotation"} then
+            {self.append-documentation-node child}
+
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+
+         else
+            {self.unexpected-tag child} 
+        }
+    }
+ 
+    || resolve schema references
+    {self.schema.finish-parsing}
+  }
+
+  || import processing
+  || --------------------
+  {method private {parse-import
+                      node:WSDLDOMNode,
+                      target-namespace:String
+                  }:void
+    let constant namespace:String = 
+        || TODO: verify that this is optional
+        {if-non-null namespace = {node.get-attribute "namespace"} then
+            namespace
+         else
+            || TODO: or should this be ""
+            "" ||target-namespace
+        }
+    let constant location-attribute:String = "location"
+    let constant location:#String = {node.get-attribute location-attribute}
+    
+    || prepare to load
+    let constant import:WSDLImport =
+        {WSDLImport namespace, location, node}
+    set import.wsdl = self   
+    
+    {if-non-null location then
+        || ignore if already loaded from same location 
+        {for i in self.imports do
+            {if i.namespace == namespace and i.full-location == import.full-location then
+                {if not i.loaded? then
+                    {self.load-import
+                        i, target-namespace}
+                }
+                {return}
+             elseif i.namespace == namespace then
+                || same namespace from different location
+                {output
+                    {hlmessage Warning: 
+                        Namespace '{value namespace}' 
+                        defined by '{value i.full-location}' 
+                        will be redefined by '{value import.full-location}'}}
+             elseif i.location == location then
+                || different namespace from same location
+                {output
+                    {hlmessage Warning:  
+                        Unable to define namespace '{value namespace}'
+                        from '{value i.full-location}' it defined
+                        because namespace '{value i.namespace}'}}
+            }
+        }
+        || note import
+        {self.imports.append import}
+        || do import
+        {self.load-import import, import.namespace}
+     else
+        || note unresolved namespace, in case its defined later
+        {self.pending-imports.append import}
+    }
+  }
+  
+  {method private {load-import
+                      import:WSDLImport,
+                      target-namespace:String
+                  }:void
+    let constant handler:WSDLDOMHandler =
+        {WSDLDOMHandler {non-null import.full-location}}
+    
+    let constant top-node:#WSDLDOMNode = {handler.parse}
+    let constant node:WSDLDOMNode =
+        {if-non-null top-node then
+            top-node
+         else
+            {wsdl-exception node = import.node,
+                {hlmessage Unable to parse import of '{value import.location}'}
+            }
+        }
+    set import.loaded? = true
+    {if {self.wsdl-tag-match node.name, "definitions"} then
+        {if-non-null tn = {node.get-attribute "targetNamespace"} then
+            set target-namespace = tn
+        }
+        {self.parse-definition node, target-namespace}
+     else
+        || FIXME: aren't there other legal imports?  (services and such?)
+        {self.unexpected-tag node}
+    }
+  }
+  
+  {method private {resolve-imports}:void
+    || "forward references" may not be resolved in a single pass
+    || so recurse (while making progress) until all are resolved
+    let unresolved:{Array-of WSDLImport} = 
+        {self.pending-imports.clone}
+    {while not unresolved.empty? do
+        let to-resolve:{Array-of WSDLImport} = {unresolved.clone}
+        {unresolved.clear}
+        {for import in to-resolve do
+            let namespace:String = import.namespace
+            || could have been defined locally
+            {if not {self.known-schema? namespace} then
+                || TODO: load some other way?
+                || -- if so, after loading, {self.imports.append import}
+                {unresolved.append import}}
+        }
+        || not making progress
+        {if unresolved.size >= to-resolve.size then
+            {wsdl-exception 
+                {hlmessage Unable to import {value unresolved.size} namespaces,
+                    including '{value unresolved[0].namespace}'}}}
+    }
+  }
+  
+  {method private {known-schema? namespace:String}:bool
+    {if
+        || defined locally
+        {self.local-namespaces.member? namespace}
+     then
+        {return true}}   
+    || imported
+    {for i in self.imports do
+        {if i.namespace == namespace and i.loaded? then
+            {return true}}}   
+    {return false}
+  }
+
+  || WSDL tags
+  || --------------------
+  {method private {parse-message
+                      node:WSDLDOMNode,
+                      target-namespace:String
+                  }:void
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant message:WSDLMessage =
+        {WSDLMessage name, self, node}
+    {self.messages.append message}
+    {self.names.set-name target-namespace, WSDL.message-prefix, name, message}
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "part"} then
+            let constant part:WSDLMessagePart = {self.parse-part child}
+            {message.parts.append part}
+            set part.message = message
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {message.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+  }
+
+  {method private {parse-part
+                      node:WSDLDOMNode
+                  }:WSDLMessagePart
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant element:#String = {node.get-attribute "element"}
+    let constant type:#String = {node.get-attribute "type"}
+    {return
+        {WSDLMessagePart
+            name,
+            {if-non-null element then
+                {self.names.resolve-qname
+                    node,
+                    element,
+                    WSDL.element-prefix
+                } asa WSDLSchemaElement
+             else
+                null
+            },
+            {if-non-null type then
+                {self.names.resolve-qname
+                    node,
+                    type,
+                    WSDL.type-prefix
+                } asa WSDLSchemaType
+             else
+                null
+            },
+            node
+        }
+    }
+  }
+
+  {method private {parse-port-type
+                      node:WSDLDOMNode,
+                      target-namespace:String
+                  }:void
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant port-type:WSDLPortType =
+        {WSDLPortType name, self, node}
+    {self.port-types.append port-type}
+    {self.names.set-name target-namespace, WSDL.port-type-prefix, name, port-type}
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "operation"} then
+            let op:WSDLPortOperation = {self.parse-port-operation child}
+            {port-type.operations.append op}
+            set op.port-type = port-type
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {port-type.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+  }
+
+  {method private {parse-port-operation
+                      node:WSDLDOMNode
+                  }:WSDLPortOperation
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant order:#String = {node.get-attribute "parameterOrder"}
+    let constant op:WSDLPortOperation =
+        {WSDLPortOperation
+            name,
+            {if-non-null order then
+                {order.split}
+             else
+                null
+            },
+            node
+        }
+    let input:#WSDLPortOperationMessage
+    let output:#WSDLPortOperationMessage
+    let constant faults:{Array-of WSDLPortOperationMessage} =
+        {new {Array-of WSDLPortOperationMessage}}
+    || save which one was first and which one was second, so that we
+    || can tell what type of operation this is, so that we can assign
+    || default names.
+    let first-message:#WSDLPortOperationMessage
+    let second-message:#WSDLPortOperationMessage
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "input"} then
+            set input = {self.parse-port-operation-message
+                            child,
+                            WSDLKindOfMessage.input
+                        }
+            set input.operation = op
+            {if first-message == null then
+                set first-message = input
+             elseif second-message == null then
+                set second-message = input
+            }
+         elseif {self.wsdl-tag-match child.name, "output"} then
+            set output = {self.parse-port-operation-message
+                             child,
+                             WSDLKindOfMessage.output
+                        }
+            set output.operation = op
+            {if first-message == null then
+                set first-message = output
+             elseif second-message == null then
+                set second-message = output
+            }
+         elseif {self.wsdl-tag-match child.name, "fault"} then
+            let fault:WSDLPortOperationMessage =
+                {self.parse-port-operation-message
+                    child,
+                    WSDLKindOfMessage.fault
+                }
+            set fault.operation = op
+            {faults.append fault}
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {op.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    let constant transmission-primitive:WSDLPortOperationTransmissionPrimitive =
+        {if first-message == input and second-message == output then
+            WSDLPortOperationTransmissionPrimitive.request-response
+         elseif first-message == output and second-message == input then
+            WSDLPortOperationTransmissionPrimitive.solicit-response
+         elseif input != null then
+            WSDLPortOperationTransmissionPrimitive.one-way
+         elseif output != null then
+            WSDLPortOperationTransmissionPrimitive.notification
+         else
+            {wsdl-exception node = node,
+                {hlmessage Port operation '{WSDL.format-name name = name, node}' 
+                    has no messages.}
+            }
+        }
+    set op.input = input
+    set op.output = output
+    {if faults.size > 0 then
+        set op.faults = faults
+    }
+    set op.transmission-primitive = transmission-primitive
+    {return op}
+  }
+
+  {method private {parse-port-operation-message
+                      node:WSDLDOMNode,
+                      kind:WSDLKindOfMessage
+                  }:WSDLPortOperationMessage
+    let name:#String = {node.get-attribute "name"}
+    let constant message:String =
+        {WSDL.get-required-node-attribute node, "message"}
+    let pom:WSDLPortOperationMessage =
+        {WSDLPortOperationMessage
+            name,
+            {self.names.resolve-qname node, message, WSDL.message-prefix}
+                asa WSDLMessage,
+            kind,
+            node
+        }
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "documentation"} then
+            {pom.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    {return pom}
+  }
+
+  {method private {parse-binding
+                      node:WSDLDOMNode,
+                      target-namespace:String
+                  }:void
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant type:String =
+        {WSDL.get-required-node-attribute node, "type"}
+    let constant port-type:WSDLPortType =
+        {self.names.resolve-qname
+            node,
+            type,
+            WSDL.port-type-prefix
+        } asa WSDLPortType
+    let constant binding:WSDLBinding =
+        {WSDLBinding name, port-type, node}
+    {self.bindings.append binding}
+    {self.names.set-name target-namespace, WSDL.binding-prefix, name, binding}
+    || Passed as default for style in WSDLSOAPOperation
+    let soap-style:WSDLSOAPStyle
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "operation"} then
+            let op:WSDLBindingOperation =
+                {self.parse-binding-operation child, soap-style}
+            {binding.operations.append op}
+            set op.binding = binding
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "binding"} then
+            def sb = {self.parse-soap-binding child, SOAPVersion.soap-1-1}
+            set soap-style = sb.style
+            {binding.extensions.append sb}
+            set binding.soap-version = SOAPVersion.soap-1-1
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "binding"} then
+            def sb = {self.parse-soap-binding child, SOAPVersion.soap-1-2}
+            set soap-style = sb.style
+            {binding.extensions.append sb}
+            set binding.soap-version = SOAPVersion.soap-1-2
+         elseif {self.wsdl-http-tag-match child.name, "binding"} then
+            let b:WSDLHttpBinding = {self.parse-http-binding child}
+            {binding.extensions.append b}
+            {break}                     ||FIXME
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {binding.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         elseif child.name.namespace != WSDL.wsdl-namespace-uri then
+            || tags in other namespaces are for extensions, can be ignored
+            {self.ignored-tag node}
+         else
+            {self.unexpected-tag node}
+        }
+    }
+  }
+
+  {method private {parse-binding-operation
+                      node:WSDLDOMNode,
+                      style:WSDLSOAPStyle
+                  }:WSDLBindingOperation
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant op:WSDLBindingOperation =
+        {WSDLBindingOperation name, node}
+    let input-message:#WSDLBindingOperationMessage
+    let output-message:#WSDLBindingOperationMessage
+    let constant faults:{Array-of WSDLBindingOperationMessage} =
+        {new {Array-of WSDLBindingOperationMessage}}
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "input"} then
+            set input-message =
+                {self.parse-binding-operation-message
+                    child,
+                    WSDLKindOfMessage.input
+                }
+            set input-message.operation = op
+         elseif {self.wsdl-tag-match child.name, "output"} then
+            set output-message =
+                {self.parse-binding-operation-message
+                    child,
+                    WSDLKindOfMessage.output
+                }
+            set output-message.operation = op
+         elseif {self.wsdl-tag-match child.name, "fault"} then
+            let fault:WSDLBindingOperationMessage =
+                {self.parse-binding-operation-message
+                    child,
+                    WSDLKindOfMessage.fault
+                }
+            set fault.operation = op
+            {faults.append fault}
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "operation"} then
+            {op.extensions.append
+                {self.parse-soap-operation child, style}
+            }
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "operation"} then
+            {op.extensions.append
+                {self.parse-soap-operation child, style}
+            }
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {op.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child} 
+         elseif child.name.namespace != WSDL.wsdl-namespace-uri then
+            || tags in other namespaces are for extensions, can be ignored
+            {self.ignored-tag node} 
+         else
+            {self.unexpected-tag node}
+        }
+    }
+    set op.input = input-message
+    set op.output = output-message
+    {if faults.size > 0 then
+        set op.faults = faults
+    }
+    {return op}
+  }
+
+  {method private {parse-binding-operation-message
+                      node:WSDLDOMNode,
+                      kind:WSDLKindOfMessage
+                  }:WSDLBindingOperationMessage
+    let constant name:#String = {node.get-attribute "name"}
+    let constant message:WSDLBindingOperationMessage =
+        {WSDLBindingOperationMessage name, kind, node}
+    {for child in node.children do
+        {if {self.wsdl-soap-1-1-tag-match child.name, "body"} then
+            {message.extensions.append {self.parse-soap-body child}}
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "body"} then
+            {message.extensions.append {self.parse-soap-body child}}
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "header"} then
+            {message.extensions.append {self.parse-soap-header child}}
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "header"} then
+            {message.extensions.append {self.parse-soap-header child}}
+         elseif {self.wsdl-soap-1-1-tag-match child.name, "fault"} then
+            {message.extensions.append {self.parse-soap-fault child, fault-name = name}}
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "fault"} then
+            {message.extensions.append {self.parse-soap-fault child, fault-name = name}}
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {message.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         elseif child.name.local-name == "message" then
+            || TODO:
+            {self.ignored-tag child}
+         elseif child.name.local-name == "multipartRelated" then
+            {self.unsupported-tag child}
+         elseif child.name.namespace != WSDL.wsdl-namespace-uri then
+            || tags in other namespaces are for extensions, can be ignored
+            {self.ignored-tag node}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    {return message}
+  }
+
+  {method private {parse-service
+                      node:WSDLDOMNode,
+                      target-namespace:String
+                  }:void
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant service:WSDLService = {WSDLService name, node}
+    set service.wsdl = self
+    {self.services.append service}
+    {self.names.set-name target-namespace, WSDL.service-prefix, name, service}
+    {for child in node.children do
+        {if {self.wsdl-tag-match child.name, "port"} then
+            let port:WSDLServicePort = {self.parse-service-port child}
+            {service.ports.append port}
+            set port.service = service
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {service.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+  }
+
+  {method private {parse-service-port
+                      node:WSDLDOMNode
+                  }:WSDLServicePort
+    let constant name:String =
+        {WSDL.get-required-node-attribute node, "name"}
+    let constant binding-string:String =
+        {WSDL.get-required-node-attribute node, "binding"}
+    let constant binding:WSDLBinding =
+        {self.names.resolve-qname
+            node,
+            binding-string,
+            WSDL.binding-prefix
+        } asa WSDLBinding
+    let constant port:WSDLServicePort =
+        {WSDLServicePort name, binding, node}
+    {for child in node.children do
+        {if {self.wsdl-soap-1-1-tag-match child.name, "address"} then
+            {port.extensions.append {self.parse-soap-address child}}
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "address"} then
+            {port.extensions.append {self.parse-soap-address child}}
+         elseif {self.wsdl-http-tag-match child.name, "address"} then
+            {port.extensions.append {self.parse-http-address child}}
+         elseif {self.wsdl-tag-match child.name, "documentation"} then
+            {port.append-documentation-node child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         elseif child.name.namespace != WSDL.wsdl-namespace-uri then
+            || tags in other namespaces are for extensions, can be ignored
+            {self.ignored-tag node}
+         else
+            {self.unexpected-tag node}
+        }
+    }
+    {return port}
+  }
+
+  {method private {parse-http-binding
+                      node:WSDLDOMNode
+                  }:WSDLHttpBinding
+    let constant verb:String =
+        {WSDL.get-required-node-attribute node, "verb"}
+    {return {WSDLHttpBinding verb, node}}
+  }
+
+  {method private {parse-soap-binding
+                      node:WSDLDOMNode,
+                      soap-version:SOAPVersion
+                  }:WSDLSOAPBinding
+    let style:#String = {node.get-attribute "style"}
+    let transport:#String = {node.get-attribute "transport"}
+    {return
+        {WSDLSOAPBinding
+            {if style == "rpc" then
+                WSDLSOAPStyle.rpc
+             else
+                WSDLSOAPStyle.document
+            },
+            {if-non-null transport then
+                transport
+             else
+                WSDL.soap-transport-default
+            },
+            node,
+            soap-version
+        }
+    }
+  }
+
+  {method private {parse-soap-operation
+                      node:WSDLDOMNode,
+                      style-from-binding:WSDLSOAPStyle
+                  }:WSDLSOAPOperation
+    let style:#String = {node.get-attribute "style"}
+    let soap-action:#String = {node.get-attribute "soapAction"}
+    || NOTE: Should we check for soapActionRequired when doing SOAP 1.2?
+    || I say, ignore it, if a soapAction is supplied, we will use it.
+    {return
+        {WSDLSOAPOperation
+            {if-non-null style then
+                {WSDLSOAPStyle name = style}
+             else
+                style-from-binding
+            },
+            soap-action,
+            node
+        }
+    }
+  }
+
+  {method private {parse-soap-body
+                      node:WSDLDOMNode
+                  }:WSDLSOAPBody
+    let (use:WSDLSOAPUse, encoding-style:#String, namespace:#String) =
+        {self.parse-soap-wsdl-attributes node}
+    {return
+        {WSDLSOAPBody
+            {if-non-null parts = {node.get-attribute "parts"} then
+                {parts.split}
+             else
+                null
+            },
+            use,
+            encoding-style,
+            namespace,
+            node
+        }
+    }
+  }
+
+  {method private {parse-soap-fault
+                      node:WSDLDOMNode,
+                      fault-name:#String = null
+                  }:WSDLSOAPFault
+    let (use:WSDLSOAPUse, encoding-style:#String, namespace:#String) =
+        {self.parse-soap-wsdl-attributes node}
+    || NOTE: according to both the spec and the WS-I guidelines 
+    || the name attribute is required here. However, some services omit it 
+    || (apparently the schema does _not_ say its required)
+    || So this allows it, by using parent's name (also required).
+    || It seems overly stringent to reject the service just because
+    || of the omission of a redundant duplicate name for an exception.
+    let constant name:String =
+        {if-non-null name = {node.get-attribute "name"} then name
+         else 
+            {if-non-null fault-name then fault-name
+             else
+                {wsdl-exception node = node,
+                    {hlmessage Fault name is required.}}}}
+    
+    {return
+        {WSDLSOAPFault
+            name,
+            use,
+            encoding-style,
+            namespace,
+            node
+        }
+    }
+  }
+
+  {method private {parse-soap-wsdl-attributes
+                      node:WSDLDOMNode
+                  }:(use:WSDLSOAPUse,
+                     encoding-style:#String,
+                     namespace:#String)
+    let constant use:String =
+        {WSDL.get-required-node-attribute node, "use"}
+    {return
+        {if use == "literal" then
+            WSDLSOAPUse.literal
+         else
+            WSDLSOAPUse.encoded
+        },
+        {node.get-attribute "encodingStyle"},
+        {node.get-attribute "namespace"}
+    }
+  }
+
+
+  {method private {parse-soap-header
+                      node:WSDLDOMNode
+                  }:WSDLSOAPHeader
+    let (use:WSDLSOAPUse, encoding-style:#String, namespace:#String) =
+        {self.parse-soap-wsdl-attributes node}
+    let constant message:String =
+        {WSDL.get-required-node-attribute node, "message"}
+    let constant part:String =
+        {WSDL.get-required-node-attribute node, "part"}
+    let constant required?:bool =
+        {node.get-attribute "required", namespace = WSDL.wsdl-namespace-uri} ==
+        "true"
+    let constant header:WSDLSOAPHeader =
+        {WSDLSOAPHeader
+            {self.names.resolve-qname node, message, WSDL.message-prefix} asa WSDLMessage,
+            part,
+            use,
+            encoding-style,
+            namespace,
+            required?,
+            self,
+            node
+        }
+    {for child in node.children do
+        {if {self.wsdl-soap-1-1-tag-match child.name, "headerfault"} then
+            {header.faults.append {self.parse-soap-header-fault child}}
+            || not sure if any of the documentation
+            || elements are possible here...
+         elseif {self.wsdl-soap-1-2-tag-match child.name, "headerfault"} then
+            {header.faults.append {self.parse-soap-header-fault child}}
+         elseif {self.wsdl-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+         elseif {self.wsdl-tag-match child.name, "appInfo"} then
+            {self.ignored-tag child}
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    {return header}
+  }
+
+  {method private {parse-soap-header-fault
+                      node:WSDLDOMNode
+                  }:WSDLSOAPHeaderFault
+    let (use:WSDLSOAPUse, encoding-style:#String, namespace:#String) =
+        {self.parse-soap-wsdl-attributes node}
+    let constant message:String =
+        {WSDL.get-required-node-attribute node, "message"}
+    let constant part:String =
+        {WSDL.get-required-node-attribute node, "part"}
+    {return
+        {WSDLSOAPHeaderFault
+            {self.names.resolve-qname node, message, WSDL.message-prefix} asa WSDLMessage,
+            part,
+            use,
+            encoding-style,
+            namespace,
+            node
+       }
+    }
+  }
+
+  {method private {parse-soap-address
+                      node:WSDLDOMNode
+                  }:WSDLSOAPAddress
+    let constant location:String =
+        {WSDL.get-required-node-attribute node, "location"}
+    {return
+        {WSDLSOAPAddress location, node}
+    }
+  }
+
+  {method private {parse-http-address
+                      node:WSDLDOMNode
+                  }:WSDLHttpAddress
+
+    let constant location:String =
+        {WSDL.get-required-node-attribute node, "location"}
+    {return
+        {WSDLHttpAddress location, node}
+    }
+  }
+  
+  || support methods
+  || --------------------
+  {method public open {dump-nodes out:TextOutputStream}:void
+    {self.top-node.dump out}
+  }
+
+  {method private {warn e:Exception}:void
+    {self.warnings.append e}
+    {output e.message}
+  }
+
+  {method private {unsupported-tag
+                      node:WSDLDOMNode
+                  }:void
+    {wsdl-exception node = node, 
+        {hlmessage Unsupported '{WSDL.format-name node}'}}
+  }
+  
+  {method private {ignored-tag
+                      node:WSDLDOMNode
+                  }:void
+    let e:WSDLSyntaxException =
+        {WSDLSyntaxException node,
+            {hlmessage Ignored '{WSDL.format-name node}'}}
+
+    {if self.ignored-tags-reported? then
+        {self.warn e}
+    }
+  }
+
+  {method private {unexpected-tag
+                      node:WSDLDOMNode
+                  }:void
+    let e:WSDLSyntaxException =
+        {WSDLSyntaxException node,
+            {hlmessage Unexpected '{WSDL.format-name node}'}}
+        
+    
+    {if self.unexpected-tags-fatal? then
+        {throw e}
+     else
+        {self.warn e}
+    }
+  }
+
+  {define-proc package {format-name 
+                           node:WSDLDOMNode,
+                           name:#XMLName = node.name
+                       }:String
+    {return
+        {if-non-null name then
+            let p:String = {node.get-namespace-prefix name.namespace}
+            {if p.empty? then name.local-name
+             else {format "%s:%s", p, name.local-name}}
+         else
+            "text"}}
+  }
+
+  {define-proc package {get-required-node-attribute
+                           node:WSDLDOMNode,
+                           attribute:String,
+                           namespace:String = ""
+                       }:String
+    {return
+        {if-non-null a =
+            {node.get-attribute attribute, namespace = namespace}
+         then
+            a
+         else
+            {wsdl-exception node = node,
+                {hlmessage
+                    '{WSDL.format-name node}' 
+                    element missing a '{value attribute}' attribute,
+                }
+            }
+        }
+    }
+  }
+
+}
+{define-proc package {escapify-string s:String}:String
+    let t:StringBuf = {StringBuf}
+    {for c in s do
+        {switch c
+         case '\{', '\}', '\\', '\|' do
+            || curl special character
+            {t.append '\\'}}
+        {t.append c}}
+    {return {t.to-String}}
+}

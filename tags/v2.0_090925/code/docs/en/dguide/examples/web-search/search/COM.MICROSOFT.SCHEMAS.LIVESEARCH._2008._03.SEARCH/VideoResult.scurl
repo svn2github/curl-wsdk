@@ -1,0 +1,50 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open VideoResult
+
+  field public title:#String
+  field public playUrl:#String
+  field public sourceTitle:#String
+  field package _runTime:{Nullable uint32} = null
+  {getter public {runTime}:uint32
+    {return self._runTime.value-or-default}
+  }
+  {setter public {runTime val:uint32}:void
+    set self._runTime = val
+  }
+  {getter public {runTime-specified?}:bool
+    {return self._runTime.value?}
+  }
+  {method public {unset-runTime}:void
+    set self._runTime = null
+  }
+  field public clickThroughPageUrl:#String
+  field public staticThumbnail:#Thumbnail
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      title:#String = {uninitialized-value-for-type #String},
+      playUrl:#String = {uninitialized-value-for-type #String},
+      sourceTitle:#String = {uninitialized-value-for-type #String},
+      runTime:uint32 = {uninitialized-value-for-type uint32},
+      clickThroughPageUrl:#String = {uninitialized-value-for-type #String},
+      staticThumbnail:#Thumbnail = {uninitialized-value-for-type #Thumbnail}
+    }
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? playUrl} then
+        set self.playUrl = playUrl}
+    {if {keyword-supplied? sourceTitle} then
+        set self.sourceTitle = sourceTitle}
+    {if {keyword-supplied? runTime} then
+        set self.runTime = runTime}
+    {if {keyword-supplied? clickThroughPageUrl} then
+        set self.clickThroughPageUrl = clickThroughPageUrl}
+    {if {keyword-supplied? staticThumbnail} then
+        set self.staticThumbnail = staticThumbnail}
+  }
+
+}
+

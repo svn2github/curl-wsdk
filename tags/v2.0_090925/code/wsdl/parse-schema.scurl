@@ -1,0 +1,2783 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| TODO
+|| - review state overlap parse-wsdl/parse-xsd
+|| - consider lazier parsing
+|| -- use WSDLSchemaImport also for top node
+|| - whither append-documentation-node
+
+{define-class public open WSDLSchema {inherits WSDLDocumentedNode}
+
+  field public constant top-node:WSDLDOMNode
+
+  field public constant elements:{Array-of WSDLSchemaElement}
+  field public constant types:{Array-of WSDLSchemaType}
+  field public constant attributes:{Array-of WSDLSchemaAttribute}
+  field public constant names:WSDLNameTable
+  field public constant type-to-element-name:{HashTable-of XMLName, XMLName}
+  field public constant curl-namer:WSDLCurlNamer
+
+  def package any-type-name:XMLName =
+      {XMLName WSDLSchema.schema-namespace-uri, "anyType"}
+  field package generic-document-type:WSDLSchemaType
+
+  field package constant local-namespaces:{Set-of String}  
+  field public constant imports:{Array-of WSDLSchemaImport}
+  field public constant namespace-imports:{Array-of WSDLSchemaNamespacePair}
+  
+  || imports possibly defined by "forward references"
+  field public constant pending-imports:{Array-of WSDLSchemaImport}
+  
+  || no need to import schema definition for these
+  def package known-namespaces:{Set-of String} =
+      {{Set-of String}
+        "http://www.w3.org/2001/XMLSchema",
+        "http://schemas.xmlsoap.org/soap/encoding/",
+        || does not make sense to import this, but some do
+        "http://schemas.xmlsoap.org/wsdl/" ||,
+||--        || not meaningful to import this, but harmless
+||--        "http://www.w3.org/XML/1998/namespace"
+      }
+  
+  || for debugging 
+  || - allow processing to continue after unhandled tag
+  || TODO: consider finer grained categorization
+  field package unexpected-tags-fatal?:bool = true
+  field package approximated-tags-reported?:bool = true
+  field package ignored-tags-reported?:bool = true
+  field public-get warnings:{Array-of Exception}
+  || - output diagnostic messages
+  field package debug?:bool = false
+
+  || namespaces
+  || --------------------
+  def package schema-namespace-uri = || WSDL.schema-namespace-uri
+      "http://www.w3.org/2001/XMLSchema"
+  
+  def package wsdl-namespace-uri =  || WSDL.wsdl-namespace-uri
+      "http://schemas.xmlsoap.org/wsdl/"
+
+  def package soap-1-1-enc-namespace-uri = || WSDL.soap-1-1-enc-namespace-uri
+      "http://schemas.xmlsoap.org/soap/encoding/"
+  def package soap-1-2-enc-namespace-uri = || WSDL.soap-1-2-enc-namespace-uri
+      "http://www.w3.org/2003/05/soap-encoding"
+
+  || XML Schema items
+  def package type-prefix = "t:"  || WSDL.type-prefix
+  def package element-prefix = "e:"  || WSDL.element-prefix
+  def package element-group-prefix = "g:"  || WSDL.element-group-prefix
+  def package attribute-prefix = "a:"  || WSDL.attribute-prefix
+  def package attribute-group-prefix = "ag:"  || WSDL.attribute-group-prefix
+
+  || extension point
+  || --------------------
+  || TODO: document
+  {define-proc public {register-simple-type
+                          xml-simple-type:XMLSimpleType,
+                          error-if-exists?:bool = false
+                      }:void
+    def simple-type = xml-simple-type asa WSDLSchemaSimpleType
+    def index =
+        {WSDLSchema.registered-simple-types.find simple-type,
+            equality-proc =
+                {fn x, y => x.xml-name == y.xml-name}}
+    {if index >= 0 then
+        {if error-if-exists? then
+            {wsdl-exception
+                {message
+                    Extension type {value simple-type.xml-name} already registered.}}
+         else       
+            {WSDLSchema.registered-simple-types.remove 
+                index}
+        }}
+    {WSDLSchema.registered-simple-types.append
+        simple-type}
+  }
+  {define-proc public {unregister-simple-type
+                          xml-simple-type:XMLSimpleType,
+                          error-if-missing?:bool = false
+                      }:void
+    def simple-type = xml-simple-type asa WSDLSchemaSimpleType
+    def index =
+        {WSDLSchema.registered-simple-types.find simple-type,
+            equality-proc =
+                {fn x, y => x.xml-name == y.xml-name}}
+    {if index < 0 then
+        {if error-if-missing? then
+            {wsdl-exception
+                {message
+                    Extension type {value simple-type.xml-name} not already registered.}}}
+     else        
+        {WSDLSchema.registered-simple-types.remove 
+            index}
+    }
+  }
+  def package registered-simple-types =
+      {{Array-of WSDLSchemaSimpleType}}
+
+  {constructor public {default
+                          node:WSDLDOMNode,
+                          curlify-names?:bool = true
+                      }
+    
+    {construct-super node}
+    set self.top-node = node
+    
+    set self.types = {{Array-of WSDLSchemaType}}   
+    set self.elements = {{Array-of WSDLSchemaElement}}    
+    set self.attributes = {{Array-of WSDLSchemaAttribute}}    
+    set self.curl-namer =
+        {WSDLCurlNamer
+            curlify-names? = curlify-names?,
+            {{Array-of Package}
+                || packages to be checked for name clashes
+                {this-package}
+                || TODO: shouldn't this be runtime context ("COM.CURL.WSDK.SOAP")
+            }}
+    set self.type-to-element-name = {{HashTable-of XMLName, XMLName}}
+    set self.imports = {{Array-of WSDLSchemaImport}}
+    set self.pending-imports = {{Array-of WSDLSchemaImport}}
+    set self.local-namespaces = {{Set-of String}}
+    set self.namespace-imports = {{Array-of WSDLSchemaNamespacePair} }   
+    set self.names = {create-name-table}
+    set self.warnings = {{Array-of Exception}}
+    
+    || extension types
+    {for type in WSDLSchema.registered-simple-types do
+        {extend-name-table
+            self.names,
+            type}}
+
+    || load in the generic element type
+    set self.generic-document-type =
+        {WSDLSchemaXMLDocumentType
+            WSDLSchema.any-type-name,
+            self.curl-namer}
+    
+    || NOTE: no parsing initiated
+    || - expects calls to 'parse-schema' with nodes to parse
+  }
+
+  || finish parsing
+  || --------------------
+  {method package {finish-parsing}:void
+
+    || Demand unprocessed imports
+    {self.resolve-imports}
+
+    || Replace placeholder types with real types
+    {self.resolve-placeholders}
+
+    || Final combination of definitions
+    {self.resolve-groups}
+    
+    || DEBUG
+    {if self.debug? then
+        {self.dump-types}
+        {self.dump-members}
+    }
+  }
+
+  {method package {resolve-groups}:void
+
+    || NOTE: currently, parsing performs some transformations
+    || - (some) nested model groups combined during parsing
+    || - groups are flattened during code generation
+    || TODO: consider distinct phase for transformations
+    || - this code would prepare for those transformations
+||--    {for t in self.types do
+||--        {type-switch t
+||--         case t:WSDLSchemaClassType do
+||--            {WSDLSchema.splice-elements
+||--                t.elements}
+||--            {WSDLSchema.splice-attributes
+||--                t.attributes}
+||--        }
+||--    }
+||--    || NOTE: types were generated for top-level elements
+
+  }
+
+  {method package {resolve-placeholders}:void
+    
+    || prepare for recursion 
+    let unresolved:{Set-of WSDLSchemaMember} =
+        self.names.unresolved-placeholders
+    let resolve-placeholders:{proc-type {}:void} =
+        {proc {}:void
+            || clear cycle-detection cache
+            {self.names.seen.clear}
+            
+            || traverse reachable types
+            {for t in self.types do
+                {t.resolve-types self.names}
+            }
+            {for e in self.elements do
+                {e.resolve-types self.names}
+            }
+            {for a in self.attributes do
+                {a.resolve-types self.names}
+            }
+            {self.names.seen.clear}
+        }
+    {unresolved.clear} 
+    {resolve-placeholders}
+    
+    || "forward references" may not be resolved in a single pass
+    || so recurse (while making progress) until all are resolved
+    {while not unresolved.empty? do
+        let to-resolve:{Set-of WSDLSchemaMember} = 
+            {unresolved.clone}
+        {unresolved.clear}
+        {resolve-placeholders}
+        || not making progress
+        {if unresolved.size >= to-resolve.size then
+            {for x in unresolved do 
+                {output "Unresolved: ",
+                    x.xml-name.local-name, " ",
+                    x.xml-name.namespace}}
+            {wsdl-exception 
+                {hlmessage Unable to resolve placeholders for
+                    {value unresolved.size} elements}}}
+    }
+  }
+
+  || namespace tag matching
+  || --------------------
+  {method private {schema-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            qname.namespace == WSDLSchema.schema-namespace-uri
+         else
+            false
+        }
+    }
+  }
+
+  {method private {soap-enc-tag-match qname:#XMLName, match-tag:String}:bool
+    {return 
+        {if-non-null qname then
+            qname.local-name == match-tag and
+            (qname.namespace == WSDLSchema.soap-1-1-enc-namespace-uri or
+            qname.namespace == WSDLSchema.soap-1-2-enc-namespace-uri)
+         else
+            false
+        }
+    }
+  }
+
+  || XML Schema tags
+  || --------------------
+  {method package {parse-schema
+                      node:WSDLDOMNode
+                  }:void
+    let attribute-form-qualified?:bool = false || TODO: argument
+    def target-namespace = 
+        {if-non-null namespace = {node.get-attribute "targetNamespace"} then namespace
+         else ""}
+    def element-form-qualified? =
+        {if-non-null efd = {node.get-attribute "elementFormDefault"} then
+            efd == "qualified"
+         else
+            false
+    }
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "element"} then
+            {self.elements.append
+                {self.parse-toplevel-element child, target-namespace, element-form-qualified?}
+            }
+         elseif {self.schema-tag-match child.name, "complexType"} then
+            {self.types.append
+                {self.parse-complex-type child, target-namespace, element-form-qualified?}
+            }
+         elseif {self.schema-tag-match child.name, "simpleType"} then
+            {self.types.append
+                {self.parse-simple-type child, target-namespace}
+            }
+         elseif {self.schema-tag-match child.name, "import"} then
+            {self.parse-import child, target-namespace, element-form-qualified?}
+
+         elseif {self.schema-tag-match child.name, "include"} then
+            {self.parse-include child, target-namespace, element-form-qualified?}
+            
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.append-documentation-node child}
+
+         elseif {self.schema-tag-match child.name, "group"} then
+            let (group:#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType) =
+                {self.parse-group child, target-namespace, element-form-qualified?}
+            {if-non-null group then
+                {self.elements.append group}
+            }
+         elseif {self.schema-tag-match child.name, "attribute"} then
+            {self.parse-toplevel-attribute child, target-namespace, false}
+
+         elseif {self.schema-tag-match child.name, "attributeGroup"} then
+            {if {self.ignorable-attribute-group? child} then
+                || OK to ignore
+             else
+                let group:WSDLSchemaAttributeGroup =
+                    {self.parse-attribute-group child, target-namespace, 
+                        attribute-form-qualified?}
+                {self.attributes.append group}
+            }
+
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.append-documentation-node child}
+                    
+         else
+            {self.unexpected-tag child} 
+        }
+    }
+    || note this namespace
+    {self.local-namespaces.insert target-namespace}
+  }
+
+  {method private {parse-element-name-and-type
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool,
+                      local-element?:bool
+                  }:(xml-name:#XMLName, type:WSDLSchemaType)
+    let constant name:#String = {node.get-attribute "name"}
+    
+    || TODO: fix this like attribute case below
+    || -- ref to another namespace will fail
+    let xml-name:#XMLName =
+        {if-non-null name then
+            let constant form-qualified?:bool =
+                {if-non-null form-string = {node.get-attribute "form"} then
+                    form-string == "qualified"
+                 else
+                    element-form-qualified?
+                }
+            {if form-qualified? or not local-element? then
+                {new XMLName, target-namespace, name}
+             else
+                {new XMLName, "", name}
+            }
+         else
+            null
+        }
+
+    let constant t:WSDLSchemaType =
+        {if {self.schema-tag-match node.name, "element"} then
+            let constant type:#String = {node.get-attribute "type"}
+            let constant ref:#String = {node.get-attribute "ref"}
+            {if-non-null ref then
+                {if xml-name == null then
+                    set xml-name = {WSDLNameTable.make-qname node, ref, ""}
+                }
+                {new WSDLSchemaElementPlaceholderType,
+                    xml-name,
+                    {WSDLNameTable.make-qname node, ref, WSDLSchema.element-prefix},
+                    node
+                }
+             else
+                {if-non-null type then
+                    {self.get-type-from-node-string node, type}
+                 elseif node.children.size == 0 then
+                    {self.get-xml-document-type null}
+                 else  
+                    || expecting single (non-extension) child
+                    let nodes:{Array-of WSDLDOMNode} =
+                        {node.children.filter-clone 
+                            {proc {node:WSDLDOMNode}:bool
+                                let ignorable?:bool =
+                                    ({self.schema-tag-match
+                                         node.name, "annotation"})
+                                {return not ignorable?}}}
+                    {if nodes.size == 1 then
+                        let tnode:WSDLDOMNode = nodes[0]
+                        {if {self.schema-tag-match tnode.name, "complexType"}
+                         then
+                            let constant complex-type:WSDLSchemaType =
+                                {self.parse-complex-type
+                                    tnode,
+                                    target-namespace,
+                                    element-form-qualified?,
+                                    element-name = xml-name
+                                }
+                            {self.types.append complex-type}
+                            complex-type
+                         elseif {self.schema-tag-match tnode.name, "simpleType"}
+                         then
+                            {self.parse-simple-type tnode, target-namespace}
+                         else
+                            {self.unexpected-tag tnode}
+                            {self.get-xml-document-type xml-name} || ###
+                        }
+                     else
+                        {wsdl-exception node = node,
+                            {hlmessage 
+                                Expected a single element directly under an element declaration.}
+                        }
+                    }
+                }
+            }
+         elseif {self.schema-tag-match node.name, "any"} then
+            {self.get-xml-document-type xml-name}
+
+         else
+            {self.unexpected-tag node}
+            {self.get-xml-document-type xml-name} || ###
+        }
+    {return xml-name, t}
+  }
+
+  {method private {parse-attribute-name-and-type
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      attribute-form-qualified?:bool,
+                      local-attribute?:bool
+                  }:(xml-name:XMLName, type:WSDLSchemaType)
+    
+    let constant form-qualified?:bool =
+        {if-non-null form-string = {node.get-attribute "form"} then
+            form-string == "qualified"
+         else
+            attribute-form-qualified?
+        }
+    
+    let constant ref:#String = {node.get-attribute "ref"}
+    let constant type:#String = {node.get-attribute "type"}
+    let constant name:#String = {node.get-attribute "name"}
+        
+    || defined by reference to top-level attribute
+    {if-non-null ref then    
+        let qname:XMLName = 
+            {WSDLNameTable.make-qname node, ref, WSDLSchema.attribute-prefix}
+        || NOTE: may be in another namespace
+        let xml-name:XMLName = {WSDLNameTable.make-qname node, ref, ""}
+        let type:WSDLSchemaType =
+            {WSDLSchemaAttributePlaceholderType xml-name, qname, node}
+        {return xml-name, type}
+    }
+    
+    || defined here
+    let xml-name:XMLName =
+        {if-non-null name then 
+            {if form-qualified? or not local-attribute? then
+                {XMLName target-namespace, name}
+             else
+                {XMLName "", name}
+            }
+         else
+            {wsdl-exception node = node,
+                {hlmessage '{WSDLSchema.format-name node}' 
+                    element missing 'name' or 'ref' attribute.}
+            }
+        }
+     
+    let t:WSDLSchemaType =
+        {if-non-null type then
+            
+            || defined by reference to top-level type
+            {self.get-type-from-node-string node, type}
+            
+         elseif node.children.size == 0 then
+            
+            || not defined: use anySimpleType (that is, string, sort of)
+            let string-type-key:XMLName = 
+                {XMLName.unchecked WSDLSchema.schema-namespace-uri, WSDLSchema.type-prefix & "string"}
+            self.names[string-type-key] asa WSDLSchemaType
+            
+         else
+            
+            || defined locally
+            let nodes:{Array-of WSDLDOMNode} =
+                {node.children.filter-clone 
+                    {proc {node:WSDLDOMNode}:bool
+                        let ignorable?:bool =
+                            ({self.schema-tag-match
+                                 node.name, "annotation"})
+                        {return not ignorable?}}}
+            {if nodes.size == 1 then
+                let tnode:WSDLDOMNode = nodes[0]
+                {if {self.schema-tag-match tnode.name, "simpleType"}
+                 then
+                    {self.parse-simple-type tnode, target-namespace}
+                 else
+                    {self.unexpected-tag tnode}
+                    {self.get-xml-document-type xml-name} || ###
+                }
+             else
+                {wsdl-exception node = node,
+                    {hlmessage Expected a single element directly under an attribute declaration.}
+                }
+            }
+        }
+    {return xml-name, t}
+  }
+  
+  {method private {parse-toplevel-element
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:WSDLSchemaElement
+   
+    let constant (xml-name:#XMLName, type:WSDLSchemaType,
+                  min-occurs:int, max-occurs:int, nillable?:bool,
+                  expected-content-types:#String) =
+        {self.parse-internal-element-attributes 
+            node, target-namespace, element-form-qualified?,
+            local-element? = false
+        }
+    || NOTE: occurance attributes are disallowed on toplevel elements
+    {assert min-occurs == 1 and max-occurs == 1,
+        {hlmessage Occurance attributes are disallowed on toplevel elements}
+    }
+    let constant e:WSDLSchemaElement =
+        {WSDLSchemaElement xml-name, type, node,
+            min-occurs = min-occurs,
+            max-occurs = max-occurs,
+            nillable? = nillable?,
+            expected-content-types = expected-content-types
+        }
+    {if-non-null xml-name then
+        {self.names.set-name
+            xml-name.namespace, WSDLSchema.element-prefix, xml-name.local-name, e
+        }
+        {if-non-null type-xml-name = type.xml-name then
+            set self.type-to-element-name[type-xml-name] = xml-name
+        }
+    }
+    {return e}
+  }
+
+  {method private {parse-toplevel-attribute
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      attribute-form-qualified?:bool
+                  }:WSDLSchemaAttribute
+    
+    let constant (xml-name:XMLName, type:WSDLSchemaType) =
+        {self.parse-attribute-name-and-type
+            node, target-namespace, attribute-form-qualified?, false
+        }
+    let constant a:WSDLSchemaAttribute =
+        {WSDLSchemaAttribute xml-name, type, node}
+
+    {self.names.set-name
+        xml-name.namespace, WSDLSchema.attribute-prefix, xml-name.local-name, a
+    }
+    {return a}
+  }
+
+  {method private {parse-internal-element-attributes
+                      e:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool,
+                      local-element?:bool = true
+                  }:(#XMLName, WSDLSchemaType, int, int, bool, #String)
+    def (xml-name, type) =
+        {self.parse-element-name-and-type  
+            e, target-namespace, element-form-qualified?, local-element?}
+    def (min-occurs, max-occurs, nillable?, expected-content-types) =
+        {self.parse-element-occurrance-attributes e}
+
+    {return
+        xml-name,
+        type,
+        min-occurs,
+        max-occurs,
+        nillable?,
+        expected-content-types
+    }
+  }
+
+  {method private {get-unique-name
+                      xml-name:XMLName,
+                      target-namespace:String = xml-name.namespace,
+                      prefix:String = WSDLSchema.type-prefix
+                  }:XMLName
+    || - vary original name suffix (or prefix) until unique
+    def base-name = xml-name.local-name
+    let name:String = base-name
+    let index:int = 1
+    {while
+        {self.names.name-exists? target-namespace, prefix, name}
+     do
+        || TODO: consider "scope" prefix using containing element(s)
+        set name =
+            {if index == 0 then
+                || special case: prefix with underscore (not used for now)
+                "_" & base-name
+             else
+                {format "%s%02d", base-name, index}}
+        {inc index}}
+    {return
+        {XMLName target-namespace, name}}
+  }
+
+  {method private {has-attributes?
+                      node:WSDLDOMNode
+                  }:bool
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "attribute"} or
+            {self.schema-tag-match child.name, "attributeGroup"} or
+            {self.schema-tag-match child.name, "anyAttribute"}
+         then
+            {return true}
+        }
+    }
+    {return false}
+  }
+
+  {method private {parse-complex-type
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool,
+                      || for anonymous types
+                      element-name:#XMLName = null
+                  }:WSDLSchemaType
+    let attribute-form-qualified?:bool = false || TODO: argument
+
+    def xml-name =
+        {if-non-null name = {node.get-attribute "name"} then
+            || named type
+            {XMLName target-namespace, name}
+         else
+            || anonymous type: use element name
+            {if-non-null element-name then
+                || NOTE: local element names may not be unique
+                || - attempt to avoid clashes induced by anonymous types
+                def _element-name =
+                    {XMLName element-name.namespace,
+                        "_" & element-name.local-name}
+                {self.get-unique-name _element-name,
+                    target-namespace = target-namespace}
+             else
+                {wsdl-exception node = node,
+                    {hlmessage No name for complex-type}}
+            }
+        }
+     
+    let type:#WSDLSchemaType = null  
+  
+    {if {node.get-attribute "mixed"} == "true" then
+        || %%% FALLBACK
+        {self.approximated-tag node}
+        set type = {self.get-xml-document-type xml-name}
+    }
+    let abstract?:bool =
+        {node.get-attribute "abstract"} == "true"
+    
+    || TODO: where is this used?
+||--    def attribute = 
+||--        {node.get-attribute "expectedContentTypes",
+||--            namespace = WSDL.xmime-namespace-uri}
+
+    || NOTE: check for presence of attributes, which disallow
+    || treating repeating element as array type when parsing sequence
+    def has-attributes? = {self.has-attributes? node}
+   
+    {for child in node.children do
+
+        || enforce single particle
+        {if {self.schema-tag-match child.name, "sequence"} or
+            {self.schema-tag-match child.name, "all"} or
+            {self.schema-tag-match child.name, "choice"} or
+            {self.schema-tag-match child.name, "group"} or
+            {self.schema-tag-match child.name, "simpleContent"} or
+            {self.schema-tag-match child.name, "complexContent"}
+         then
+            {if type isa WSDLSchemaXMLDocumentType then
+                {continue}
+            }
+            {if type != null then
+                {wsdl-exception node = node,
+                    {hlmessage Expected a single non-documentation element 
+                        directly under a complexType element.}
+                }
+            }
+        }
+
+        {if {self.schema-tag-match child.name, "sequence"} or
+            {self.schema-tag-match child.name, "all"} or
+            {self.schema-tag-match child.name, "choice"}
+         then
+            set type =
+                {self.parse-complex-type-sequence
+                    child, xml-name, target-namespace, element-form-qualified?,
+                    allow-array-type? = not has-attributes? and not abstract?
+                }
+
+         elseif {self.schema-tag-match child.name, "group"} then
+            || NOTE: these are almost the same (except for @base)
+            || - parse-complex-type
+            || - parse-complex-type-complex-content-extension
+            let (group:#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType) =
+                {self.parse-group-ref child, target-namespace, element-form-qualified?}
+            set type = 
+                {if-non-null maybe-doc then
+                    maybe-doc
+                 else
+                    {WSDLSchemaClassType
+                        xml-name,
+                        {if-non-null group then
+                            {{Array-of WSDLSchemaElement} group}
+                         else
+                            {{Array-of WSDLSchemaElement}}
+                        },
+                        self.curl-namer}
+                    }
+         elseif {self.schema-tag-match child.name, "complexContent"} then
+            set type =
+                {self.parse-complex-type-complex-content
+                    child, xml-name, target-namespace, element-form-qualified?,
+                    abstract? = abstract?
+                }
+         elseif {self.schema-tag-match child.name, "simpleContent"} then
+            set type =
+                {self.parse-complex-type-simple-content
+                    child, xml-name, target-namespace, element-form-qualified?
+                }
+         elseif {self.schema-tag-match child.name, "attributeGroup"} then
+            {if {self.ignorable-attribute-group? child} then
+                || OK to ignore
+             else
+                def ag =
+                    {self.parse-attribute-group child, target-namespace, 
+                        attribute-form-qualified?}
+                {type-switch type
+                 case n:Null do
+                    set type =
+                        || There were no elements
+                        {WSDLSchemaClassType.empty xml-name, self.curl-namer,
+                            attributes = 
+                                {{Array-of WSDLSchemaAttribute} ag}
+                        }
+                 case at:WSDLSchemaArrayType do
+                    || paranoia: 'has-attributes?' check should prevent this 
+                    {self.ignored-tag child}
+                    
+                 case t:WSDLSchemaClassType do
+                    {t.attributes.append ag}
+                }
+            }
+         elseif {self.schema-tag-match child.name, "attribute"} then
+            {if {self.ignorable-attribute? child} then
+                || OK to ignore
+             else
+                def (name, attribute-type) =
+                    {self.parse-attribute-name-and-type
+                        child, 
+                        target-namespace,
+                        attribute-form-qualified?,
+                        true
+                    }
+                def a = {WSDLSchemaAttribute name, attribute-type, child}
+                {type-switch type
+                 case n:Null do
+                    || There were no elements
+                    set type =
+                        {WSDLSchemaClassType.empty xml-name, self.curl-namer,
+                            attributes = 
+                                {{Array-of WSDLSchemaAttribute} a}
+                        }
+
+                 case at:WSDLSchemaArrayType do
+                    || paranoia: 'has-attributes?' check should prevent this 
+                    {self.ignored-tag child}
+
+                 case t:WSDLSchemaClassType do
+                    {t.attributes.append a}
+                }
+            }
+         elseif {self.schema-tag-match child.name, "anyAttribute"} then
+            || %%% FALLBACK
+            {self.approximated-tag child}
+            set type = {self.get-xml-document-type xml-name}
+
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+
+         else
+            {self.unexpected-tag child}
+        }
+    }
+ 
+    {if type == null then
+        || There were no elements
+        set type =
+            {WSDLSchemaClassType.empty xml-name, self.curl-namer}
+    }
+    
+    || note abstract type if applicable
+    {type-switch type
+     case t:WSDLSchemaClassType do
+        set t.abstract? = abstract?
+    }
+    
+    {self.names.set-name
+        target-namespace, WSDLSchema.type-prefix, xml-name.local-name, {non-null type}
+    }
+    
+    {return {non-null type}}
+  }
+
+  {method private {parse-sequence-element-list
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:({Array-of WSDLSchemaElement}, maybe-doc:#WSDLSchemaType)
+    let elements:{Array-of WSDLSchemaElement} =
+        {{Array-of WSDLSchemaElement}}
+    let maybe-doc:#WSDLSchemaType
+    {for e in node.children do
+        {if {self.schema-tag-match e.name, "element"} then
+            let constant (e-xml-name:#XMLName, e-type:WSDLSchemaType,
+                          min-occurs:int, max-occurs:int, nillable?:bool,
+                          expected-content-types:#String) =
+                {self.parse-internal-element-attributes
+                    e, target-namespace, element-form-qualified?
+                }
+            || save this element to be used for a class field for the array element
+            {elements.append
+                {WSDLSchemaElement
+                    e-xml-name, e-type,
+                    min-occurs = min-occurs,
+                    max-occurs = max-occurs,
+                    nillable? = nillable?,
+                    expected-content-types = expected-content-types,
+                    e
+                }
+            }
+         elseif {self.schema-tag-match e.name, "group"} then
+            let group:#WSDLSchemaElementGroup
+            set (group, maybe-doc) =
+                {self.parse-group-ref e, target-namespace, element-form-qualified?}
+            {if-non-null group then
+                {elements.append group}
+             else
+                {break}
+            }
+         elseif {self.schema-tag-match e.name, "sequence"} then
+            || TODO: check cardinality constraints
+            let sub-elements:#{Array-of WSDLSchemaElement}
+            set (sub-elements, maybe-doc) =
+                {self.parse-sequence-element-list
+                      e,
+                      null,
+                      target-namespace,
+                      element-form-qualified?
+                }
+            {if maybe-doc != null then
+                {break}
+            }
+            let constant g:WSDLSchemaElement =
+                {WSDLSchemaElementGroup
+                    null,
+                    null,
+                    e.name.local-name,
+                    sub-elements,
+                    node
+                }
+            {elements.append g}
+         elseif {self.schema-tag-match e.name, "choice"} then
+            || TODO: check cardinality constraints
+            let choice-element:#WSDLSchemaElement = null
+            set (choice-element, maybe-doc) =
+                {self.parse-choice-elements e, xml-name,
+                    target-namespace,
+                    element-form-qualified?}
+            {if-non-null maybe-doc then
+                {break}
+             else
+                {elements.append {non-null choice-element}}}
+         elseif {self.schema-tag-match e.name, "any"} then
+            set maybe-doc = {self.get-xml-document-type xml-name}
+            {break}
+         elseif {self.schema-tag-match e.name, "annotation"} then
+            {self.ignored-tag e}
+         else            
+            {self.unexpected-tag e}
+        }
+    }
+    {if-non-null maybe-doc then
+        {return
+            elements,
+            {if-non-null xml-name then
+                {WSDLSchemaXMLDocumentType 
+                    xml-name,
+                    self.curl-namer}
+             else
+                {if maybe-doc.xml-name == null then
+                    maybe-doc
+                 else
+                    self.generic-document-type
+                }
+            }
+        }
+     else
+        {return elements, null}
+    }
+  }
+
+  {method private {parse-element-occurrance-attributes
+                      e:WSDLDOMNode
+                  }:(min-occurs:int,
+                     max-occurs:int,
+                     nillable?:bool,
+                     expected-content-types:#String)
+    def min-occurs = 
+        {if-non-null min = {e.get-attribute "minOccurs"} then
+            {min.to-int}
+         else 1}
+    def max-occurs = 
+        {if-non-null max = {e.get-attribute "maxOccurs"} then
+            {if max != "unbounded" and max != "*" then
+                {max.to-int}                        
+             else -1}
+         else 1}
+    def nillable? = 
+        {if-non-null n = {e.get-attribute "nillable"} then
+            n == "true"
+         else false}
+    def expected-content-types =
+        {if-non-null ct =
+            {e.get-attribute
+                "expectedContentTypes",
+                namespace = WSDL.xmime-namespace-uri}
+         then
+            ct
+         else null}
+    {return min-occurs, max-occurs, nillable?, expected-content-types}
+  }
+
+  {method private {parse-choice-elements
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:(element:#WSDLSchemaElement, maybe-doc:#WSDLSchemaType)
+    
+    || TODO: should get (or derive) name from scope
+    {if xml-name == null then
+        set xml-name = {XMLName "", "Anonymous_Choice"}}
+    
+    || synthesize element(-type) name
+    {if-non-null xml-name then
+        
+        || TODO: is 'Value' suffix necessary?
+        def local-name = xml-name.local-name
+        def choice-name = {XMLName target-namespace, local-name & "Value"}
+
+        || parse model-group elements
+        def (sub-elements, maybe-doc) =
+            {self.parse-sequence-element-list 
+                node,
+                null,
+                target-namespace,
+                element-form-qualified?
+            }
+        || fallback if elements contained unexpected particles
+        {if maybe-doc != null then
+            {return null, maybe-doc}
+        }
+        
+        def (min-occurs, max-occurs, nillable?) =
+            {self.parse-element-occurrance-attributes node}
+
+        || analyze subelements
+        || - single subelement: simplify to non-choice element
+        || - nested structure: fallback to NamedElements
+        || - nested choice: flatten
+        
+        || - nested structure: fallback to NamedElements
+        def sub-groups =
+            {sub-elements.filter-clone
+                {fn e => e isa WSDLSchemaElementGroup}}
+        {if not sub-groups.empty? then
+            {return
+                {WSDLSchemaElementGroup null, null, "choice", 
+                    sub-elements, node},
+                null}}
+
+        || - nested choice: flatten
+        let spliced?:bool = false
+        let i:int = 0
+        {while i < sub-elements.size do
+            def e = sub-elements[i]
+            {type-switch e.type
+             case t:WSDLSchemaChoiceType do
+                set spliced? = true
+                {sub-elements.remove i}
+                {sub-elements.splice t.elements, i}
+                || Don't increment i, we just added new stuff where it was.
+             else
+                {inc i}
+            }}
+
+        || - single subelement: simplify to non-choice element
+        {if sub-elements.size == 1 then
+            def e = sub-elements[0]
+            def e-min-occurs = min-occurs * e.min-occurs
+            def e-max-occurs =
+                {if max-occurs == -1 or e.max-occurs == -1 then -1
+                 else max-occurs * e.max-occurs}
+            def e-nillable? = nillable? or e.nillable?
+            set e.min-occurs = e-min-occurs
+            set e.max-occurs = e-max-occurs
+            set e.nillable? = e-nillable?
+            {return e, null}
+        }
+
+        || construct choice element-type and element
+        || NOTE: local element names may not be unique
+        def element-name = 
+            {self.get-unique-name choice-name,
+                prefix = WSDLSchema.type-prefix,
+                target-namespace = target-namespace}
+        def element-type =
+            {WSDLSchemaChoiceType
+                element-name,
+                sub-elements,
+                self.curl-namer}
+        {self.names.set-name
+            element-name.namespace, WSDLSchema.type-prefix,
+            element-name.local-name, element-type}
+        def element =
+            {WSDLSchemaElement
+                element-name,
+                element-type,
+                min-occurs = min-occurs,
+                max-occurs = max-occurs,
+                nillable? = nillable?,
+                node}
+        {return element, null}
+     else
+        || fallback if no choice-name        
+        {self.approximated-tag node}
+        def maybe-doc = {self.get-xml-document-type xml-name}
+        {return null, maybe-doc}
+    }
+  }
+
+  {method private {parse-group
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:(#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType)
+
+    let name:#String = {node.get-attribute "name"}
+    let ref:#String = {node.get-attribute "ref"}
+    let ret:#WSDLSchemaElementGroup
+    let xml-name:#XMLName =
+        {if-non-null name then
+            {WSDLNameTable.make-qname node, name, ""}
+         else
+            null
+        }
+    || should be either ref or name, not both, and name should only occur
+    || as top level definition, and ref only as inside things.
+    {if-non-null ref then
+        || make placeholder
+        || FIXME: might be annotation in here...
+        def (min-occurs, max-occurs, nillable?) =
+            {self.parse-element-occurrance-attributes node}
+        {if max-occurs == -1 or max-occurs > 1 then
+            || %%% FALLBACK
+            {self.approximated-tag node}
+            {return null, {self.get-xml-document-type xml-name}}
+        }
+        set ret =
+            {WSDLSchemaPlaceholderElementGroup 
+                {WSDLNameTable.make-qname node, ref, ""},
+                null,
+                node.name.local-name,
+                {WSDLNameTable.make-qname node, ref, WSDLSchema.element-group-prefix},
+                min-occurs,
+                max-occurs,
+                node
+            }
+     else
+        let elements:#{Array-of WSDLSchemaElement}
+        let group-type:#String
+        {for child in node.children do
+            {if {self.schema-tag-match child.name, "all"} or
+                {self.schema-tag-match child.name, "sequence"} or
+                {self.schema-tag-match child.name, "choice"}
+            then
+                {if elements != null then
+                    {wsdl-exception node = node,
+                        {hlmessage Did not expect more than one 'all/sequence/choice' element.}
+                    }
+                } 
+                || TODO: check cardinality constraints
+                || - fallback if max-occurs != 1
+
+                let maybe-doc:#WSDLSchemaType
+                set (elements, maybe-doc) =
+                    {self.parse-sequence-element-list
+                        child, null, target-namespace, element-form-qualified?
+                    }
+                {if maybe-doc != null then
+                    {return null, maybe-doc}
+                }
+                set group-type = child.name.local-name
+             elseif {self.schema-tag-match child.name, "annotation"} then
+                {self.ignored-tag child}
+             else
+                {self.unexpected-tag child}
+            }
+        }
+        {if elements == null then
+            {wsdl-exception node = node,
+                {hlmessage A 'group' must have at least one element child in the 'all/sequence/choice'.}
+            }
+        }
+        set ret =
+            {WSDLSchemaElementGroup
+                || NOTE: using qualified name
+                {XMLName target-namespace, xml-name.local-name},
+                null,
+                {non-null group-type},
+                elements,
+                node
+            }
+    }
+    {if-non-null ret then
+        {if-non-null xml-name = ret.xml-name then
+            let key:XMLName = 
+                {XMLName.unchecked 
+                    xml-name.namespace, 
+                    WSDLSchema.element-group-prefix & xml-name.local-name}
+            {if {self.names.key-exists? key}
+                and ret isa WSDLSchemaPlaceholderElementGroup 
+             then
+                || don't clobber definition with placeholder                
+             else
+                set self.names[key] = ret
+            }
+        }
+        {return ret, null}
+     else
+        {wsdl-exception node = node,
+            {hlmessage Unable to parse 'group'.}
+        }
+    }
+  }
+  
+  {method private {parse-group-ref
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:(#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType)
+    def (group, maybe-doc) =
+        {self.parse-group node, target-namespace, element-form-qualified?}
+    {if-non-null group then
+        {if not group isa WSDLSchemaPlaceholderElementGroup then
+            {wsdl-exception node = node,
+                {hlmessage Expected 'Group' reference.}}}}
+    {return group, maybe-doc}
+  }
+  
+  {method private {parse-attribute-group
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      attribute-form-qualified?:bool
+                  }:WSDLSchemaAttributeGroup
+
+    let name:#String = {node.get-attribute "name"}
+    let ref:#String = {node.get-attribute "ref"}
+    let ret:#WSDLSchemaAttributeGroup
+    let xml-name:#XMLName =
+        {if-non-null name then
+            {WSDLNameTable.make-qname node, name, ""}
+         else
+            null
+        }
+    || should be either ref or name, not both, and name should only occur
+    || as top level definition, and ref only as inside things.
+    {if-non-null ref then
+        || make placeholder
+        || FIXME: might be annotation in here...
+        set ret =
+            {WSDLSchemaPlaceholderAttributeGroup  
+                {WSDLNameTable.make-qname node, ref, ""},
+                null,
+                {WSDLNameTable.make-qname node, ref, WSDLSchema.attribute-group-prefix},
+                node
+            }
+     else
+        {if-non-null name then
+            let attributes:{Array-of WSDLSchemaAttribute} =
+                {{Array-of WSDLSchemaAttribute}}
+            
+            {for child in node.children do
+                {if {self.schema-tag-match child.name, "attribute"} then
+                    let (name:XMLName, type:WSDLSchemaType) =
+                        {self.parse-attribute-name-and-type 
+                            child, 
+                            target-namespace,
+                            attribute-form-qualified?,
+                            true
+                        }
+                    let a:WSDLSchemaAttribute =
+                        {WSDLSchemaAttribute 
+                            name, type, child}                
+                    {attributes.append a}
+                    
+                 elseif {self.schema-tag-match child.name, "attributeGroup"} then
+                    {if {self.ignorable-attribute-group? child} then
+                        || OK to ignore
+                     else                        
+                        let ag:WSDLSchemaAttributeGroup =
+                            {self.parse-attribute-group 
+                                child, 
+                                target-namespace, 
+                                attribute-form-qualified?}
+                        {attributes.append ag}
+                    }
+                    
+                 elseif {self.schema-tag-match child.name, "annotation"} then
+                    {self.ignored-tag child}
+                    
+                 elseif {self.schema-tag-match child.name, "anyAttribute"} then
+                    || TODO: approximate
+                    {self.ignored-tag child}
+                    
+                 else
+                    {self.unexpected-tag child}
+                }
+            }
+            {if attributes.empty? then
+                {wsdl-exception node = node,
+                    {hlmessage An 'attributeGroup' must have at least one attribute child .}
+                }
+            }
+            set ret =
+                {WSDLSchemaAttributeGroup
+                    || NOTE: using qualified name
+                    {XMLName target-namespace, xml-name.local-name},
+                    null,   
+                    attributes,
+                    node
+                }
+        }
+    }
+    {if-non-null ret then
+        {if-non-null xml-name = ret.xml-name then
+            let key:XMLName = 
+                {XMLName.unchecked 
+                    xml-name.namespace, 
+                    WSDLSchema.attribute-group-prefix & xml-name.local-name}
+            {if {self.names.key-exists? key}
+                and ret isa WSDLSchemaPlaceholderAttributeGroup 
+             then
+                || don't clobber definition with placeholder                
+             else
+                set self.names[key] = ret
+            }
+        }
+        {return ret}
+     else
+        {wsdl-exception node = node,
+            {hlmessage Unable to parse 'attributeGroup'.}
+        }
+    }
+  }
+
+  {method private {parse-complex-type-sequence
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool,
+                      allow-array-type?:bool = true,
+                      parent-class:#WSDLSchemaType = null
+                  }:WSDLSchemaType
+
+    || TODO: check cardinality constraints
+    
+    def choice? = {self.schema-tag-match node.name, "choice"}
+    
+    || outermost choice transformation
+    {if choice? then
+        def (element, maybe-doc) =
+            {self.parse-choice-elements
+                node, xml-name, target-namespace, element-form-qualified?}
+        || %%% FALLBACK
+        {if-non-null maybe-doc then
+            {return maybe-doc}
+        }
+        || the choice element
+        {if-non-null element then
+
+            || treat repeating choice element as array
+            {if element.max-occurs == -1 or element.max-occurs > 1 then
+                {return
+                    {WSDLSchemaArrayType xml-name, element,
+                        curl-namer = self.curl-namer}}
+            }
+            {return
+                {WSDLSchemaClassType xml-name, 
+                    {{Array-of WSDLSchemaElement} element},
+                    self.curl-namer,
+                    choice? = false,
+                    parent-class = parent-class}}
+        }
+    }
+   
+    def (elements, maybe-doc) =
+        {self.parse-sequence-element-list
+            node, xml-name, target-namespace, element-form-qualified?
+        }
+    || %%% FALLBACK
+    {if-non-null maybe-doc then
+        {return maybe-doc}
+    }
+
+    || check special case: single repeating element
+    {if allow-array-type? and
+        not choice? and
+        elements.size == 1
+     then
+        def element = elements[0]
+        {if element.max-occurs == -1 or element.max-occurs > 1 and
+            || NOTE: does not resolve group references
+            not elements[0] isa WSDLSchemaElementGroup
+         then
+            || treat as Array
+            {return
+                {WSDLSchemaArrayType xml-name, element,
+                    curl-namer = self.curl-namer}
+            }
+        }
+    }
+    
+    || handle non-nested repeated elements
+    def checked-elements =
+        {WSDLSchemaClassType.process-repeating-elements elements,
+            {non-null xml-name},
+            target-namespace = target-namespace,
+            schema-names = self.names}
+    {return
+        {WSDLSchemaClassType xml-name, checked-elements,
+            self.curl-namer,
+            choice? = choice?,
+            parent-class = parent-class
+        }
+    }
+  }
+
+  {method private {parse-complex-type-complex-content
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool,
+                      abstract?:bool = false
+                  }:WSDLSchemaType
+    {if {node.get-attribute "mixed"} == "true" then
+        {self.approximated-tag node}
+        {return self.generic-document-type}
+    }
+    {if node.children.size != 1 then
+        {wsdl-exception node = node,
+            {hlmessage Expected a single element directly under a complexContent element.}
+        }
+    }
+
+    || detect special cases for Array, otherwise generic restriction
+    let type:#WSDLSchemaType
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "restriction"} then
+
+            || %%% FALLBACK
+            {if type isa WSDLSchemaXMLDocumentType then
+                {continue}
+            }
+            {if type != null then
+                {wsdl-exception node = node,
+                    {hlmessage Expected a single non-documentation element directly
+                        under a complexContent element.}
+                }
+            }
+            let constant base:#String = {child.get-attribute "base"}
+            {if base == null or
+                not {self.soap-enc-tag-match
+                        {WSDLNameTable.make-qname child, {non-null base}, ""},
+                        "Array"
+                    }
+             then
+                || not an array: generic restriction
+                set type =
+                    {self.parse-complex-type-complex-content-restriction
+                        child,
+                        xml-name,
+                        target-namespace,
+                        element-form-qualified?}
+                {break}
+            }
+            || %%% SPECIAL CASE: ARRAY
+            || There seem to be two ways to specify an array, one with a one
+            || element sequence, the other with an attribute.
+            {if child.children.size < 1 then
+                {self.approximated-tag child}
+                set type = {self.get-xml-document-type xml-name}
+                {break}
+            }
+            set type =
+                {self.parse-complex-type-complex-content-restriction-array
+                        child,
+                        xml-name,
+                        target-namespace,
+                        element-form-qualified?}
+            {break}
+         elseif {self.schema-tag-match child.name, "extension"} then
+            || construct a subclass type object
+            set type =
+                {self.parse-complex-type-complex-content-extension
+                    child,
+                    xml-name,
+                    target-namespace,
+                    element-form-qualified?,
+                    abstract? = abstract?
+                }
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+
+         else
+            {self.approximated-tag child} 
+            set type = {self.get-xml-document-type xml-name}
+        }
+    }
+    {if-non-null type then
+        {return type}
+     else
+        {self.approximated-tag node}
+        {return {self.get-xml-document-type xml-name}}
+    }
+  }
+
+  {method private {parse-complex-type-complex-content-extension
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool,
+                      abstract?:bool = false
+                  }:WSDLSchemaType
+    let attribute-form-qualified?:bool = false || TODO: argument
+
+    let constant base:String =
+        {WSDLSchema.get-required-node-attribute node, "base"}
+    let constant base-xml-name:XMLName =
+        {WSDLNameTable.make-qname node, base, ""}
+        
+    let type:#WSDLSchemaType
+
+    || NOTE: check for presence of attributes, which disallow
+    || treating repeating element as array type when parsing sequence
+    def has-attributes? = {self.has-attributes? node}
+
+    {for child in node.children do
+
+        || enforce single particle
+        {if {self.schema-tag-match child.name, "sequence"} or
+            {self.schema-tag-match child.name, "all"} or
+            {self.schema-tag-match child.name, "choice"}
+         then
+            {if type isa WSDLSchemaXMLDocumentType then
+                {continue}
+            }
+            {if type != null then
+                {wsdl-exception node = child,
+                    {hlmessage Expected a single non-documentation element directly 
+                        under an extension element.}
+                }
+            }
+
+            || NOTE: unified model-group processing
+            || - (as in parse-complex-type)
+            || - recognizes repeating elements
+            || - recognizes choice particles
+            set type =
+                {self.parse-complex-type-sequence
+                    child, xml-name, target-namespace, element-form-qualified?,
+                    allow-array-type? = not has-attributes? and not abstract?,
+                    parent-class = {self.get-type-from-node-string node, base}
+                }
+            || ====================\\
+            || the old way
+||--            let constant (elements:{Array-of WSDLSchemaElement},
+||--                          maybe-doc:#WSDLSchemaType) =
+||--                {self.parse-sequence-element-list
+||--                    child, xml-name, target-namespace, element-form-qualified?
+||--                }
+||--            set type = 
+||--                {if-non-null maybe-doc then
+||--                    maybe-doc
+||--                 else
+||--                    {WSDLSchemaClassType
+||--                        xml-name,
+||--                        elements,
+||--                        self.curl-namer,
+||--                        parent-class =
+||--                            {self.get-type-from-node-string node, base},
+||--                        choice? = {self.schema-tag-match child.name, "choice"}
+||--                    }
+||--                }
+            || ====================//
+ 
+         elseif {self.schema-tag-match child.name, "group"} then
+            || NOTE: these are almost the same (except for @base)
+            || - parse-complex-type
+            || - parse-complex-type-complex-content-extension
+            let (group:#WSDLSchemaElementGroup, maybe-doc:#WSDLSchemaType) =
+                {self.parse-group-ref child, target-namespace, element-form-qualified?}
+            set type = 
+                {if-non-null maybe-doc then
+                    maybe-doc
+                 else
+                    {WSDLSchemaClassType
+                        xml-name,
+                        {if-non-null group then
+                            {{Array-of WSDLSchemaElement} group}
+                         else
+                            {{Array-of WSDLSchemaElement}}
+                        },
+                        self.curl-namer,
+                        parent-class =
+                            {self.get-type-from-node-string node, base}
+                    }
+                }
+         elseif {self.schema-tag-match child.name, "attributeGroup"} then
+            {if {self.ignorable-attribute-group? child} then
+                || OK to ignore
+             else
+                def ag =
+                    {self.parse-attribute-group child, target-namespace, 
+                        attribute-form-qualified?}
+                {if type == null then
+                    || There were no elements
+                    set type =
+                        {WSDLSchemaClassType.empty xml-name, self.curl-namer,
+                            parent-class =
+                                {self.get-type-from-node-string node, base}
+                        }} 
+                {type-switch type
+                 case t:WSDLSchemaClassType do
+                    {t.attributes.append ag}
+                }
+            }
+         elseif {self.schema-tag-match child.name, "attribute"} then
+            {if {self.ignorable-attribute? child} then
+                || OK to ignore
+             else
+                def (name, attribute-type) =
+                    {self.parse-attribute-name-and-type
+                        child, 
+                        target-namespace,
+                        attribute-form-qualified?,
+                        true
+                    }
+                def a = {WSDLSchemaAttribute name, attribute-type, child}
+                {if type == null then
+                    || There were no elements
+                    set type =
+                        {WSDLSchemaClassType.empty xml-name, self.curl-namer,
+                            parent-class =
+                                {self.get-type-from-node-string node, base}
+                        }} 
+                {type-switch type
+                 case t:WSDLSchemaClassType do
+                    {t.attributes.append a}
+                }
+            }
+         elseif {self.schema-tag-match child.name, "anyAttribute"} then
+            || %%% FALLBACK
+            {self.approximated-tag child}
+            set type = {self.get-xml-document-type xml-name}
+
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    {if-non-null type then
+        {return type}
+     else
+        || There were no elements
+        {return
+            {WSDLSchemaClassType.empty xml-name, self.curl-namer,
+                parent-class =
+                    {self.get-type-from-node-string node, base}
+            }            
+        }
+    }
+  }
+
+  {method private {parse-complex-type-complex-content-restriction
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:WSDLSchemaType
+    || NOTE: this a placeholder
+    || - no representation nor enforcement of "narrowing" contituents
+    def type =
+        {self.parse-complex-type-complex-content-extension
+            node, xml-name, target-namespace, element-form-qualified?}
+    || prune redundant elements
+    {type-switch type
+     case type:WSDLSchemaClassType do
+        || flag type as restriction,
+        || -  will be consolidated when generating code
+        set type.derived-by-restriction? = true
+    }
+    {return type}
+  }
+
+  {method private {parse-complex-type-complex-content-restriction-array
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:#WSDLSchemaType
+    let type:#WSDLSchemaType
+    {for e in node.children do
+        {if {self.schema-tag-match e.name, "attribute"} then
+            let constant ref:#String = {e.get-attribute "ref"}
+            || make sure that there is a ref, and that it
+            || is SOAP-ENC:arrayType
+            {if-non-null ref then
+                let constant ref-xml-name:XMLName =
+                    {WSDLNameTable.make-qname
+                        e,
+                        ref,
+                        ""
+                    }
+                {if {self.soap-enc-tag-match
+                        ref-xml-name,
+                        "arrayType"
+                    }
+                 then
+                    || This statement intentionally left blank
+                 elseif
+                    {self.soap-enc-tag-match
+                        ref-xml-name,
+                        "offset"
+                    } or {self.ignorable-attribute? e}
+                 then
+                    {continue}
+                 else
+                    {self.approximated-tag node}
+                    set type = {self.get-xml-document-type xml-name}
+                    {break}
+                }
+             else
+                {self.approximated-tag node}
+                set type = {self.get-xml-document-type xml-name}
+                {break}
+            }
+            let constant atype:String =
+                {WSDLSchema.get-required-node-attribute
+                    e, "arrayType", namespace = WSDLSchema.wsdl-namespace-uri
+                }
+            let constant size:int = atype.size
+            {if atype[size - 1] != '\]' then
+                {wsdl-exception node = e,
+                    {hlmessage Expected 'arrayType' attribute to end in a '\]'.}
+                }
+            }
+            let constant etype:String =
+                {atype.substr 0,
+                    {atype.find
+                        '\[', search-direction = SearchDirection.forward
+                    }
+                }
+            || FIXME let this be a group also.
+            set type =
+                {new WSDLSchemaArrayType,
+                    xml-name,
+                    array-type = {WSDLNameTable.make-qname e, atype, ""},
+                    {WSDLSchemaElement
+                        null,
+                        {self.get-type-from-node-string e, etype},
+                        min-occurs = 0,
+                        max-occurs = -1,
+                        nillable? = false,
+                        e
+                    },
+                    curl-namer = self.curl-namer
+                }
+         elseif 
+            {self.schema-tag-match e.name, "sequence"} or
+            {self.schema-tag-match e.name, "all"}
+         then
+
+            || FIXME: should call sequence parser???
+            || FIXME: this could be false...which means an array of synthetic types
+            || of an XML document type
+            || resolve possible group and use that as the element list
+            || to work with
+            let constant (elements:{Array-of WSDLSchemaElement},
+                          maybe-doc:#WSDLSchemaType) =
+                              {self.parse-sequence-element-list
+                                  e, null, target-namespace, element-form-qualified?
+                              }
+            {if elements.size == 1 and
+                not elements[0] isa WSDLSchemaElementGroup
+             then
+                let (element-xml-name:#XMLName, t:WSDLSchemaType,
+                     min:int, max:int, null?:bool) =
+                         {self.parse-internal-element-attributes
+                             e.children[0],
+                             target-namespace,
+                             element-form-qualified?
+                         }
+                set type =
+                    {new WSDLSchemaArrayType,
+                        xml-name,
+                        elements[0],
+                        curl-namer = self.curl-namer
+                    }
+             else
+                {wsdl-exception node = e,
+                    {hlmessage 
+                        Array definition problem: 
+                        Expected a single element under an 'all' or 
+                        'sequence' under a 'restriction' under a 
+                        'complexContent' element to define an array.}
+                }
+            }
+         elseif {self.schema-tag-match e.name, "annotation"} then
+            {self.ignored-tag node}
+
+         elseif {self.schema-tag-match e.name, "attributeGroup"} then
+            {if {self.ignorable-attribute-group? e} then
+                || OK to ignore
+             else
+                {self.approximated-tag node}
+                set type = {self.get-xml-document-type xml-name}
+            }
+         else
+            {self.approximated-tag node}
+            set type = {self.get-xml-document-type xml-name}
+        }
+    }
+    {return type}
+  }
+      
+  {method private {parse-complex-type-simple-content
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:WSDLSchemaType
+    {if node.children.size != 1 then
+        {wsdl-exception node = node,
+            {hlmessage Expected a single element directly under
+                a simpleContent element.}
+        }
+    }
+
+    let type:#WSDLSchemaType
+    {if {node.get-attribute "mixed"} == "true" then
+        set type = {self.get-xml-document-type xml-name}
+    }
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "restriction"} then
+            || TODO: Implement this.
+            {self.approximated-tag child}
+            set type = {self.get-xml-document-type xml-name}
+
+         elseif {self.schema-tag-match child.name, "extension"} then
+            || construct a subclass type object
+            set type =
+                {self.parse-complex-type-simple-content-extension
+                    child,
+                    xml-name,
+                    target-namespace,
+                    element-form-qualified?
+                }
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    {if-non-null type then
+        {return type}
+     else
+        {return {self.get-xml-document-type xml-name}}
+    }
+  }
+
+  {method private {parse-complex-type-simple-content-extension
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:WSDLSchemaType
+    let attribute-form-qualified?:bool = false || TODO: argument
+    let constant base:String =
+        {WSDLSchema.get-required-node-attribute node, "base"}
+    let constant base-xml-name:XMLName =
+        {WSDLNameTable.make-qname node, base, ""}
+    
+    || NOTE: simple content is different
+    || - 'base' defines a value field, not an 'inherits'
+    def content-name =
+        {XMLName 
+            {if-non-null xml-name 
+             then xml-name.namespace 
+             else ""},
+            "content"}
+    def content-type:WSDLSchemaType =
+        {self.get-type-from-node-string node, base}
+    let content-element:WSDLSchemaElement =
+        {WSDLSchemaElement content-name, content-type, node}
+    let type:WSDLSchemaType = 
+        {WSDLSchemaClassType
+            xml-name,
+            {{Array-of WSDLSchemaElement}},
+            self.curl-namer,
+            content-element = content-element}
+    
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "attribute"} then
+            {if {self.ignorable-attribute? child} then
+                || OK to ignore
+             else
+                {type-switch type
+                 case t:WSDLSchemaClassType do
+                    let (name:XMLName, type:WSDLSchemaType) =
+                        {self.parse-attribute-name-and-type 
+                            child, 
+                            target-namespace,
+                            attribute-form-qualified?,
+                            true
+                        }
+                    let a:WSDLSchemaAttribute =
+                        {WSDLSchemaAttribute 
+                            name, type, child}
+                    
+                    {t.attributes.append a}
+                }
+            }
+         elseif {self.schema-tag-match child.name, "attributeGroup"} then
+            {if {self.ignorable-attribute-group? child} then
+                || OK to ignore
+             else
+                {type-switch type
+                 case t:WSDLSchemaClassType do
+                    let (name:XMLName, type:WSDLSchemaType) =
+                        {self.parse-attribute-name-and-type 
+                            child, 
+                            target-namespace,
+                            attribute-form-qualified?,
+                            true
+                        }
+                    let a:WSDLSchemaAttribute =
+                        {WSDLSchemaAttribute 
+                            name, type, child}
+                    
+                    {t.attributes.append a}
+                }
+            }
+         elseif {self.schema-tag-match child.name, "anyAttribute"} then
+            || for all of the things that we don't understand, just do document types.
+            {self.approximated-tag child}
+            set type = {self.get-xml-document-type xml-name}
+            
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+         else
+            || FIXME: probably other elements that should trigger 
+            {self.unexpected-tag child}
+        }
+    }
+    {return type}
+  }
+  
+  {method private {parse-simple-type
+                      node:WSDLDOMNode,
+                      target-namespace:String
+                  }:WSDLSchemaType
+    let name:#String = {node.get-attribute "name"}
+    let xml-name:#XMLName =
+        {if-non-null name then
+            {new XMLName, target-namespace, name}
+         else
+            null
+        }
+    def attribute = {node.get-attribute
+                        "expectedContentTypes",
+                        namespace = WSDL.xmime-namespace-uri}
+    {if node.children.size == 0 then
+        {return
+            {WSDLSchemaClassType
+                xml-name,
+                {{Array-of WSDLSchemaElement}},
+                self.curl-namer
+            }
+        }
+    }
+    let type:#WSDLSchemaType
+    {for child in node.children do
+        {if {self.schema-tag-match child.name, "restriction"} then
+            set type = {self.parse-simple-type-restriction child, xml-name}
+
+         elseif {self.schema-tag-match child.name, "union"} then
+            set type = {self.parse-simple-type-union child, xml-name, target-namespace}
+
+         elseif {self.schema-tag-match child.name, "list"} then
+            set type = {self.parse-simple-type-list child, xml-name, target-namespace}
+
+         elseif {self.schema-tag-match child.name, "annotation"} then
+            {self.ignored-tag child}
+
+         elseif {self.schema-tag-match child.name, "attribute"} then
+            || TODO
+            {self.approximated-tag child}
+            set type = {self.get-xml-document-type xml-name}
+
+         else
+            {self.unexpected-tag child}
+        }
+    }
+    {if-non-null type then
+        {if-non-null at = attribute then
+            {type-switch type
+             case e:WSDLSchemaAliasType do
+                set e.expected-content-types = at
+            }
+        }
+        {if-non-null name then
+            {self.names.set-name
+                target-namespace, WSDLSchema.type-prefix, name, type
+            }
+        }
+        {return type}
+     else
+        {wsdl-exception node = node,
+            {hlmessage Did not understand type described by 'simpleType'.}
+        }
+    }
+  }
+
+  {method private {parse-simple-type-restriction
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName
+                  }:WSDLSchemaType
+
+    let constant base:String =
+        {WSDLSchema.get-required-node-attribute node, "base"}
+    || really should check type of each child.
+    || FIXME: whiteSpace actually is trying to change how a string type
+    || is processed, and is just ignored here.
+    {if node.children.size == 0 or
+        {value
+            let constant child:WSDLDOMNode = node.children[0]
+            not {self.schema-tag-match child.name, "enumeration"}
+        }
+     then
+        let constant base-type:WSDLSchemaType =
+            {self.get-type-from-node-string node, base}
+        {return
+            {if-non-null xml-name then
+                {new WSDLSchemaAliasType,
+                    xml-name,
+                    base-type,
+                    self.curl-namer
+                }
+             else
+                base-type
+            }
+        }
+     else
+        let constant members:StringArray = {StringArray}
+        {for e in node.children do
+            {if {self.schema-tag-match e.name, "enumeration"} then
+                {members.append {WSDLSchema.get-required-node-attribute e, "value"}}
+
+             elseif {self.schema-tag-match e.name, "annotation"} then
+                {self.ignored-tag e}
+             else
+                {self.unexpected-tag e}
+            }
+        }
+
+        || only primitive types are allowed here...
+        let string-type-key:XMLName = 
+            {XMLName.unchecked WSDLSchema.schema-namespace-uri, WSDLSchema.type-prefix & "string"}
+        let generic-simple-type:WSDLSchemaType =
+            self.names[string-type-key] asa WSDLSchemaType
+        let base-type-key:XMLName = 
+            {WSDLNameTable.make-qname node, base, WSDLSchema.type-prefix}
+        let base-type:WSDLSchemaType =
+            {if {self.names.key-exists? base-type-key} then
+                self.names[base-type-key] asa WSDLSchemaType
+             else
+                generic-simple-type
+            }
+        {if-non-null xml-name then
+            {return
+                {WSDLSchemaEnumType
+                    xml-name, members, self.curl-namer,
+                    base-type = base-type
+                }
+            }
+         else
+            || we can't make an anonymous enum, so use a primitive
+            {return base-type}
+        }
+    }
+  }
+
+  {method private {parse-simple-type-list
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String
+                  }:WSDLSchemaType
+    
+    let item-type:#WSDLSchemaType = null
+    
+    || defined by reference
+    {if-non-null name = {node.get-attribute "itemType"} then
+        set item-type =
+            {self.get-type-from-node-string node, name}
+    }
+    
+    || defined locally
+    {for e in node.children do
+        {if {self.schema-tag-match e.name, "simpleType"} then
+            {if item-type == null then
+                set item-type =
+                    {self.parse-simple-type e, target-namespace} 
+             else           
+                || only one definition allowed
+                {self.unexpected-tag e}
+            }
+         elseif {self.schema-tag-match e.name, "annotation"} then
+            {self.ignored-tag e}            
+         else
+            {self.unexpected-tag e}
+        }
+    }
+    || TODO: verify its a simpleType
+
+    {return
+        {WSDLSchemaListType  
+            xml-name, 
+            {if-non-null item-type then 
+                item-type
+             else
+                let constant any-simple-type-key:XMLName =
+                    {XMLName.unchecked WSDLSchema.schema-namespace-uri, 
+                        WSDLSchema.type-prefix & "string"}
+                self.names[any-simple-type-key] asa WSDLSchemaPrimitiveType
+            }, 
+            self.curl-namer}
+    }
+  }
+
+  {method private {parse-simple-type-union
+                      node:WSDLDOMNode,
+                      xml-name:#XMLName,
+                      target-namespace:String
+                  }:WSDLSchemaType
+    || get the list of types
+    let constant types:{Array-of WSDLSchemaType} =
+        {{Array-of WSDLSchemaType}}
+    let constant member-types:#String = {node.get-attribute "memberTypes"}
+    {if-non-null member-types then
+        let member-array:StringArray = {member-types.split}
+        {for m in member-array do
+            {if not m.empty? then
+                {types.append
+                    {self.get-type-from-node-string node, m}
+                }
+            }
+        }
+     }
+    {for child in node.children do
+        || FIXME this can return types that don't get defined
+        {types.append
+            {self.parse-simple-type
+                child,
+                target-namespace
+            }
+        }
+    }
+    {return
+        {new WSDLSchemaUnionType, xml-name, types, self.curl-namer}
+    }
+  }
+
+  || import processing
+  || --------------------
+  {method private {parse-import
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:void
+    let constant namespace:String = 
+        || TODO: verify that this is optional
+        {if-non-null namespace = {node.get-attribute "namespace"} then
+            namespace
+         else
+            || TODO: or should this be ""
+            target-namespace
+        }
+    let constant location-attribute:String ="schemaLocation"
+    let constant location:#String = {node.get-attribute location-attribute}
+
+    || note imports relationship
+    {self.namespace-imports.append
+        {WSDLSchemaNamespacePair
+            target-namespace,
+            namespace}}
+    
+    || prepare to load
+    let constant import:WSDLSchemaImport =
+        {WSDLSchemaImport namespace, location, node}
+    set import.schema = self  
+    
+    {if-non-null location then
+        || check multiple references
+        {for i in self.imports do
+            {if i.namespace == namespace and i.full-location == import.full-location then
+                || same namespace from same location
+                {if not i.loaded? then
+                    {self.load-import
+                        i, element-form-qualified?}
+                }
+                {return}
+             elseif i.namespace == namespace then
+                || same namespace from different location
+                {self.warn
+                    {WSDLSyntaxException node,
+                        {hlmessage Warning: 
+                            Namespace '{value namespace}' 
+                            defined by '{value i.full-location}' 
+                            will be redefined by '{value import.full-location}'}}}
+             elseif i.location == location then
+                || different namespace from same location
+                {self.warn
+                    {WSDLSyntaxException node,
+                        {hlmessage Warning:  
+                            Unable to define namespace '{value namespace}'
+                            from '{value i.full-location}' it defined
+                            because namespace '{value i.namespace}'}}}
+            }
+        }
+        || import
+        {self.imports.append import}
+        || but don't attempt to load "well known" namespaces
+        {if {self.known-schema? namespace} then
+            set import.loaded? = true
+         else
+            {self.load-import import, element-form-qualified?}
+        }
+     else
+        || note unresolved namespace, in case its defined later
+        || but accept "well known" namespaces
+        {if not {self.known-schema? namespace} then
+            {self.pending-imports.append import}
+        }
+    }
+  }
+  
+  {method private {parse-include
+                      node:WSDLDOMNode,
+                      target-namespace:String,
+                      element-form-qualified?:bool
+                  }:void
+    let constant location:String = 
+        {WSDLSchema.get-required-node-attribute node, "schemaLocation"}
+    || TODO: verify that this (mis)use of import conforms to 'include' semantics
+    let constant i:WSDLSchemaImport =
+        {WSDLSchemaImport target-namespace, location, node}
+    set i.schema = self
+    {self.load-import i, element-form-qualified?}
+  }
+
+  {method private {load-import
+                      import:WSDLSchemaImport,
+                      element-form-qualified?:bool
+                  }:void
+    let constant handler:WSDLDOMHandler =
+        {WSDLDOMHandler {non-null import.full-location}}
+    
+    let constant top-node:#WSDLDOMNode = {handler.parse}
+    let constant node:WSDLDOMNode =
+        {if-non-null top-node then
+            top-node
+         else
+            {wsdl-exception node = import.node,
+                {hlmessage Unable to parse import of '{value import.location}'}
+            }
+        }
+    set import.loaded? = true
+    {self.parse-schema node}
+  }
+  
+  {method private {resolve-imports}:void
+    || "forward references" may not be resolved in a single pass
+    || so recurse (while making progress) until all are resolved
+    let unresolved:{Array-of WSDLSchemaImport} = 
+        {self.pending-imports.clone}
+    {while not unresolved.empty? do
+        let to-resolve:{Array-of WSDLSchemaImport} = {unresolved.clone}
+        {unresolved.clear}
+        {for import in to-resolve do
+            let namespace:String = import.namespace
+            || could have been defined locally
+            {if not {self.known-schema? namespace} then
+                || TODO: load some other way?
+                || -- if so, after loading, {self.imports.append import}
+                {unresolved.append import}}
+        }
+        || not making progress
+        {if unresolved.size >= to-resolve.size then
+            {wsdl-exception 
+                {hlmessage Unable to import {value unresolved.size} namespaces,
+                    including '{value unresolved[0].namespace}'}}}
+    }
+  }
+  
+  {method private {known-schema? namespace:String}:bool
+    {if
+        || defined locally
+        {self.local-namespaces.member? namespace}
+        || well known
+        or {WSDLSchema.known-namespaces.member? namespace}
+     then
+        {return true}}   
+    || imported
+    {for i in self.imports do
+        {if i.namespace == namespace and i.loaded? then
+            {return true}}}   
+    {return false}
+  }
+
+  || ignorable? predicates
+  || --------------------
+  {method private {ignorable-attribute-group? child:WSDLDOMNode}:bool
+    let constant ref:#String = {child.get-attribute "ref"}
+    {if-non-null ref then
+        let constant ref-xml-name:XMLName =
+            {WSDLNameTable.make-qname
+                child,
+                ref,
+                ""
+            }
+        {if {self.soap-enc-tag-match ref-xml-name, "commonAttributes"} then
+            {return true}
+        }
+    }
+    {return false}
+  }
+  {method private {ignorable-attribute? child:WSDLDOMNode}:bool
+    let constant ref:#String = {child.get-attribute "ref"}
+    {if-non-null ref then
+        let constant ref-xml-name:XMLName =
+            {WSDLNameTable.make-qname
+                child,
+                ref,
+                ""
+            }
+        {if (ref-xml-name.local-name == "id" or
+             ref-xml-name.local-name == "href") and
+            ref-xml-name.namespace == ""
+         then
+            {return true}
+        }
+     else
+        let constant name:#String = {child.get-attribute "name"}
+        {if-non-null name then
+            let constant name-xml-name:XMLName =
+                {WSDLNameTable.make-qname
+                    child,
+                    name,
+                    ""
+                }
+            {if (name-xml-name.local-name == "id" or
+                 name-xml-name.local-name == "href") and
+                name-xml-name.namespace == ""
+             then
+                {return true}
+            }
+        }
+    }
+    {return false}
+  }
+
+  || miscellaneous
+  || --------------------
+  {method private {get-xml-document-type xml-name:#XMLName}:WSDLSchemaType
+    {if-non-null xml-name then
+        {return 
+            {WSDLSchemaXMLDocumentType 
+                xml-name,
+                self.curl-namer}
+        }
+     else
+        {return self.generic-document-type}
+    }
+  }
+
+  {method private {get-type-from-node-string
+                      node:WSDLDOMNode,
+                      name:String
+                  }:WSDLSchemaType
+    let constant qname:XMLName =
+        {WSDLNameTable.make-qname node, name, WSDLSchema.type-prefix}
+    let (obj:Object, found?:bool) =
+        {self.names.get-if-exists qname}
+    {return
+        {if found? then
+            obj asa WSDLSchemaType
+         else
+            {new WSDLSchemaPlaceholderType,
+                {WSDLNameTable.make-qname node, name, ""},
+                qname,
+                node
+            }
+        }
+    }
+  }
+
+  {method private {warn e:Exception}:void
+    {self.warnings.append e}
+    {output e.message}
+  }
+
+  {method private {unsupported-tag
+                      node:WSDLDOMNode
+                  }:void
+    {wsdl-exception node = node, 
+        {hlmessage Unsupported '{WSDLSchema.format-name node}'}}
+  }
+
+  {method private {approximated-tag
+                      node:WSDLDOMNode
+                  }:void
+    let e:WSDLSyntaxException =
+        {WSDLSyntaxException node,
+            {hlmessage Approximated as 'anyType': '{WSDLSchema.format-name node}'}}
+
+    {if self.approximated-tags-reported? then
+        {self.warn e}
+    }
+  }
+
+  {method private {ignored-tag
+                      node:WSDLDOMNode
+                  }:void
+    let e:WSDLSyntaxException =
+        {WSDLSyntaxException node,
+            {hlmessage Ignored '{WSDLSchema.format-name node}'}}
+
+    def ignored-annotation-reported? = false
+    {if self.ignored-tags-reported? and
+        (ignored-annotation-reported? or
+         not {self.schema-tag-match node.name, "annotation"})
+     then
+        {self.warn e}
+    }
+  }
+
+  {method private {unexpected-tag
+                      node:WSDLDOMNode
+                  }:void
+    let e:WSDLSyntaxException =
+        {WSDLSyntaxException node,
+            {hlmessage Unexpected '{WSDLSchema.format-name node}'}}
+        
+    
+    {if self.unexpected-tags-fatal? then
+        {throw e}
+     else
+        {self.warn e}
+    }
+  }
+
+  || helper functions
+  || --------------------
+  {define-proc package {format-name 
+                           node:WSDLDOMNode,
+                           name:#XMLName = node.name
+                       }:String
+    {return
+        {if-non-null name then
+            let p:String = {node.get-namespace-prefix name.namespace}
+            {if p.empty? then name.local-name
+             else {format "%s:%s", p, name.local-name}}
+         else
+            "text"}}
+  }
+
+  {define-proc package {get-required-node-attribute
+                           node:WSDLDOMNode,
+                           attribute:String,
+                           namespace:String = ""
+                       }:String
+    {return
+        {if-non-null a =
+            {node.get-attribute attribute, namespace = namespace}
+         then
+            a
+         else
+            {wsdl-exception node = node,
+                {hlmessage
+                    '{WSDLSchema.format-name node}' 
+                    element missing a '{value attribute}' attribute,
+                }
+            }
+        }
+    }
+  }
+
+  || NOTE: not currently used - see resolve-groups
+  || START UNCOVERED unused
+  {define-proc package {splice-elements
+                           elements:{Array-of WSDLSchemaElement}
+                       }:bool
+    let spliced?:bool
+    let i:int = 0
+    {while i < elements.size do
+        def e = elements[i]
+        {type-switch e
+         case g:WSDLSchemaElementGroup do
+            set spliced? = true
+            def ge = g.elements
+            {assert g.max-occurs == 1}
+            {elements.remove i}
+            {elements.splice ge, i}
+            || Don't increment i, we just added new stuff where it was.
+         else
+            {inc i}
+        }
+    }
+    {return spliced?}
+  }
+
+  || NOTE: not currently used - see resolve-groups
+  {define-proc package {splice-attributes
+                           attributes:{Array-of WSDLSchemaAttribute}
+                       }:{Array-of WSDLSchemaAttribute}
+    let spliced?:bool
+    let i:int = 0
+    {while i < attributes.size do
+        def a = attributes[i]
+        {type-switch a
+         case g:WSDLSchemaAttributeGroup do
+            set spliced? = true
+            def ga = g.attributes
+            {attributes.remove i}
+            {attributes.splice ga, i}
+            || Don't increment i, we just added new stuff where it was.
+         else
+            {inc i}
+        }
+    }
+    {return attributes}
+  }
+  || END UNCOVERED unused
+
+  {define-proc package {flatten-elements
+                           elements:{Array-of WSDLSchemaElement}
+                       }:{Array-of WSDLSchemaElement}
+    let cloned?:bool
+    let i:int = 0
+    {while i < elements.size do
+        def e = elements[i]
+        {type-switch e
+         case e:WSDLSchemaElementGroup do
+            {if not cloned? then
+                set elements = {elements.clone}
+                set cloned? = true
+            }
+            def group-type = e.group-type
+||--            {if group-type == "choice" then
+||--                {output "@@@ Flattening choice: ", e.xml-name}}
+            let constant ge:{Array-of WSDLSchemaElement} = e.elements
+            {elements.remove i}
+            {elements.splice ge, i}
+            || Don't increment i, we just added new stuff where it was.
+         else
+            {inc i}
+        }
+    }
+    {return elements}
+  }
+
+  {define-proc package {flatten-attributes
+                           attributes:{Array-of WSDLSchemaAttribute}
+                       }:{Array-of WSDLSchemaAttribute}
+    let cloned?:bool
+    let i:int = 0
+    {while i < attributes.size do
+        def a = attributes[i]
+        {type-switch a
+         case a:WSDLSchemaAttributeGroup do
+            {if not cloned? then
+                set attributes = {attributes.clone}
+                set cloned? = true
+            }
+            let constant ga:{Array-of WSDLSchemaAttribute} = a.attributes
+            {attributes.remove i}
+            {attributes.splice ga, i}
+            || Don't increment i, we just added new stuff where it was.
+         else
+            {inc i}
+        }
+    }
+    {return attributes}
+  }
+
+  {define-proc package {elements-has-choice-or-array?
+                           elements:{Array-of WSDLSchemaElement}
+                       }:bool
+    {for e key i in elements do
+        {if (e.max-occurs > 1 and not e.type isa WSDLSchemaArrayType) then
+            {return true}
+        }
+        {type-switch e
+         case e:WSDLSchemaElementGroup do
+            {if e.group-type == "choice" or
+                {WSDLSchema.elements-has-choice-or-array? e.elements}
+             then
+                {return true}
+            }
+        }
+    }
+    {return false}
+  }
+    
+  || debugging support
+  || --------------------
+  || START UNCOVERED debug
+  {method package {dump-types
+                      show-internal?:bool = false
+                  }:void
+    || dump known types
+    {output "\nTYPES === \\\\"}
+    let types:{Array-of WSDLSchemaType} = {{Array-of WSDLSchemaType}}
+    {for x key k in self.names do
+        {type-switch x
+         case t:WSDLSchemaType do
+            let ns:String = k.namespace
+            {if || user defined type
+                not {WSDLSchema.known-namespaces.member? ns} or
+                (show-internal? and
+                 || these are duplicates of xsd types
+                 ns != "http://schemas.xmlsoap.org/soap/encoding/") 
+             then
+                {types.append t}}}}
+    {types.sort comparison-proc =
+        {proc {x:WSDLSchemaType, y:WSDLSchemaType}:bool
+            {return
+                {switch
+                    {x.xml-name.namespace.compare y.xml-name.namespace}
+                 case -1 do true
+                 case 1 do false
+                 else
+                    {x.xml-name.local-name.compare y.xml-name.local-name} <= 0}}}}
+    {for t in types do
+        {output {hlmessage
+                    {format "%30s", {type-of t}}
+                    {format "[%-15s]", t.ref-name}
+                    {value t.xml-name.namespace}`{value t.xml-name.local-name}}}}
+    {output "TYPES === //\n"}
+  }
+  
+  {method package {dump-members
+                      show-internal?:bool = false
+                  }:void
+    || dump known members
+    {output "\nMEMBERS === \\\\"}
+    let members:{Array-of WSDLSchemaMember} = {{Array-of WSDLSchemaMember}}
+    {for x key k in self.names do
+        {type-switch x
+         case m:WSDLSchemaMember do
+            let ns:String = k.namespace
+            {if || user defined type
+                not {WSDLSchema.known-namespaces.member? ns} or
+                (show-internal? and
+                 || these are duplicates of xsd types
+                 ns != "http://schemas.xmlsoap.org/soap/encoding/") 
+             then
+                {members.append m}}}}
+    {members.sort comparison-proc =
+        {proc {x:WSDLSchemaMember, y:WSDLSchemaMember}:bool
+            {return
+                {switch
+                    {x.xml-name.namespace.compare y.xml-name.namespace}
+                 case -1 do true
+                 case 1 do false
+                 else
+                    {x.xml-name.local-name.compare y.xml-name.local-name} <= 0}}}}
+    {for m in members do
+        {output {hlmessage
+                    {format "%30s", {type-of m}}
+                    {value m.xml-name.namespace}`{value m.xml-name.local-name}}}}
+    {output "MEMBERS === //\n"}
+  }
+  || END UNCOVERED debug
+}
+
+{define-class public open WSDLSchemaImport {inherits WSDLDocumentedNode}
+  field public constant namespace:String
+  field public constant location:#String
+  field public full-location:#Url
+  field public schema:#WSDLSchema
+  field public loaded?:bool = false
+
+  {constructor public {default namespace:String, location:#String, node:WSDLDOMNode}
+    {construct-super node}
+    set self.namespace = namespace
+    set self.location = location
+    || location may not be absolute. If it isn't,
+    || merge it with the source-url of the WSDLSchemaImport node
+    set self.full-location =
+        {if-non-null location then
+            {parse-url location, relative-url = node.source-url.parent}
+         else
+            || not specifed: leave it unloaded for later resolution
+            null
+        }
+  }
+}
+
+{def public WSDLSchemaNamespacePair =
+    {Tuple2-of String, String}
+}
+|| predefined names
+|| --------------------
+{define-proc package {extend-name-table
+                         names:WSDLNameTable,
+                         primitive-type:WSDLSchemaPrimitiveType
+                     }:void
+    def xml-type = primitive-type.xml-name
+    def lookup-name =
+        {XMLName.unchecked
+            xml-type.namespace,
+            WSDLSchema.type-prefix & xml-type.local-name}
+    set names[lookup-name] = primitive-type
+}
+{define-proc package {create-name-table}:(WSDLNameTable, {HashTable-of XMLName, XMLName})
+    def names = {WSDLNameTable}
+    || TODO: unused ???
+    def type-to-element-name = {{HashTable-of XMLName, XMLName}}
+ 
+    def bootstrap-schema-type =
+        {proc {type:String,
+               curl-type:String,
+               nullable?:bool,
+               multiple-reference:SOAPTypeMultipleReference,
+               marshaler-handled-element?:bool = false
+              }:void
+            {extend-name-table names,
+                {WSDLSchemaPrimitiveType
+                    {XMLName WSDLSchema.schema-namespace-uri, type},
+                    curl-type, nullable?, multiple-reference,
+                    marshaler-handled-element? = marshaler-handled-element?
+                }}
+        }
+
+    || FIXME: should this be derived from the builtin-xml-type-to-curl-type-mapper instead?
+    || FIXME: should this be a document type instead?
+    {bootstrap-schema-type "anyType", "any", false, SOAPTypeMultipleReference.unknown, marshaler-handled-element? = true}
+    
+    {bootstrap-schema-type "anySimpleType", "any", false, SOAPTypeMultipleReference.unknown, marshaler-handled-element? = true}
+    {bootstrap-schema-type "anyURI", "Url", true, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "QName", "XMLName", true, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "base64Binary", |"{Array-of byte}"|, true, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "hexBinary", |"{Array-of byte}"|, true, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "string", "String", true, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "long", "int64", false, SOAPTypeMultipleReference.single}
+    || we put down alot of things as int64 or uint64 that aren't really fully
+    || representable with int64, and int64 can hold values that aren't
+    || legal for them...
+    {bootstrap-schema-type "integer", "int64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "nonNegativeInteger", "uint64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "nonPositiveInteger", "int64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "negativeInteger", "int64", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "positiveInteger", "uint64", false, SOAPTypeMultipleReference.single}
+
+    {bootstrap-schema-type "unsignedInt", "uint32", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "unsignedLong", "uint64", false, SOAPTypeMultipleReference.single}
+
+    {bootstrap-schema-type "int", "int", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "short", "int16", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "unsignedShort", "uint16", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "byte", "int8", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "unsignedByte", "uint8", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "float", "float", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "double", "double", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "decimal", "double", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "boolean", "bool", false, SOAPTypeMultipleReference.single}
+    {bootstrap-schema-type "dateTime", "DateTime", true, SOAPTypeMultipleReference.unknown}
+    {bootstrap-schema-type "date", "DateTime", true, SOAPTypeMultipleReference.unknown}
+    || XMLSimpleValue types 
+    || - (defined in COM.CURL.WSDK.SOAP.BuiltinSOAPTypeMapper)
+    def alias-type-names = XMLSimpleValue.alias-type-names
+    {for t in simple-xml-types do
+        def type-name = t.local-name
+        def (alias, alias?) = {alias-type-names.get-if-exists type-name}
+        def curl-type-name =
+            {if alias? then alias else
+                {format |"{XMLSimpleValue-for "%s"}"|, type-name}}
+        {bootstrap-schema-type 
+            type-name, 
+            curl-type-name,
+            true,
+            SOAPTypeMultipleReference.unknown}
+    }
+
+    || TODO: load in generic array type
+    || -- defined by http://schemas.xmlsoap.org/soap/encoding.xsd
+    || -- some service definitions reference it
+    def any-type-name =
+        {XMLName.unchecked
+            WSDLSchema.schema-namespace-uri,
+            WSDLSchema.type-prefix & "anyType"}
+    def any-type = names[any-type-name] asa WSDLSchemaType
+    def empty-node =
+        {WSDLDOMNode null, null, null, {string-url "nonexistent"}, 0, null}
+    
+    def soapenc-array-name =
+        {XMLName WSDLSchema.soap-1-1-enc-namespace-uri, "Array"}
+    def soapenc-array-key =
+        {XMLName.unchecked
+            WSDLSchema.soap-1-1-enc-namespace-uri,
+            WSDLSchema.type-prefix & "Array"}
+    def soapenc-array-type =
+        {WSDLSchemaArrayType    
+            soapenc-array-name, 
+            {WSDLSchemaElement null, 
+                any-type, 
+                min-occurs = 0,
+                max-occurs = -1,
+                nillable? = false,  
+                empty-node}}
+    set names[soapenc-array-key] = soapenc-array-type
+    
+    || user extensions would be here
+
+    {return names, type-to-element-name}
+}

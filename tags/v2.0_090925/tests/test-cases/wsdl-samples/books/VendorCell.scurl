@@ -1,0 +1,60 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{doc-next
+    {purpose
+        This class takes a {docref Url} pointing to a website and displays it
+        as a {docref link} in a {docref RecordGrid}.
+    }
+}
+{define-class public open VendorCell
+  {inherits StandardRecordGridCell}
+
+  field private vendor-frame:Frame =
+      {new Frame, width = {make-elastic}, height = {make-elastic}}
+
+  {constructor public {default}
+    {construct-super}
+    set self.height = 60px
+    {self.add-internal self.vendor-frame}
+  }
+  
+  {doc-next
+    {purpose
+        Creates a {docref link} from the data associated with this cell.
+    }
+  }
+  {method public open {refresh-data}:void
+    let (data:String, valid?:bool) = {self.get-formatted-data}
+    {if valid? and data != ""  then
+        {if-non-null s = self.record["vendor-site"] then
+            let site:Url = {url s asa String}
+            {self.vendor-frame.add
+                replace? = true,
+                {hcenter
+                    {vcenter
+                        {new StandardActiveTraversalContainer,
+                            active-traversal-container = null,
+                            {link href = site, target = "New", {value data}}
+                        }
+                    }
+                }
+            }
+        }
+     else
+        {self.vendor-frame.add replace? = true, {hcenter {vcenter data}}}
+    }
+  }
+}

@@ -1,0 +1,1111 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| evaluation context
+|| ====================
+{define-class abstract EvaluationContext
+  {getter abstract {context-node}:XDMNode} 
+  {getter abstract {size}:int}
+  {getter abstract {index}:int}
+  {getter abstract {result-cache}:#ResultCache}
+  {setter abstract {result-cache val:#ResultCache}:void}
+  {method abstract {set-context 
+                       context-node:XDMNode, 
+                       index:int, 
+                       size:int}:void}
+  {method abstract {subcontext
+                       context-node:XDMNode = 
+                           StandardEvaluationContext.empty-node,
+                       index:int = 0,
+                       size:int = 1
+                   }:EvaluationContext}
+}
+{define-class StandardEvaluationContext {inherits EvaluationContext}
+  field _context-node:XDMNode
+  field _size:int = 1
+  field _index:int = 0
+  field _result-cache:#ResultCache
+  {constructor {default 
+                   context-node:XDMNode = 
+                       StandardEvaluationContext.empty-node,
+                   index:int = 0,
+                   size:int = 1,
+                   result-cache:#ResultCache = null}
+    set self._context-node = context-node
+    set self._index = index
+    set self._size = size
+    set self._result-cache = result-cache
+  }
+  {getter final inline {context-node}:XDMNode
+    {return self._context-node}
+  }
+  {getter final inline {size}:int
+    {return self._size}
+  }
+  {getter final inline {index}:int
+    {return self._index}
+  }
+  {getter final inline {result-cache}:#ResultCache
+    {return self._result-cache}
+  }
+  {setter final inline {result-cache val:#ResultCache}:void
+    set self._result-cache = val
+  }
+  {method final inline {set-context context-node:XDMNode, index:int, size:int}:void
+    set self._context-node = context-node
+    set self._index = index
+    set self._size = size
+  }
+  {method final inline {subcontext
+                           context-node:XDMNode = 
+                               StandardEvaluationContext.empty-node,
+                           index:int = 0,
+                           size:int = 1
+                       }:EvaluationContext
+    {return
+        {StandardEvaluationContext
+            context-node = context-node,
+            index = index,
+            size = size,
+            result-cache = self.result-cache
+        }}
+  }
+  let constant empty-node:XDMNode = {XDMText ""}
+}
+|| cache
+|| ====================
+{define-class ResultCache
+  {inherits
+    {HashTable-of ResultKey, XDMNodeSet,
+        key-equality-proc = ResultKey-equal?,
+        key-hash-proc = ResultKey-hash}}
+  {constructor {default ...}
+    {construct-super {splice ...}}
+  }
+}
+{define-class ResultKey
+  field subject:XDMNode
+  field action:XPathAction
+  {constructor {default
+                   subject:XDMNode,
+                   action:XPathAction}
+    set self.subject = subject
+    set self.action = action
+  }
+  let constant hash-multiplier:int = 8191
+}
+{define-proc package {ResultKey-equal? self:ResultKey, other:ResultKey}:bool
+    {return
+        self.subject == other.subject and
+        self.action == other.action}
+}
+{define-proc package {ResultKey-hash self:ResultKey}:int
+    {return
+        {value-hash self.subject} * ResultKey.hash-multiplier 
+        + {value-hash self.action}}
+}
+|| runtime
+|| ====================
+{define-class abstract XPathAction
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {f self}
+  }
+  || debugging
+  {getter {summary}:String
+    {return ""}
+  }
+  {method public {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, "\[%s '%s'\]",
+        {type-of self}, self.summary}
+  }
+}
+|| evaluation
+|| ====================
+{define-class abstract Expression {inherits XPathAction}
+  {method abstract public {eval 
+                              context:EvaluationContext = {StandardEvaluationContext}
+                          }:XPathValue}
+  {method public {apply subject:XDMNode}:XPathValue
+    {return
+        {self.eval 
+            context = {StandardEvaluationContext context-node = subject}}}
+  }
+}
+{define-class LiteralExpression {inherits Expression}
+  field constant value:XPathValue
+  {constructor {default value:XPathValue}
+    set self.value = value
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    {return self.value}
+  }
+  || debugging
+  {getter {summary}:String
+    {return {format "%y", self.value.value}}
+  }
+}
+{define-class ContextExpression {inherits Expression}
+  field constant selector:String
+  {constructor {default selector:String}
+    set self.selector = selector
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    {return 
+        {switch self.selector
+         case "_context-node" do
+            || NOTE: "context-node" is internal, not XPath
+            context.context-node asa XPathValue
+         case "position" do
+            || XPath 1-based from Curl 0-based
+            (context.index + 1) asa XPathValue
+         case "last" do 
+            context.size  asa XPathValue
+         else 
+            {xdm-exception
+                {message Unexpected context selector: 
+                    '{value self.selector}'}}}}
+  }
+  || debugging
+  {getter {summary}:String
+    {return {format "%y", self.selector}}
+  }
+}
+{define-class UnaryExpression {inherits Expression}
+  field constant function:{proc-type {XPathValue}:XPathValue}
+  field constant argument:Expression
+  || not used for now
+||--  field constant type:ProcType
+||--  field constant type1:Type
+  {constructor {default 
+                   function:{proc-type {XPathValue}:XPathValue},
+                   argument:Expression}
+    set self.function = function
+    set self.argument = argument
+    || not used for now
+||--    set self.type = {type-of function} asa ProcType
+||--    set self.type1 = {self.type.arg-type 0}
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    let arg:XPathValue = {self.argument.eval context = context}
+    {return 
+        {self.function arg}}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.argument.visit f}
+  }
+}
+{define-class BinaryExpression {inherits Expression}
+  field constant function:{proc-type {XPathValue, XPathValue}:XPathValue}
+  field constant argument1:Expression
+  field constant argument2:Expression
+  || unused for now
+||--  field constant type:ProcType
+||--  field constant type1:Type
+||--  field constant type2:Type
+  {constructor {default 
+                   function:{proc-type {XPathValue, XPathValue}:XPathValue},
+                   argument1:Expression,
+                   argument2:Expression}
+    set self.function = function
+    set self.argument1 = argument1
+    set self.argument2 = argument2
+    || unused for now
+||--    set self.type = {type-of function} asa ProcType
+||--    set self.type1 = {self.type.arg-type 0}
+||--    set self.type2 = {self.type.arg-type 1}
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    let arg1:XPathValue = {self.argument1.eval context = context}
+    let arg2:XPathValue = {self.argument2.eval context = context}
+    {return 
+        {self.function arg1, arg2}}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.argument1.visit f}
+    {self.argument2.visit f}
+  }
+}
+{define-class TernaryExpression {inherits Expression}
+  field constant function:{proc-type {XPathValue, XPathValue, XPathValue}:XPathValue}
+  field constant argument1:Expression
+  field constant argument2:Expression
+  field constant argument3:Expression
+  {constructor {default 
+                   function:{proc-type {XPathValue, XPathValue, XPathValue}:XPathValue},
+                   argument1:Expression,
+                   argument2:Expression,
+                   argument3:Expression}
+    set self.function = function
+    set self.argument1 = argument1
+    set self.argument2 = argument2
+    set self.argument3 = argument3
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    let arg1:XPathValue = {self.argument1.eval context = context}
+    let arg2:XPathValue = {self.argument2.eval context = context}
+    let arg3:XPathValue = {self.argument3.eval context = context}
+    {return 
+        {self.function arg1, arg2, arg3}}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.argument1.visit f}
+    {self.argument2.visit f}
+    {self.argument3.visit f}
+  }
+}
+{define-class CompareExpression {inherits BinaryExpression}
+  field constant comparison:XPathValueComparison
+  {constructor {default 
+                   operator:String,
+                   argument1:Expression, 
+                   argument2:Expression}
+    set self.comparison = 
+        {switch operator
+         case "=" do XPathValueComparison.equal
+         case "!=" do XPathValueComparison.not-equal
+         case ">=" do XPathValueComparison.greater-equal
+         case ">" do XPathValueComparison.greater
+         case "<=" do XPathValueComparison.less-equal
+         case "<" do XPathValueComparison.less
+         else 
+            {xdmq-exception {message Unexpected comparison operator 
+                                '{value operator}'}}}
+    || TODO: predefine constant procs
+    {construct-super
+        {proc {x:XPathValue, y:XPathValue}:XPathValue
+            {return {x.compares? self.comparison, y}}},
+        argument1,
+        argument2}
+  }
+  || debugging
+  {getter {summary}:String
+    {return {format "%y", self.comparison}}
+  }
+}
+{define-class ArithmeticExpression {inherits BinaryExpression}
+  field constant operator:String
+  {constructor {default 
+                   operator:String,
+                   argument1:Expression, 
+                   argument2:Expression}
+    set self.operator = operator
+    || TODO: predefine constant procs
+    let f:{proc-type {XPathValue, XPathValue}:XPathValue} =
+        {switch operator
+         case "+" do 
+            {proc {x:XPathValue, y:XPathValue}:XPathValue
+                {return x.as-double + y.as-double}}
+         case "-" do 
+            {proc {x:XPathValue, y:XPathValue}:XPathValue
+                {return x.as-double - y.as-double}}
+         case "*" do 
+            {proc {x:XPathValue, y:XPathValue}:XPathValue
+                {return x.as-double * y.as-double}}
+         case "div" do 
+            || NOTE: Xpath 'div' does Curl '/'
+            {proc {x:XPathValue, y:XPathValue}:XPathValue
+                {return x.as-double / y.as-double}}
+         case "mod" do 
+            || NOTE: Xpath 'mod' does Curl 'rem'
+            {proc {x:XPathValue, y:XPathValue}:XPathValue
+                {return x.as-double rem y.as-double}}
+         else 
+            {xdmq-exception {message Unexpected arithmetic operator 
+                                '{value operator}'}}}
+    {construct-super f, argument1, argument2}
+  }
+  || debugging
+  {getter {summary}:String
+    {return {format "%y", self.operator}}
+  }
+}
+{define-class SetExpression {inherits BinaryExpression}
+  field constant operator:String
+  {constructor {default 
+                   operator:String,
+                   argument1:Expression, 
+                   argument2:Expression}
+    set self.operator = operator
+    let f:{proc-type {XPathValue, XPathValue}:XPathValue} =
+        {switch operator
+         case "union", "\|" do
+            PathFunction.xp-union
+         else 
+            {xdmq-exception {message Unexpected set operator 
+                                '{value operator}'}}}
+    {construct-super f, argument1, argument2}
+  }
+  || debugging
+  {getter {summary}:String
+    {return {format "%y", self.operator}}
+  }
+}
+{define-class BooleanExpression {inherits Expression}
+  field constant operator:String
+  field constant short-circuit-value:bool
+  field constant argument1:Expression
+  field constant argument2:Expression
+  {constructor {default 
+                   operator:String,
+                   argument1:Expression,
+                   argument2:Expression}
+    set self.argument1 = argument1
+    set self.argument2 = argument2
+    set self.operator = operator
+    set self.short-circuit-value = operator == "or"
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    || don't evaluate unnecessary arguments, left to right
+    let arg1:XPathValue = {self.argument1.eval context = context}
+    {return
+        {if arg1.as-bool == self.short-circuit-value then
+            arg1
+         else
+            let arg2:XPathValue = {self.argument2.eval context = context}
+            arg2}}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.argument1.visit f}
+    {self.argument2.visit f}
+  }
+  || debugging
+  {getter {summary}:String
+    {return {format "%y", self.operator}}
+  }
+}
+{define-class PathExpression {inherits Expression}
+  field constant path:PathFunction
+  {constructor {default path:PathFunction}
+    set self.path = path
+  }
+  {method public {eval 
+                     context:EvaluationContext = {StandardEvaluationContext}
+                 }:XPathValue
+    {return 
+        {self.path.apply 
+            context.context-node,
+            context = context}}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.path.visit f}
+  }
+}
+{define-class PathStep {inherits XPathAction}
+  field constant step:Match
+  field constant predicates:{Array-of MatchPredicate}
+  {constructor {default 
+                   step:Match,
+                   predicates:{Array-of MatchPredicate}}
+    set self.step = step
+    set self.predicates = predicates
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.step.visit f}
+    {for p in self.predicates do
+        {p.visit f}}
+  }
+}
+{define-class PathFunction {inherits XPathAction}
+  field constant steps:{Array-of PathStep}
+  {constructor {default steps:{Array-of PathStep}}
+    set self.steps = steps
+  }
+  {method {apply 
+              subject:XDMNode,
+              context:EvaluationContext = {StandardEvaluationContext}
+          }:XDMNodeSet
+    || nothing to do
+    {if self.steps.empty? then
+        {return {EmptyXDMNodeSet}}}
+    
+    || cache results once computed when context-independent
+    || == that is, results derived from the root
+    let cache:#ResultCache = context.result-cache
+    let basis:#ResultKey = null
+    {type-switch self.steps[0].step
+     case m:MatchRoot do
+        set basis = 
+            {ResultKey 
+                {m.apply subject}.as-XDMNode, 
+                self}}
+    {if-non-null basis then
+        {if-non-null cache then
+            let (xs:XDMNodeSet, xs?:bool) = 
+                {cache.get-if-exists basis}
+            {if xs? then 
+                || use cached result
+                {return xs}}}}
+  
+    || preparation
+    let xs:StandardXDMNodeSet = {StandardXDMNodeSet subject}
+    let out:StandardXDMNodeSet = {StandardXDMNodeSet}    
+    || process each step together with its predicates       
+    {for ps in self.steps do
+        let predicates:{Array-of MatchPredicate} = ps.predicates
+        let step:Match = ps.step
+        {self.apply-step step, predicates,
+            xs, out = out,
+            || TODO: avoid superfluous tests using static analysis
+||--            check-duplicates? = not step.forward?,
+||--            check-order? = false,
+            context = context}
+        let tmp:StandardXDMNodeSet = xs
+        set xs = out
+        set out = tmp
+        {out.clear}}
+
+    || cache result if appropriate
+    {if-non-null basis then
+        {if-non-null cache then
+            set cache[basis] = xs
+         else
+            set context.result-cache =
+                {ResultCache basis, xs}
+        }}
+    
+    {return xs}
+  }
+  || NOTE: collapsing duplicates
+  || - many simple queries can NEVER have duplicates
+  || - those which have reverse axes do
+  || -- (also those with disjunction, if we ever get there)
+  || NOTE: preserving document order
+  || - descendant steps may be disordered (see MatchDescendants)
+  || - ancestor steps will be disordered
+  {method {apply-step
+              match:Match,
+              predicates:{Array-of MatchPredicate},
+              in:StandardXDMNodeSet,
+              out:StandardXDMNodeSet = {StandardXDMNodeSet},
+              check-duplicates?:bool = true,
+              check-order?:bool = true,
+              context:EvaluationContext = {StandardEvaluationContext}
+          }:XDMNodeSet
+    || prepare for check-order?
+    let in-order?:bool = true
+    let doc:XDMDocument = {PathFunction.get-document in}
+    let check-order:#{proc-type {XDMNode, StandardXDMNodeSet}:void} =
+        {if check-order? then
+            {proc {x:XDMNode, xs:StandardXDMNodeSet}:void
+                {if in-order? and not xs.empty? then
+                    set in-order? =
+                        {doc.nodes-ordered? 
+                            {xs._nodes.top-of-stack},
+                            x}}}
+         else null}
+    
+    || prepare for check-duplicates?
+    let seen:{Set-of XDMNode} = self.seen
+    {if check-duplicates? then
+        || using set is faster than using find (O[n^2])
+        || with more than about 10 elements
+        {seen.clear}}
+    
+    || maintain context
+    || TODO: bypass context maintenance where irrelevant
+    || - that is, no context-dependent subexpressions
+    let constant subcontext:EvaluationContext =
+        {context.subcontext size = in.size}
+    
+    || process each incoming node
+    {for x key i in in do
+        || apply step to node
+        {subcontext.set-context x, i, in.size}
+        let ys:XDMNodeSet = {match.eval x, context = subcontext}
+        || filter result with predicate(s)
+        {for p in predicates do
+            let zs:XDMNodeSet = {StandardXDMNodeSet}
+            {for y key i in ys do
+                {subcontext.set-context y, i, ys.size}
+                {if {p.match? y, context = subcontext} then
+                    {zs.append y}}}
+            set ys = zs}
+        || NOTE: result for each step will be ordered and without duplicates
+        || accumulate result
+        {if-non-null check-order then
+            {if-non-null y = ys.as-XDMNode? then
+                {check-order y, out}}}
+        {if check-duplicates? then
+            {for y in ys do
+                {if not {seen.member? y} then
+                    {seen.insert y}         
+                    {out.append y}}}
+         else            
+            {out.concat ys}}}
+    
+    || enforce document order
+    {if not in-order? then
+        {out._nodes.sort comparison-proc = doc.nodes-ordered?}}
+    {return out}
+  }
+  field constant seen:{Set-of XDMNode} = {{Set-of XDMNode}} 
+  || TODO: get from context somehow
+  {define-proc {get-document in:XDMNodeSet}:XDMDocument
+    || NOTE: assuming common document
+    {return
+        {type-switch in.as-XDMNode? 
+         case x:XDMNode do
+            {type-switch x.document
+             case doc:XDMDocument do
+                || existing document
+                doc
+             else 
+                || synthesize "fragment" document
+                {type-switch {x.get-root}
+                 case root:XDMElement do               
+                    {StandardXDMDocument.internal root}
+                 else PathFunction.empty-document}}
+         else PathFunction.empty-document} }
+  }
+  let constant empty-document:XDMDocument = 
+      {StandardXDMDocument.internal 
+        {XDMElement XDMName.empty-name}}
+  
+  || TODO: promote to XPathValue/XDMNodeSet method
+  {define-proc {xp-union xs:XPathValue, ys:XPathValue}:XPathValue
+    {return {PathFunction.union xs.as-XDMNodeSet, ys.as-XDMNodeSet}}
+  }
+  {define-proc {union xs:XDMNodeSet, ys:XDMNodeSet}:XDMNodeSet
+    || degenerate cases
+    {if xs.empty? then 
+        {return ys}
+     elseif ys.empty? then
+        {return xs}}
+    let out:StandardXDMNodeSet = {StandardXDMNodeSet}
+    || NOTE: each input is ordered
+    let doc:XDMDocument = {PathFunction.get-document xs}
+    || first arg
+    {for x in xs do
+        {out.append x}}
+    let in-order?:bool =
+        {doc.nodes-ordered? {out._nodes.top-of-stack}, ys.as-XDMNode}
+    let seen:{Set-of XDMNode} = {{Set-of XDMNode}}
+    || NOTE: if ordered, no need to check duplicates
+    {if not in-order? then
+        {for x in xs do
+            {seen.insert x}}}
+    || second arg
+    {for y in ys do
+        {if not {seen.member? y} then 
+            {out.append y}}}
+    || assure document order
+    || TODO: consider merge
+    {if not in-order? then
+        {out._nodes.sort comparison-proc = doc.nodes-ordered?}}
+    {return out}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {for s in self.steps do
+        {s.visit f}}
+  }
+}
+|| matching
+|| ====================
+
+|| TODO:
+|| - refactor to distinguish different actions
+|| -- 'Match' (match?)
+|| -- 'Collect' (apply)
+
+{define-class abstract shared Match {inherits XPathAction}
+  {method abstract {match? subject:XDMNode}:bool}
+  {method abstract {apply subject:XDMNode}:XDMNodeSet}
+  {getter sealed inline {forward?}:bool
+    {return true}
+  }
+  {method {eval 
+              subject:XDMNode, 
+              context:EvaluationContext = {StandardEvaluationContext}
+          }:XDMNodeSet
+    {return {self.apply subject}}
+  }
+}
+{define-class abstract ReverseMatch {inherits Match}
+  {getter final inline {forward?}:bool
+    {return false}
+  }
+}
+{define-class abstract MatchAlways {inherits Match}
+  {method final inline {match? subject:XDMNode}:bool
+    {return true}
+  }
+}
+{define-class abstract MatchElementAlways {inherits Match}
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject isa XDMElement}
+  }
+}
+{define-class abstract MatchText {inherits Match}
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject isa XDMText}
+  }
+}
+{define-class abstract MatchProcessingInstruction {inherits Match}
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject isa XDMProcessingInstruction}
+  }
+}
+{define-class abstract MatchName {inherits Match}
+||--  field constant name:XDMName
+  field name:XDMName
+  {constructor {default name:XDMName}
+    set self.name = name
+  }
+  || debugging
+  {getter {summary}:String
+    {return self.name.local-name}
+  }
+}
+{define-class abstract MatchChildren {inherits Match}
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:XDMNodeSet = {StandardXDMNodeSet}
+    {for x in subject.children do
+        {if {self.match? x} then
+            {xs.append x}}}
+    {return xs}
+  }
+}
+{define-class abstract MatchDescendants {inherits Match}
+  field constant include-self?:bool = false
+  {constructor {default include-self?:bool = true}
+    set self.include-self? = include-self?
+  }
+  || NOTE: document order 
+  || - when both a node and one of its ancestors is collected
+  || - then subsequent steps might not be in document order
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:XDMNodeSet = {StandardXDMNodeSet}
+    {type-switch subject
+     case x:XDMText do
+        {if self.include-self? and {self.match? x} then
+            {xs.append x}}
+     case subject:XDMElement do
+        {self.walk-internal subject, xs}
+     case doc:XDMDocument do
+        {self.walk-internal doc, xs}}
+    {return xs}
+  }
+  || special case for self, then recursive
+  {method {walk-internal node:XDMNode, out:XDMNodeSet}:void
+    {if self.include-self? and {self.match? node} then
+        {out.append node}}
+    {for x in node.children do
+        {type-switch x
+         case n:XDMElement do
+            {for-each-node
+                {proc {x:XDMNode}:void
+                    {if {self.match? x} then
+                        {out.append x}}},
+                n}
+         else
+            {if {self.match? x} then
+                {out.append x}}}}
+  }
+}
+{define-class abstract MatchAncestors {inherits ReverseMatch}
+  field constant include-self?:bool = false
+  {constructor {default include-self?:bool = true}
+    set self.include-self? = include-self?
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:{Array-of XDMNode} = {{Array-of XDMNode}}
+    {if self.include-self? 
+        || TODO: this adversely affected result from an XDMText
+||--        and {self.match? subject} 
+     then
+        {xs.append subject}}
+    {type-switch subject
+     case subject:XDMElement do
+        {subject.walk-ancestors   
+            {proc {x:XDMNode}:void
+                {if {self.match? x} then
+                    {xs.append x}}}}
+     else
+        {if-non-null p = subject.parent then
+            {if {self.match? p} then
+                {xs.append p}}
+            {subject.walk-ancestors   
+                {proc {x:XDMNode}:void
+                    {if {self.match? x} then
+                        {xs.append x}}}}}
+    }
+    || NOTE: reversing preserves document order
+    let xxs:XDMNodeSet = {StandardXDMNodeSet}
+    {for i = xs.size - 1 downto 0 do
+        {xxs.append xs[i]}}
+    {return xxs}
+  }
+}
+{define-class MatchElement {inherits MatchName, MatchChildren}
+  {constructor {default name:XDMName}
+    {construct-super.MatchName name}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchAnyElement {inherits MatchElementAlways, MatchChildren}
+}
+{define-class MatchAnyNode {inherits MatchAlways, MatchChildren}
+}
+{define-class MatchDescendant {inherits MatchName, MatchDescendants}
+  {constructor {default name:XDMName, include-self?:bool = false}
+    {construct-super.MatchName name}
+    {construct-super.MatchDescendants include-self? = include-self?}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchAnyDescendant {inherits MatchElementAlways, MatchDescendants}
+  {constructor {default include-self?:bool = false}
+    {construct-super.MatchDescendants include-self? = include-self?}
+  }
+}
+{define-class MatchAnyNodeDescendant {inherits MatchAlways, MatchDescendants}
+  {constructor {default include-self?:bool = false}
+    {construct-super.MatchDescendants include-self? = include-self?}
+  }
+}
+{define-class MatchAncestor {inherits MatchName, MatchAncestors}
+  {constructor {default name:XDMName, include-self?:bool = false}
+    {construct-super.MatchName name}
+    {construct-super.MatchAncestors include-self? = include-self?}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchAnyAncestor {inherits MatchElementAlways, MatchAncestors}
+  {constructor {default include-self?:bool = false}
+    {construct-super.MatchAncestors include-self? = include-self?}
+  }
+}
+{define-class abstract MatchSiblings {inherits Match}
+  field constant following?:bool
+  {constructor {default following?:bool}
+    set self.following? = following?
+  }
+  {getter final inline {forward?}:bool
+    {return self.following?}
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:XDMNodeSet = {StandardXDMNodeSet}
+    {if-non-null parent = subject.parent then
+        let seen?:bool = false
+        {for x in parent.children do
+            {if x == subject then
+                {if not self.following? then
+                    {break}
+                 else
+                    set seen? = true
+                    {continue}}}
+            {if seen? == self.following? and {self.match? x} then
+                {xs.append x}}}}
+    {return xs}
+  }
+}
+{define-class MatchSibling {inherits MatchName, MatchSiblings}
+  {constructor {default name:XDMName, following?:bool = true}
+    {construct-super.MatchName name}
+    {construct-super.MatchSiblings following?}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchAnySibling {inherits MatchElementAlways, MatchSiblings}
+  {constructor {default following?:bool = true}
+    {construct-super.MatchSiblings following?}
+  }
+}
+{define-class MatchAnyNodeSibling {inherits MatchAlways, MatchSiblings}
+  {constructor {default following?:bool = true}
+    {construct-super.MatchSiblings following?}
+  }
+}
+{define-class MatchTextSibling {inherits MatchText, MatchSiblings}
+  {constructor {default following?:bool = true}
+    {construct-super.MatchSiblings following?}
+  }
+}
+{define-class abstract MatchRelatives {inherits MatchSiblings}
+  {constructor {default following?:bool}
+    {construct-super.MatchSiblings following?}
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:XDMNodeSet = {StandardXDMNodeSet}
+    let path:XDMPath = 
+        {if self.following? 
+         then MatchRelatives.following
+         else MatchRelatives.preceding}
+    let rs:XDMNodeSet = {path.search subject}
+    {for x in rs do
+        {if {self.match? x} then
+            {xs.append x}}}
+    {return xs}
+  }
+  let constant preceding:XDMPath =
+      {XDMPath "ancestor-or-self::*[..]/preceding-sibling::*/descendant-or-self::node()"}
+  let constant following:XDMPath =
+      {XDMPath "ancestor-or-self::*[..]/following-sibling::*/descendant-or-self::node()"}
+}
+{define-class MatchRelative {inherits MatchName, MatchRelatives}
+  {constructor {default name:XDMName, following?:bool = true}
+    {construct-super.MatchName name}
+    {construct-super.MatchRelatives following?}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchAnyRelative {inherits MatchElementAlways, MatchRelatives}
+  {constructor {default following?:bool = true}
+    {construct-super.MatchRelatives following?}
+  }
+}
+{define-class MatchAnyNodeRelative {inherits MatchAlways, MatchRelatives}
+  {constructor {default following?:bool = true}
+    {construct-super.MatchRelatives following?}
+  }
+}
+{define-class MatchTextRelative {inherits MatchText, MatchRelatives}
+  {constructor {default following?:bool = true}
+    {construct-super.MatchRelatives following?}
+  }
+}
+{define-class MatchAttribute
+  {inherits MatchElementAlways, MatchName}
+  {constructor {default name:XDMName}
+    {construct-super.MatchName name}
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    {return
+        {type-switch subject
+         case subject:XDMElement do
+            {if-non-null 
+                att = {subject.get-attribute self.name} 
+             then {SingletonXDMNodeSet att}
+             else {EmptyXDMNodeSet}}
+         else {EmptyXDMNodeSet}}}
+  }
+}
+{define-class MatchAnyAttribute
+  {inherits MatchElementAlways}
+  {constructor {default}
+    {construct-super}
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:XDMNodeSet = {StandardXDMNodeSet}
+    {type-switch subject
+     case subject:XDMElement do
+        {if-non-null atts = subject.attributes then
+            {for key k in atts do
+                {xs.append {atts.get-attribute k}}}}}
+    {return xs}
+  }
+}
+{define-class MatchSelf {inherits MatchElementAlways}
+  {method final inline {apply subject:XDMNode}:XDMNodeSet
+    {return {SingletonXDMNodeSet subject}}
+  }
+}
+{define-class MatchSelfName {inherits MatchName}
+  {constructor {default name:XDMName}
+    {construct-super.MatchName name}
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    {return 
+        {if {self.match? subject} then
+            {SingletonXDMNodeSet subject}
+         else
+            {EmptyXDMNodeSet}}}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchParent {inherits MatchElementAlways, ReverseMatch}
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let parent:#XDMNode =
+        {if-non-null parent = subject.parent then 
+            parent
+         else 
+            {if-non-null document = subject.document then 
+                  document
+               else 
+                  null}}
+    {return 
+        {if-non-null parent then 
+            {SingletonXDMNodeSet parent}
+         else 
+            {EmptyXDMNodeSet}}}
+  }
+}
+{define-class MatchParentName {inherits MatchName, ReverseMatch}
+  {constructor {default name:XDMName}
+    {construct-super.MatchName name}
+  }
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let parent:#XDMNode =
+        {if-non-null parent = subject.parent then 
+            parent
+         else 
+            {if-non-null document = subject.document then 
+                  document
+               else 
+                  null}}
+    {return 
+        {if-non-null parent then
+            {if {self.match? parent} then
+                {SingletonXDMNodeSet parent}
+             else
+                {EmptyXDMNodeSet}}
+         else
+            {EmptyXDMNodeSet}}}
+  }
+  {method final inline {match? subject:XDMNode}:bool
+    {return subject.xmlname == self.name}
+  }
+}
+{define-class MatchTextChildren {inherits MatchText, MatchChildren} 
+}
+{define-class MatchTextDescendants {inherits MatchText, MatchDescendants} 
+}
+{define-class MatchProcessingInstructionChildren 
+  {inherits MatchProcessingInstruction, MatchChildren} 
+}
+{define-class MatchProcessingInstructionDescendants 
+  {inherits MatchProcessingInstruction, MatchDescendants} 
+}
+{define-class MatchRoot {inherits MatchElementAlways}
+  || NOTE: this only makes sense as first step
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let root:XDMNode = {subject.get-root}
+    || root paths are from perspective of document
+    let doc:XDMNode =
+        {if-non-null doc = root.document then 
+            || document exists
+            doc
+         else
+            || fragment without document
+            {type-switch root
+             case root:XDMElement do
+                || synthesized document (root NOT attached)
+                let doc:XDMDocument = {StandardXDMDocument.internal root}
+                doc
+             else
+                || degenerate case: non-element can not be document.root
+                || doesn't matter, it has no name or children anyway
+                root}}
+    {return {SingletonXDMNodeSet doc}}
+  }
+}
+{define-class MatchExpression {inherits MatchAlways} 
+  field constant expression:Expression
+  {constructor {default expression:Expression}
+    set self.expression = expression
+  }
+  || NOTE: this only makes sense as first step
+  {method {apply subject:XDMNode}:XDMNodeSet
+    let xs:XDMNodeSet = 
+        {self.expression.eval 
+            context = {StandardEvaluationContext context-node = subject}}
+    {return xs}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.expression.visit f}
+  }
+}
+{define-class MatchPredicate {inherits XPathAction}
+  field constant expression:Expression
+  field forward?:bool 
+  {constructor {default 
+                   expression:Expression,
+                   forward?:bool = true}
+    set self.expression = expression
+    set self.forward? = forward?
+  }
+  {method {match?
+              subject:XDMNode, 
+              context:EvaluationContext = {StandardEvaluationContext}
+          }:bool
+    let x:XPathValue = {self.expression.eval context = context}
+    {return
+        {type-switch x.value
+         case x:double do
+            let n:int = {round x} asa int
+            let index:int = 
+                || account for axis direction: "proximity position"
+                || NOTE: XPath indices are 1-based
+                {if self.forward? then
+                    context.index + 1
+                 else
+                    context.size - context.index}
+            n == index
+         else x.as-bool}}
+  }
+  {method {visit f:{proc-type {x:XPathAction}:void}}:void
+    {super.visit f}
+    {self.expression.visit f}
+  }
+}
+|| faster than 'XDMElement.walk-internal'
+|| - because it has no auxiliary checks
+|| - would be even faster if element-only
+{define-proc {for-each-element
+                 f:{proc-type {XDMNode}:void}, 
+                 x:XDMElement
+             }:void
+    {f x}
+    {for n in x.children do
+        {type-switch n
+         case x:XDMElement do
+            {for-each-element f, x}
+        }}
+}
+{define-proc {for-each-node
+                 f:{proc-type {XDMNode}:void}, 
+                 x:XDMElement
+             }:void
+    {f x}
+    {for n in x.children do
+        {type-switch n
+         case x:XDMElement do
+            {for-each-node f, x}
+         else {f n}
+        }}
+}

@@ -1,0 +1,708 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+
+|| TODO integration
+|| - close: reset defaults ?
+
+|| TODO GUI
+|| - split organize and target-url
+|| -- check 'underneath?'
+|| - namespace settings:
+|| -- RecordSet-for
+|| -- is-default?
+|| - simplify choice/value treatment
+|| -- show default values ?
+
+|| TODO model
+|| - rationalize preserve/skip
+
+|| TODO IDE
+|| - add to project
+|| -- method, enablement
+|| -- generate template applet ?
+|| - choose from service packages in manifest
+|| -- how detect ?
+|| - deployment configuration
+
+{define-class public WSDLGeneration
+
+  || Curl IDE interface
+  || --------------------
+  field constant surge-lab-interface:WSDLLabInterface
+  field constant project-context:WSDLProjectContext
+  {factory {from-surge-lab editor-interface:WSDLLabInterface}:WSDLGeneration
+    def self =
+        {WSDLGeneration surge-lab-interface = editor-interface}
+    {return self}
+  }
+
+  def spec-default =
+      {WSDLPackageDirectives {url "whatever.wsdl"},
+        target-url = null,
+        package-prefix = null,
+        curlify-names? = false,
+        include-async-methods? = false}
+
+  || construction
+  || --------------------
+  {constructor public {default surge-lab-interface:WSDLLabInterface = {WSDLLabInterface}}
+    set self.surge-lab-interface = surge-lab-interface
+    set self.project-context = {WSDLProjectContext surge-lab-interface}
+    set self.spec = WSDLGeneration.spec-default
+    {self.make-commands}
+    {self.init-controls}
+    {self.add-project-event-handlers}
+    set self.main-display = {self.make-display}
+  }
+  
+  || state
+  || --------------------
+  field spec:WSDLPackageDirectives
+  field writer:#WSDLPackageWriter = null
+  field exception:#Exception = null
+  field generated-url:#Url 
+
+  || operations
+  || --------------------
+  {method {do-open}:void
+    {if self.can-close? then
+        {self.close}}
+    {self.open}
+  }
+  {method {open}:void
+    {if-non-null loc =
+        {choose-file
+            title = {hlmessage WSDL file},
+            filters = WSDLGeneration.wsdl-file-filters}
+     then
+        {if {self.wsdl-selector.find loc} < 0 then
+            {self.wsdl-selector.append loc}}
+        {self.wsdl-selector.set-value-with-events loc}
+    }
+  }
+  {method {do-generate}:void
+    {if-non-null writer = self.writer then
+        || TODO: check url-is-writable-file?
+        set (self.generated-url, self.exception) =
+            {try
+                ({writer.generate-code}, null)
+             catch e:Exception do
+                (null, e)}
+        {self.generated-code-changed}
+     else
+        {error {hlmessage source url must be specified.}}
+    }
+  }
+  {method {do-close}:void
+    {if self.can-close? then
+        {self.close}}
+  }
+  {method {close}:void
+    {self.display-body.clear}
+    set self.writer = null
+    set self.exception = null
+    {self.wsdl-selector.unset-value}
+    {self.clear-display}
+    {self.commands.request-update-commands}
+  }
+  {getter {could-close?}:bool
+    {return self.writer != null}
+  }
+  {getter {could-generate?}:bool
+    {return        
+        self.writer != null and
+        self.generated-url == null}
+  }
+  || commands
+  || --------------------
+  field constant commands:CommandContext = {CommandContext}
+  {method {make-commands}:void
+    def make-command =
+        {proc {name:String,
+               execute-proc:{proc-type {}:void},
+               enabled-proc:{proc-type {}:bool}
+               }:void
+            {self.commands.add-command
+                {SimpleCommand name,
+                    execute-proc = execute-proc,
+                    enabled-proc = enabled-proc}}}
+    {make-command "open",
+        {fn => {self.do-open}},
+        {fn => true}}
+    {make-command "close",
+        {fn => {self.do-close}},
+        {fn => self.could-close?}}
+    {make-command "generate",
+        {fn => {self.do-generate}},
+        {fn => self.could-generate?}}
+  }
+  
+  || controls
+  || --------------------
+  field wsdl-selector:DropdownList = {DropdownList}
+  field prefix-field:TextField = {TextField}
+  field suffix-field:TextField = {TextField}
+  field target-field:TextField = {TextField}
+  field mixin-field:TextField = {TextField}
+  field prefix-choice:String = ""
+  field prefix-value:String = ""
+  field suffix-choice:String = ""
+  field suffix-value:String = ""
+  field target-choice:String = ""
+  field target-path:String = ""
+  field add-to-project-button:CheckButton =
+      {CheckButton
+        label = {hlmessage Add to project?},
+        enabled? = false}
+  {getter {add-to-project?}:bool
+    {return self.add-to-project-button.value}
+  }
+
+  || displays
+  || --------------------
+  field display-service-package:Frame =
+      {Frame width = {add-stretch}}
+  field display-service-class:VBox =
+      {VBox width = {add-stretch}}
+  field display-defined-namespaces:VBox =
+      {VBox width = {add-stretch}}
+  field display-generated:Frame =
+      {Frame width = {add-stretch}}
+  field display-failures:VBox =
+      {VBox style-class = "failures",
+        width = {add-stretch}}
+
+  || coordination
+  || --------------------
+  {method {source-changed}:void
+    {self.display-body.clear}
+    {self.display-body.add self.body}
+    set (self.writer, self.exception) =
+        {try
+            ({WSDLPackageWriter self.spec}, null)
+         catch e:Exception do
+            (null, e)}
+  }
+  {method {spec-changed which:String}:void
+    {switch which
+     case "source-url", "curlify-names?" do
+        {self.source-changed}
+     case "package-prefix", "package-suffix", "target-url",
+        "include-async-methods?", "curl-versions",
+        "use-bignum-types?", "service-class-mixin"
+     do
+        || nothing
+     else
+        {error {hlmessage Unexpected directive: {value which}}}
+    }
+    set self.generated-url = null
+    {self.result-changed}
+  }
+  {method {generated-code-changed}:void
+    {self.display-failures.clear}
+    {self.display-generated.clear}
+    {self.check-failures}
+    {if-non-null generated-url = self.generated-url then
+        def code-url =
+            {url "curl://edit/" & generated-url.name}
+        def code-path = 
+                {generated-url.name-relative-to-url
+                    self.spec.source-url.parent}
+        {self.display-generated.add
+            {link href = code-url, {value code-path}}}}
+    {self.commands.request-update-commands}
+  }
+  {method {result-changed}:void
+    {self.clear-display}
+    {self.check-failures}
+    {if-non-null writer = self.writer then
+        {self.display-service-package.add
+            writer.service-package-name}
+        def class-names = writer.service-class-names
+        {for class-name in class-names do
+            {self.display-service-class.add
+                class-name}}
+        {if class-names.empty? then
+            {self.note-warning
+                {Exception {hlmessage No service classes defined.}}}}
+        def namespaces = writer.defined-namespaces
+        {for namespace in namespaces do
+            {self.display-defined-namespaces.add
+                namespace}}}
+    {self.commands.request-update-commands}
+  }
+  {method {check-failures}:void
+    {if-non-null exception = self.exception then
+        {self.note-exception exception}}
+    {if-non-null writer = self.writer then
+        {for warning in writer.schema.warnings do
+            {self.note-warning warning}}
+        {for warning in writer.wsdl.warnings do
+            {self.note-warning warning}}
+    }
+  }
+  {method {note-exception exception:Exception}:void
+    {self.display-failures.add
+        {Frame style-class = "exception",
+            exception}}
+  }
+  {method {note-warning warning:Exception}:void
+    {self.display-failures.add
+        {Frame style-class = "warning",
+            warning}}
+  }
+  {method {clear-display}:void
+    {self.display-failures.clear}
+    {self.display-service-package.clear}
+    {self.display-service-class.clear}
+    {self.display-defined-namespaces.clear}
+    {self.display-generated.clear}
+  }
+  
+  {method {init-prefix}:void
+    set (self.prefix-choice, self.prefix-value) =
+        {switch self.spec.package-prefix
+         case null do
+            ("standard", "")
+         case "" do
+            ("none", "")
+         else
+            ("specified", {non-null self.spec.package-prefix})
+        }
+    set self.prefix-field.enabled? = self.prefix-value == "specified"
+  }
+  {method {prefix-changed}:void
+    set (self.spec.package-prefix, self.prefix-field.enabled?) =
+        {switch self.prefix-choice
+         case "standard" do (null, false)
+         case "none" do ("", false)
+         case "specified" do (self.prefix-value, true)
+         else {unreachable}}
+    {self.spec-changed "package-prefix"}
+  }
+  {method {init-suffix}:void
+    set (self.suffix-choice, self.suffix-value) =
+        {switch self.spec.package-suffix
+         case null do
+            ("standard", "")
+         case "" do
+            ("none", "")
+         else
+            ("specified", {non-null self.spec.package-suffix})
+        }
+    set self.suffix-field.enabled? = self.suffix-value == "specified"
+  }
+  {method {suffix-changed}:void
+    set (self.spec.package-suffix, self.suffix-field.enabled?) =
+        {switch self.suffix-choice
+         case "standard" do (null, false)
+         case "none" do ("", false)
+         case "specified" do (self.suffix-value, true)
+         else {unreachable}}
+    {self.spec-changed "package-suffix"}
+  }
+  {method {init-target}:void
+    set (self.target-choice, self.target-path) =
+        {if-non-null target-url = self.spec.target-url then
+            def path = {target-url.name-relative-to-url self.spec.source-url.parent}
+            {if target-url.extension == ".scurl"
+             then ("file", path)
+             else ("specified", path)}
+         else ("standard", "")}
+    set self.target-field.enabled? = self.target-choice == "specified"
+  }
+  {method {target-changed}:void
+    set (self.spec.target-url, self.target-field.enabled?) =
+        {switch self.target-choice
+         case "standard" do (null, false)
+         case "file" do
+            ({{self.spec.source-url.merge self.target-path
+              }.set-extension ".scurl"}, false)
+         case "specified" do
+            ({self.spec.source-url.merge self.target-path}, true)
+         else {unreachable}}
+    {self.spec-changed "target-url"}
+  }
+  
+  {method {init-controls}:void
+    {self.init-prefix}
+    {self.init-suffix}
+    {self.init-target}
+    {self.wsdl-selector.add-event-handler
+        {on ValueFinished at c:DropdownList do
+            def loc = c.value asa Url
+            set self.spec.source-url = loc
+            {self.spec-changed "source-url"}}
+    }
+    {self.prefix-field.add-event-handler
+        {on ValueFinished at c:TextField do
+            set self.prefix-value = c.value
+            {self.prefix-changed}}
+    }
+    {self.suffix-field.add-event-handler
+        {on ValueFinished at c:TextField do
+            set self.suffix-value = c.value
+            {self.suffix-changed}}
+    }
+    {self.target-field.add-event-handler
+        {on ValueFinished at c:TextField do
+            set self.target-path = c.value
+            {self.target-changed}}
+    }
+    {if-non-null service-class-mixin = self.spec.service-class-mixin then
+        set self.mixin-field.value = service-class-mixin}
+    {self.mixin-field.add-event-handler
+        {on ValueFinished at c:TextField do
+            set self.spec.service-class-mixin =
+                {if c.has-value? and not c.value.empty?
+                 then c.value
+                 else null}
+            {self.spec-changed "service-class-mixin"}}
+    }
+  }
+  
+  {method {get-command name:String}:Command
+    {return 
+        {non-null {self.commands.get-command name}}}
+  }
+  {method {add-project-event-handlers}:void
+    {self.project-context.add-event-handler
+        {on WSDLProjectChanged at c:WSDLProjectContext do
+||--            || TODO: base-url implications
+||--            set self.add-to-project-button.enabled? =
+||--                c.manifest-loc != null
+        }}
+    {self.project-context.add-event-handler
+        {on WSDLProjectPackagesChanged at c:WSDLProjectContext do
+            || known WSDL files
+            {self.wsdl-selector.clear-items}
+            || TODO: preserve "recent files"
+            {for wloc in c.service-packages do
+                {if {self.wsdl-selector.find wloc} < 0 then
+                    {self.wsdl-selector.append {self.path-for {abs-url wloc}}}}}
+        }}
+  }
+
+  || layout
+  || --------------------
+  field display-body:Frame = {Frame}
+  field body:Graphic = {uninitialized-value-for-type Graphic}
+  {method {make-display}:Graphic
+    def spec = self.spec
+    set self.body =       
+        {VBox
+            || info
+            || --------------------
+            {GroupBox
+                label = {hlmessage WSDL Service},
+                {Table
+                    columns = 2,
+                    cell-margin = 2px,
+                    {hlmessage Service Package: },
+                    self.display-service-package,
+                    {hlmessage Service Class: },
+                    self.display-service-class
+                }
+            },
+            || directives
+            || --------------------
+            {GroupBox
+                label = {hlmessage Package Name},
+                {HBox
+                    {GroupBox label = {hlmessage Prefix},
+                        width = {make-elastic},
+                        {RadioFrame
+                            value = "standard",
+                            {on ValueFinished at c:RadioFrame do
+                                set self.prefix-choice = c.value asa String
+                                {self.prefix-changed}},
+                            {VBox hstretch? = true,
+                                {RadioButton
+                                    label = {hlmessage from namespace},
+                                    radio-value = "standard"},
+                                {RadioButton
+                                    label = {hlmessage none},
+                                    radio-value = "none"},
+                                {RadioButton
+                                    label = {hlmessage as specified},
+                                    radio-value = "specified"},
+                                self.prefix-field}
+                        }},        
+                    {GroupBox label = {hlmessage Suffix},
+                        width = {make-elastic},
+                        {RadioFrame
+                            value ="standard",
+                            {on ValueFinished at c:RadioFrame do
+                                set self.suffix-choice = c.value asa String
+                                {self.suffix-changed}},
+                            {VBox hstretch? = true,
+                                {RadioButton
+                                    label = {hlmessage from filename},
+                                    radio-value = "standard"},
+                                {RadioButton
+                                    label = {hlmessage none},
+                                    radio-value = "none"},
+                                {RadioButton
+                                    label = {hlmessage as specified},
+                                    radio-value = "specified"},
+                                self.suffix-field}   
+                        }}
+                }},
+            {GroupBox
+                label = {hlmessage Coding Style},
+                {VBox
+                    {CheckButton
+                        label = {hlmessage use curlified identifiers},
+                        value = spec.curlify-names?,
+                        {on ValueFinished at c:CheckButton do
+                            set spec.curlify-names? = c.value
+                            {self.spec-changed "curlify-names?"}}},
+                    {CheckButton
+                        label = {hlmessage include asynchronous methods},
+                        value = spec.include-async-methods?,
+                        {on ValueFinished at c:CheckButton do
+                            set spec.include-async-methods? = c.value
+                            {self.spec-changed "include-async-methods?"}}},
+                    {CheckButton
+                        label = {hlmessage use bignum types},
+                        value = spec.use-bignum-types?,
+                        {on ValueFinished at c:CheckButton do
+                            set spec.use-bignum-types? = c.value
+                            {self.spec-changed "use-bignum-types?"}}},
+                    {HBox style-class = "spaced",
+                        {hlmessage API Version: },
+                        {DropdownList
+                            value = spec.curl-versions,
+                            "7.0",
+                            "6.0, 7.0",
+                            "6.0",
+                            {on ValueFinished at c:DropdownList do
+                                def versions = c.value asa String
+                                set spec.curl-versions = versions
+                                {self.spec-changed "curl-versions"}}}
+                    }
+                }        
+            },
+            {GroupBox
+                label = {hlmessage Organize Code},
+                {VBox
+                    {HBox style-class = "spaced",
+                        {hlmessage Service Class Mixin: },
+                        self.mixin-field},
+                    {RadioFrame
+                        value = "standard",
+                        {on ValueFinished at c:RadioFrame do
+                            set self.target-choice = c.value asa String
+                            {self.target-changed}},
+                        {VBox hstretch? = true,
+                            {RadioButton
+                                label = {hlmessage in standard directory},
+                                radio-value = "standard"},
+                            {RadioButton
+                                label = {hlmessage in specified directory},
+                                radio-value = "specified"},
+                            {RadioButton
+                                label = {hlmessage in a single file},
+                                radio-value = "file"},
+                            {HBox style-class = "spaced",
+                                {hlmessage Target Url: },
+                                self.target-field}}
+                    }}},
+            || namespace directives
+            || --------------------
+            {GroupBox
+                label = {hlmessage Defined Namespaces},
+                self.display-defined-namespaces
+            },
+            || errors
+            || --------------------
+            {GroupBox
+                label = {hlmessage WSDL Errors},
+                self.display-failures
+            },
+            || commands
+            || --------------------
+            {GroupBox label = "",
+                {VBox
+                    {HBox style-class = "spaced",
+                        {CommandButton
+                            label = {hlmessage Generate},
+                            bound-command = {self.commands.get-command "generate"}},
+                        self.display-generated,
+                        {Fill}},
+                    self.add-to-project-button}}
+        }
+    def dialog =
+        {Dialog
+            use-look-and-feel? = false,
+            {ScrollBox
+                hscroll? = false,
+                hstretch? = true,
+                {VBox style-class = "main",                    
+                    width = {add-stretch},
+                    || title
+                    || --------------------
+                    {Frame style-class = "title",
+                        {hlmessage WSDL Service Generation}},
+                    || choose WSDL file
+                    || --------------------
+                    {HBox style-class = "spaced",
+                        {hlmessage Source File:},
+                        self.wsdl-selector,
+                        {CommandButton label = {hlmessage Browse...},
+                            bound-command = {self.commands.get-command "open"}},
+                        {CommandButton
+                            label = {hlmessage Close},
+                            bound-command = {self.commands.get-command "close"}}
+                    },
+                    self.display-body,
+                    {Fill height = {make-elastic stretch-order = 50}}
+                }}
+        }
+    {api-version-switch
+     case "7+" do
+        {install-style-sheet-on-Graphic 
+            dialog,
+            WSDLGeneration.stylesheet}
+    }
+
+    {return dialog}    
+  }
+
+  || main view
+  || --------------------
+  field public-get main-display:Graphic
+  field _main-view:#View = null
+  {getter public {main-view}:View
+    {if self._main-view == null then        
+        def display = self.main-display
+        {self.project-context.validate-project-info}
+        def v =
+            {View display,
+                title = {hlmessage WSDL Services},
+                owner = null,
+                {on e:WindowClose do
+                    {if self.can-close? then
+                        {if self.detached-applet? then
+                            {exit}
+                         else
+                            {v.hide}}}
+                    {e.consume}},
+                {on e:ViewActivateEvent do
+                    {self.project-context.validate-project-info}}}
+        set v.height = 8in
+        set v.width = 6in 
+        set self._main-view = v}
+    {return {non-null self._main-view}}
+  }
+  {getter public {can-close?}:bool
+    {return
+        {if self.could-generate? then
+            {switch
+                {popup-question title = {hlmessage Generate Service Package?},
+                    cancel? = true,
+                    {hlmessage Package {value self.writer.service-package-name}}}
+             case Dialog.yes do
+                {self.do-generate}
+                true
+             case Dialog.no do true
+             case Dialog.cancel do false
+             else {unreachable}}
+         else
+            true}}
+  }
+  {getter {detached-applet?}:bool
+    {return
+        {if-non-null this-applet = {get-the-applet-or-null} then
+            {api-version-switch
+             case "7+" do
+                this-applet.detached?
+             case "6" do
+                this-applet.url.extension == ".dcurl"
+             else false}
+         else false}}
+  }
+  {method public {save-open-files}:bool
+    {return self.can-close?}
+  }
+  
+  def wsdl-file-filters =
+      {FileDialogFilterArray
+        {FileDialogFilter {hlmessage WSDL files},
+            {FileDialogTypeFilterArray "wsdl", "xml"}},
+        {FileDialogFilter {hlmessage All files},
+            {FileDialogTypeFilterArray "*"}}
+      }
+  
+  def stylesheet =
+    {api-version-switch
+     case "7+" do
+      {StyleSheet
+        {get-default-style-sheet},
+        {StyleSheet
+            {StyleRule "Frame.title",
+                font-size = 12pt,
+                font-weight = "bold"
+            },
+            {StyleRule "HBox.spaced",
+                margin = 3px,
+                spacing = 6px
+            },
+            {StyleRule "VBox.main",
+                border-width = 2px,
+                border-style = "sunken",
+                margin = 6px,
+                spacing = 3px
+            },
+||--            {StyleRule "VBox.failures",
+||--                spacing = 4px
+||--            },
+            {StyleRule "Frame.exception",
+                margin = 3px,
+                outside-margin = 3px,
+                background = "#EB9999"
+            },
+            {StyleRule "Frame.warning",
+                margin = 3px,
+                outside-margin = 3px,
+                background = "#FFC29E"
+            },
+            {StyleRule "EOF"}
+        }}
+     else null}
+  
+  || helper methods
+  || --------------------
+  {method {url-for path:String}:Url
+    {return
+        {parse-url path,
+            relative-url = self.base-url,
+            encode-if-not-absolute? = false}}
+  }
+  {method {path-for loc:Url}:String
+    {return
+        {loc.name-relative-to-url self.base-url}}
+  }
+  || project context
+  || --------------------
+  {getter {current-project}:#ProjectInterface
+    {return self.project-context.current-project}
+  }
+  {getter {base-url}:Url
+    {return self.project-context.base-url}
+  }
+}

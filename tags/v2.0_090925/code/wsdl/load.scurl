@@ -1,0 +1,111 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 package}
+{package COM.CURL.WSDK.WSDL,
+    version = "2.0",
+    resource-directory = "../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives
+        || Turn on maximum speed & safety.
+        stringent? = true
+    }
+}
+
+{doc
+    type = package,
+    COM.CURL.WSDK.WSDL
+    {purpose
+        The classes in this package assist developers in making
+        SOAP requests over HTTP based on a WSDL file.
+    }
+}
+
+{import * from CURL.XML.SAX.PARSER}
+{import * from COM.CURL.WSDK.SOAP}
+{import * from CURL.LANGUAGE.REGEXP}
+{import StemHttpDirectory from CURL.IO.HTTP}  || for WSDLCurlNamer
+{import Identifier from CURL.LANGUAGE.SOURCE} || for WSDLCurlNamer, namespace-contraction
+{import Domain from CURL.DATA-ACCESS.BASE}    || for WSDLSchema.register-simple-type
+
+{include "WSDLNameTable.scurl"}
+{include "WSDLCurlNamer.scurl"}
+{include "WSDLSchemaType.scurl"}
+{include "WSDLSchema.scurl"}
+{include "WSDLSchemaGroup.scurl"}
+{include "WSDLDOM.scurl"}
+{include "WSDLNodes.scurl"}
+
+{include "parse-wsdl.scurl"}
+{include "parse-schema.scurl"}
+{include "WSDLWriter.scurl"}
+{include "WSDLPackageWriter.scurl"}
+{include "generate-wsdl.scurl"}
+
+|| root-manifest for all seasons
+|| --------------------
+{import get-the-applet-or-null from CURL.ENGINE.APPLET}
+{import CURL.LANGUAGE.COMPONENT} 
+{import ComponentLocationException from CURL.LANGUAGE.COMPONENT}
+{import CURL.IO.SERIALIZE}
+{define-proc package {get-root-manifest}:ComponentManifest
+    {return
+        {if {get-the-applet-or-null} == null then
+            || No applet: must be IDE
+            {get-default-manifest}
+         else
+            || Normal applet: use its manifest
+            {api-version-switch
+             case "7+" do || has convenient API
+                {CURL.LANGUAGE.COMPONENT.get-process-manifest}
+             case "6" do  || no API; needs contrivance
+                {CURL.IO.SERIALIZE.SerializeInputStream
+                    {ByteArrayInputStream {ByteArray}}
+                }.manifest
+             else
+                {unreachable}}
+        }}
+}
+
+|| exceptions
+|| --------------------
+{doc-next
+    {purpose Encapsulates exceptions which occur processing WSDL}
+}
+{define-class public open WSDLSyntaxException {inherits Exception}
+  field public-get constant node:#WSDLDOMNode
+  {constructor public {default node:#WSDLDOMNode, message:String}
+    set self.node = node
+    {if-non-null node = self.node then
+        || NOTE: guard against string-url
+        def source-url =
+            {type-switch node.source-url.stem
+             case stem:StringDirectory do "<memory>"
+             else node.source-url}
+        set message =  
+            {format "%s\n at [%s:%d]", message,
+                source-url,
+                node.line-number}}
+    {construct-super message}           
+  }
+}
+
+{doc-next
+    {purpose Throws a {docref WSDLSyntaxException}}
+}
+{define-proc public {wsdl-exception node:#WSDLDOMNode = null, message:String}:never-returns
+    {throw {WSDLSyntaxException node, message}}
+}

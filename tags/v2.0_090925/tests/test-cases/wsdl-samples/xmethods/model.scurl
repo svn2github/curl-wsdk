@@ -1,0 +1,290 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{let public constant services-fields:RecordFields =
+    {RecordFields
+        {RecordField "name", domain = String, modifiable? = false},
+        {RecordField "wsdl-url", domain = String, modifiable? = false},
+        {RecordField "filename", domain = String},
+        {RecordField "status", domain = 
+            {StandardStringDomain
+                allowable-values = service-status-codes}},
+        {RecordField "note", domain = String},
+        {RecordField "description", domain = String, modifiable? = false},
+        {RecordField "error", domain = String}
+    }
+}
+{let public constant methods-fields:RecordFields = 
+    {RecordFields
+        || hack to "extend" api-recordset 
+        {splice {curl-api-recordset}.fields},
+        || extension fields
+        {RecordField "input", domain = String},
+        {RecordField "result", domain = {TransientDomain}, nullable? = true},
+        {RecordField "note", domain = String, nullable? = true},
+        {RecordField "result-type", domain = String, nullable? = true},
+        {RecordField "result-kind", domain = String, nullable? = true}
+    }
+}
+{define-proc {truncated-string 
+                 x:StringInterface,
+                 max-size:int = 100
+             }:String
+    {return
+        {if x.size <= 100 then {x.to-String}
+         else {x.substr 0, 100} & "..."}}
+}
+{define-class public ResultString 
+  field public-get constant value:String
+  {constructor public {default value:String}
+    set self.value = value
+  }
+}
+|| try to DWIM live object vs restored description
+|| -- this is gross
+{define-class TransientDomain {inherits StandardAnyDomain}
+  {method public {parse x:String}:any
+    {return 
+        {if x.empty? then null
+         elseif {x.prefix? |"{ResultString ""|} 
+         then
+            || extract string literal, 
+            || -- which is not properly escaped for curl
+            {ResultString {x.substr 15, x.size - 17}}
+         else x} 
+    }
+  }
+  {method public {wrap x:any}:String
+    {return
+        {format |"{ResultString "%s"}"|,
+            {truncated-string {String x}}}}
+  }
+  {method public {format x:any}:String
+    {return 
+        {type-switch x
+         case x:Null do ""
+         case x:String do
+            {if x.size <= 100 then x else
+                {self.wrap x}}
+         case x:ResultString do
+            {self.wrap x.value}
+         else 
+            {self.wrap {String x}}}
+    }
+  }
+  {method public {sort x:any, y:any}:int
+    let xx:String =
+        {String 
+            {type-switch x
+             case x:String do
+                {self.parse x}
+             else x}}
+    let yy:String =
+        {String 
+            {type-switch y
+             case y:String do
+                {self.parse y}
+             else y}}
+    {return
+        {xx.compare yy}}
+  }
+}
+
+{define-class public Services
+  field public generate?:bool = false
+  field public local-wsdl-file?:bool = true
+  field public-get constant directory:Url
+  field public-get constant recordset:RecordSet
+  field constant index:{HashTable-of String, Service}
+  field constant manifest:ComponentManifest
+  
+  {factory public {from-file 
+                      sloc:Url,
+                      character-encoding:CharEncoding = CharEncoding.utf8,
+                      local-wsdl-file?:bool = true
+                  }:Services
+    {return 
+        {Services
+            {Services.load sloc, 
+                character-encoding = character-encoding},
+            sloc.parent-dir.url,
+            local-wsdl-file? = local-wsdl-file?}}
+  }
+  {constructor public {default 
+                          rs:RecordSet, 
+                          dir:Url,
+                          local-wsdl-file?:bool = true}
+    set self.recordset = rs
+    set self.directory = dir
+    set self.local-wsdl-file? = local-wsdl-file?
+    let mloc:Url = {dir.concat "manifest.mcurl"}
+    {if not {local-file-exists? mloc} then
+        {generate-manifest rs, dir}}
+    set self.manifest = 
+        {import-manifest mloc}
+    let index:{HashTable-of String, Service} =
+        {{HashTable-of String, Service}}
+    {for r in rs do
+        let s:Service = {Service self, r, local-wsdl-file? = local-wsdl-file?}
+        set index[s.name] = s}
+    set self.index = index 
+  }
+  {method public {get name:String}:Service
+    {return self.index[name]}
+  }
+  {define-proc {load 
+                   sloc:Url,
+                   character-encoding:CharEncoding = CharEncoding.utf8
+               }:RecordSet
+    let rs:RecordSet = 
+        {CsvRecordSet sloc,
+            fields = services-fields, 
+            character-encoding = character-encoding}
+    || TODO: rethink this
+    let rv:RecordView = 
+        {RecordView rs, 
+            filter = {RecordData status = "copied"}}
+    {return rv}
+  }
+  || demand driven properties
+  field _methods:#RecordSet = null
+  {getter public {methods}:RecordSet
+    {if self._methods == null then
+        let all-methods:RecordSet = {RecordSet methods-fields}
+        {for r in self.recordset do
+            let s:Service = self.index[r["filename"] asa String]
+            {if s.error == null then
+                {if-non-null ms = s.methods then
+                    {for m in {ms.select filter = Services.service-method?} do                        
+                        let d:RecordData = {record-data m}
+                        {all-methods.append d}}}}}
+        set self._methods = all-methods}
+    {return {non-null self._methods}}
+  }
+  {define-proc {service-method? r:Record}:bool
+    let name:String = r["member"] asa String
+    {return
+        r["kind"] == "Method" and
+        name != "register-types" and
+        not {name.prefix? "async-"}}
+  }
+}
+{define-class public Service
+  field constant services:Services
+  field public-get constant name:String
+  field public-get constant record:Record
+  field public local-wsdl-file?:bool = true
+  
+  {constructor public {default 
+                          services:Services, 
+                          r:Record,
+                          local-wsdl-file?:bool = true}
+    set self.services = services
+    set self.record = r
+    set self.name = r["filename"] asa String
+    set self.local-wsdl-file? = local-wsdl-file?
+  }
+  || demand driven properties
+  field package?:bool = false
+  field _package:#Package
+  field _error:#Exception
+  field _methods:#RecordSet
+  {getter public {package}:#Package
+    {self.validate-package}
+    {return self._package}
+  }
+  {getter public {error}:#Exception
+    {self.validate-package}
+    {return self._error}
+  }
+  {getter public {methods}:#RecordSet
+    {self.validate-package}
+    {return self._methods}
+  }
+  {method public {invalidate-package}:void
+    set self.package? = false
+    set self._package = null
+    set self._error = null
+    set self._methods = null
+  }
+  {method public {validate-package}:void
+    {if not self.package? then
+        {self.update-package}
+        set self.package? = true}
+  }
+  || operations
+  {method {update-package}:void  
+    let generate?:bool = self.services.generate?
+    let src:StringBuf = {StringBuf}
+    let sloc:Url = self.loc-scurl
+    let package:#Package = null
+    let error:#Exception = null
+    {try
+        {if generate? then
+            let wloc:Url =
+                {if self.local-wsdl-file? 
+                 then self.loc-wsdl 
+                 else self.loc-wsdl-http}
+            {generate-wsdl-code wloc,
+                package-suffix = self.loc-wsdl.basename,
+                target = sloc}}     
+        || trial evaluation
+        set package =
+            {import-package 
+                {make-package-selector self.package-name},
+                manifest = self.services.manifest}
+        || applet template
+        {if generate? then
+            let src:String = {code-test-applet {non-null package}}
+            {write-to self.loc-curl, src}}
+        || methods summary
+        set self._methods = {curl-api-members package}
+     catch e:SyntaxError do
+        || avoiding string-url spew
+        set error = {Exception e.message}
+     catch e:Exception do
+        set error = e
+    }
+    set self._package = package
+    set self._error = error
+    {if generate? then
+        set self.record["error"] =     
+            {if-non-null error then
+                || TODO: clear defunct files, optionally
+                {String error}
+             else "_"}}
+  }
+  || derived properties
+  {getter public {package-name}:String
+    {return "COM.CURL.WSDL." & self.name}
+  }
+  {getter public {loc-wsdl}:Url
+    {return {self.pathname ".wsdl"}}
+  }
+  {getter public {loc-wsdl-http}:Url
+    {return {url self.record["wsdl-url"] asa String}}
+  }
+  {getter public {loc-scurl}:Url
+    {return {self.pathname ".scurl"}}
+  }
+  {getter public {loc-curl}:Url
+    {return {self.pathname ".curl"}}
+  }
+  {method {pathname extension:String}:Url
+    {return {self.services.directory.concat self.name & extension}}
+  }
+}
+

@@ -1,0 +1,214 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public open SOAPMTOMMessageReader
+
+  field private response-headers:HttpResponseHeaders
+  field private message:MultipartMessage
+  field private attachments:{HashTable-of String, SOAPMTOMAttachment}
+
+  {constructor public {default
+                          stream:ByteInputStream,
+                          response-headers:HttpResponseHeaders
+                      }
+    set self.response-headers = response-headers
+    set self.attachments = {{HashTable-of String, SOAPMTOMAttachment}}
+    def mr = {MultipartMessageReader response-headers}
+    set self.message = {mr.read-message stream}
+  }
+
+  {method public open {get-root-stream}:ByteInputStream
+    {if not self.message.empty? then
+        {if-non-null start = {self.derive-start-param} then
+            {for mp in self.message do
+                def (id, found?) = {mp.headers.get-if-exists "Content-ID"}
+                {if found? and id == start then
+                    {return {ByteArrayInputStream mp.body}}
+                }
+            }
+         else
+            def root-part = self.message[0]
+            {if root-part.headers.mime-type == SOAPMTOMRequestData.xop-type then
+                {return {ByteArrayInputStream root-part.body}}
+            }
+        }
+    }
+    {error {lmessage No root MIME part}}
+  }
+
+  {method private {derive-start-param}:#String
+    {if-non-null ct = self.response-headers.content-type then
+        def start = {HttpHeaders.get-parameter ct, "start", default = ""}
+        {if not start.empty? then
+            {return start}
+        }
+    }
+    {return null}
+  }
+  
+  {method public open {get-unmarshal-context
+                          context:#SOAPUnmarshalContext = null,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }:SOAPUnmarshalContext
+    {if context == null then
+        set context = {DefaultSOAPUnmarshalContext
+                          soap-version = soap-version
+                      }
+    }
+
+    {context.register-mtom-reader self}
+
+    || except the root part
+    {for i:int = 1 below self.message.size do
+        def part = self.message[i]
+        def headers = part.headers
+        def (id, found?) = {headers.get-if-exists "Content-ID"}
+        {if found? then
+            {context.set-binary-data
+                id, headers.content-type, part.body
+            }
+         else
+            {error {lmessage No Content-ID}}
+        }
+    }
+    {return {non-null context}}
+  }
+
+  {method package {set-binary-data
+                      content-id:String,
+                      content-type:#String,
+                      bytes:{Array-of byte}
+                  }:void
+    def trimmed-id = {StringBuf content-id}
+    {trimmed-id.trim-left trim-chars = '<'}
+    {trimmed-id.trim-right trim-chars = '>'}
+
+    set self.attachments[{trimmed-id.to-String}] =
+        {SOAPMTOMAttachment content-id, null, content-type, bytes}
+  }
+  
+  {method package {get-binary-data
+                      content-id:String
+                  }:SOAPMTOMAttachment
+    {if {content-id.prefix? "cid:"} then
+        set content-id = {content-id.tail 4}
+    }
+    def (val, found?) = {self.attachments.get-if-exists content-id}
+    {if found? then
+        {return val}
+     else
+        {error {lmessage No specified Content-ID}} || TOOD: message
+    }
+  }
+  
+  {define-proc package {parse-xop-element
+                           stream:XMLInputStream,
+                           unmarshal-context:SOAPUnmarshalContext
+                       }:(val:any, found?:bool)
+    let (current-token:XMLToken, eof?:bool) = {stream.read-one}
+    def read-tokens = {{Array-of XMLToken}}
+    {if eof? then
+        {throw-unmarshal-exception
+            {localize "Got EOF early while unmarshaling."}
+        }
+    }
+    {read-tokens.append current-token}
+
+    let return-val:any = null
+    let found?:bool = false
+    {type-switch current-token
+     case se:XMLStartElement do
+        {if se.element != SOAPMTOMRequestData.xop-include-name then
+            {throw-unmarshal-exception
+                {lformat "Got unexpected element : %s", se.element}
+            }
+        }
+
+        let href-handled?:bool = false
+        {while true do
+            set (current-token, eof?) = {stream.read-one}
+            {if eof? then
+                {throw-unmarshal-exception
+                    {localize "Got EOF early while unmarshaling."}
+                }
+            }
+            {read-tokens.append current-token}
+            
+            {type-switch current-token
+             case at:XMLAttribute do
+                {if at.name == {XMLName "", "href"} then
+                    {if href-handled? then
+                        {throw-unmarshal-exception
+                            {lmessage href has already been specified.}
+                        }
+                     else
+                        set href-handled? = true
+                    }
+                    {if at.value isa String and
+                        {(at.value asa String).prefix? "cid:"}
+                     then
+                        def attachment = {unmarshal-context.get-binary-data
+                                             at.value asa String
+                                         }
+
+                        {if-non-null ct = attachment.content-type then
+                            def charset = {HttpHeaders.get-parameter
+                                              ct,
+                                              "charset",
+                                              default = ""
+                                          }
+                            {if not charset.empty? then
+                                def (num, decode-str) =
+                                    {decode-characters
+                                        attachment.content.underlying-FastArray,
+                                        {http-charset-to-char-encoding
+                                            {non-null charset}}
+                                    }
+                                set return-val = decode-str
+                                set found? = true
+                                {continue}
+                            }
+                        }
+                        set return-val = attachment.content
+                        set found? = true
+                    }
+                }
+             case ee:XMLEndElement do
+                {if ee.element != null and ee.element != se.element then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Mismatched end element for value %s.",
+                            se.element
+                        }
+                    }
+                }
+                {break}
+             else
+                {throw-unmarshal-exception
+                    {lmessage Final token was not an expected type.}
+                }
+            }
+        }
+     case ee:XMLEndElement do
+        set found? = true
+    }
+
+    {for i:int = read-tokens.size - 1 to 0 do
+        {stream.unread-one read-tokens[i]}
+    }
+    {return return-val, found?}
+  }
+}

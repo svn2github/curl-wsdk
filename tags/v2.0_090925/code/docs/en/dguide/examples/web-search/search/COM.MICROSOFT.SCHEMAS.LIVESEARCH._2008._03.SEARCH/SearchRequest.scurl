@@ -1,0 +1,134 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open SearchRequest
+
+  field public version:#String
+  field public market:#String
+  field public uILanguage:#String
+  field public query:String = ""
+  field public appId:String = ""
+  field package _adult:{Nullable AdultOption} = null
+  {getter public {adult}:AdultOption
+    {return self._adult.value-or-default}
+  }
+  {setter public {adult val:AdultOption}:void
+    set self._adult = val
+  }
+  {getter public {adult-specified?}:bool
+    {return self._adult.value?}
+  }
+  {method public {unset-adult}:void
+    set self._adult = null
+  }
+  field package _latitude:{Nullable double} = null
+  {getter public {latitude}:double
+    {return self._latitude.value-or-default}
+  }
+  {setter public {latitude val:double}:void
+    set self._latitude = val
+  }
+  {getter public {latitude-specified?}:bool
+    {return self._latitude.value?}
+  }
+  {method public {unset-latitude}:void
+    set self._latitude = null
+  }
+  field package _longitude:{Nullable double} = null
+  {getter public {longitude}:double
+    {return self._longitude.value-or-default}
+  }
+  {setter public {longitude val:double}:void
+    set self._longitude = val
+  }
+  {getter public {longitude-specified?}:bool
+    {return self._longitude.value?}
+  }
+  {method public {unset-longitude}:void
+    set self._longitude = null
+  }
+  field package _radius:{Nullable double} = null
+  {getter public {radius}:double
+    {return self._radius.value-or-default}
+  }
+  {setter public {radius val:double}:void
+    set self._radius = val
+  }
+  {getter public {radius-specified?}:bool
+    {return self._radius.value?}
+  }
+  {method public {unset-radius}:void
+    set self._radius = null
+  }
+  field public options:#{Array-of SearchOption}
+  field public sources:{Array-of SourceType} = {uninitialized-value-for-type {Array-of SourceType}}
+  field public web:#WebRequest
+  field public image:#ImageRequest
+  field public phonebook:#PhonebookRequest
+  field public video:#VideoRequest
+  field public news:#NewsRequest
+  field public mobileWeb:#MobileWebRequest
+  field public translation:#TranslationRequest
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      version:#String = {uninitialized-value-for-type #String},
+      market:#String = {uninitialized-value-for-type #String},
+      uILanguage:#String = {uninitialized-value-for-type #String},
+      query:String = {required-keyword "SearchRequest.query"} asa String,
+      appId:String = {required-keyword "SearchRequest.appId"} asa String,
+      adult:AdultOption = {uninitialized-value-for-type AdultOption},
+      latitude:double = {uninitialized-value-for-type double},
+      longitude:double = {uninitialized-value-for-type double},
+      radius:double = {uninitialized-value-for-type double},
+      options:#{Array-of SearchOption} = {uninitialized-value-for-type #{Array-of SearchOption}},
+      sources:{Array-of SourceType} = {required-keyword "SearchRequest.sources"} asa {Array-of SourceType},
+      web:#WebRequest = {uninitialized-value-for-type #WebRequest},
+      image:#ImageRequest = {uninitialized-value-for-type #ImageRequest},
+      phonebook:#PhonebookRequest = {uninitialized-value-for-type #PhonebookRequest},
+      video:#VideoRequest = {uninitialized-value-for-type #VideoRequest},
+      news:#NewsRequest = {uninitialized-value-for-type #NewsRequest},
+      mobileWeb:#MobileWebRequest = {uninitialized-value-for-type #MobileWebRequest},
+      translation:#TranslationRequest = {uninitialized-value-for-type #TranslationRequest}
+    }
+    {if {keyword-supplied? version} then
+        set self.version = version}
+    {if {keyword-supplied? market} then
+        set self.market = market}
+    {if {keyword-supplied? uILanguage} then
+        set self.uILanguage = uILanguage}
+    {if {keyword-supplied? query} then
+        set self.query = query}
+    {if {keyword-supplied? appId} then
+        set self.appId = appId}
+    {if {keyword-supplied? adult} then
+        set self.adult = adult}
+    {if {keyword-supplied? latitude} then
+        set self.latitude = latitude}
+    {if {keyword-supplied? longitude} then
+        set self.longitude = longitude}
+    {if {keyword-supplied? radius} then
+        set self.radius = radius}
+    {if {keyword-supplied? options} then
+        set self.options = options}
+    {if {keyword-supplied? sources} then
+        set self.sources = sources}
+    {if {keyword-supplied? web} then
+        set self.web = web}
+    {if {keyword-supplied? image} then
+        set self.image = image}
+    {if {keyword-supplied? phonebook} then
+        set self.phonebook = phonebook}
+    {if {keyword-supplied? video} then
+        set self.video = video}
+    {if {keyword-supplied? news} then
+        set self.news = news}
+    {if {keyword-supplied? mobileWeb} then
+        set self.mobileWeb = mobileWeb}
+    {if {keyword-supplied? translation} then
+        set self.translation = translation}
+  }
+
+}
+

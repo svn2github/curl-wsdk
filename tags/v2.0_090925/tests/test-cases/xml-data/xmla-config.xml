@@ -1,0 +1,240 @@
+<!-- Copyright (C) 1998-2004, Curl Corporation.  All Rights Reserved.-->
+<!-- Maintained by: Curl Solutions -->
+
+<!--
+
+This file specifies a data producer for the Curl Application Framework (CAF),
+and is processed by the ConfiguredDataProducer class in that library.
+
+ConfiguredDataProducer
+====================
+ connection-url : location used for data Connection, 
+ 	relative to this base-url of this file
+ database : which "database" from the data Connection to use
+ connection-type : kind of data Connection
+ 	'FileConnection' : the default
+	'ADOConnection'
+
+ name-field : name of field in facts table(s) which names metrics
+ value-field : name of field in facts table(s) which contains values
+ time-field : name of field in facts table(s) which contains time period
+
+ code-version : should match version required by ConfiguredDataProducer class.
+ data-version : declares version of contents of this file.
+	This is recorded in saved display specifications,
+	and validated whenever they are restored.
+        Change the data version number when the contents
+	(perspectives and dimensions) specified in this file change.
+
+DimensionTable
+====================
+specifies dimensions available for accessing facts table(s)
+
+StandardDimension
+====================
+specifies a dimension available for accessing facts table(s)
+
+ id : the name by which the dimension will be referred to
+ levels : comma separated list of names for intermediate hierarchical levels
+ multiple : whether multiple values can be selected for display
+ filter : whether this dimension is a filter
+ metric : whether this dimension is the metric
+ scenario : whether this dimension is a scenario
+ ordinate : whether this dimension can be used as an ordinate
+ defplot : default chart display for this dimension is bar (true) or line (false)
+ value-field : name of field in facts table(s) which contains values 
+
+DimensionHierarchy
+====================
+specifies a (possibly hierarchical) value within a dimension
+
+ name = name by which this dimension will be presented in the application
+ value = name by which this dimension will be referred to in this file
+ selected = should always be 'true'
+ type = curl data type of dimension value ('String' or 'int')
+
+MetricDimension
+TimeDimension
+====================
+these variant kinds of dimensions have similar format to StandardDimension
+
+
+FactsSpec
+====================
+each FactsSpec names a "facts table", 
+which can be used as the basis for a "perspective"
+
+ name : name by which the facts table will be referred to in this file
+ database : database in the Connection containing the facts table
+ query : query (usually table name) in the specified database
+ format : specifies how the facts table is organized
+	'standard' : (the default) one "value" per record 
+        	identified by value of metric field
+	'folded' : many values per record 
+        	in columns named by metrics
+
+PerspectiveSpec
+====================
+each perspective describes a subset of a facts table,
+containing cells corresponding to the specified values
+of the specified dimensions
+
+name :name by which this perspective is referred to in the application
+fact-table : identifies which 'FactsSpec' is the basis of this perspective
+
+DimensionsSpec
+====================
+enumerates dimensions visible in this perspective
+
+DimensionSpec
+====================
+specifies a dimension visible in this perspective
+by default, all values in the dimension are included
+unless specific values are enumerated here
+
+id : identifies which 'Dimension' is used
+
+DimensionValue
+====================
+identifies a specific dimension value visible in this perspective
+
+-->
+
+<ConfiguredDataProducer
+ code-version="1.4"
+ data-version="1.0"
+ connection-url=""
+ database="data"
+ connection-type="FileConnection"
+ name-field="Name"
+ value-field="Val"
+ time-field="Time">
+
+ <FactsSpec
+  name="facts"
+  database="data"
+  query="ffacts"
+  format="folded" />
+
+  <DimensionTable id = "default" >
+   <StandardDimension id="State" selected="State" levels="Region"
+    value-field="Val" multiple='false' filter='true' metric='false'
+    scenario='false' ordinate='true' defplot='true'>
+    <DimensionHierarchy name = 'State' value = 'State' selected = 'true' type = 'String'>
+     <DimensionHierarchy name = 'West' value = 'West' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'California' value = 'California' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Nevada' value = 'Nevada' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Oregon' value = 'Oregon' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Utah' value = 'Utah' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'Washington' value = 'Washington' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+     <DimensionHierarchy name = 'Central' value = 'Central' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Colorado' value = 'Colorado' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Illinois' value = 'Illinois' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Iowa' value = 'Iowa' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Missouri' value = 'Missouri' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Ohio' value = 'Ohio' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Wisconsin' value = 'Wisconsin' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+     <DimensionHierarchy name = 'East' value = 'East' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Connecticut' value = 'Connecticut' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Florida' value = 'Florida' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Massachusetts' value = 'Massachusetts' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'New Hampshire' value = 'New Hampshire' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'New York' value = 'New York' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+      <DimensionHierarchy name = 'South' value = 'South' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Louisiana' value = 'Louisiana' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'New Mexico' value = 'New Mexico' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Oklahoma' value = 'Oklahoma' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Texas' value = 'Texas' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+    </DimensionHierarchy>
+   </StandardDimension>
+   <StandardDimension id="Scenario" selected="Scenario" levels = ""
+    value-field="Val" multiple='true' filter='false' metric='false'
+    scenario='true' ordinate='true' defplot='true'>
+    <DimensionHierarchy name = 'Scenario' value = 'Scenario' selected = 'true' type = 'String'>
+     <DimensionHierarchy name = 'Actual' value = 'Actual' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'Budget' value = 'Budget' selected = 'true' type = 'String' />
+   </DimensionHierarchy>
+   </StandardDimension>
+   <TimeDimension id="Time" selected="Time" value-field="Val" levels = ""
+    start="2000-01-01 00:00:00.000000 -0500"
+    end ="2000-12-28 00:00:00.000000 -0500"
+    multiple='false' filter='true' metric='false' scenario='false' ordinate='true'>
+    <DimensionHierarchy name = 'Time' value = 'Time' selected = 'true' type = 'String'>
+     <DimensionHierarchy name = '2000' value = '2000' selected = 'true' type = 'int'>
+      <DimensionHierarchy name = 'Q1 - 2000' value = 'Q1 - 2000' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Q2 - 2000' value = 'Q2 - 2000' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Q3 - 2000' value = 'Q3 - 2000' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Q4 - 2000' value = 'Q4 - 2000' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+    </DimensionHierarchy>
+   </TimeDimension>
+   <StandardDimension id="Sku" selected="Sku" value-field="Val" levels="Family"
+    multiple='true' filter='true' metric='false'
+    scenario='false' ordinate='true' defplot='true'>
+    <DimensionHierarchy name = 'Sku' value = 'Sku' selected = 'true' type = 'String'>
+     <DimensionHierarchy name = 'Root Beer' value = 'Root Beer' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Birch Beer' value = 'Birch Beer' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Diet Root Beer' value = 'Diet Root Beer' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Old Fashioned' value = 'Old Fashioned' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Sasparilla' value = 'Sasparilla' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+     <DimensionHierarchy name = 'Colas' value = 'Colas' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Caffeine Free Cola' value = 'Caffeine Free Cola' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Cola' value = 'Cola' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Diet Cola' value = 'Diet Cola' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+     <DimensionHierarchy name = 'Cream Soda' value = 'Cream Soda' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Dark Cream' value = 'Dark Cream' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Diet Cream' value = 'Diet Cream' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Vanilla Cream' value = 'Vanilla Cream' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+     <DimensionHierarchy name = 'Fruit Soda' value = 'Fruit Soda' selected = 'true' type = 'String'>
+      <DimensionHierarchy name = 'Grape' value = 'Grape' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Orange' value = 'Orange' selected = 'true' type = 'String' />
+      <DimensionHierarchy name = 'Strawberry' value = 'Strawberry' selected = 'true' type = 'String' />
+     </DimensionHierarchy>
+    </DimensionHierarchy>
+   </StandardDimension>
+   <MetricDimension id="Name" selected="Name" levels = ""
+    value-field="Val" multiple='true' filter='false' metric='true'
+    scenario='false' ordinate='false' defplot='true'>
+    <DimensionHierarchy name = 'Name' value = 'Name' selected = 'true' type = 'String'>
+     <DimensionHierarchy name = 'Sales' value = 'Sales' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'COGS' value = 'COGS' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'StockAdditions' value = 'StockAdditions' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'MarketingExpense' value = 'MarketingExpense' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'PayrollExpense' value = 'PayrollExpense' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'MiscExpense' value = 'MiscExpense' selected = 'true' type = 'String' />
+    </DimensionHierarchy>
+   </MetricDimension>
+   <StandardDimension id="SupplierName" selected="SupplierName" levels = ""
+    value-field="Val" multiple='true' filter='true' metric='false'
+    scenario='false' ordinate='true' defplot='true'>
+    <DimensionHierarchy name = 'SupplierName' value = 'SupplierName' selected = 'true' type = 'String'>
+     <DimensionHierarchy name = 'Cool Canadian' value = 'Cool Canadian' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'East Coast Beverage' value = 'East Coast Beverage' selected = 'true' type = 'String' />
+     <DimensionHierarchy name = 'High Tech Drinks' value = 'High Tech Drinks' selected = 'true' type = 'String' />
+    </DimensionHierarchy>
+   </StandardDimension>
+  </DimensionTable>
+
+ <PerspectiveSpec
+  name="E-Business"
+  fact-table="facts">
+
+  <DimensionsSpec id = 'default'>
+   <DimensionSpec id = 'Name' />
+   <DimensionSpec id = 'Sku' />
+   <DimensionSpec id = 'SupplierName' />
+   <DimensionSpec id = 'State' />
+   <DimensionSpec id = 'Scenario' />
+   <DimensionSpec id = 'Time' />
+  </DimensionsSpec>
+
+ </PerspectiveSpec>
+
+</ConfiguredDataProducer>

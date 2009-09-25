@@ -1,0 +1,576 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next
+    {purpose
+        proc that throws an exception if called, used as the value
+        for a keyword argument that must be supplied.
+    }
+}
+{define-proc public {required-keyword what:String}:any
+    {error {lmessage Required keyword argument {value what}}}
+}
+
+{doc-next
+    {purpose
+        Base class used to implement a class that can call SOAP
+        services via HTTP POST requests.
+    }
+}
+{define-class public abstract open WSDLHTTPRPCPostClient
+
+  field public constant soap-caller:SOAPHTTPRPCPostCaller
+
+  field public constant service-location:Url
+
+  {doc-next ||== WSDLHTTPRPCPostClient.operations
+    {purpose 
+        Characteristics of the operations defined by this web service.
+    }}
+  field public constant operations:{HashTable-of String, Arguments}
+
+
+  {doc-next
+    {purpose
+        Proc Type for {docref WSDLHTTPRPCPostClient.response-headers-callback}.
+    }
+  }
+  {def public ResponseHeadersCallback =
+    {proc-type
+         {operation:String,
+          headers:#Array,
+          header-roles:#{Array-of #String},
+          header-must-understands:#{Array-of bool},
+          defined-header-count:int
+         }:void
+     }
+  }
+
+  {doc-next
+    {purpose
+        proc to handle any SOAP response headers.
+    }
+    {parameter defined-headers-size,
+        Number of response headers that were defined in the call.
+        Any headers after this are extra ones that will be {docref XDMElement}
+        representations of the SOAP header's XML.
+    }
+    {details
+        The parameters match the header return values from
+        {docref SOAPHTTPRPCPostCaller.call}.
+    }
+  }
+  field public response-headers-callback:#WSDLHTTPRPCPostClient.ResponseHeadersCallback
+
+  {doc-next
+    {purpose
+        Additional XML that should be sent as part of all request SOAP headers.
+    }
+  }
+  field public additional-request-headers:#{Array-of XDMElement}
+
+  {doc-next
+    {purpose
+        Indicates what sort of MTOM support for SOAP 1.2 messages is
+        expected.
+    }
+    {notes
+        Defaults to {docref SOAPMTOMSupportRange}{ctext .response} to allow
+        accepting responses with MTOM, but it will not send them unless
+        this is set to {docref SOAPMTOMSupportRange}{ctext .both}
+    }
+  }
+  field public mtom-support-range:SOAPMTOMSupportRange
+
+  {doc-next
+    {purpose
+        Create a {docref WSDLHTTPRPCPostClient}.
+    }
+    {parameter generated-using-version,
+        Version of the WSDL generation code that was used to generate the
+        service subclass.  If it is out of date with the version of
+        the library being used an error will be thrown.
+    }
+    {details
+        The parameters match the fields or getters and setters on
+        {docref WSDLHTTPRPCPostClient} of the same names.
+    }
+  }
+  {constructor public {default 
+                          service-location:Url,
+                          generated-using-version:String = "1",
+                          accept-encoding:#String = null,
+                          additional-request-headers:#{Array-of XDMElement} = null,
+                          response-headers-callback:#WSDLHTTPRPCPostClient.ResponseHeadersCallback = null,
+                          mtom-support-range:SOAPMTOMSupportRange =
+                              SOAPMTOMSupportRange.response
+                      }
+    
+    {self.verify-service-version generated-using-version}
+
+    set self.service-location = service-location
+
+    set self.operations = {{HashTable-of String, Arguments}}
+
+    set self.additional-request-headers = additional-request-headers
+    set self.response-headers-callback = response-headers-callback
+    set self.mtom-support-range = mtom-support-range
+
+    def (type-mapper:SOAPTypeMapper,
+         element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+         curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+         xml-type-to-element-name:SOAPXMLTypeToElementNameMapper) =
+        {self.register-types}
+
+    {self.define-operations}
+
+    set self.soap-caller =
+        {SOAPHTTPRPCPostCaller
+            message-writer =
+                {SOAPRPCMessageWriter
+                    type-mapper = type-mapper,
+                    element-name-to-xml-type = element-name-to-xml-type,
+                    xml-type-to-curl-type = xml-type-to-curl-type,
+                    curl-type-to-xml-type = curl-type-to-xml-type,
+                    xml-type-to-element-name = xml-type-to-element-name
+                },
+            message-reader =
+                {SOAPRPCMessageReader
+                    type-mapper = type-mapper,
+                    element-name-to-xml-type = element-name-to-xml-type,
+                    xml-type-to-curl-type = xml-type-to-curl-type,
+                    curl-type-to-xml-type = curl-type-to-xml-type,
+                    xml-type-to-element-name = xml-type-to-element-name
+                }
+        }
+    {if-non-null accept-encoding then
+        set self.accept-encoding = accept-encoding
+    }
+  }
+  
+  {doc-next  ||== WSDLHTTPRPCPostClient.trace-stream
+    {purpose
+        If not {ctext null}, SOAP requests and responses will
+        be output to this stream.
+    }
+  }
+  {getter public open {trace-stream}:#TextOutputStream
+    {return self.soap-caller.trace-stream}
+  }
+  {setter public open {trace-stream val:#TextOutputStream}:void
+    set self.soap-caller.trace-stream = val
+  }
+  
+  {doc-next  ||== WSDLHTTPRPCPostClient.accept-encoding
+    {purpose
+        Specifies "Accept-Encoding" HTTP header to be used for requests.
+    }
+    {details
+        This can be used to request compressed responses from the server.
+        These compression formats are supported for responses:
+        {itemize
+            {item {monospace gzip} using {docref CompressionFormat}.gzip}
+            {item {monospace deflate} using {docref CompressionFormat}.zlib}
+        }
+    }
+  }
+  {getter public open {accept-encoding}:String
+    {return 
+        {if-non-null headers = self.soap-caller.request-http-headers then
+            let (enc:String, enc?:bool) = 
+                {headers.get-if-exists "Accept-Encoding"}
+            {if enc? then enc else ""}
+         else ""}}
+  }
+  {setter public open {accept-encoding val:String}:void
+    {if-non-null headers = self.soap-caller.request-http-headers then
+        set headers["Accept-Encoding"] = val
+     else
+        set self.soap-caller.request-http-headers =
+            {HttpRequestHeaders
+                "Accept-Encoding", val}
+    }
+  }
+
+  {method public abstract open {register-types
+                               }:(type-mapper:SOAPTypeMapper,
+                                  element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                                  xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                                  curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                                  xml-type-to-element-name:SOAPXMLTypeToElementNameMapper)
+  }
+
+  {method protected abstract open {define-operations}:void
+  }
+  
+  {doc-next ||== WSDLHTTPRPCPostClient.verify-service-version
+    {purpose 
+        Checks the consistency of this generated service class.}
+    {details
+        compares {docref WSDLHTTPRPCPostClient.generated-using-version}
+        with {docref wsdl-service-class-version}.
+    }}
+  {method protected open {verify-service-version generated-using-version:String
+                         }:void
+    {if generated-using-version != wsdl-service-class-version then
+        {throw-soap-exception
+            {lmessage
+                This service package was generated using 
+                WSDL service class version {value generated-using-version}
+                but the current version is {value wsdl-service-class-version}
+            }}
+    }
+  }
+
+  {doc-next ||== WSDLHTTPRPCPostClient.parse-response
+    {purpose 
+        Process supplied response stream.}
+    {parameter method, the name of the operation}
+    {parameter in, the response stream}
+    {details
+        Useful for testing, and for diagnosing problems.
+    }}
+  {method public open {parse-response
+                          method:String,
+                          in:ByteInputStream
+                      }:(responses:{Array-of any},
+                         headers:#{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool},
+                         root-attributes:#{Array-of XMLAttribute})
+    {return
+        {self.parse-response-internal
+            in,
+            self.service-location,
+            {splice self.operations[method]}
+        }}
+  }
+
+  {doc-next ||== WSDLHTTPRPCPostClient.format-request
+    {purpose 
+        Create request data with supplied arguments.}
+    {parameter method, the name of the operation}
+    {parameter args, the method arguments}
+    {details
+        Useful for testing, and for diagnosing problems.
+    }}
+  {method public open {format-request
+                          method:String,
+                          arguments:Array
+                      }:(request-data:HttpRequestData,
+                         request-http-headers:#HttpRequestHeaders)
+    {return
+        {self.format-request-internal
+            arguments,
+            {splice self.operations[method]}
+        }}
+  }
+  
+  {method package {parse-response-internal
+                      || (async-)call arguments
+                      in:ByteInputStream,
+                      binding-url:Url,
+                      argument-names:{Array-of #XMLName},
+                      argument-types:{Array-of SOAPObjectType},
+                      response-names:{Array-of #XMLName},
+                      response-types:{Array-of SOAPObjectType},
+                      encoding:#String,
+                      request-operation:#XMLName = null,
+                      response-operation:#XMLName = request-operation,
+                      soap-action:#String = null,
+                      write-type-attribute?:bool = true,
+                      check-type-attribute?:bool = false,
+                      ||scheme-instance-namespace:#String = null,
+                      default-namespace:#String = null,
+                      write-encoding-attribute?:bool = true,
+                      request-headers:#{Array-of any} = null,
+                      request-header-names:#{Array-of #XMLName} = null,
+                      request-header-types:#{Array-of SOAPObjectType} = null,
+                      request-header-roles:#{Array-of #String} = null,
+                      request-header-must-understands:#{Array-of bool} = null,
+                      response-header-names:#{Array-of #XMLName} = null,
+                      response-header-types:#{Array-of SOAPObjectType} = null,
+                      rpc-style?:bool = true,
+                      root-element-attributes:#{Array-of XMLToken} = null,
+                      character-encoding:CharEncoding = CharEncoding.utf8,
+                      add-content-type-charset?:bool = true,
+                      soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                  }:(responses:{Array-of any},
+                     headers:#{Array-of any},
+                     header-roles:#{Array-of #String},
+                     header-must-understands:#{Array-of bool},
+                     root-attributes:#{Array-of XMLAttribute})
+    {return
+        {self.soap-caller.read-message-from-stream
+            in,
+            binding-url,
+            response-names,
+            response-types,
+            encoding,
+            response-operation = response-operation,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            header-names = response-header-names,
+            header-types = response-header-types,
+            rpc-style? = rpc-style?,
+            character-encoding = character-encoding,
+            soap-version = soap-version,
+            mtom-support-range = self.mtom-support-range
+        }
+    }
+  }
+  
+  {method package {format-request-internal
+                      || (async-)call arguments
+                      arguments:Array,
+                      argument-names:{Array-of #XMLName},
+                      argument-types:{Array-of SOAPObjectType},
+                      response-names:{Array-of #XMLName},
+                      response-types:{Array-of SOAPObjectType},
+                      encoding:#String,
+                      request-operation:#XMLName = null,
+                      response-operation:#XMLName = request-operation,
+                      soap-action:#String = null,
+                      write-type-attribute?:bool = true,
+                      check-type-attribute?:bool = false,
+                      ||scheme-instance-namespace:#String = null,
+                      default-namespace:#String = null,
+                      write-encoding-attribute?:bool = true,
+                      request-headers:#{Array-of any} = null,
+                      request-header-names:#{Array-of #XMLName} = null,
+                      request-header-types:#{Array-of SOAPObjectType} = null,
+                      request-header-roles:#{Array-of #String} = null,
+                      request-header-must-understands:#{Array-of bool} = null,
+                      response-header-names:#{Array-of #XMLName} = null,
+                      response-header-types:#{Array-of SOAPObjectType} = null,
+                      rpc-style?:bool = true,
+                      root-element-attributes:#{Array-of XMLToken} = null,
+                      character-encoding:CharEncoding = CharEncoding.utf8,
+                      add-content-type-charset?:bool = true,
+                      soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                  }:(request-data:HttpRequestData,
+                     request-http-headers:#HttpRequestHeaders)
+    {return
+        {self.soap-caller.setup-request-data   
+            arguments,
+            argument-names,
+            argument-types,
+            encoding,
+            request-operation = request-operation,
+            write-type-attribute? = write-type-attribute?,
+            ||scheme-instance-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            headers = request-headers,
+            header-names = request-header-names,
+            header-types = request-header-types,
+            header-roles = request-header-roles,
+            header-must-understands = request-header-must-understands,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            request-http-headers = self.soap-caller.request-http-headers,
+            character-encoding = character-encoding,
+            add-content-type-charset? = add-content-type-charset?,
+            soap-action = soap-action,
+            trace-stream = self.trace-stream,
+            soap-version = soap-version,
+            mtom-support-range = self.mtom-support-range,
+            additional-request-headers = self.additional-request-headers 
+        }
+    }
+  }
+
+  {method public open {call
+                          operation:String,
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          response-names:{Array-of #XMLName},
+                          response-types:{Array-of SOAPObjectType},
+                          encoding:#String,
+                          request-operation:#XMLName = null,
+                          response-operation:#XMLName = request-operation,
+                          soap-action:#String = null,
+                          write-type-attribute?:bool = true,
+                          check-type-attribute?:bool = false,
+                          ||scheme-instance-namespace:#String = null,
+                          default-namespace:#String = null,
+                          write-encoding-attribute?:bool = true,
+                          request-headers:#{Array-of any} = null,
+                          request-header-names:#{Array-of #XMLName} = null,
+                          request-header-types:#{Array-of SOAPObjectType} = null,
+                          request-header-roles:#{Array-of #String} = null,
+                          request-header-must-understands:#{Array-of bool} = null,
+                          response-header-names:#{Array-of #XMLName} = null,
+                          response-header-types:#{Array-of SOAPObjectType} = null,
+                          rpc-style?:bool = true,
+                          root-element-attributes:#{Array-of XMLToken} = null,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          add-content-type-charset?:bool = true,
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          http-request-method:HttpRequestMethod = HttpRequestMethod.post,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1
+                      }:(responses:{Array-of any},
+                         headers:#{Array-of any},
+                         header-roles:#{Array-of #String},
+                         header-must-understands:#{Array-of bool},
+                         root-attributes:#{Array-of XMLAttribute})
+    def (responses, headers, header-roles, header-must-understands,
+         root-attributes) =
+        {self.soap-caller.call
+            self.service-location,
+            arguments,
+            argument-names,
+            argument-types,
+            response-names,
+            response-types,
+            encoding,
+            request-operation = request-operation,
+            response-operation = response-operation,
+            soap-action = soap-action,
+            write-type-attribute? = write-type-attribute?,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            request-headers = request-headers,
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-header-roles = request-header-roles,
+            request-header-must-understands = request-header-must-understands,
+            response-header-names = response-header-names,
+            response-header-types = response-header-types,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            character-encoding = character-encoding,
+            add-content-type-charset? = add-content-type-charset?,
+            trace-stream = trace-stream,
+            http-request-method = http-request-method,
+            soap-version = soap-version,
+            mtom-support-range = self.mtom-support-range,
+            additional-request-headers = self.additional-request-headers 
+        }
+    {if-non-null rhc = self.response-headers-callback then
+        {rhc
+            operation,
+            headers,
+            header-roles,
+            header-must-understands,
+            {if-non-null response-header-names then
+                response-header-names.size
+             else
+                0
+            }
+        }
+    }
+    {return 
+        responses, headers, header-roles, header-must-understands,
+        root-attributes
+    }
+  }
+
+  {method public open {async-call
+                          operation:String,
+                          arguments:{Array-of any},
+                          argument-names:{Array-of #XMLName},
+                          argument-types:{Array-of SOAPObjectType},
+                          response-names:{Array-of #XMLName},
+                          response-types:{Array-of SOAPObjectType},
+                          encoding:#String,
+                          event-handler:EventHandler,
+                          request-operation:#XMLName = null,
+                          response-operation:#XMLName = request-operation,
+                          soap-action:#String = null,
+                          write-type-attribute?:bool = true,
+                          check-type-attribute?:bool = false,
+                          ||scheme-instance-namespace:#String = null,
+                          default-namespace:#String = null,
+                          write-encoding-attribute?:bool = true,
+                          request-headers:#{Array-of any} = null,
+                          request-header-names:#{Array-of #XMLName} = null,
+                          request-header-types:#{Array-of SOAPObjectType} = null,
+                          request-header-roles:#{Array-of #String} = null,
+                          request-header-must-understands:#{Array-of bool} = null,
+                          response-header-names:#{Array-of #XMLName} = null,
+                          response-header-types:#{Array-of SOAPObjectType} = null,
+                          rpc-style?:bool = true,
+                          root-element-attributes:#{Array-of XMLToken} = null,
+                          character-encoding:CharEncoding = CharEncoding.utf8,
+                          add-content-type-charset?:bool = true,
+                          trace-stream:#TextOutputStream = self.trace-stream,
+                          http-request-method:HttpRequestMethod =
+                              HttpRequestMethod.post,
+                          soap-version:SOAPVersion = SOAPVersion.soap-1-1,
+                          ...:EventHandler
+                      }:SOAPHTTPRPCPostAsyncWorker
+    {return
+        {self.soap-caller.async-call
+            self.service-location,
+            arguments,
+            argument-names,
+            argument-types,
+            response-names,
+            response-types,
+            encoding,
+            request-operation = request-operation,
+            response-operation = response-operation,
+            soap-action = soap-action,
+            write-type-attribute? = write-type-attribute?,
+            check-type-attribute? = check-type-attribute?,
+            default-namespace = default-namespace,
+            write-encoding-attribute? = write-encoding-attribute?,
+            request-headers = request-headers,
+            request-header-names = request-header-names,
+            request-header-types = request-header-types,
+            request-header-roles = request-header-roles,
+            request-header-must-understands = request-header-must-understands,
+            response-header-names = response-header-names,
+            response-header-types = response-header-types,
+            rpc-style? = rpc-style?,
+            root-element-attributes = root-element-attributes,
+            character-encoding = character-encoding,
+            add-content-type-charset? = add-content-type-charset?,
+            trace-stream = trace-stream,
+            http-request-method = http-request-method,
+            soap-version = soap-version,
+            mtom-support-range = self.mtom-support-range,
+            additional-request-headers = self.additional-request-headers,
+            || from application
+            event-handler,
+            || for dynamic headers
+            {on e:SOAPHTTPRPCPostAsyncEvent do
+                {if e.exception != null or e.canceled? then
+                    {return}
+                }
+                {if-non-null rhc = self.response-headers-callback then
+                    {rhc
+                        operation,
+                        e.headers,
+                        e.header-roles,
+                        e.header-must-understands,
+                        {if-non-null response-header-names then
+                            response-header-names.size
+                         else
+                            0
+                        }
+                    }
+                }
+            },
+            {splice ...}
+        }
+    }
+  }
+}

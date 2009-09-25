@@ -1,0 +1,219 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public serializable StandardXDMNamespaceDeclaration 
+  {inherits XDMNamespaceDeclaration, StandardXDMNode}
+  field public constant _prefix:String
+  field public constant _namespace:String
+  {constructor public {default
+                          prefix:String,
+                          namespace:String}
+    set self._prefix = prefix
+    set self._namespace = namespace
+  }
+  {getter public {namespace}:String
+    {return self._namespace}
+  }
+  {getter public {prefix}:String
+    {return self._prefix}
+  }
+  || XDMNode protocol
+  {method public {get-text}:String
+    {return self.namespace}
+  }
+  {method public {clone}:XDMNamespaceDeclaration
+    {return
+        {XDMNamespaceDeclaration self.prefix, self.namespace}}
+  }
+  || NOTE: some parts of protocol don't make sense for NamespaceDeclaration
+  {getter public {xmlname}:XDMName
+    {return {XDMName "", self._prefix}}
+  }
+  {getter public {qualified-name}:String
+    {return {if self.prefix.empty? then "xmlns" else "xmlns:" & self.prefix}}
+  }
+  {getter public {local-name}:String
+    {return self._prefix}
+  }
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+    {out.write-one-string 
+        {if self.prefix.empty? 
+         then "xmlns"
+         else "xmlns:"}}
+    {out.write-one-string self.prefix}
+    {out.write-one-string "=\'"}
+    {format-xml-string out = out, self.namespace}
+    {out.write-one-string "\'"}
+    
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+  {doc-next ||=== XDMNamespaceDeclaration.xmlname
+    {purpose Create an {docref XDMName} in this namespace.}
+  }
+  {method public {xmlname-for local-name:String}:XDMName
+    {return {XDMName self.namespace, local-name}}
+  }
+}
+
+{define-class public serializable StandardXDMNamespaceDeclarations
+  {inherits XDMNamespaceDeclarations}
+  field constant declarations:{HashTable-of String, XDMNamespaceDeclaration}
+  field private _element:#XDMElement
+  {getter public {element}:#XDMElement
+    {return self._element}
+  }
+  {setter package {element element:#XDMElement}:void
+    set self._element = element
+    {for a in self.declarations do
+        set a.parent = element}        
+  }
+  {constructor public {default ...}
+    set self.declarations = {{HashTable-of String, XDMNamespaceDeclaration}}
+    {for (x, k) in ... do
+        {if-non-null k then
+            {type-switch x
+                case x:String do
+                set self.declarations[k] = 
+                    {XDMNamespaceDeclaration k, x}
+             else
+                {xdm-exception {message Expected namespace string.}}}
+         else
+            {type-switch x
+             case x:XDMNamespaceDeclaration do
+                set self.declarations[x.prefix] = x
+             else
+                {xdm-exception {message Expected XDMNamespaceDeclaration.}}}
+        }}
+  }
+  {method public {get-declaration prefix:String}:XDMNamespaceDeclaration
+    {return self.declarations[prefix]}
+  }
+  {method public {add-declaration a:XDMNamespaceDeclaration}:void
+    {self.assure-modifiable}
+    set a.parent = self.element
+    set self.declarations[a.prefix] = a      
+    {self.trigger-xdm-event {XDMNodeAdded a}}
+  }
+  {method public {remove-declaration prefix:String}:void
+    {self.assure-modifiable}
+    {if {self.key-exists? prefix} then
+        let a:XDMNamespaceDeclaration = {self.get-declaration prefix}
+        {a.detach}
+        {self.declarations.remove prefix}
+        {if-non-null element = self._element then
+            {self.trigger-xdm-event {XDMNodeRemoved element, a}}}}
+  }
+  {method public {clear-declarations}:void
+    {self.assure-modifiable}
+    || NOTE: change management by remove-declaration
+    {for p in {self.get-prefixes} do
+        {self.remove-declaration p}}
+  }
+  || change management    
+  {method public {assure-modifiable}:void
+    {type-switch self._element
+     case e:StandardXDMElement do
+        {e.assure-modifiable}}
+  }
+  {method protected {trigger-xdm-event x:XDMEvent}:void
+    {type-switch self._element
+     case e:StandardXDMElement do
+        {e.trigger-xdm-event x}}
+  }
+  || NamespaceSupport API
+  {method public {get-uri prefix:String}:#String
+    let (x:XDMNamespaceDeclaration, x?:bool) =
+        {self.declarations.get-if-exists prefix}
+    {return {if x? then x.namespace else null}}
+  }
+  {method public {get-prefix namespace:String}:#String
+    {for x key k in self.declarations do
+        {if k != "" and x.namespace == namespace then
+            {return k}}}
+    {return null}
+  }
+  {method public {get-prefixes-for-uri namespace:String}:StringArray
+    let xs:StringArray = {StringArray}
+    {for x key k in self.declarations do
+        {if x.namespace == namespace then
+            {xs.append k}}}
+    {return xs}
+  }
+  {method public {get-prefixes}:StringArray
+    let xs:StringArray = {StringArray}
+    {for key k in self.declarations do
+        {xs.append k}}
+    {return xs}
+  }
+  {method public {declare-prefix? prefix:String, namespace:String}:bool
+    let new-prefix?:bool = not {self.declarations.key-exists? prefix}
+    {if new-prefix? then
+        set self.declarations[prefix] =
+            {XDMNamespaceDeclaration prefix, namespace}}
+    {return new-prefix?}
+  }
+  || Association-of API
+  {getter public {empty?}:bool
+    {return self.declarations.empty?}
+  }
+  {method public {key-exists? prefix:String}:bool
+    {return {self.declarations.key-exists? prefix}}
+  }
+  {method public {get prefix:String}:String
+    {return self.declarations[prefix].namespace}
+  }
+  {method public {get-if-exists prefix:String}:(String, bool)
+    {if-non-null ns = {self.get-uri prefix} 
+     then {return ns, true}
+     else {return {uninitialized-value-for-type String}, false}}
+  }
+  {method public {keys-to-Iterator}:{Iterator-of String}
+    {return {self.declarations.keys-to-Iterator}}
+  }
+  || XDMObject API
+  {method public {clone}:XDMNamespaceDeclarations
+    {return
+        {XDMNamespaceDeclarations {splice {self.to-Arguments}}}}
+  }
+  {method public {to-XML
+                     out:#TextOutputStream = null,
+                     indentation:int = 1
+                 }:String
+    let return?:bool = out == null
+    {if return? then
+        set out = {StringBuf}
+    }
+    {for x in self.declarations do
+        {out.write-one ' '}
+        {x.to-XML out = out, indentation = indentation}
+    }   
+    {return {if return? then {(out asa StringBuf).to-String} else ""}}
+  }
+  || adapters
+  {method public {to-Arguments}:Arguments
+    let args:Arguments = {Arguments}
+    {for x key k in self.declarations do
+        {args.append keyword = k, x.namespace}}
+    {return args}
+  }
+}

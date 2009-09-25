@@ -1,0 +1,34 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open SpellResponse
+
+  field package _total:{Nullable uint32} = null
+  {getter public {total}:uint32
+    {return self._total.value-or-default}
+  }
+  {setter public {total val:uint32}:void
+    set self._total = val
+  }
+  {getter public {total-specified?}:bool
+    {return self._total.value?}
+  }
+  {method public {unset-total}:void
+    set self._total = null
+  }
+  field public results:#{Array-of SpellResult}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      total:uint32 = {uninitialized-value-for-type uint32},
+      results:#{Array-of SpellResult} = {uninitialized-value-for-type #{Array-of SpellResult}}
+    }
+    {if {keyword-supplied? total} then
+        set self.total = total}
+    {if {keyword-supplied? results} then
+        set self.results = results}
+  }
+
+}
+

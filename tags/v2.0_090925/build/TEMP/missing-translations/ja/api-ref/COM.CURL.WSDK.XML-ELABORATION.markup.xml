@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="Shift_JIS" standalone="yes"?>
+<translation-dictionary version="2">
+
+<string>
+<original>Abstract base class used by {docref XmlElaboration} expressions
+        to represent content that should be ignored.</original>
+<translation>Abstract base class used by <opaque>{docref XmlElaboration}</opaque> expressions to represent content that should be ignored.</translation>
+<comment>VoidPrototype</comment>
+</string>
+
+<string>
+<original>Abstract base class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as a keyword argument.</original>
+<translation>Abstract base class used by <opaque>{docref XmlElaboration}</opaque> expressions to represent content that should be treated as a keyword argument.</translation>
+<comment>KeywordPrototype</comment>
+</string>
+
+<string>
+<original>Abstract base class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as keyword arguments.</original>
+<translation>Abstract base class used by <opaque>{docref XmlElaboration}</opaque> expressions to represent content that should be treated as keyword arguments.</translation>
+<comment>ArgumentsPrototype</comment>
+</string>
+
+<string>
+<original>Class used by {docref XmlElaboration} expressions
+        to represent content that should be ignored.</original>
+<translation>Class used by <opaque>{docref XmlElaboration}</opaque> expressions to represent content that should be ignored.</translation>
+<comment>XmlVoidPrototype</comment>
+</string>
+
+<string>
+<original>Class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as a keyword argument.</original>
+<translation>Class used by <opaque>{docref XmlElaboration}</opaque> expressions to represent content that should be treated as a keyword argument.</translation>
+<comment>GenericKeywordPrototype</comment>
+</string>
+
+<string>
+<original>Class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as keyword arguments.</original>
+<translation>Class used by <opaque>{docref XmlElaboration}</opaque> expressions to represent content that should be treated as keyword arguments.</translation>
+<comment>GenericArgumentsPrototype</comment>
+</string>
+
+<string>
+<original>Generate styling arguments for the specified element.</original>
+<translation>Generate styling arguments for the specified element.</translation>
+<comment>XmlStyleSheet.style-arguments</comment>
+</string>
+
+<string>
+<original>Generic stylesheet protocol.</original>
+<translation>Generic stylesheet protocol.</translation>
+<comment>XmlStyleSheet</comment>
+</string>
+
+<string>
+<original>Indicate wheteher a given type or proc-type can accept styling arguments.</original>
+<translation>Indicate wheteher a given type or proc-type can accept styling arguments.</translation>
+<comment>XmlStyleSheet.can-be-styled?</comment>
+</string>
+
+<string>
+<original>Simple macro form for creating an {docref XmlElaboration}</original>
+<translation>Simple macro form for creating an <opaque>{docref XmlElaboration}</opaque></translation>
+<comment>xml-elaboration</comment>
+</string>
+
+<string>
+<original>Specifies how {docref XmlElaboration} converts attributes.</original>
+<translation>Specifies how <opaque>{docref XmlElaboration}</opaque> converts attributes.</translation>
+<comment>AttributeElaborationMode</comment>
+</string>
+
+<string>
+<original>Specifies how {docref XmlElaboration} converts element names.</original>
+<translation>Specifies how <opaque>{docref XmlElaboration}</opaque> converts element names.</translation>
+<comment>TagElaborationMode</comment>
+</string>
+
+<string>
+<original>The "xml-elaboration" macro uses the following syntax:
+        
+        {ctext
+            {xml-elaboration
+                {metavar prefix} = {metavar "namespace"}
+                [, {metavar prefix} = {metavar "namespace"}]*
+                {{metavar "tag"} {metavar spec}}*
+            }}
+        
+        where each {metavar "tag"} is either an XML element qualified name,
+        or {ctext "*"} to indicate the default elabration expression.
+        
+        and each {metavar spec} is one of
+        {itemize
+            {item a function specification
+                
+                {ctext {{metavar signature}} {metavar body}}
+            }
+            {item a class specification
+                
+                {ctext {metavar classtype}}
+            }
+        }</original>
+<translation><p>The "xml-elaboration" macro uses the following syntax:</p>
+<p><opaque>{ctext {xml-elaboration
+                {metavar prefix} = {metavar "namespace"}
+                [, {metavar prefix} = {metavar "namespace"}]*
+                {{metavar "tag"} {metavar spec}}*
+            }}</opaque></p>
+<p>where each <opaque>{metavar "tag"}</opaque> is either an XML element qualified name, or <opaque>{ctext "*"}</opaque> to indicate the default elabration expression.</p>
+<p>and each <opaque>{metavar spec}</opaque> is one of <curl name="itemize"><curl name="item"><p>a function specification</p><p><opaque>{ctext {{metavar signature}} {metavar body}}</opaque></p></curl> <curl name="item"><p>a class specification</p><p><opaque>{ctext {metavar classtype}}</opaque></p></curl></curl></p></translation>
+<comment>xml-elaboration</comment>
+</string>
+
+<string>
+<original>There are two ways (elaboration modes) by which {docref XDMElement} 
+        content is made available to the elaboration expression.
+
+        {italic Mapping XDM content to Curl arguments}
+    
+        Contents are mapped to arguments as follows:
+        {itemize
+            {item attributes map to keyword arguments}
+            {item children map to positional arguments}
+            {itemize
+                {item text maps to String, 
+                    ignoring {docref xml-whitespace?} strings
+                    unless {ctext preserve-whitespace?} is true}
+                {item element according to its elaboration}
+            }
+        }
+        
+        By default, the {docref-abbr XDMNode.xmlname}
+        is not supplied to the expression.
+        When {ctext call-with-name?} is true,
+        the xmlname is included in the arguments. 
+        (This defaults according to whether the first positional argument 
+        of the elaboration procedure is of type {docref XDMName}.)
+
+        {italic Direct access to XDM element}
+
+        When {ctext call-with-node?} is true,
+        the elaboration expression is passed the node directly.
+        (This defaults according to whether the elaboration procedure
+        has a single {docref XDMElement} argument.)
+        In this case, usually, it is responsible for processing the children,
+        so the children will not be elaborated and supplied as arguments.
+        
+        When {ctext elaborate-subnodes?} is true, 
+        children will always be elaborated.
+        (This is normally true, but false when {ctext call-with-node?} is specified,
+        unless the elaboration action accepts rest arguments)
+        
+        {italic Stylesheet processing}
+        
+        When a {docref XmlStyleSheet} is supplied,
+        keyword arguments will be generated in accordance
+        with the styling rules specified in the stylesheet,
+        (via {docref XmlStyleSheet.style-arguments})
+        if the elaborated type can accept them
+        (as determined by {docref XmlStyleSheet.can-be-styled?}).
+        
+        If {ctext call-with-styling?} is false,
+        all stylesheet processing will be suppressed.
+        The default is true.
+        
+        {italic elaboration context}
+        
+        Sometimes it is useful to have access to the elaboration context
+        in order to explicitly elaborate subordinate nodes.
+        When {ctext call-with-elaboration?} is true,
+        the elaboration expression is passed the current elaboration context,
+        using the {ctext elaboration} keyword argument.
+        (This defaults according to whether the elaboration action
+        accepts a keyword argument {ctext elaboration} of type {docref XmlElaboration}).</original>
+<translation><p>There are two ways (elaboration modes) by which <opaque>{docref XDMElement}</opaque> content is made available to the elaboration expression.</p>
+<p><i>Mapping XDM content to Curl arguments</i></p>
+<p>Contents are mapped to arguments as follows: <curl name="itemize"><curl name="item">attributes map to keyword arguments</curl> <curl name="item">children map to positional arguments</curl> <curl name="itemize"><curl name="item">text maps to String, ignoring <opaque>{docref xml-whitespace?}</opaque> strings unless <opaque>{ctext preserve-whitespace?}</opaque> is true</curl> <curl name="item">element according to its elaboration</curl></curl></curl></p>
+<p>By default, the <opaque>{docref-abbr XDMNode.xmlname}</opaque> is not supplied to the expression. When <opaque>{ctext call-with-name?}</opaque> is true, the xmlname is included in the arguments. (This defaults according to whether the first positional argument of the elaboration procedure is of type <opaque>{docref XDMName}</opaque>.)</p>
+<p><i>Direct access to XDM element</i></p>
+<p>When <opaque>{ctext call-with-node?}</opaque> is true, the elaboration expression is passed the node directly. (This defaults according to whether the elaboration procedure has a single <opaque>{docref XDMElement}</opaque> argument.) In this case, usually, it is responsible for processing the children, so the children will not be elaborated and supplied as arguments.</p>
+<p>When <opaque>{ctext elaborate-subnodes?}</opaque> is true, children will always be elaborated. (This is normally true, but false when <opaque>{ctext call-with-node?}</opaque> is specified, unless the elaboration action accepts rest arguments)</p>
+<p><i>Stylesheet processing</i></p>
+<p>When a <opaque>{docref XmlStyleSheet}</opaque> is supplied, keyword arguments will be generated in accordance with the styling rules specified in the stylesheet, (via <opaque>{docref XmlStyleSheet.style-arguments}</opaque>) if the elaborated type can accept them (as determined by <opaque>{docref XmlStyleSheet.can-be-styled?}</opaque>).</p>
+<p>If <opaque>{ctext call-with-styling?}</opaque> is false, all stylesheet processing will be suppressed. The default is true.</p>
+<p><i>elaboration context</i></p>
+<p>Sometimes it is useful to have access to the elaboration context in order to explicitly elaborate subordinate nodes. When <opaque>{ctext call-with-elaboration?}</opaque> is true, the elaboration expression is passed the current elaboration context, using the <opaque>{ctext elaboration}</opaque> keyword argument. (This defaults according to whether the elaboration action accepts a keyword argument <opaque>{ctext elaboration}</opaque> of type <opaque>{docref XmlElaboration}</opaque>).</p></translation>
+<comment>XmlElaboration</comment>
+</string>
+
+<string>
+<original>This package contains support for processing XML Document Models
+        by mapping elaboration expressions to element types
+        using {docref xml-elaboration}.</original>
+<translation>This package contains support for processing XML Document Models by mapping elaboration expressions to element types using <opaque>{docref xml-elaboration}</opaque>.</translation>
+<comment>COM.CURL.WSDK.XML-ELABORATION</comment>
+</string>
+
+<string>
+<original>Used by {docref XmlElaboration} to associate
+        element names with elaboration expressions.</original>
+<translation>Used by <opaque>{docref XmlElaboration}</opaque> to associate element names with elaboration expressions.</translation>
+<comment>XmlElaborationTable</comment>
+</string>
+
+<string>
+<original>Used by {docref XmlElaboration} to dispatch
+        to the elaboration expression corresponding
+        to an element name.</original>
+<translation>Used by <opaque>{docref XmlElaboration}</opaque> to dispatch to the elaboration expression corresponding to an element name.</translation>
+<comment>XmlElaborationDispatch</comment>
+</string>
+
+<string>
+<original>Used by {docref XmlElaboration} to represent
+        an elaboration expression defined by a {ctext ClassType}.</original>
+<translation>Used by <opaque>{docref XmlElaboration}</opaque> to represent an elaboration expression defined by a <opaque>{ctext ClassType}</opaque>.</translation>
+<comment>XmlElaborationType</comment>
+</string>
+
+<string>
+<original>Used by {docref XmlElaboration} to represent
+        an elaboration expression defined by a {ctext proc}.</original>
+<translation>Used by <opaque>{docref XmlElaboration}</opaque> to represent an elaboration expression defined by a <opaque>{ctext proc}</opaque>.</translation>
+<comment>XmlElaborationFunction</comment>
+</string>
+
+<string>
+<original>XML elaboration allows an entire XML structure 
+        to be systematically transformed into native Curl objects. 
+        A mapping is defined associating element names 
+        with elaboration expressions which produce Curl content.</original>
+<translation>XML elaboration allows an entire XML structure to be systematically transformed into native Curl objects. A mapping is defined associating element names with elaboration expressions which produce Curl content.</translation>
+<comment>xml-elaboration</comment>
+</string>
+
+<string>
+<original>XML elaboration allows an entire XML structure 
+        to be systematically transformed into native Curl objects. 
+        A mapping is defined associating element names 
+        with elaboration expressions which produce Curl content.
+        
+        Use {docref xml-elaboration} to create an {docref XmlElaboration}.</original>
+<translation><p>XML elaboration allows an entire XML structure to be systematically transformed into native Curl objects. A mapping is defined associating element names with elaboration expressions which produce Curl content.</p>
+<p>Use <opaque>{docref xml-elaboration}</opaque> to create an <opaque>{docref XmlElaboration}</opaque>.</p></translation>
+<comment>XmlElaboration</comment>
+</string>
+
+<string>
+<original>{curl-code
+            let e:XMLElaboration =
+                {xml-elaboration
+                    {"channel" VBox}
+                    {"item" TextFlowBox}
+                    {"title" Frame}
+                    {"rss" {version:String = "", channel:any}:Graphic
+                        || just return the channel, ignoring the version
+                        channel}
+                }
+            {e.elaborate model}
+        }</original>
+<translation><opaque>{curl-code
+            let e:XMLElaboration =
+                {xml-elaboration
+                    {"channel" VBox}
+                    {"item" TextFlowBox}
+                    {"title" Frame}
+                    {"rss" {version:String = "", channel:any}:Graphic
+                        || just return the channel, ignoring the version
+                        channel}
+                }
+            {e.elaborate model}
+        }</opaque></translation>
+<comment>xml-elaboration</comment>
+</string>
+
+</translation-dictionary>

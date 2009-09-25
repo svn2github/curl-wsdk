@@ -1,0 +1,356 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{import * from COM.CURL.WSDK.SOAP}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+
+{define-class public EchoTest {inherits WSDLHTTPRPCPostClient}
+ {method public {echo-int input-int:int}:(_return:int)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            response-header-names =
+                {new {Array-of #XMLName},
+                    {XMLName "http://example.org/ts-tests", "responseOk"}
+                },
+            response-header-types =
+                {new {Array-of SOAPObjectType},
+                    {SOAPObjectType
+                        xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                        curl-type = String,
+                        nillable? = true
+                    }
+
+                },
+            {{Array-of any}
+                input-int
+            },
+            {splice self.operations["echo-int"]}
+        }
+    {if-non-null rhc = self.response-headers-callback then
+        {rhc
+             "empty-int",
+             headers,
+             header-roles,
+             header-must-understands,
+             1
+        }
+    }
+
+    {return
+        responses[0] asa int
+    }
+  }
+  {method public {define-echo-int}:void
+    set self.operations["echo-int"] =
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputInt"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }             },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoInt"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+  {method public {echo-int2 input-int:int}:(_return:int)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute})=
+        {self.soap-caller.call
+            self.service-location,
+            {{Array-of any}
+                input-int
+            },
+            {splice self.operations["echo-int2"]}
+        }
+    {if-non-null rhc = self.response-headers-callback then
+        {rhc
+             "empty-int2",
+             headers,
+             header-roles,
+             header-must-understands,
+             0
+        }
+    }
+
+    {return
+        responses[0] asa int
+    }
+  }
+  {method public {define-echo-int2}:void
+    set self.operations["echo-int2"] =
+         {Arguments
+            {{Array-of #XMLName}
+                {XMLName "", "inputInt"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }             },
+            {{Array-of #XMLName}
+                {XMLName "", "return"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                }
+            },
+            "http://www.w3.org/2003/05/soap-encoding",
+            soap-action = "http://soapinterop.org/",
+            request-operation = {XMLName "http://soapinterop.org/", "echoInt"},
+            default-namespace = "http://soapinterop.org/",
+            rpc-style? = true,
+            write-type-attribute? = true,
+            write-encoding-attribute? = true,
+            soap-version = SOAPVersion.soap-1-2
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-echo-int}
+     {self.define-echo-int2}
+  }
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    {return builtin-soap-type-mapper,
+        builtin-soap-element-name-to-xml-type-mapper,
+        builtin-soap-xml-type-to-curl-type-mapper,
+        builtin-soap-curl-type-to-xml-type-mapper,
+        builtin-soap-xml-type-to-element-name-mapper
+    }
+  }
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://www.whitemesa.net/soap12/baseTypes"}
+    }
+    {construct-super service-location,
+        generated-using-version = "6"
+    }
+  }
+}
+
+{TestSuite "SOAP Header",
+    {test-case "soap 1.2 response additional headers",
+        def et = {EchoTest}
+        def message-without-headers =
+            |"<?xml version='1.0' encoding='UTF-8'?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<env:Body>
+<ns1:echoIntResponse xmlns:ns1="http://soapinterop.org/" env:encodingStyle="http://www.w3.org/2003/05/soap-encoding">
+<return xsi:type="xsd:int">5</return>
+</ns1:echoIntResponse>
+</env:Body>
+</env:Envelope>"|
+        def bytes = {ByteArray efficient-size = message-without-headers.size + 1}
+        {encode-characters
+            message-without-headers,
+            bytes.underlying-FastArray,
+            CharEncoding.utf8
+        }
+        set et.response-headers-callback =
+            {proc
+                {operation:String,
+                 headers:#Array,
+                 header-roles:#{Array-of #String},                                               header-must-understands:#{Array-of bool},
+                 defined-header-count:int
+                }:void
+                {TestCondition.assert headers.size == defined-header-count}
+                {if defined-header-count > 0 then
+                    {TestCondition.assert headers[0] == null}
+                }
+            }
+        {et.parse-response
+            "echo-int",
+            {ByteArrayInputStream bytes}
+        }
+        {et.parse-response
+            "echo-int2",
+            {ByteArrayInputStream bytes}
+        }
+        def message-with-headers =
+            |"<?xml version='1.0' encoding='UTF-8'?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<env:Header>
+    <AuthHeader xmlns="http://tempuri.org/">
+      <UserName>jeff</UserName>
+      <Password>imbatman</Password>
+    </AuthHeader>
+    <Bork thingy="hi" />
+</env:Header>
+<env:Body>
+<ns1:echoIntResponse xmlns:ns1="http://soapinterop.org/" env:encodingStyle="http://www.w3.org/2003/05/soap-encoding">
+<return xsi:type="xsd:int">5</return>
+</ns1:echoIntResponse>
+</env:Body>
+</env:Envelope>"|
+        def bytes-with-headers =
+            {ByteArray efficient-size = message-with-headers.size + 1}
+        {encode-characters
+            message-with-headers,
+            bytes-with-headers.underlying-FastArray,
+            CharEncoding.utf8
+        }
+        set et.response-headers-callback =
+            {proc
+                {operation:String,
+                 headers:#Array,
+                 header-roles:#{Array-of #String},                                               header-must-understands:#{Array-of bool},
+                 defined-header-count:int
+                }:void
+                {TestCondition.assert headers != null}
+                {TestCondition.assert headers.size == defined-header-count + 2}
+                {TestCondition.assert headers[defined-header-count] isa XDMElement}
+                {TestCondition.assert headers[defined-header-count + 1] isa XDMElement}
+                
+            }
+        {et.parse-response
+            "echo-int",
+            {ByteArrayInputStream bytes-with-headers}
+        }
+        {et.parse-response
+            "echo-int2",
+            {ByteArrayInputStream bytes-with-headers}
+        }
+    },
+    {test-case "soap 1.2 response additional headers2",
+        def et = {EchoTest}
+        def message-without-headers =
+            |"<?xml version='1.0' encoding='UTF-8'?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<env:Body>
+<ns1:echoIntResponse xmlns:ns1="http://soapinterop.org/" env:encodingStyle="http://www.w3.org/2003/05/soap-encoding">
+<return xsi:type="xsd:int">5</return>
+</ns1:echoIntResponse>
+</env:Body>
+</env:Envelope>"|
+        def bytes = {ByteArray efficient-size = message-without-headers.size + 1}
+        {encode-characters
+            message-without-headers,
+            bytes.underlying-FastArray,
+            CharEncoding.utf8
+        }
+        set et.response-headers-callback =
+            {proc
+                {operation:String,
+                 headers:#Array,
+                 header-roles:#{Array-of #String},                                               header-must-understands:#{Array-of bool},
+                 defined-header-count:int
+                }:void
+                {TestCondition.assert headers == null or headers.size == 0}
+            }
+        {et.parse-response
+            "echo-int2",
+            {ByteArrayInputStream bytes}
+        }
+        def message-with-headers =
+            |"<?xml version='1.0' encoding='UTF-8'?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<env:Header>
+    <AuthHeader xmlns="http://tempuri.org/">
+      <UserName>jeff</UserName>
+      <Password>imbatman</Password>
+    </AuthHeader>
+    <Bork thingy="hi" />
+</env:Header>
+<env:Body>
+<ns1:echoIntResponse xmlns:ns1="http://soapinterop.org/" env:encodingStyle="http://www.w3.org/2003/05/soap-encoding">
+<return xsi:type="xsd:int">5</return>
+</ns1:echoIntResponse>
+</env:Body>
+</env:Envelope>"|
+        def bytes-with-headers =
+            {ByteArray efficient-size = message-with-headers.size + 1}
+        {encode-characters
+            message-without-headers,
+            bytes.underlying-FastArray,
+            CharEncoding.utf8
+        }
+        set et.response-headers-callback =
+            {proc
+                {operation:String,
+                 headers:#Array,
+                 header-roles:#{Array-of #String},                                               header-must-understands:#{Array-of bool},
+                 defined-header-count:int
+                }:void
+                {TestCondition.assert headers != null and headers.size == 2}
+                {TestCondition.assert headers[0].size == 2}
+            }
+    },
+    {test-case "soap 1.2 request additional headers",
+        def et = {EchoTest}
+        set et.accept-encoding = "gzip"
+        set et.additional-request-headers =
+            {new {Array-of XDMElement},
+                {XDMElement
+                    "XYZZY",
+                    {XDMAttribute "zzz", "yyy"},
+                    {XDMElement "ABCDEF"}
+                }
+            }
+        def (request-data, headers) =
+            {et.format-request
+                "echo-int",
+                {Array 123}
+            }
+        def (bytes-decoded, request-string) =
+            {decode-characters
+                {request-data.request-data}.underlying-FastArray,
+                CharEncoding.utf8
+            }
+        def (h, found?) = {headers.get-if-exists "Accept-Encoding"}
+        {TestCondition.assert found? and h == "gzip"}
+
+        {TestCondition.assert {request-string.find-string ">123<"} >= 0}
+        {TestCondition.assert {request-string.find-string "<XYZZY "} >= 0}
+        {TestCondition.assert {request-string.find-string "<ABCDEF"} >= 0}
+        {TestCondition.assert {request-string.find-string "zzz"} >= 0}
+        {TestCondition.assert {request-string.find-string "yyy"} >= 0}
+    }
+}

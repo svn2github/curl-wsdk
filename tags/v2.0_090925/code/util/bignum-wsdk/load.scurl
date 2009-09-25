@@ -1,0 +1,172 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 7.0, 6.0 package}
+{package COM.CURL.WSDK.BIGNUM-WSDK,
+    version = "2.0",
+    resource-directory = "../../resources/",
+    translations-file = "messages.xml",
+    {compiler-directives careful? = true}
+}
+
+{doc
+    type = package,
+    COM.CURL.WSDK.BIGNUM-WSDK
+    {purpose
+        This package defines adapters allowinf web services
+        to use {docref BigInt} and {docref BigDecimal} types.
+    }
+}
+
+{import * from COM.CURL.UTIL.BIGNUM}
+{import public
+    BigDecimal,
+    BigInt
+ from COM.CURL.UTIL.BIGNUM}
+
+{import * from CURL.DATA-ACCESS.BASE}
+{import * from COM.CURL.WSDK.SOAP}
+{import * from COM.CURL.WSDK.WSDL}
+
+|| registers contributions for WSDL extension point
+|| --------------------
+{define-proc public {register-simple-types}:void
+    {process-simple-types
+        {fn type =>
+            {WSDLSchema.register-simple-type type}}}
+}
+|| unregisters contributions for WSDL extension point
+|| --------------------
+{define-proc public {unregister-simple-types}:void
+    {process-simple-types
+        {fn type =>
+            {WSDLSchema.unregister-simple-type type}}}
+}
+{define-proc {process-simple-types
+                 process-simple-type:{proc-type {simple-type:XMLSimpleType}:void}
+             }:void
+    {process-simple-type
+        {XMLSimpleType 
+            {XMLName "http://www.w3.org/2001/XMLSchema", "decimal"},
+            domain =  BigDecimalDomain.standard
+        }}
+    def xsd-integer-types =
+        {{Array-of XMLName}
+            {XMLName "http://www.w3.org/2001/XMLSchema", "integer"},
+            {XMLName "http://www.w3.org/2001/XMLSchema", "nonNegativeInteger"},
+            {XMLName "http://www.w3.org/2001/XMLSchema", "nonPositiveInteger"},
+            {XMLName "http://www.w3.org/2001/XMLSchema", "negativeInteger"},
+            {XMLName "http://www.w3.org/2001/XMLSchema", "positiveInteger"}
+        }
+    {for xsd-type in xsd-integer-types do
+        {process-simple-type 
+            {XMLSimpleType xsd-type,
+                domain = BigIntDomain.standard
+            }}}
+}
+
+|| adapters
+|| --------------------
+{define-class public BigDecimalDomain {inherits {StandardDomain-of BigDecimal}}
+  {constructor public {default
+                          default-value:BigDecimal = 0.0,
+                          min-allowable:#BigDecimal = null,
+                          max-allowable:#BigDecimal = null,
+                          allowable-values:#{Array-of BigDecimal} = null
+                      }
+    {construct-super default-value, min-allowable, max-allowable, allowable-values}
+  }
+  {method public {parse x:String}:any
+    {return {BigDecimal.from-String x}}
+  }
+  {method public {format x:any}:String
+    {return
+        {type-switch x
+         case x:BigDecimal do
+            {x.to-String}
+         else
+            {super.format x}}
+    }
+  }
+  {method public {compare x:any, y:any}:int
+    def tx = {self.convert x} asa BigDecimal
+    def ty = {self.convert y} asa BigDecimal
+    {return {tx.compare ty}}          
+  }
+  {method public {validate x:any}:#ValidationException
+    {return
+        {super.validate x}}
+  }
+  {method public {convert x:any}:any
+    {return x asa BigDecimal}
+  }
+  {method public {hash x:any}:int
+    {return 
+        {type-switch x
+         case x:BigDecimal do
+            || TODO: delegate to BigDecimal
+            {value-hash {x.to-double}}
+         else
+            {super.hash x}}
+    }
+  }
+  def public standard = {BigDecimalDomain}
+}
+{define-class public BigIntDomain {inherits {StandardDomain-of BigInt}}
+  {constructor public {default
+                          default-value:BigInt = 0,
+                          min-allowable:#BigInt = null,
+                          max-allowable:#BigInt = null,
+                          allowable-values:#{Array-of BigInt} = null
+                      }
+    {construct-super default-value, min-allowable, max-allowable, allowable-values}
+  }
+  {method public {parse x:String}:any
+    {return {BigInt.from-String x}}
+  }
+  {method public {format x:any}:String
+    {return
+        {type-switch x
+         case x:BigInt do
+            {x.to-String}
+         else
+            {super.format x}}
+    }
+  }
+  {method public {compare x:any, y:any}:int
+    def tx = {self.convert x} asa BigInt
+    def ty = {self.convert y} asa BigInt
+    {return {tx.compare ty}}          
+  }
+  {method public {validate x:any}:#ValidationException
+    {return
+        {super.validate x}}
+  }
+  {method public {convert x:any}:any
+    {return x asa BigInt}
+  }
+  {method public {hash x:any}:int
+    {return 
+        {type-switch x
+         case x:BigInt do
+            || TODO: delegate to BigInt
+            {value-hash {x.to-int64}}
+         else
+            {super.hash x}}
+    }
+  }
+  def public standard = {BigIntDomain}
+}

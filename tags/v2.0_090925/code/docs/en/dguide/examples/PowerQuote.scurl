@@ -1,0 +1,564 @@
+{curl 6.0, 7.0 package}
+{package COM.CDYNE.WS.PowerQuote,
+    {compiler-directives careful? = true}}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/PowerQuote.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public DelayedStockQuote {inherits WSDLHTTPRPCPostClient}
+
+{doc-next 
+    {details 
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
+    }
+}
+  {method public {get-quote stock-symbol:String, license-key:String}:(get-quote-result:QuoteData)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-quote",
+            {{Array-of any}
+                stock-symbol,
+                license-key
+            },
+            {splice self.operations["get-quote"]}
+        }
+    {return
+        responses[0] asa QuoteData
+    }
+  }
+
+
+{doc-next 
+    {details 
+        This method retrieves a current stock quote.  Use a license key of 0 for testing.
+    }
+}
+  {method public {define-get-quote}:void
+    set self.operations["get-quote"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "StockSymbol"},
+                {XMLName "http://ws.cdyne.com/", "LicenseKey"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "GetQuoteResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://ws.cdyne.com/", "QuoteData"},
+                    curl-type = QuoteData,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://ws.cdyne.com/GetQuote",
+            request-operation = {XMLName "http://ws.cdyne.com/", "GetQuote"},
+            response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+
+{doc-next 
+    {details 
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
+    }
+}
+  {method public {get-quick-quote stock-symbol:String, license-key:String}:(get-quick-quote-result:double)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-quick-quote",
+            {{Array-of any}
+                stock-symbol,
+                license-key
+            },
+            {splice self.operations["get-quick-quote"]}
+        }
+    {return
+        responses[0] asa double
+    }
+  }
+
+
+{doc-next 
+    {details 
+        This method retrieves just a stock price.  Use a license key of 0 for testing.
+    }
+}
+  {method public {define-get-quick-quote}:void
+    set self.operations["get-quick-quote"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "StockSymbol"},
+                {XMLName "http://ws.cdyne.com/", "LicenseKey"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "GetQuickQuoteResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                }
+            },
+            null,
+            soap-action = "http://ws.cdyne.com/GetQuickQuote",
+            request-operation = {XMLName "http://ws.cdyne.com/", "GetQuickQuote"},
+            response-operation = {XMLName "http://ws.cdyne.com/", "GetQuickQuoteResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+
+{doc-next 
+    {details 
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+    }
+}
+  {method public {get-quote-data-set stock-symbols:String, license-key:String}:(get-quote-data-set-result:#GetQuoteDataSetResult)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-quote-data-set",
+            {{Array-of any}
+                stock-symbols,
+                license-key
+            },
+            {splice self.operations["get-quote-data-set"]}
+        }
+    {return
+        responses[0] asa #GetQuoteDataSetResult
+    }
+  }
+
+
+{doc-next 
+    {details 
+        This method retrieves the stock information and returns it in a dataset.  Use a , to diplay multiple quotes.  Use a license key of 0 for testing.
+    }
+}
+  {method public {define-get-quote-data-set}:void
+    set self.operations["get-quote-data-set"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "StockSymbols"},
+                {XMLName "http://ws.cdyne.com/", "LicenseKey"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
+                    curl-type = GetQuoteDataSetResult,
+                    nillable? = true,
+                    marshaler-handled-element? = true
+                }
+            },
+            null,
+            soap-action = "http://ws.cdyne.com/GetQuoteDataSet",
+            request-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSet"},
+            response-operation = {XMLName "http://ws.cdyne.com/", "GetQuoteDataSetResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+
+  {method public {important-message}:(important-message-result:#String)
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "important-message",
+            {{Array-of any}
+            },
+            {splice self.operations["important-message"]}
+        }
+    {return
+        responses[0] asa #String
+    }
+  }
+
+
+  {method public {define-important-message}:void
+    set self.operations["important-message"] = 
+        {Arguments
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "ImportantMessageResult"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "http://ws.cdyne.com/ImportantMessage",
+            request-operation = {XMLName "http://ws.cdyne.com/", "ImportantMessage"},
+            response-operation = {XMLName "http://ws.cdyne.com/", "ImportantMessageResponse"},
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-get-quote}
+     {self.define-get-quick-quote}
+     {self.define-get-quote-data-set}
+     {self.define-important-message}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://ws.cdyne.com/", "DataSet"},
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_DataSet"},
+                    curl-type = DataSet,
+                    nillable? = true,
+                    marshaler-handled-element? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    xml-type = {XMLName "http://ws.cdyne.com/", "_GetQuoteDataSetResult"},
+                    curl-type = GetQuoteDataSetResult,
+                    nillable? = true,
+                    marshaler-handled-element? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://ws.cdyne.com/", "QuoteData"},
+                xml-type = {XMLName "http://ws.cdyne.com/", "QuoteData"},
+                curl-type = QuoteData,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://ws.cdyne.com/", "StockSymbol"},
+                {XMLName "http://ws.cdyne.com/", "LastTradeAmount"},
+                {XMLName "http://ws.cdyne.com/", "LastTradeDateTime"},
+                {XMLName "http://ws.cdyne.com/", "StockChange"},
+                {XMLName "http://ws.cdyne.com/", "OpenAmount"},
+                {XMLName "http://ws.cdyne.com/", "DayHigh"},
+                {XMLName "http://ws.cdyne.com/", "DayLow"},
+                {XMLName "http://ws.cdyne.com/", "StockVolume"},
+                {XMLName "http://ws.cdyne.com/", "MktCap"},
+                {XMLName "http://ws.cdyne.com/", "PrevCls"},
+                {XMLName "http://ws.cdyne.com/", "ChangePercent"},
+                {XMLName "http://ws.cdyne.com/", "FiftyTwoWeekRange"},
+                {XMLName "http://ws.cdyne.com/", "EarnPerShare"},
+                {XMLName "http://ws.cdyne.com/", "PE"},
+                {XMLName "http://ws.cdyne.com/", "CompanyName"},
+                {XMLName "http://ws.cdyne.com/", "QuoteError"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "dateTime"},
+                    curl-type = DateTime
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "int"},
+                    curl-type = int
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "decimal"},
+                    curl-type = double
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                },
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "boolean"},
+                    curl-type = bool
+                }
+            },
+            {{Array-of String}
+                "stock-symbol",
+                "last-trade-amount",
+                "last-trade-date-time",
+                "stock-change",
+                "open-amount",
+                "day-high",
+                "day-low",
+                "stock-volume",
+                "mkt-cap",
+                "prev-cls",
+                "change-percent",
+                "fifty-two-week-range",
+                "earn-per-share",
+                "pe",
+                "company-name",
+                "quote-error"
+            },
+            optional-elements = 
+                {{Set-of XMLName}
+                    {XMLName "http://ws.cdyne.com/", "StockSymbol"},
+                    {XMLName "http://ws.cdyne.com/", "MktCap"},
+                    {XMLName "http://ws.cdyne.com/", "ChangePercent"},
+                    {XMLName "http://ws.cdyne.com/", "FiftyTwoWeekRange"},
+                    {XMLName "http://ws.cdyne.com/", "CompanyName"}
+              },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://ws.cdyne.com/delayedstockquote/delayedstockquote.asmx"},
+            ...
+    }
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
+    }
+  }
+}
+
+{let public constant DataSet:Type = any}
+
+{let public constant GetQuoteDataSetResult:Type = any}
+
+{define-class public open QuoteData
+
+  field public stock-symbol:#String
+  field public last-trade-amount:double
+  field public last-trade-date-time:DateTime = {uninitialized-value-for-type DateTime}
+  field public stock-change:double
+  field public open-amount:double
+  field public day-high:double
+  field public day-low:double
+  field public stock-volume:int
+  field public mkt-cap:#String
+  field public prev-cls:double
+  field public change-percent:#String
+  field public fifty-two-week-range:#String
+  field public earn-per-share:double
+  field public pe:double
+  field public company-name:#String
+  field public quote-error:bool
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      stock-symbol:#String = {uninitialized-value-for-type #String},
+      last-trade-amount:double = {uninitialized-value-for-type double},
+      last-trade-date-time:DateTime = {required-keyword "QuoteData.last-trade-date-time"} asa DateTime,
+      stock-change:double = {uninitialized-value-for-type double},
+      open-amount:double = {uninitialized-value-for-type double},
+      day-high:double = {uninitialized-value-for-type double},
+      day-low:double = {uninitialized-value-for-type double},
+      stock-volume:int = {uninitialized-value-for-type int},
+      mkt-cap:#String = {uninitialized-value-for-type #String},
+      prev-cls:double = {uninitialized-value-for-type double},
+      change-percent:#String = {uninitialized-value-for-type #String},
+      fifty-two-week-range:#String = {uninitialized-value-for-type #String},
+      earn-per-share:double = {uninitialized-value-for-type double},
+      pe:double = {uninitialized-value-for-type double},
+      company-name:#String = {uninitialized-value-for-type #String},
+      quote-error:bool = {uninitialized-value-for-type bool}
+    }
+    {if {keyword-supplied? stock-symbol} then
+        set self.stock-symbol = stock-symbol}
+    {if {keyword-supplied? last-trade-amount} then
+        set self.last-trade-amount = last-trade-amount}
+    {if {keyword-supplied? last-trade-date-time} then
+        set self.last-trade-date-time = last-trade-date-time}
+    {if {keyword-supplied? stock-change} then
+        set self.stock-change = stock-change}
+    {if {keyword-supplied? open-amount} then
+        set self.open-amount = open-amount}
+    {if {keyword-supplied? day-high} then
+        set self.day-high = day-high}
+    {if {keyword-supplied? day-low} then
+        set self.day-low = day-low}
+    {if {keyword-supplied? stock-volume} then
+        set self.stock-volume = stock-volume}
+    {if {keyword-supplied? mkt-cap} then
+        set self.mkt-cap = mkt-cap}
+    {if {keyword-supplied? prev-cls} then
+        set self.prev-cls = prev-cls}
+    {if {keyword-supplied? change-percent} then
+        set self.change-percent = change-percent}
+    {if {keyword-supplied? fifty-two-week-range} then
+        set self.fifty-two-week-range = fifty-two-week-range}
+    {if {keyword-supplied? earn-per-share} then
+        set self.earn-per-share = earn-per-share}
+    {if {keyword-supplied? pe} then
+        set self.pe = pe}
+    {if {keyword-supplied? company-name} then
+        set self.company-name = company-name}
+    {if {keyword-supplied? quote-error} then
+        set self.quote-error = quote-error}
+  }
+
+}
+

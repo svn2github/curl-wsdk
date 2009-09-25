@@ -1,0 +1,335 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class Term
+  field public constant kind:String
+  field public constant text:String
+  field public constant start-location:int
+  {constructor {default
+                   kind:String,
+                   text:String,
+                   start-location:int = -1}
+    set self.kind = kind
+    set self.text = text
+    set self.start-location = start-location
+  }
+  {getter public {value}:any
+    {return
+        {switch self.kind
+         case "string" do
+            self.text
+         case "bool" do
+            self.text == "true()"
+         case "double" do
+            {self.text.to-double}
+         else
+            {xdmq-exception {message Not a literal {value self}}}}
+    }
+  }
+  {method public {object-describe out:TextOutputStream, locale:Locale}:void
+    {format out = out, locale = locale,
+        "[%s (%s) '%s']", 
+        {type-of self}, self.kind, self.text}
+  }
+}
+{define-enum ScanState
+    whitespace,
+    token-prefix, 
+    token-name,
+    operator,
+    integer, 
+    decimal,
+    string-single,
+    string-double
+}
+{define-enum TermKind
+    whitespace,
+    operator,
+    axis,
+    connector,
+    selector,
+    token,
+    call,
+    special,
+    double,
+    string,
+    bool
+}
+
+{define-proc {scan-tokens 
+                 src:TextInputStream,
+                 out:{Array-of Term} = {{Array-of Term}}
+             }:{Array-of Term}
+    || character classes
+    || NOTE: not globals because could be used during macroexpansion
+    || -- (takes .002s to create largest)
+    let constant _whitespace:CharClass = " \t\n\r"
+    let constant _operator:CharClass = |"[](),=!><+.*-@/:|"|
+    let constant _digit:CharClass = CharClass.digit-chars
+    let constant cc:CC = {CC}
+    let constant _letter-initial:CharClass = cc.NCNameFirstChar
+    let constant _letter-additional:CharClass = cc.NCNameChar
+    || state
+    let position:int = -1
+    let term-position:int = -1
+    let term:StringBuf = {StringBuf}
+    let _kind:TermKind = "whitespace"
+    let _state:ScanState = "whitespace"
+    || functions
+    let operator-allowed?:{proc-type {}:bool} =
+        {proc {}:bool
+            let previous:Term = 
+                {if not out.empty? 
+                 then {out.top-of-stack}
+                 else {Term "operator", "("}}
+            let allowed?:bool =
+                {switch previous.kind
+                 case "axis" do false
+                 case "connector" do false
+                 case "call" do false
+                 case "operator" do
+                    {switch previous.text
+                     case "[", "(", "," do false
+                     else true}
+                 case "special" do
+                    {switch previous.text
+                     case "@" do false
+                     else true}
+                 else true}
+            {return allowed?}}
+    let note-term:{proc-type {}:void} =
+        {proc {}:void
+            let text:String = {term.to-String}
+            {term.clear}
+            || special cases 
+            {switch text
+             case ")" do
+                || extend "constant" calls with '\)'
+                let previous:Term = {out.top-of-stack}
+                let text:String = previous.text
+                let loc:int = previous.start-location
+                {switch previous.text
+                 case "true(", "false(" do
+                    {out.pop}
+                    {out.append {Term "bool", text & ")", start-location = loc}}
+                    {return}
+                 case "node(", "text(", "processing-instruction(" do
+                    {out.pop}
+                    {out.append {Term "special", text & ")", start-location = loc}}
+                    {return}}
+             case "/", "//" do
+                || connector operator conversion
+                {out.append {Term "connector", text, start-location = term-position}}
+                {return}
+             case ".", "..", "@" do
+                || special operator conversion
+                {out.append {Term "special", text, start-location = term-position}}
+                {return}
+             case "and", "or", "div", "mod" do
+                || distinguish operator from selector
+                {if {operator-allowed?} then
+                    {out.append {Term "operator", text, start-location = term-position}}
+                    {return}}                    
+             case "*" do
+                || distinguish wildcard from multiplication
+                let wildcard?:bool = not {operator-allowed?}
+                {if wildcard? then
+                    {out.append {Term "special", text, start-location = term-position}}
+                    {return}}  
+            }
+            || normal case
+            let kind:TermKind = 
+                {switch _kind 
+                 case TermKind.token do "selector" 
+                 else _kind}
+            {out.append {Term kind.name, text, start-location = term-position}}}
+    let note-char:{proc-type {char}:void} =
+        {proc {c:char}:void
+            {if term.empty? then
+                set term-position = position}
+            {term.append c}}
+    let set-state:{proc-type {ScanState, kind:TermKind = "?"}:void} =
+        {proc {state:ScanState, kind:TermKind = state.name asa TermKind}:void
+            set _state = state
+            set _kind = kind}
+    let unexpected-char:{proc-type {char}:void} =
+        {proc {c:char}:void
+            {throw {Exception {message Unexpected character: '{value c}' in state '{value _state.name}'}}}}
+    let unexpected-state:{proc-type {}:void} =
+        {proc {}:void
+            {throw {Exception {message Unexpected state: '{value _state.name}'}}}}
+    
+    || processing
+    {for c in src do
+        {inc position}
+        {switch _state
+            
+         case ScanState.whitespace do
+            {if _whitespace[c] then
+                || ignore
+             elseif _letter-initial[c] then 
+                {set-state "token-prefix", kind = "token"}
+                {note-char c}
+             elseif _operator[c] then
+                {set-state "operator"}
+                {note-char c}
+             elseif _digit[c] then
+                {set-state "integer", kind = "double"}
+                {note-char c}
+             elseif c == '\"' then
+                {set-state "string-double", kind = "string"}
+             elseif c == '\'' then
+                {set-state "string-single", kind = "string"}
+             else {unexpected-char c}}
+            
+         case ScanState.token-prefix, ScanState.token-name do
+            {if _whitespace[c] then
+                {note-term}
+                {set-state "whitespace"}
+             elseif _letter-additional[c] then
+                {note-char c}
+             elseif _digit[c] then
+                {note-char c}
+             elseif c == '*' then
+                || allow wildcard after prefix
+                {switch term[term.size - 1]
+                 case '@', ':' do
+                    {note-char c}
+                 else
+                    {note-term}
+                    {set-state "operator"}
+                    {note-char c}}                    
+             elseif _operator[c] then
+                {switch c
+                 case '\(' do
+                    {note-char c}
+                    set _kind = "call"
+                    {note-term}
+                    {set-state "whitespace"}
+                 case ':' do
+                    {if _state == ScanState.token-name then
+                        let axis?:bool =
+                            term[term.size - 1] == ':'
+                        {if axis? then
+                            {note-char c}
+                            set _kind = "axis"
+                            {note-term}
+                            {set-state "whitespace"}
+                         else
+                            || will be illegal NCName later ...
+                            {note-char c}}
+                     else
+                        {note-char c}
+                        {set-state "token-name", kind = "token"}}
+                 else
+                    {note-term}
+                    {set-state "operator"}
+                    {note-char c}}
+             elseif c == '\"' then
+                {note-term}
+                {set-state "string-double", kind = "string"}
+             elseif c == '\'' then
+                {note-term}
+                {set-state "string-single", kind = "string"}
+             else {unexpected-char c}}
+            
+         case ScanState.operator do
+            {if _whitespace[c] then
+                {note-term}
+                {set-state "whitespace"}
+             elseif _letter-initial[c] then
+                {note-term}
+                {set-state "token-prefix", kind = "token"}
+                {note-char c}
+             elseif _operator[c] then
+                || compound operators: '>=' '!=' '<=' '//' '..'
+                let complete?:bool = 
+                    {switch term.size
+                     case 1 do
+                        {switch term[0] 
+                         case '.' do c != '.'
+                         case '/' do c != '/'
+                         case '<','!','>' do c != '='
+                         else true}
+                     else true}
+                {if complete? then
+                    {note-term}}
+                {note-char c}
+             elseif _digit[c] then
+                {note-term}
+                {set-state "integer", kind = "double"}
+                {note-char c}
+             elseif c == '\"' then
+                {note-term}
+                {set-state "string-double", kind = "string"}
+             elseif c == '\'' then
+                {note-term}
+                {set-state "string-single", kind = "string"}
+             else {unexpected-char c}}
+            
+         case ScanState.integer, ScanState.decimal do
+            {if _whitespace[c] then
+                {note-term}
+                {set-state "whitespace"}
+             elseif _letter-initial[c] then
+                {note-term}
+                {set-state "token-prefix", kind = "token"}
+                {note-char c}
+             elseif _operator[c] then
+                {if c == '.' and _state == ScanState.integer then
+                    {set-state "decimal", kind = "double"}
+                    {note-char c}
+                 else
+                    {note-term}
+                    {set-state "operator"}
+                    {note-char c}}
+             elseif _digit[c] then
+                {note-char c}
+             elseif c == '\"' then
+                {note-term}
+                {set-state "string-double", kind = "string"}
+             elseif c == '\'' then
+                {note-term}
+                {set-state "string-single", kind = "string"}
+             else {unexpected-char c}}
+            
+         case ScanState.string-single do
+            {if c == '\'' then
+                {note-term}
+                {set-state "whitespace"}
+             else {note-char c}}
+            
+         case ScanState.string-double do
+            {if c == '\"' then
+                {note-term}
+                {set-state "whitespace"}
+             else {note-char c}}
+            
+         else {unexpected-state}}
+    }
+    {switch _kind
+     case TermKind.whitespace do
+     case TermKind.token do {note-term}
+     case TermKind.call do {note-term}
+     case TermKind.axis do {note-term}
+     case TermKind.special do {note-term}
+     case TermKind.operator do {note-term}
+     case TermKind.double do {note-term}
+     case TermKind.string do {note-term}
+     case TermKind.bool do {note-term}
+     else {unexpected-state}}
+    {return out}
+}

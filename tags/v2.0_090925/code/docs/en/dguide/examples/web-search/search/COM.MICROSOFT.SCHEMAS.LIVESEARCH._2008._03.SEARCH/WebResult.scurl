@@ -1,0 +1,46 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open WebResult
+
+  field public title:#String
+  field public description:#String
+  field public url:#String
+  field public cacheUrl:#String
+  field public displayUrl:#String
+  field public dateTime:#String
+  field public searchTags:#{Array-of WebSearchTag}
+  field public deepLinks:#{Array-of DeepLink}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      title:#String = {uninitialized-value-for-type #String},
+      description:#String = {uninitialized-value-for-type #String},
+      url:#String = {uninitialized-value-for-type #String},
+      cacheUrl:#String = {uninitialized-value-for-type #String},
+      displayUrl:#String = {uninitialized-value-for-type #String},
+      dateTime:#String = {uninitialized-value-for-type #String},
+      searchTags:#{Array-of WebSearchTag} = {uninitialized-value-for-type #{Array-of WebSearchTag}},
+      deepLinks:#{Array-of DeepLink} = {uninitialized-value-for-type #{Array-of DeepLink}}
+    }
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? description} then
+        set self.description = description}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+    {if {keyword-supplied? cacheUrl} then
+        set self.cacheUrl = cacheUrl}
+    {if {keyword-supplied? displayUrl} then
+        set self.displayUrl = displayUrl}
+    {if {keyword-supplied? dateTime} then
+        set self.dateTime = dateTime}
+    {if {keyword-supplied? searchTags} then
+        set self.searchTags = searchTags}
+    {if {keyword-supplied? deepLinks} then
+        set self.deepLinks = deepLinks}
+  }
+
+}
+

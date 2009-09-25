@@ -27,7 +27,7 @@ set WORKSPACE=WSDK\trunk
 
 :: define release tag
 :: ------------------------------
-set TAG=090910
+set TAG=090925
 set WORK=__WORK_%TAG%
 
 :: define command shortcuts

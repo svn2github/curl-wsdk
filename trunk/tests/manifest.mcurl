@@ -14,9 +14,9 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-{curl 7.0, 6.0 manifest}
+{curl 6.0, 7.0, 8.0 manifest}
 {manifest COM.CURL.WSDK.SUPPORT,
-    version = "2.0"}
+    version = "2.1"}
 
 {delegate-to COM.CURL.WSDK,
     location = "../code/manifest.mcurl"}
@@ -111,6 +111,10 @@
 ||--    location = "test-cases/wsdl-samples"
 ||--}
 
+{component file classic-project.cprj,
+    location = "classic-project.cprj"
+}
+
 {component file project.cprj,
     location = "project.cprj"
 }
@@ -159,37 +163,6 @@
     location = "test-cases/xs-patterns-cases.scurl"
 }
 
-{component directory xs-patterns,
-    location = "test-cases/xs-patterns"
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+||--{component directory xs-patterns,
+||--    location = "test-cases/xs-patterns"
+||--}

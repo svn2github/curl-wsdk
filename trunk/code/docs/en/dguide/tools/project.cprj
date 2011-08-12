@@ -3,13 +3,17 @@
 || ***              DO NOT MODIFY IT BY HAND              ***
 || **********************************************************
 {project
-    version = 2,
+    version = 3,
     manifest-location = "manifest.mcurl",
-    api-version = "7.0",
+    api-version = "8.0",
     compiler-directives = "careful? = true",
-    use-style-sheets? = false,
+    use-style-sheets? = true,
+    project-look-and-feel = "default-style-sheet",
     style-package-name = "COM.CURL.GUI.STYLED-CONTROLS",
     style-sheet-name = "DEFAULT-STYLE-SHEET",
+    allow-hidden-access? = false,
+    debug-compile? = false,
+    make-guide-index? = false,
     {target
         name = "deploy",
         target-url-name = "file:///c:/Inetpub/wwwroot/Z/WSDK-TOOLS",
@@ -23,8 +27,8 @@
         {package-transform "COM.CURL.WSDK.WSDL-IDE\u0000package\u0000load.scurl", copy? = true},
         {resource-transform "project.cprj\u0000file\u0000../support/project.cprj", copy? = true},
         {resource-transform "manifest.mcurl\u0000file\u0000wsdl/manifest.mcurl", copy? = true},
-        {assembly-transform "COM.CURL.WSDK", use-path? = true}
+        {assembly-transform "COM.CURL.WSDK", action = "use-specified-location", relocate-path = "../../../../manifest.mcurl"}
     },
-    {file-setting "wsdl/start.curl"},
-    {file-setting "wsdl/start.dcurl", start-file? = true}
+    {file-setting "wsdl/start.dcurl", start-file? = true},
+    {file-setting "wsdl/start.curl"}
 }

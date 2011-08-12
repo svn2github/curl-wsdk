@@ -16,8 +16,8 @@
 
 {value
     def name = "COM.CURL.WSDK"
-    def version = "2.0"
-    def dirname = name & "." & version
+    def version = "2.1"
+    def dirname = name & "-V" & version
     
     {DeploySpecs  
         caption = {lmessage deploy WSDK},
@@ -33,8 +33,6 @@
             "deploy-source",
             "src/code"
         },
-        || -- samples (copy)
-        || ---- NOTE: not yet available
         || -- tests (copy)
         {DeploySpec
             "tests/project.cprj",
@@ -61,7 +59,7 @@
             {proc {self:DeployAction,
                    source-root:Url,
                    target-root:Url}:void
-                def target = {target-root.concat "src/build"}
+                def target = {target-root.concat "src/tools"}
                 {create-Directory target,
                     error-if-exists? = false}
                 def files =
@@ -73,7 +71,7 @@
                         "become-v6.xcurl"}
                 {for file in files do
                     {copy 
-                        {source-root.concat "build/" & file},
+                        {source-root.concat "tools/" & file},
                         {target.concat file},
                         error-if-exists? = false}}}
         },
@@ -106,7 +104,7 @@
         {DeploySpec
             "lib/CURL-UTIL/project.cprj",
             "deploy", 
-            "docs-install/COM.CURL.UTIL.1.0"
+            "docs-install/COM.CURL.UTIL.1.1"
         },
         || -- Then, generate the index
         {DeployAction
@@ -128,7 +126,7 @@
                    target-root:Url}:void
                 def loc =
                     {target-root.concat
-                        "docs-install/COM.CURL.UTIL.1.0"}
+                        "docs-install/COM.CURL.UTIL.1.1"}
                 {delete recurse? = true, loc}
             }},
 
@@ -164,5 +162,35 @@
                     {target-root.concat "README.txt"},
                     error-if-exists? = false} 
             }}
+        ,
+        {DeployAction
+            caption = {lmessage copy BOILERPLATE (for distribution)},
+            {proc {self:DeployAction, source-root:Url, target-root:Url}:void
+                def files =
+                    {StringArray
+                        "LICENSE",
+                        "NOTICE",
+                        "README.txt"
+                    }
+                {for file in files do
+                    {copy 
+                        {source-root.concat file},
+                        {target-root.concat "deploy/" & dirname & "/" & file},
+                        error-if-exists? = false
+                    }
+                    {copy 
+                        {source-root.concat file},
+                        {target-root.concat "docs-install/" & dirname & "/" & file},
+                        error-if-exists? = false
+                    }
+                    {copy 
+                        {source-root.concat file},
+                        {target-root.concat "src/" & file},
+                        error-if-exists? = false
+                    }
+                }
+            }
+        }
+        
     }
 }

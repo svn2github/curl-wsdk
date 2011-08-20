@@ -15,10 +15,10 @@
 ||| limitations under the License.
 
 ====================
-WSDK Release 2.0 for Curl API Versions 7.0 and 6.0. 
+WSDK Release 2.1 for Curl API Versions 8.0, 7.0 and 6.0. 
 ====================
 
-This directory contains the 2.0 release of the Curl
+This directory contains the 2.1 release of the Curl
 Web Services Software Development Kit (WSDK)
 
 The Curl Web Services SDK (WSDK) provides the technologies necessary
@@ -44,7 +44,7 @@ Deployable Library
 The 'deploy' directory contains a preprocessed library 
 for use in deployed applications.
 
-- COM.CURL.WSDK.2.0/manifest.mcurl   	WSDK library definition
+- COM.CURL.WSDK.2.1/manifest.mcurl   	WSDK library definition
 
 Documentation
 --------------------
@@ -54,7 +54,7 @@ addition to the Curl Documentation Viewer using the IDE 'Install
 Documentation' command.  The directories include both documentation
 and preprocessed library.
 
-- COM.CURL.WSDK.2.0/manifest.mcurl   	WSDK library doc definition
+- COM.CURL.WSDK.2.1/manifest.mcurl   	WSDK library doc definition
 
 Source Code
 --------------------
@@ -97,13 +97,13 @@ curl version defined by their project.
 Prerequisites
 --------------------
 
-WSDK 2.0 depends on the CURL-UTIL library.
+WSDK 2.1 depends on the CURL-UTIL library.
 
 * CURL-UTIL Documentation must be installed for WSDK documentation,
   including WSDL IDE Tool, to function properly.
 
 * CURL-UTIL Library must be accessible as a delegate from the root
-  manifest of applications using WSDK Library.
+  manifest of applications using the WSDK Library.
 
 For installatiuon convenience, a CURL-UTIL distribution may be
 included in this directory.
@@ -116,6 +116,14 @@ Some of the tests access web content or invoke web services,
 and thus require privilege and web access to succeed.
 
 CHANGES
+====================
+
+WSDK 2.1 CHANGES
+--------------------
+
+The only change in this release was to add 8.0 as a supported
+version of the Curl RTE.
+
 ====================
 
 WSDK 2.0 CHANGES

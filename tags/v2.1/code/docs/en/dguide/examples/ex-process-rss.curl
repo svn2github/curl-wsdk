@@ -1,0 +1,52 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0, 7.0, 8.0 applet}
+{applet manifest = "../manifest.mcurl"}
+{import * from COM.CURL.WSDK.XML-DOCUMENT-MODEL}
+
+{value
+    || load XML source
+    let loc:Url = {url "wsdk-dguide.rss"}
+    let xml:XDMElement =
+        {build-xml preserve-whitespace? = false, loc}.root
+    let base-url:Url = {xml.get-base-url}
+    || prepare the display
+    let display:VBox = 
+        {VBox
+            {bold Links from {monospace {value loc.filename}}}}
+    
+    || gather the content
+    let channel:XDMElement = 
+        {xml.get-elements xmlname = "channel"}[0]
+    let items:{Array-of XDMElement} =
+        {channel.get-elements xmlname = "item"}
+    {for item in items do
+        let title-element:XDMElement = 
+            {item.get-elements xmlname = "title"}[0]
+        let link-element:XDMElement = 
+            {item.get-elements xmlname = "link"}[0]
+        let title:String = {title-element.get-text}
+        let href:String = {link-element.get-text}
+        || augment the display
+        {display.add
+            {link target = "_new",
+                href = {base-url.merge href},
+                {value title}}}
+    }
+    || Display the result
+    display
+}

@@ -1,0 +1,794 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0, 7.0, 8.0 applet}
+
+{applet manifest = "manifest.mcurl", locale = "en"}
+
+{include "../utils/guide-header.scurl"}
+{include "../utils/support.scurl"}
+
+{chapter
+    index= {HeadingIndex primary-key="Web Services Interoperability"},
+    Web Services Interoperability
+}
+
+{heading level = 2,
+    Introduction
+}
+{heading level = 3,
+    Web Services
+}
+
+Web services are governed by the SOAP specifications. They are defined
+by WSDL files, following the WSDL specification. WSDL files use XML
+Schema for type and element definitions.  
+
+XML Schema (XS) 
+{link href = {url "http://www.w3.org/TR/xmlschema-1"}, Structures} and
+{link href = {url "http://www.w3.org/TR/xmlschema-2"}, Datatypes}
+are broad, complex specifications, written to address the full
+spectrum of XML use cases.  Many of the advanced features are not
+often used in web service applications.  Different tools and services
+use varying conventions.
+
+It is considered "good practice" for web service interoperability to
+start with a definition of message content, using XSD and WSDL, which
+employs a subset "profile" of standard XS features. Then server and
+client implementations (using various programming languages and tools)
+may be developed based on that definition. However, many tools offer
+the reverse method: i.e.  deriving the WSDL and XS definitions from
+the implementation in the particular programming language.  This is
+convenient when all endpoints of the web service use the same
+conventions, but this approach is more likely to encounter
+interoperability problems arising from the mapping of XML Schema types
+between implementations.
+
+{heading level = 3,
+    WS-I Standards
+}
+
+The WSDK attempts to implement the 
+{link href = {url "http://www.ws-i.org/Profiles/BasicProfile-1.0-2004-04-16.html"},
+WS-I Basic Profile},
+though it is possible that some features are not fully implemented.
+
+Conformance with the standard is intended to improve interoperability
+between endpoints of a web service; the standard makes the following
+note:
+
+{blockquote
+    "It is impossible to completely guarantee the interoperability
+of a particular service. However, the Profile does address the most
+common problems that implementation experience has revealed to date."
+}
+
+The WS-I web site provides source for sample applications, and some
+test tools for evaluating a service against the Basic Profile.
+
+Many interoperability issues arise from handling the types specified
+by XML Schema - the following sections summarize how Curl WSDK 2.0
+represents XML Schema types in Curl.
+
+{heading level = 2,
+    destination-name = "datatypes",
+    XML Schema Type correspondence
+}
+{heading level = 3,
+    Simple Types
+}
+
+All primitive simple types are supported, with correspondence
+to Curl types summarized in the following table.
+
+Types requiring arbitrary precision are mapped to {docref COM.CURL.UTIL.BIGNUM} types,
+if {ctext use-bignum-types?} is specified; otherwise primitive types are used. 
+
+{docref XMLSimpleValue} is used for some infrequently used types
+that do not have direct equivalents as standard Curl types.
+{ctext XMLSimpleValue} gives access to the underlying
+{ctext String value}, and the ascribed XML Schema datatype.
+There are aliases for some {ctext XMLSimpleValue} varieties.
+
+{Table
+    columns = 2,
+    font-size = 8pt,
+    background = "beige",
+    cell-margin = 1px,
+    
+    {bold XML Type}, {bold Curl Type},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:string}, {docref String},
+    {xml-node xs:boolean}, {docref bool},
+    {xml-node xs:int}, {docref int},
+    {xml-node xs:double}, {docref double},
+    {xml-node xs:float}, {docref float},
+    {xml-node xs:long}, {docref int64},
+    {xml-node xs:short}, {docref int16},
+    {xml-node xs:byte}, {docref int8},
+    {xml-node xs:base64Binary}, {docref ByteArray},
+    {xml-node xs:hexBinary}, {docref ByteArray},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:unsignedShort}, {docref uint16},
+    {xml-node xs:unsignedByte}, {docref byte},
+    {xml-node xs:unsignedInt}, {docref uint},
+    {xml-node xs:unsignedLong}, {docref uint64},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:integer}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:positiveinteger}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:negativeinteger}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:nonPositiveinteger}, {text {docref int64}, {docref BigInt}},
+    {xml-node xs:nonNegativeinteger}, {text {docref int64}, {docref BigInt}},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:decimal}, {text {docref double}, {docref BigDecimal}},
+    {xml-node xs:dateTime}, {docref DateTime},
+    {xml-node xs:date}, {docref DateTime.date#factory},
+    {xml-node xs:anyURI}, {docref Url},
+    {xml-node xs:QName}, {docref XDMName},
+    
+    {cell-prototype colspan = 2, {hrule color = "gray"}},
+    {xml-node xs:time},
+    {text {docref XMLTimeString}, {docref XMLSimpleValue}},
+    {xml-node xs:duration},
+    {text {docref XMLDurationString}, {docref XMLSimpleValue}},
+    {xml-node xs:token},
+    {text {docref XMLTokenString}, {docref XMLSimpleValue}},
+    {xml-node xs:language},
+    {text {docref XMLLanguageString}, {docref XMLSimpleValue},},
+    {xml-node xs:gYear}, {docref XMLSimpleValue},
+    {xml-node xs:gYearMonth}, {docref XMLSimpleValue},
+    {xml-node xs:gMonth}, {docref XMLSimpleValue},
+    {xml-node xs:gMonthDay}, {docref XMLSimpleValue},
+    {xml-node xs:gDay}, {docref XMLSimpleValue},
+    {xml-node xs:normalizedString}, {docref XMLSimpleValue},
+    {xml-node xs:Name}, {docref XMLSimpleValue},
+    {xml-node xs:NCName}, {docref XMLSimpleValue},
+    {xml-node xs:ENTITY}, {docref XMLSimpleValue},
+    {xml-node xs:ENTITIES}, {docref XMLSimpleValue},
+    {xml-node xs:NMTOKEN}, {docref XMLSimpleValue},
+    {xml-node xs:NMTOKENS}, {docref XMLSimpleValue},
+    {xml-node xs:ID}, {docref XMLSimpleValue},
+    {xml-node xs:IDREF}, {docref XMLSimpleValue},
+    {xml-node xs:IDREFS}, {docref XMLSimpleValue}
+}
+
+Derived simple types are supported as follows:
+{itemize
+    {item Types derived by enumeration are represented 
+        as the equivalent Curl {docref define-enum}
+        
+        The values associated with Curl enums are limited to simple types
+        (number, {docref char}, {docref bool}, or {docref String}).  
+        Therefore, {ctext String} equivalents are used
+        when the enumeration basis is not one of those types 
+        (e.g. {docref Url}, {docref XMLName}).
+    }
+    {item Types derived by restriction are represented 
+        as an alias to the underlying primitive type.}
+    {item Types derived by list are represented by 
+        arrays parameterized by the underlying base type.}
+    {item Types derived by union are represented as an alias to {docref any}.}
+}
+{heading level = 3,
+    Complex Types
+}
+
+In general, complex types are represented as classes, with fields
+corresponding to the specified elements and attributes. The type of
+each field is based on the member (element or attribute) type. The
+treatment of members depends on the cardinality and content model.  
+
+In some cases, however, when the specified structure does not have a
+direct equivalent as a class, a different representation is used:
+{docref XMLElementValues} is a sequence of {docref XMLElementValue}.
+Each {docref XMLElementValue} associates an element 
+{docref XMLName} with some value. These cases are noted below.
+
+{heading level = 4,
+    Cardinality
+}
+
+A required element (minOccurs = 1 maxOccurs = 1) is represented as a
+non-nullable field.
+
+An optional element (minOccurs = 0 maxOccurs = 1) is represented as a
+nullable field.
+
+A repeating element (maxOccurs > 1) is represented as a parameterized
+array.
+
+An element specified as {xml-node nillable} is always represented as a
+nullable field.
+
+{heading level = 4,
+    Complex Content
+}
+
+Elements specified in model groups {xml-node xs:all} and {xml-node xs:sequence} are
+represented as fields in the class.
+
+Elements specified in {xml-node xs:choice} model groups are represented using
+{docref any}, or {docref XMLElementValue} 
+(depending on whether the alternatives can be discriminated by their
+type, or need to be tagged with their element name).
+
+When model groups have nested structure, the elements will
+be represented using {docref XMLElementValues}, preserving their
+element names and order.
+
+Elements specified indirectly, by reference to {xml-node xs:group} definitions,
+are expanded into the constituent elements.
+
+Arbitrary elements, specified using the {xml-node xs:any} wildcard result in the
+use of {docref XDMElement} (rather than a specific class) to represent the
+{italic container}.
+
+Attributes are also represented as fields.
+
+Attributes specified indirectly, by reference to {xml-node xs:attributeGroup}
+definitions, are expanded into the constituent attributes.
+
+Arbitrary attributes, specified using the {xml-node xs:anyAttribute} wildcard
+result in the use of {docref XDMElement} (rather than a specific class) to
+represent the {italic container}.
+
+Mixed content results in the use of {docref XDMElement} (rather than a
+specific class).
+
+Types derived by extension result in a class definition which inherits
+from the class corresponding to the specified base type.
+
+Types derived by restriction are treated as if they were derived by extension.
+This preserves the content, but does not enforce
+the constraints of the restriction.
+
+When the restriction definition matches the pattern
+conventionally used to describe an encoded array,
+it is represented as a parameterized array.
+
+
+{heading level = 4,
+    Subtypes
+}
+
+Elements with a declared type derived by extension from a base type may 
+contain a subtype of the base type.  Such "runtime subtypes" must
+be specified using the {xml-node xsi:type} attribute.  
+
+{heading level = 4,
+    Nullable Primitives
+}
+
+Some Curl types (primitives and enums) do not admit the null value.
+When the schema definition specifies an optional (or nillable) value
+for one of these types, they are wrapped with {docref Nullable}, and
+the generated class provides accessors to query and assign the
+unspecified value:
+{itemize
+    {item {ctext {metavar<element-name>}-specified?}}
+    {item {ctext unset-{metavar<element-name>}}
+    }
+}
+The value will be unspecified if an optional element was not supplied,
+or if a nillable element was marked as nil using {xml-node xsi:nil=true}.
+    
+{heading level = 4,
+    Simple Content
+}
+
+This is used to describe "atomic" elements, which contain only a text
+element (and possibly attributes). The text value is represented using
+a field named {ctext content}.
+
+{heading level = 4,
+    Global Definitions
+}
+
+XML schema allows structure to be specified using globally named
+elements. These are treated similarly to type definitions.  Globally
+named attributes are treated similarly to attribute groups with a
+single member.
+
+{heading level = 4,
+    Local Definitions
+}
+
+XML Schema allows structure to be specified locally, without any
+global type.  When the representation of such a structure would
+correspond to a class definition, a name based on the element name is
+used.
+
+{heading level = 4,
+    Schema Composition
+}
+
+A schema or WSDL file may incorporate definitions from other schema
+files by use of {xml-node xs:import} and {xml-node xs:include}. These are processed similarly
+to the top level schema definition. Certain "well known" SOAP/WSDL
+schema definitions are not explicitly imported.
+{itemize
+    {item "http://www.w3.org/2001/XMLSchema"}
+    {item "http://schemas.xmlsoap.org/wsdl/"}
+}
+
+If a schema refers to another namespace, a schemaLocation
+must be specified.  For example, a service might import the
+special XML namespace.  For this to be processed,
+the schemaLocation must be added.
+{pre
+<xs:import namespace='http://www.w3.org/XML/1998/namespace'
+           schemaLocation='http://www.w3.org/2005/08/xml.xsd'/>
+}
+
+{heading level = 4,
+    Names
+}
+
+A legal XML name might not correspond to legal Curl name. (The allowed
+character sets are different; XML names include the namespace; naming
+conventions vary between programming languages and styles). 
+
+When web service definitions are internalized into Curl, legal Curl
+name are always used.  Name conflicts are checked,
+and resolved by substitution of underscores for disallowed characters,
+and addition of namespace prefixes or numeric suffixes. 
+
+Furthermore, when code generation directive {ctext curlify-names? = true}
+is specified, names are converted to follow standard Curl conventions
+(using hyphenated lower case words for variables, and "CamelCase"
+names for class names).
+
+
+{heading level = 4,
+    SOAP encoding
+}
+
+SOAP allows operation inputs and outputs to be interpreted without use
+of explicit XS types according to an encoding. This {xml-node "encoded"} usage is
+discouraged by the WS-I interoperability guidelines, in favor of the
+more explicit {xml-node "literal"} usage described above.
+
+The conventions used for {xml-node "encoded"} services are as follows. The SOAP
+spec allows for arbitrary encoding styles, identified by the value of
+the {xml-node encodingStyle} attribute. In practice, the default encoding style
+that is defined in the specification
+({xml-node "http://schemas.xmlsoap.org/soap/encoding/"}) is always used.
+
+Message elements use the {xml-node xsi:type} attribute to describe their
+type. Message elements marked with {xml-node xsi:nil} true are treated as
+nulls. Array elements use {xml-node soapenc:Array} for {xml-node xsi:type} value and
+{xml-node soapenc:arrayType} with a value containing the element type
+concatenated with dimensions. (The spec also has provisions for sparse
+arrays and nonstandard offsets.  These are rarely used, and are not
+supported by the WSDK.)
+
+Message elements may be shared ("multiref"): they are specified once,
+with an unique {xml-node id} attribute, and reference elsewhere, via a {xml-node ref}
+attribute. The original element may be "in place" in the message, or
+"freestanding" in the message envelope outside the message body. Some
+services and tools use "multiref" encoding even for primitive values,
+or for values which appear only once.
+
+The WSDK does not support SOAP 1.2 encoding conventions.
+
+{heading level = 4,
+    Service Method Signatures
+}
+
+The Curl service class corresponding to a WSDL service port defines
+methods for each SOAP operation (in general, there are two,
+for synchronous and asynchronous requests); the asynchronous variants
+can be suppressed by using {ctext include-async-methods? = false}.
+
+WSDK 2.0 supports both SOAP 1.1 and SOAP 1.2,
+according to the namespace of the 
+{xml-node binding} elements in the WSDL file.
+
+The signatures of these methods (arguments and return values)
+are derived from {xml-node input} and {xml-node output} message
+definitions in the WSDL file.  The conventions for the messages vary,
+depending on whether the operation style is "rpc" or "document".  For
+"document" style operations, the input and output messages are
+expected to contain a single {xml-node part}, which refers to a defined
+{xml-node element} in the types.  For "rpc" style operations, the messages may
+contain multiple parts: each {xml-node part} of the input message describes an
+argument; each {xml-node part} in an output message describes a return value.
+
+SOAP messages can contain headers. When headers are specified, input
+headers are represented as keyword arguments, and output headers as
+additional return values.
+
+SOAP headers can also be specified and detected dynamically,
+using service class 
+{docref-abbr WSDLHTTPRPCPostClient.additional-request-headers} 
+and {docref-abbr WSDLHTTPRPCPostClient.response-headers-callback}
+properties. That is the only way to work with headers
+that are not specified in the WSDL.
+
+{heading level = 2,
+    WSDK Interoperability
+}
+
+{heading level = 3,
+    Known Issues
+}
+
+The following issues have been identified:
+{itemize
+
+    {item Nonrepeating 'xs:choice' elements yield generated code
+        with a wrapper class around the choice value.
+    }
+
+    {item Types containing 'xs:choice' particles fall back to using 'xs:any'.
+        That yields results containing XDM objects
+        that must be parsed by the application.
+        
+        {italic Fixed (in most cases) in WSDK version 2.0}
+    }
+
+    {item When parameter and header have same name,
+        generated code fails to compile.
+
+        This was a WSDK 1.1 defect.
+        
+        {italic Fixed in WSDK version 2.0}
+    }
+
+    {item When repeating element has same name as its container,
+        a SOAPUnmarshalException occurs.
+
+        This was a WSDK1.1 defect.
+
+        {italic Fixed in WSDK version 2.0}
+    }
+
+    {item Nested local elements can cause name conflicts.
+
+        This was a WSDK1.0.6 defect.
+
+        {italic Fixed in WSDK version 2.0}
+    }
+    
+    {item Repeating elements must be nested in their own container.
+
+        This was a WSDK1.0 limitation.  XML schema has no limitation of
+        the cardinality of elements in a model group.  However, it is
+        considered good practice for web service interoperability to
+        nest repeated elements in their own container.
+        
+        {italic Fixed in WSDK version 1.0.3.}
+    }
+    
+    {item The names used for elements and types must be different.
+
+        This was a WSDK 1.0 limitation.  XML Schema distinguishes
+        element and type names.  However, it is common practice to use
+        a naming convention that distinguishes them.
+         
+        {italic Fixed in WSDK version 1.0.3.}      
+    }
+    
+    {item Runtime subtyping with 'xsi:type' may only be used for 
+        'xs:anyType' or with 'style="encoded"' services.
+        
+        This was a WSDK 1.0 limitation.
+         
+        {italic Fixed in WSDK version 1.0.4.}   
+    }
+    
+    {item Unspecified primitive values for elements that are optional or nillable
+        are not distinguished.
+        
+        
+        This was a WSDK 1.0 limitation.  
+        Curl primitive types and enums do not admit the null value.
+        
+        {italic  Fixed in WSDK version 1.0.4.}
+    }
+}
+
+{heading level = 3,
+    XS Coverage
+}
+
+The following features are rarely used in web service definitions, and
+may be more likely to encounter interoperability issues and unexpected
+behavior from the WSDK
+{itemize
+    {item {xml-node xs:choice}}
+    {item {xml-node xs:union}}
+    {item {xml-node xs:list}}
+    {item {xml-node xs:attributeGroup}}
+    {item {xml-node xs:anyAttribute}}
+    {item {xml-node xs:any}}
+}
+Similarly, the use of SOAP headers is less frequent, so services
+employing headers may also encounter interoperability issues.
+
+{heading level = 3,
+    Diagnostic Information
+}
+When investigating and reporting web service interoperability issues
+or other problems, the following information is useful to help
+identify the problem
+
+{enumerate
+    {item The WSDL file, and any referenced files (includes or imports). }
+    {item Sample request / response messages. 
+        These can be obtained in Curl using the HTTP Monitor tool.}
+}
+
+|| ====================
+
+{heading level = 2,
+    Examples
+}
+|| TODO: more advanced patterns
+
+{heading level = 3,
+    XS patterns with Curl representation
+}
+{heading level = 4,
+    structure
+}
+{bold XS}
+
+{code
+<xs:complexType name="ResultElement">
+ <xs:all>
+   <xs:element name="summary" type="xs:string"/>
+   <xs:element name="URL" type="xs:string"/>
+   <xs:element name="snippet" type="xs:string"/>
+   <xs:element name="title" type="xs:string"/>
+   <xs:element name="cachedSize" type="xs:string"/>
+   <xs:element name="relatedInformationPresent" type="xs:boolean"/>
+   <xs:element name="hostName" type="xs:string"/>
+   <xs:element name="directoryCategory" type="typens:DirectoryCategory"/>
+   <xs:element name="directoryTitle" type="xs:string"/>
+ </xs:all>
+</xs:complexType>
+}
+
+{bold Curl}
+
+{curl-code
+    {define-class public open ResultElement
+      field public summary:String = ""
+      field public url:String = ""
+      field public snippet:String = ""
+      field public title:String = ""
+      field public cached-size:String = ""
+      field public related-information-present:bool
+      field public host-name:String = ""
+      field public directory-category:DirectoryCategory = {uninitialized-value-for-type DirectoryCategory}
+      field public directory-title:String = ""
+    }
+}
+
+{heading level = 4,
+    array (literal) 
+}
+{bold XS}
+
+{code
+<xs:complexType name="ArrayOfPlaceFacts">
+ <xs:sequence>
+   <xs:element minOccurs="0" maxOccurs="unbounded" name="PlaceFacts" type="tnxs:PlaceFacts" />
+ </xs:sequence>
+</xs:complexType>
+}
+{bold Curl}
+
+{curl-code
+    {let public constant ArrayOfPlaceFacts:ClassType = 
+        {Array-of PlaceFacts}
+    }
+}
+
+{heading level = 4,
+    array (encoded)
+}
+{bold XS}
+
+{code
+<xs:complexType name="ResultElementArray">
+ <xs:complexContent>
+   <xs:restriction base="soapenc:Array">
+      <xs:attribute ref="soapenc:arrayType" wsdl:arrayType="typens:ResultElement[]"/>
+   </xs:restriction>
+ </xs:complexContent>
+</xs:complexType>
+}
+{bold Curl}
+
+{curl-code
+    {let public constant ResultElementArray:ClassType = 
+        {Array-of ResultElement}
+    }
+}
+
+{heading level = 4,
+    enumeration
+}
+{bold XS}
+
+{code
+<xs:simpleType name="PlaceType">
+ <xs:restriction base="xs:string">
+   <xs:enumeration value="UnknownPlaceType" />
+   <xs:enumeration value="AirRailStation" />
+   <xs:enumeration value="BayGulf" />
+   <xs:enumeration value="CapePeninsula" />
+   <xs:enumeration value="CityTown" />
+   <xs:enumeration value="HillMountain" />
+   <xs:enumeration value="Island" />
+   <xs:enumeration value="Lake" />
+   <xs:enumeration value="OtherLandFeature" />
+   <xs:enumeration value="OtherWaterFeature" />
+   <xs:enumeration value="ParkBeach" />
+   <xs:enumeration value="PointOfInterest" />
+   <xs:enumeration value="River" />
+ </xs:restriction>
+</xs:simpleType>
+}
+
+{bold Curl}
+
+{curl-code
+    {define-enum public PlaceType
+        unknown-place-type = "UnknownPlaceType",
+        air-rail-station = "AirRailStation",
+        bay-gulf = "BayGulf",
+        cape-peninsula = "CapePeninsula",
+        city-town = "CityTown",
+        hill-mountain = "HillMountain",
+        island = "Island",
+        lake = "Lake",
+        other-land-feature = "OtherLandFeature",
+        other-water-feature = "OtherWaterFeature",
+        park-beach = "ParkBeach",
+        point-of-interest = "PointOfInterest",
+        river = "River"
+    }
+}
+
+{heading level = 4,
+    list of anonymous enumeration
+}
+{bold XS}
+
+{code
+<xs:simpleType name="Themes">
+ <xs:list>
+   <xs:simpleType>
+     <xs:restriction base="xs:string">
+       <xs:enumeration value="Photo" />
+       <xs:enumeration value="Topo" />
+       <xs:enumeration value="Relief" />
+     </xs:restriction>
+   </xs:simpleType>
+ </xs:list>
+</xs:simpleType>
+}
+{bold Curl}
+
+{curl-code
+    {let public constant Themes:ClassType = {Array-of String}}
+}
+
+{heading level = 4,
+    simpleContent
+}
+{bold XS}
+
+{code
+      <s:complexType name="category-type">
+        <s:simpleContent>
+          <s:extension base="s:string">
+            <s:attribute name="id" type="s1:category-id-type" />
+          </s:extension>
+        </s:simpleContent>
+      </s:complexType>
+}
+{bold Curl}
+
+{curl-code
+    field public content:String = ""
+    field public id:Category-id-type
+}
+{heading level = 3,
+    Method Signatures
+}
+{heading level = 4,
+    "document" style
+}
+{code
+<s:element name="GetPlaceList">
+  <s:complexType>
+    <s:sequence>
+      <s:element minOccurs="0" maxOccurs="1" name="placeName" type="s:string" />
+      <s:element minOccurs="1" maxOccurs="1" name="MaxItems" type="s:int" />
+      <s:element minOccurs="1" maxOccurs="1" name="imagePresence" type="s:boolean" />
+    </s:sequence>
+  </s:complexType>
+</s:element>
+<s:element name="GetPlaceListResponse">
+  <s:complexType>
+    <s:sequence>
+      <s:element minOccurs="0" maxOccurs="1" name="GetPlaceListResult"
+                 type="tns:ArrayOfPlaceFacts" />
+    </s:sequence>
+  </s:complexType>
+</s:element>
+
+<wsdl:message name="GetPlaceListSoapIn">
+  <wsdl:part name="parameters" element="tns:GetPlaceList" />
+</wsdl:message>
+<wsdl:message name="GetPlaceListSoapOut">
+  <wsdl:part name="parameters" element="tns:GetPlaceListResponse" />
+</wsdl:message>
+
+<wsdl:operation name="GetPlaceListInRect">
+  <wsdl:input message="tns:GetPlaceListInRectSoapIn" />
+  <wsdl:output message="tns:GetPlaceListInRectSoapOut" />
+</wsdl:operation>
+
+<wsdl:operation name="GetPlaceList">
+  <soap:operation style="document"
+    soapAction="http://terraserver-usa.com/terraserver/GetPlaceList" />
+  <wsdl:input> <soap:body use="literal" /> </wsdl:input>
+  <wsdl:output> <soap:body use="literal" /> </wsdl:output>
+}
+{heading level = 4,
+    "rpc" style
+}
+{code
+<message name="doSpellingSuggestion">
+  <part name="key" type="xsd:string"/>
+  <part name="phrase" type="xsd:string"/>
+</message>
+
+<message name="doSpellingSuggestionResponse">
+  <part name="return" type="xsd:string"/>
+</message>
+
+<operation name="doSpellingSuggestion">
+  <input message="typens:doSpellingSuggestion"/>
+  <output message="typens:doSpellingSuggestionResponse"/>
+</operation>
+
+<operation name="doSpellingSuggestion">
+  <soap:operation soapAction="urn:GoogleSearchAction"/>
+  <input>
+    <soap:body use="encoded" namespace="urn:GoogleSearch"
+               encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+  </input>
+  <output>
+    <soap:body use="encoded" namespace="urn:GoogleSearch"
+               encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+  </output>
+</operation>
+}
+
+|| ====================
+
+{curl-copyright}
+

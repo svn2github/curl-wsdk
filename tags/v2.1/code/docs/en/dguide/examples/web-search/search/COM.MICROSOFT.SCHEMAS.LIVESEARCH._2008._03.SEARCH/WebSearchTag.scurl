@@ -1,0 +1,22 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open WebSearchTag
+
+  field public name:#String
+  field public value:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      name:#String = {uninitialized-value-for-type #String},
+      value:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? value} then
+        set self.value = value}
+  }
+
+}
+

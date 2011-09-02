@@ -1,0 +1,1419 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| SOAPArrayMarshaler
+
+|| FIXME should this be called DefaultSOAPArrayMarshaler
+
+|| FIXME no offset or sparse array support.
+
+{doc-next
+    {purpose
+        Class that can marshal and unmarshal arrays.
+    }
+    {details
+        Can handle Curl types {ctext Array-of}, {ctext FastArray-of}, and
+        {ctext Array2d-of}.  It can be registered with a custom XML type,
+        but otherwise uses the SOAP 1.1 arrayType names as the XML type.
+        (Eg. {ctext {new XMLName, "http://www.w3.org/1999/XMLScheme", "int[]"}})
+    }
+    {notes
+        The various built in mappers will attempt to use this automatically
+        if they see XML types that look like SOAP 1.1 arrayType names, or
+        if you attempt to look up an XML type for an {ctext Array-of},
+        {ctext FastArray-of} or {ctext Array2d-of}.
+    }
+}
+{define-class public open SOAPArrayMarshaler
+  {inherits SOAPMarshaler}
+
+  field public array-type:#XMLName
+  field public element-type:#SOAPObjectType
+  field public element-array-type:#XMLName
+  field public element-name:#XMLName
+  || null if elements are not an array type
+  field public element-array-marshaler:#SOAPArrayMarshaler
+  field private element-array-marshaler-marshal-proc:#SOAPTypeMapper.MarshalProc
+  field private element-array-marshaler-unmarshal-proc:
+    #SOAPTypeMapper.UnmarshalProc
+  field public dimensions:#{Array-of int}
+  field public check-element-name:#XMLName
+
+  field public constant xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper
+  field public constant curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+  field public constant xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+
+  {let public constant soap-1-1-array-type-attribute-name:XMLName =
+    {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "arrayType"}
+  }
+  {let public constant soap-1-1-offset-attribute-name:XMLName =
+    {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "offset"}
+  }
+  {let public constant soap-1-1-array-type-name:XMLName =
+    {new XMLName, SOAPTypeMapper.soap-1-1-encoding-uri, "Array"}
+  }
+  {def public soap-1-2-item-type-name:XMLName =
+    {XMLName SOAPTypeMapper.soap-1-2-encoding-uri, "itemType"}
+  }
+  {def public soap-1-2-array-size-name:XMLName =
+    {XMLName SOAPTypeMapper.soap-1-2-encoding-uri, "arraySize"}
+  }
+
+  {let public constant default-element-name:XMLName =
+    {new XMLName, "", "e"}
+  }
+
+  {constructor public {default
+                          || curl-type and xml-type must be filled in.
+                          type:SOAPObjectType,
+                          element-names:#{Array-of #XMLName} = null,
+                          element-name-index:int =
+                              {if-non-null element-names then
+                                  element-names.size - 1
+                               else
+                                  -1
+                              },
+                          check-element-name:#XMLName = null,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper
+                      }
+    set self.xml-type-to-curl-type = xml-type-to-curl-type
+    set self.curl-type-to-xml-type = curl-type-to-xml-type
+    set self.xml-type-to-element-name = xml-type-to-element-name
+    
+    set self.check-element-name = check-element-name
+    
+    || if the xml-type is SOAP-ENC:Array which means that it doesn't contain
+    || any useful type information, then just toss it,
+    || and derive a "real" type from the curl-type
+    {if type.xml-type == SOAPArrayMarshaler.soap-1-1-array-type-name then
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                xml-type = null,
+                nillable? = type.curl-type.can-be-null?
+            }
+    }
+    {if type.xml-type == null or type.curl-type == null then
+        set type = {self.fill-in-type-and-element-type type}
+    }
+    {if type.xml-type != null and type.element-name == null then
+        set type = {xml-type-to-element-name.xml-type-to-element-name type}
+    }
+    {if-non-null element-names then
+        {if element-names.size > element-name-index then
+            {if-non-null en = element-names[element-name-index] then
+                set self.element-name = en
+            }
+        }
+    }
+    {construct-super.SOAPMarshaler type}
+    {if self.type.xml-type != null and
+        {self.type.xml-type.local-name.find '\['} >= 0
+     then
+        set self.array-type = self.type.xml-type
+    }
+  }
+
+  {method private {fill-in-type-and-element-type type:SOAPObjectType
+                  }:SOAPObjectType
+    || should we try to install an element type? (Since it will probably be
+    || something obvious, or do they need to use a mapper?)
+    let is-array-type?:bool = false, dimensions:#{Array-of int}
+    set (self.element-type, is-array-type?, dimensions) =
+        {SOAPArrayMarshaler.make-element-type
+            type,
+            self.xml-type-to-curl-type,
+            self.curl-type-to-xml-type
+        }
+    set self.element-array-marshaler =
+        {if is-array-type? then
+            {new SOAPArrayMarshaler,
+                {non-null self.element-type},
+                xml-type-to-curl-type = self.xml-type-to-curl-type,
+                curl-type-to-xml-type = self.curl-type-to-xml-type,
+                xml-type-to-element-name = self.xml-type-to-element-name
+            }
+         else
+            null
+        }
+    {if-non-null eam = self.element-array-marshaler then
+        set self.element-type = eam.type
+    }
+
+    let array-type:#XMLName
+    {if-non-null dimensions then
+        let constant dimension-string:String =
+            {SOAPArrayMarshaler.dimension-array-to-string
+                dimensions
+            }
+        || NOTE: should not be null, but just in case ...
+        {if-non-null element-xml-type = self.element-type.xml-type then
+            set array-type =
+                {XMLName.unchecked
+                    element-xml-type.namespace,
+                    element-xml-type.local-name & dimension-string
+                }
+        }
+        {if type.xml-type == null then
+            set type =
+                {SOAPObjectType.clone-with
+                    type,
+                    xml-type = array-type,
+                    nillable? = type.curl-type.can-be-null?
+                }
+        }
+        {if type.curl-type == null then
+            let constant curl-type:Type =
+                {SOAPArrayMarshaler.apply-dimensions
+                    {non-null self.element-type.curl-type},
+                    dimensions
+                }
+            set type =
+                {SOAPObjectType.clone-with
+                    type,
+                    curl-type = curl-type,
+                    nillable? = curl-type.can-be-null?
+                }
+        }
+    }
+   
+    set self.dimensions = {non-null dimensions}
+
+    {if self.element-name == null then
+        set self.element-name =
+            {SOAPArrayMarshaler.get-element-name
+                {non-null self.element-type},
+                curl-type-to-xml-type = self.curl-type-to-xml-type,
+                xml-type-to-element-name = self.xml-type-to-element-name
+            }
+    }
+    {if-non-null array-type then
+        {if self.array-type == null then
+            set self.array-type = array-type
+        }
+    }
+
+    {return type}
+  }
+
+
+  {constructor public {from-element-type-array
+                          || curl-type and xml-type must be filled in.
+                          types:{Array-of SOAPObjectType},
+                          element-names:#{Array-of #XMLName} = null,
+                          array-types:#{Array-of #XMLName} = null,
+                          type-index:int = (types.size - 1),
+                          check-element-name:#XMLName = null,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper =
+                              builtin-soap-xml-type-to-curl-type-mapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                              builtin-soap-curl-type-to-xml-type-mapper,
+                          xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                              builtin-soap-xml-type-to-element-name-mapper
+                      }
+    set self.xml-type-to-curl-type = xml-type-to-curl-type
+    set self.curl-type-to-xml-type = curl-type-to-xml-type
+    set self.xml-type-to-element-name = xml-type-to-element-name
+    
+    set self.check-element-name = check-element-name
+
+    {if types.size <= type-index or type-index < 1 then
+        {throw-soap-exception
+            {localize "Types array too small, must have this type and elements' type."}
+        }
+    }
+    let constant element-index:int = type-index - 1
+    {if-non-null array-types then
+        {if array-types.size > element-index then
+            {if-non-null at = array-types[element-index] then
+                set self.array-type = at
+            }
+        }
+    }
+
+    let type:SOAPObjectType = types[type-index]
+
+    {if type.xml-type == null and self.array-type != null then
+        set type = {SOAPObjectType.clone-with type, xml-type = self.array-type}
+     elseif self.array-type == null and type.xml-type != null and
+        {type.xml-type.local-name.find '\['} >= 0 then
+        set self.array-type = type.xml-type
+    }
+    set type =
+        {SOAPObjectType.fill-in-from-curl-type-mapper
+            type,
+            curl-type-to-xml-type,
+            xml-type-to-element-name
+        }
+    set type =
+        {SOAPObjectType.fill-in-from-element-name-mapper
+            type,
+            null,
+            xml-type-to-curl-type 
+        }
+    
+    {construct-super.SOAPMarshaler type}
+    || if element-type is an array type then make a child marshaler
+    {if element-index > 0 then
+        set self.element-array-marshaler =
+                {new SOAPArrayMarshaler.from-element-type-array,
+                    types,
+                    element-names = element-names,
+                    array-types = array-types,
+                    type-index = element-index,
+                    xml-type-to-curl-type = xml-type-to-curl-type,
+                    curl-type-to-xml-type = curl-type-to-xml-type,
+                    xml-type-to-element-name = xml-type-to-element-name
+                }
+        set self.element-type = self.element-array-marshaler.type
+        set self.element-array-type = self.element-array-marshaler.array-type
+     else || element-index is 0, element is not an array
+        set self.element-type =
+            {SOAPObjectType.fill-in-from-curl-type-mapper
+                types[element-index],
+                curl-type-to-xml-type,
+                xml-type-to-element-name
+            }
+        set self.element-type =
+            {SOAPObjectType.fill-in-from-element-name-mapper
+                {non-null self.element-type},
+                null,
+                xml-type-to-curl-type 
+            }
+        set self.element-array-type = null
+    }
+    {if-non-null element-names then
+        {if element-names.size > element-index then
+            {if-non-null en = element-names[element-index] then
+                set self.element-name = en
+            }
+        }
+    }
+
+    {if self.element-name == null then
+        set self.element-name =
+            {SOAPArrayMarshaler.get-element-name
+                {non-null self.element-type},
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+    }
+    set self.dimensions =
+        {new {Array-of int}.from-size,
+            {SOAPArrayMarshaler.curl-type-dimensions
+                {non-null self.type.curl-type}
+            },
+            -1
+        }
+  }
+
+  {define-proc package {get-element-name
+                           element-type:SOAPObjectType,
+                           curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper =
+                               builtin-soap-curl-type-to-xml-type-mapper,
+                           xml-type-to-element-name:SOAPXMLTypeToElementNameMapper =
+                               builtin-soap-xml-type-to-element-name-mapper
+                       }:XMLName
+    set element-type =
+        {SOAPObjectType.fill-in-from-curl-type-mapper
+            element-type,
+            curl-type-to-xml-type,
+            xml-type-to-element-name
+        }
+    {if-non-null en = element-type.element-name then
+        {return en}
+     else
+        || This is kind of bogus, using the type as an element name
+        {if-non-null xml-type = element-type.xml-type then
+            {if {xml-type.local-name.find '\['} < 0 then
+                {return xml-type}
+            }
+        }
+        {return SOAPArrayMarshaler.default-element-name}
+    }
+    {throw-soap-exception
+        {localize "Not enough type information to figure out element name."}
+    }
+  }
+
+  {method public open {default-marshal
+                            stream:{OutputStream-of XMLToken},
+                            value:any,
+
+                            || xml-type and curl-type required
+                            type:SOAPObjectType,
+                            element:XMLName,
+
+                            encoding:#String, ||default? (multiple urls poss.)
+                            context:SOAPMarshalContext,
+                            current-mapper:SOAPTypeMapper,
+                            curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                            marshal-proc:SOAPTypeMapper.MarshalProc,
+                            write-type-attribute?:bool = true,
+                            multiple-reference:SOAPTypeMultipleReference =
+                                SOAPTypeMultipleReference.unknown
+                        }:(worked?:bool)
+    {self.check-type type, true}
+    {if type.element-name == null then
+        set type =
+            {SOAPObjectType.clone-with
+                type,
+                element-name = SOAPArrayMarshaler.soap-1-1-array-type-name 
+            }
+    }
+
+    {if self.element-name == null or self.element-type == null or
+        self.dimensions == null or         
+        (write-type-attribute? and self.array-type == null)
+     then
+        {self.fill-in-type-and-element-type self.type}
+    }
+
+    {if write-type-attribute? and not self.type.marshaler-handled-element?
+     then
+        || write out generic xsd:type=SOAP-ENC:Array attribute
+        let constant dimensions:{Array-of int} =
+            {SOAPArrayMarshaler.fill-in-dimensions-from-value
+                value,
+                {non-null self.dimensions}
+            }
+
+        let constant dimensions-string:String =
+            {SOAPArrayMarshaler.dimension-array-to-string
+                dimensions
+            }
+        let constant new-local-name:String =
+            {if-non-null eat = self.element-array-type then
+                eat.local-name & dimensions-string
+             else
+                self.element-type.xml-type.local-name & dimensions-string
+            }
+
+        let constant array-type:XMLName =
+            {if new-local-name == self.array-type.local-name then
+                {non-null self.array-type}
+             else
+                {XMLName.unchecked
+                    {if-non-null eat = self.element-array-type then
+                        eat.namespace
+                     else
+                        self.element-type.xml-type.namespace
+                    },
+                    new-local-name
+                }
+            }
+
+        {stream.write-one
+            {new XMLAttribute.with-xml-name-values,
+                SOAPTypeMapper.xml-schema-type,
+                {new {Array-of XMLName},
+                    {if self.type.xml-type == self.array-type and
+                        context.soap-version == SOAPVersion.soap-1-1
+                     then
+                        SOAPArrayMarshaler.soap-1-1-array-type-name
+                     else
+                        {non-null self.type.xml-type}
+                    }
+                }
+            }
+        }
+        
+        {if context.soap-version == SOAPVersion.soap-1-1 then
+            || write out actual type SOAP-ENC:arrayType="my type" 
+            || if we have a [] type thing
+            {stream.write-one
+                {new XMLAttribute.with-xml-name-values,
+                    SOAPArrayMarshaler.soap-1-1-array-type-attribute-name,
+                    {new {Array-of XMLName}, array-type}
+                }
+            }
+        }
+    }
+
+   
+    || handle multi-ref
+    set multiple-reference =
+        {marshal-handle-id-href
+            stream,
+            value asa #Object,
+            type,
+            encoding,
+            context,
+            multiple-reference,
+            || FIXME: is this the right default?
+            SOAPTypeMultipleReference.single,
+            marshal-proc,
+            write-type-attribute? = write-type-attribute?
+        }
+    {if value == null then
+        {marshal-write-nil-type stream, type}
+        {return true}
+     elseif multiple-reference == SOAPTypeMultipleReference.single or
+        multiple-reference == SOAPTypeMultipleReference.multiple-instance
+     then
+        || FIXME: what about any's, how can they do their own element-name?
+        let constant element-name:XMLName =
+            {if-non-null en = self.element-name then
+                en
+             else
+                {non-null self.type.element-name}
+            } 
+||--        {if element-name != type.element-name then 
+||--            {output
+||--                {message ### marshal inconsistency
+||--                    element-name {String element-name}
+||--                    type.element-name {String type.element-name}
+||--                }}
+||--        }
+        || write out each element...
+        || FIXME 2d should be ok with Array-2-of, but Nd? 2d with Array-of Array-of?
+        {with-compiler-directives allow-any-calls? = true do
+            
+            let needs-nullability?:bool =
+                self.element-type.nillable? and self.element-type.curl-type.null-variant == null
+
+            || paranoia
+            let has-nullability?:bool =
+                || assuming Array-of
+                {type-switch value.element-type
+                 case pt:ParameterizedType do
+                    pt.template == Nullable
+                 else false}
+            set needs-nullability? =
+                needs-nullability? and has-nullability?
+            
+            {for vv in value do
+                || deal with nullable primitives
+                let v:any =
+                    {if needs-nullability? then
+                        || a Nullable variant
+                        vv.value-as-any
+                     else
+                        vv}
+                
+                {if not self.element-type.marshaler-handled-element? then
+                    {stream.write-one
+                        {XMLStartElement element-name}
+                    }
+                }
+                {if-non-null eam = self.element-array-marshaler then
+                    || FIXME: we are caching it without reguard to encoding...
+                    {if self.element-array-marshaler-marshal-proc == null then
+                        set self.element-array-marshaler-marshal-proc =
+                            {eam.marshal-proc encoding}
+                    }
+                    {{non-null self.element-array-marshaler-marshal-proc}
+                        stream,
+                        v,
+                        {non-null self.element-type},
+                        element-name,
+                        encoding,
+                        context,
+                        current-mapper,
+                        curl-type-to-xml-type,
+                        write-type-attribute? = write-type-attribute?,
+                        multiple-reference = self.element-type.multiple-reference
+                    }
+                 else
+                    {current-mapper.marshal
+                        stream,
+                        v,
+                        {non-null self.element-type},
+                        element-name,
+                        encoding,
+                        context,
+                        current-mapper,
+                        curl-type-to-xml-type,
+                        write-type-attribute? = write-type-attribute?,
+                        multiple-reference = self.element-type.multiple-reference
+                    }
+                }
+                {if not self.element-type.marshaler-handled-element?  then
+                    {stream.write-one
+                        {XMLEndElement element = element-name}
+                    }
+                }
+            }
+        }
+    }
+
+    {return true}
+  }
+
+  {method public open {default-unmarshal
+                          stream:XMLInputStream,
+                          attributes:#{Array-of XMLAttribute},
+
+                          || xml-type and curl-type required
+                          type:SOAPObjectType,
+
+                          default-encoding:#String, ||default? (multiple urls poss.)
+                          context:SOAPUnmarshalContext,
+                          current-mapper:SOAPTypeMapper,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          check-type-attribute?:bool = false
+                      }:(value:any, worked?:bool)
+    {self.check-type type, false}
+    {if type.curl-type == any or
+        type.curl-type == Object or type.curl-type == #Object
+     then
+        set type =
+            {SOAPObjectType.clone-with type, curl-type = self.type.curl-type}
+    }
+
+    {if self.element-name == null or self.element-type == null or
+        self.dimensions == null or 
+        (check-type-attribute? and self.array-type == null)
+     then
+        {self.fill-in-type-and-element-type self.type}
+    }
+    let constant element-name:XMLName =
+        {if-non-null en = self.element-name then
+            en
+         else
+            {non-null self.type.element-name}
+        } 
+||--    {if type.element-name != self.element-name then
+||--        {output
+||--            {message ### unmarshal inconsistency
+||--                element-name {value element-name}
+||--                type.element-name {value type.element-name}
+||--            }}
+||--    }
+    let id:#String, href:#String
+    let null?:bool = false
+    let dimensions:{Array-of int} = {non-null self.dimensions}
+    {if-non-null attributes then
+        {if check-type-attribute? then
+            || FIXME: implement this, to ignore dimension issues and check for
+            || type=Array and ArrayType=???
+            let constant new-dimensions:{Array-of int} =
+                {SOAPArrayMarshaler.check-array-type-attribute
+                    attributes, {non-null type.xml-type}, dimensions
+                }
+            {for nd key i in new-dimensions do
+                set new-dimensions[i] = {max nd, dimensions[i]}
+            }
+            set dimensions = new-dimensions
+        }
+        set null? = {unmarshal-check-if-nil? attributes, type}
+
+        set (id, href) =
+            {unmarshal-get-id-href attributes, context}
+        {if-non-null href then
+            {if null? then
+                {throw-soap-exception
+                    {localize "null xml type with an href attribute."}
+                }
+            }
+            let constant (obj:any, status:SOAPUnmarshalObjectStatus) =
+                {context.get-object href}
+            || may return a SOAPUnmarshallingObjectState
+            || ignoring any content, and just going with href...
+            {return obj, true}
+        }
+    }
+    let constant object:#Object =
+        {if null? then
+            null
+         else
+            {with-compiler-directives allow-any-calls? = true do
+                let a:any = null
+                let constant curl-type:Type = {non-null type.curl-type}
+                let constant element-curl-type:Type =
+                    {non-null self.element-type.curl-type}
+                let constant last-dimension:int =
+                    dimensions[dimensions.size - 1]
+                {type-switch curl-type
+                    case curl-type:ParameterizedType do
+                        {if curl-type.template.name == "Array-of" then
+                            {if dimensions.size >= 1 and last-dimension > 0 then
+                                set a =
+                                    {new curl-type,
+                                        efficient-size = last-dimension
+                                    }
+                                || Note that we have no idea what we are
+                                || new-ing here...
+                                {if-non-null instance-maker =
+                                    {get-instance-maker
+                                        element-curl-type
+                                    }
+                                 then
+                                    {while a.size < last-dimension do
+                                        {a.append {instance-maker.new}}
+                                    }
+                                 else
+                                    {a.set-size
+                                        last-dimension,
+                                        {uninitialized-value-for-type
+                                            element-curl-type
+                                        }
+                                    }
+                                }
+                            }
+                        elseif curl-type.template.name == "FastArray-of" then
+                            {if dimensions.size >= 1 and last-dimension > 0 then
+                                set a =
+                                    {new curl-type, max-size = last-dimension}
+                                || Note that we have no idea what we are
+                                || new-ing here...
+                                {if-non-null instance-maker =
+                                    {get-instance-maker
+                                        element-curl-type
+                                    }
+                                 then
+                                    {while a.size < last-dimension do
+                                        {a.append {instance-maker.new}}
+                                    }
+                                else
+                                    {a.set-size
+                                        last-dimension,
+                                        {uninitialized-value-for-type
+                                            element-curl-type
+                                        }
+                                    }
+                                }
+                            }
+                         elseif dimensions.size == 2 and
+                            curl-type.template.name == "Array-2-of"
+                         then
+                            set a =
+                                {new {non-null type.curl-type},
+                                    {max dimensions[0], 0},
+                                    {max last-dimension, 0}
+                                }
+                        }
+                }
+                {if a == null then
+                    set a = {new curl-type} asa Object
+                }
+                a asa Object
+            }
+        }
+    {if not null? then
+        {if object == null then
+            {throw-soap-exception
+                {lformat
+                    "Failed to properly create object of type: %s.",
+                    type.curl-type
+                }
+            }
+        }
+        let constant object-as-any:any = object
+        || unmarshal array elements
+        let i:int = 0, j:int = 0
+        let last-end-element:#XMLEndElement
+        {while true do
+            def first-time-and-unwrapped?  =
+                last-end-element == null and self.type.marshaler-handled-element?
+            let (current-token:XMLToken, eof?:bool) =
+                {if first-time-and-unwrapped? then
+                    ({XMLStartElement {non-null type.element-name}}, false)
+                 else
+                    {stream.read-one}
+                }
+            {if eof? then
+                {throw-unmarshal-exception
+                    {localize "Got EOF early while unmarshal array."}
+                }
+            }
+            {type-switch current-token
+             case se:XMLStartElement do
+                || make sure its expected tag, if that matters
+                {if-non-null check-element-name = self.check-element-name then
+                    {if se.element != check-element-name then
+                        {stream.unread-one se}
+                        {break}
+                    }
+                }
+                || data, handle it!
+                def element-attributes =
+                    {if first-time-and-unwrapped? then
+                        attributes
+                     else
+                        {reader-read-attributes stream}
+                    }
+                || get encoding from attributes
+                let constant encoding:#String =
+                    {reader-check-attributes-for-encoding
+                        element-attributes,
+                        default-encoding
+                    }
+
+                || should we get some type info too?
+                let constant element-value:any =
+                    {current-mapper.unmarshal
+                        stream,
+                        element-attributes,
+                        {SOAPObjectType.clone-with
+                            {non-null self.element-type},
+                            element-name = se.element
+                        },
+                        encoding,
+                        context,
+                        current-mapper,
+                        xml-type-to-curl-type,
+                        check-type-attribute? = check-type-attribute?
+                    }
+                {type-switch element-value
+                 case state:SOAPUnmarshalObjectState do
+                    let ii:int = i, jj:int = j
+                    {context.append-callback
+                        state.id,
+                        {proc {
+                               value:any,
+                               status:SOAPUnmarshalObjectStatus
+                              }:bool
+                            {SOAPArrayMarshaler.set-array-element-value
+                                object-as-any,
+                                ii,
+                                jj,
+                                value,
+                                dimensions
+                            }
+                            {return true}
+                        },
+                        || would be good if it were complete, but we don't
+                        || really care.
+                        min-status = SOAPUnmarshalObjectStatus.complete
+                    }
+                 else
+                    || FIXME: if we need to expand object-as-any and it
+                    || is a FastArray, that can't be done...cause it
+                    || would change the object, which this doesn't return
+                    {SOAPArrayMarshaler.set-array-element-value
+                        object-as-any,
+                        i,
+                        j,
+                        element-value,
+                        dimensions
+                    }
+                }
+                set (i, j) =
+                    {SOAPArrayMarshaler.increment-array-element-indexes
+                        object-as-any,
+                        i,
+                        j,
+                        dimensions
+                    }
+                
+                || now finished unmarshaling this element
+                || - assure end elements properly consumed
+                set (current-token, eof?) = {stream.read-one}
+                {if eof? then
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Got EOF instead of end of response %s.",
+                            se.element
+                        }
+                    }
+                }
+                {type-switch current-token
+                 case ee:XMLEndElement do
+                    {if ee.element != null and ee.element != se.element then
+                        {throw-unmarshal-exception
+                            {lformat
+                                "Mismatched end element for response %s.",
+                                se.element
+                            }
+                        }
+                    }
+                    set last-end-element = ee
+                 else
+                    {throw-unmarshal-exception
+                        {lformat
+                            "Expected XMLEndElement for %s got %s.",
+                            se.element,
+                            current-token
+                        }
+                    }
+                }
+             case ee:XMLEndElement do
+                || unread it...
+                {stream.unread-one ee}
+                {break}
+             case ed:XMLEndDocument do
+                {stream.unread-one ed}
+                {break}
+             else
+                {throw-unmarshal-exception
+                    {lformat
+                        "Got %s instead of a XMLStartElement or XMLEndElement.",
+                        current-token
+                    }
+                }
+            }
+        }
+        {if self.type.marshaler-handled-element? then
+            {if-non-null last-end-element then
+                {stream.unread-one last-end-element}
+            }
+        }
+    }
+    {if-non-null id then
+        {context.set-object
+            id, object, SOAPUnmarshalObjectStatus.complete
+        }
+    }
+    {return object, true}
+  }
+
+  {getter public open {encodings}:{Array-of #String}
+    {return {new {Array-of #String}, null, efficient-size = 1}}
+  }
+
+  {define-proc package {apply-dimensions
+                        curl-type:Type,
+                        dimensions:{Array-of int}
+                     }:Type
+    {return
+        {switch dimensions.size
+         case 0 do
+            curl-type
+         case 2 do
+            {Array-2-of.construct curl-type}
+         else
+            {for i:int = 0 below dimensions.size do
+                set curl-type = {Array-of.construct curl-type}
+            }
+            curl-type
+        }
+    }
+  }
+
+  {define-proc public {make-element-type
+                          type:SOAPObjectType,
+                          xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                          curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper
+                      }:(element-type:SOAPObjectType,
+                         is-array-type?:bool,
+                         dimensions:{Array-of int}
+                        )
+    || pull off last dimension string and turn dimension into Array-of int
+    let left-over-string:#String
+    let dimensions:#{Array-of int}
+    {if-non-null xml-type = type.xml-type then
+        {if {xml-type.local-name.find '\['} >= 0 then
+            set (left-over-string, dimensions) =
+                {SOAPArrayMarshaler.split-dimension-string-get-last-dimension
+                    xml-type.local-name
+                }
+        }
+    }
+    || using dimension pull off Curl types
+    let element-curl-type:#Type
+    {if-non-null curl-type = type.curl-type then
+        set (element-curl-type, dimensions) =
+            {SOAPArrayMarshaler.get-element-curl-type
+                curl-type,
+                dimensions
+            }
+     else
+        {if-non-null left-over-string then
+            let element-type:SOAPObjectType =
+                {new SOAPObjectType,
+                    xml-type =
+                        {XMLName.unchecked
+                            type.xml-type.namespace,
+                            left-over-string
+                        }
+                }
+            set element-type =
+                {xml-type-to-curl-type.xml-type-to-curl-type element-type}
+            set element-curl-type = element-type.curl-type
+        }
+    }
+    || unwrap Nullable primitive
+    {type-switch element-curl-type
+     case pt:ParameterizedType do
+        {if pt.template == Nullable then
+            set element-curl-type =
+                pt.positional-type-parameters[0].parameter asa Type
+        }
+    }
+
+    {if left-over-string == null and
+        {SOAPArrayMarshaler.curl-type-dimensions
+            {non-null element-curl-type}
+        } == 0
+     then
+        let constant element-type:SOAPObjectType =
+            {new SOAPObjectType,
+                curl-type = element-curl-type,
+                nillable? = element-curl-type.can-be-null?
+            }
+        {return
+            {curl-type-to-xml-type.curl-type-to-xml-type element-type},
+            false,
+            {non-null dimensions}
+        }
+    }
+    || if left over string has [ then is-array-type?
+    || return new SOAPObjectType with curl-type and xml-type (no element?)
+    || What about multiple-ref?
+    {return
+        {new SOAPObjectType,
+            xml-type =
+                {if-non-null type.xml-type then
+                    {XMLName.unchecked
+                        type.xml-type.namespace, {non-null left-over-string}
+                    }
+                 else
+                    null
+                },
+            curl-type = element-curl-type,
+            nillable? = element-curl-type.can-be-null?
+        },
+        left-over-string != null and {left-over-string.find '\['} >= 0,
+        {non-null dimensions}
+    }
+  }
+
+  {define-proc public {get-element-curl-type
+                          curl-type:Type,
+                          dimension-array:#{Array-of int}
+                      }:(element-curl-type:Type, dimension-array:#{Array-of int})
+    let dimensions-used:int = 0
+    {while true do
+        let (dimensions:int, element-curl-type:#Type) =
+            {SOAPArrayMarshaler.curl-type-dimensions
+                curl-type
+            }
+        {if dimensions <= 0 then
+            {throw-soap-exception {lformat "Not an array type %s.", curl-type}}
+        }
+        {if-non-null dimension-array then
+            set dimensions-used = dimensions-used + dimensions
+            {if dimension-array.size - dimensions-used == 0 then
+                {return {non-null element-curl-type}, dimension-array}
+             elseif dimension-array.size - dimensions-used < 0 then
+                {throw-soap-exception {localize "array types didn't match"}}
+             else
+                set curl-type = {non-null element-curl-type}
+            }
+         else
+            {if dimensions <= 0 then
+                {throw-soap-exception
+                    {lformat "Not an array type %s.", curl-type}
+                }
+            }
+            {return
+                {non-null element-curl-type},
+                {new {Array-of int}.from-size, dimensions, -1}
+            }
+        }
+    }
+  }
+
+  {define-proc public {curl-type-dimensions
+                          curl-type:Type
+                      }:(int, element-curl-type:#Type)
+    {type-switch curl-type
+     case type:ParameterizedType do
+        {if type.template.name == "Array-of" 
+            or {type-isa-FastArray? curl-type} then
+            ||== or curl-type.array?  then
+            {return 1, type.positional-type-parameters[0].parameter asa Type}
+         elseif type.template.name == "Array-2-of" then
+            {return 2, type.positional-type-parameters[0].parameter asa Type}
+        }
+    }
+    {return 0, null}
+  }
+
+  {define-proc package {split-dimension-string-get-last-dimension
+                           array-dimension-string:String
+                       }:(left-over-string:String, dimension:{Array-of int})
+    || pull off last dimension string
+    let constant last-bracket:int =
+        {array-dimension-string.find
+            '\[',
+            search-direction = SearchDirection.backward
+        }
+    {if last-bracket < 0 then
+        {throw-soap-exception
+            {lformat "Mismatched '\]' in %s.", array-dimension-string}
+        }
+    }
+    let constant dimensions-string:String =
+        {array-dimension-string.substr
+            last-bracket + 1,
+            (array-dimension-string.size - last-bracket) - 2
+        }
+    let constant dimension-strings:{Array-of String} =
+        {if dimensions-string.empty? then
+            {new {Array-of String}, ""}
+         else
+            {dimensions-string.split split-chars = ","}
+        }
+    || turn dimension into Array-of int
+    let constant dimensions:{Array-of int} = {new {Array-of int}}
+    {for ds in dimension-strings do
+        {if ds.empty? then
+            {dimensions.append -1}
+         else
+            || FIXME do error checking on int parsing
+            {dimensions.append {ds.to-int}}
+        }
+    }
+    {return {array-dimension-string.substr 0, last-bracket}, dimensions}
+  }
+
+  || FIXME: only works for 1d Array-of/FastArray-of or Array-2-of...
+  {define-proc package {fill-in-dimensions-from-value
+                           value:any,
+                           dimensions:{Array-of int},
+                           current-dimension:int = dimensions.size - 1
+                       }:{Array-of int}
+    let constant d:{Array-of int} = {dimensions.clone}
+    {type-switch {type-of value}
+     case type:ParameterizedType do
+        {if type.template.name == "Array-of" 
+            or {type-isa-FastArray? type} then
+            ||== or type.array?  then
+            {with-compiler-directives allow-any-calls? = true do
+                set d[current-dimension] =
+                    {max value.size asa int, d[current-dimension]}
+            }
+            set current-dimension = current-dimension - 1
+            {return d}
+         elseif type.template.name == "Array-2-of" then
+            {with-compiler-directives allow-any-calls? = true,
+                allow-implicit-any-casts? = true
+             do
+                let constant (s0:int, s1:int) = {value.size}
+                set d[current-dimension] = s1
+                set current-dimension = current-dimension - 1
+                set d[current-dimension] = s0
+                set current-dimension = current-dimension - 1
+            }
+            {return d}
+        }
+    }
+    {throw-soap-exception
+        {lformat "Unsupported data %s.", value}
+    }
+  }
+
+  {define-proc package {dimension-array-to-string
+                           dimensions:{Array-of int}
+                       }:String
+    let dimension-string:StringBuf = {new StringBuf, '\['}
+        {for d key i in dimensions do
+            {if i > 0 then
+                {dimension-string.append ','}
+            }
+            {if d > 0 then
+                {format out = dimension-string, "%d", d}
+            }
+        }
+    {dimension-string.append '\]'}
+    {return {dimension-string.to-String}}
+  }
+
+  || FIXME: implement this, to ignore dimension issues and check for
+  || type=Array and ArrayType=???
+  {define-proc public {check-array-type-attribute
+                         attributes:{Array-of XMLAttribute},
+                         xml-type:XMLName,
+                         dimensions:{Array-of int}
+                      }:{Array-of int}
+    let new-dimensions:{Array-of int} = dimensions
+    {for a in attributes do
+        {if a.name == SOAPTypeMapper.xml-schema-type then
+            {if a.xml-name-values == null or
+                a.xml-name-values.size != 1 or
+                (a.xml-name-values[0] != xml-type and
+                 a.xml-name-values[0] != SOAPArrayMarshaler.soap-1-1-array-type-name)
+             then
+                {throw-unmarshal-exception
+                    {lformat
+                        "XML type attribute did not match expected type %s or %s.",
+                        xml-type,
+                        SOAPArrayMarshaler.soap-1-1-array-type-name
+                    }
+                }
+            }
+         elseif a.name ==
+            SOAPArrayMarshaler.soap-1-1-array-type-attribute-name
+         then
+            let left-over-string:String = ""
+            set (left-over-string, new-dimensions) =
+                {SOAPArrayMarshaler.split-dimension-string-get-last-dimension
+                    a.xml-name-values[0].local-name
+                }
+            {if dimensions.size != new-dimensions.size then
+                {throw-unmarshal-exception
+                    {lformat
+                        "Dimensions of %s don't match expected %s.",
+                        a.xml-name-values[0], xml-type.local-name
+                    }
+                }
+            }
+         elseif a.xml-name-values[0] == SOAPArrayMarshaler.soap-1-1-offset-attribute-name
+         then
+            {throw-unmarshal-exception
+                {localize "SOAPArrayMarshaler does not support SOAP-ENC:offset."}
+            }
+        }
+    }
+    {return new-dimensions}
+  }
+
+|| FIXME factor this better.
+  {define-proc package {set-array-element-value
+                           array:any,
+                           i:int,
+                           j:int,
+                           value:any,
+                           dimensions:{Array-of int}
+                       }:void
+    {with-compiler-directives allow-any-calls? = true do
+        let constant array-type:ParameterizedType =
+            {type-of array} asa ParameterizedType
+        let constant sub-type:Type =
+            {get-array-type-sub-type array-type}
+        {if dimensions.size == 1 then
+            || Note that we have no idea what we are new-ing here...
+            let array-size:int = array.size asa int
+            {if array-size < i then
+                let instance-maker:#InstanceMaker =
+                    {if sub-type.null-variant != sub-type then
+                        {get-instance-maker sub-type}
+                     else
+                        null
+                    }
+                {if-non-null instance-maker then
+                    {while array-size < i do
+                        {array.append {instance-maker.new}}
+                        {inc array-size}
+                    }
+                 else
+                    {array.set-size
+                        i + 1,
+                        {uninitialized-value-for-type
+                            sub-type
+                        }
+                    }
+                    set array-size = i + 1
+                }
+            }
+            || NOTE: xsi:nil initial element could indicate an empty 
+            || "repeating element" array
+            || TODO: better to check in SOAPStructMarshaler
+            let maybe-empty-repeating-element-array?:bool =
+                (value == null and 
+                 not sub-type.can-be-null? and
+                 array-size == 0)
+            {if not maybe-empty-repeating-element-array? then
+                {if array-size <= i then
+                    {array.append value}
+                 else
+                    set array[i] = value
+                }
+            }
+         elseif dimensions.size == 2 then
+            {if array-type.template.name == "Array-2-of" then
+                set array[i, j] = value
+             else || nested arrays
+                || sub-type will be some sort of Array-of thing here...
+                let array-size:int = array.size asa int
+                {while array-size < i do
+                    {array.append {new sub-type}}
+                    {inc array-size}
+                }
+                let constant sub-array:any = array[i]
+                || Note that we have no idea what we are new-ing here...
+                let constant sub-sub-type:Type =
+                    {get-array-type-sub-type (sub-type asa ParameterizedType)}
+                let instance-maker:#InstanceMaker =
+                    {if sub-sub-type.null-variant != sub-sub-type then
+                        {get-instance-maker sub-sub-type}
+                     else
+                        null
+                    }
+                let sub-array-size:int = sub-array.size  asa int
+                {if-non-null instance-maker then
+                    {while sub-array-size < j do
+                        {sub-array.append {instance-maker.new}}
+                        {inc sub-array-size}
+                    }
+                else
+                    {sub-array.set-size
+                        j + 1,
+                        {uninitialized-value-for-type
+                            sub-sub-type
+                        }
+                    }
+                    set sub-array-size = j + 1
+                }
+                {if sub-array-size <= j then
+                    {sub-array.append value}
+                 else
+                    set sub-array[j] = value
+                }
+            }
+         else
+            {throw-soap-exception
+                {localize "Can't handle > 2 dimensions for an array."}
+            }
+        }
+    } || compiler-directives
+  }
+
+  {define-proc package {increment-array-element-indexes
+                           array:any,
+                           i:int,
+                           j:int,
+                           dimensions:{Array-of int}
+                       }:(i:int, j:int)
+    {if dimensions.size == 1 then
+        set i = i + 1
+     elseif dimensions.size == 2 then
+        set j = j + 1
+        {if dimensions[1] > 0 and j >= dimensions[1] then
+            set j = 0
+            set i = i + 1
+        }
+     else
+        {throw-soap-exception
+            {localize "Can't handle > 2 dimensions for an array."}
+        }
+    }
+    {return i, j}
+  }
+
+  {method protected open {element-name-to-xml-type-register
+                             mapper:TableSOAPElementNameToXMLTypeMapper
+                         }:void
+    {if self.type.element-name != SOAPArrayMarshaler.soap-1-1-array-type-name
+     then
+        {super.element-name-to-xml-type-register mapper}
+    }
+  }
+
+  {method protected open {xml-type-to-element-name-register
+                             mapper:TableSOAPXMLTypeToElementNameMapper
+                         }:void
+    {if self.type.xml-type != SOAPArrayMarshaler.soap-1-1-array-type-name
+     then
+        {super.xml-type-to-element-name-register mapper}
+    }
+  }
+
+  {method protected open {xml-type-to-curl-type-register
+                             mapper:TableSOAPXMLTypeToCurlTypeMapper
+                         }:void
+    {if self.type.xml-type != SOAPArrayMarshaler.soap-1-1-array-type-name
+     then
+        {super.xml-type-to-curl-type-register mapper}
+    }
+  }
+}
+
+|| handles unmarshal for things that are "arrayType", by
+|| looking for the attributes to do them for real with SOAPArrayMarshaler.
+{define-proc package {builtin-arraytype-unmarshal-proc
+                         || stream must be after the XMLStartElement, and
+                         || XMLAttribute's so that
+                         || it can read the XMLCharacters.
+                         || The attributes will be in {param attributes}.
+                         stream:XMLInputStream,
+                         attributes:#{Array-of XMLAttribute},
+
+                         || xml-type and curl-type required
+                         type:SOAPObjectType,
+
+                         encoding:#String, || default? (multiple urls poss.)
+                         context:SOAPUnmarshalContext,
+                         current-mapper:SOAPTypeMapper,
+                         xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                         check-type-attribute?:bool = false
+                     }:(value:any, worked?:bool)
+    {if-non-null attributes then
+        {for a in attributes do
+            {if a.name == SOAPArrayMarshaler.soap-1-1-array-type-attribute-name
+             then
+                let constant array-marshaler:SOAPArrayMarshaler =
+                    {new SOAPArrayMarshaler,
+                        {SOAPObjectType.clone-with
+                            type,
+                            xml-type = a.xml-name-values[0]
+                        }
+                    }
+                {return
+                    {{array-marshaler.unmarshal-proc encoding}
+                        stream,
+                        attributes,
+                        array-marshaler.type,
+                        encoding,
+                        context,
+                        current-mapper,
+                        xml-type-to-curl-type,
+                        check-type-attribute? = check-type-attribute?
+                    }
+                }
+            }
+        }
+    }
+    {return null, false}
+}
+
+
+{let package instance-maker-cache:{Memoizer-of ClassType, #InstanceMaker} =
+    {new {Memoizer-of ClassType, #InstanceMaker},
+        {proc {class-type:ClassType}:#InstanceMaker
+            {return {class-type.get-instance-maker "default"}}
+        }
+    }
+}
+{define-proc package {get-instance-maker
+                         type:Type,
+                         name:String = "default"
+                     }:#InstanceMaker
+    {return
+        {type-switch type
+         case class-type:ClassType do
+            {if name == "default" then
+                instance-maker-cache[class-type]
+             else
+                {class-type.get-instance-maker name}
+            }
+         else
+            null
+        }
+    }
+}
+
+{let package array-sub-type-cache:{Memoizer-of ParameterizedType, Type} =
+    {new {Memoizer-of ParameterizedType, Type},
+        {proc {array-type:ParameterizedType}:Type
+            {return array-type.positional-type-parameters[0].parameter asa Type}
+        }
+    }
+}
+{define-proc package {get-array-type-sub-type
+                         array-type:ParameterizedType
+                     }:Type
+    {return
+        array-sub-type-cache[array-type]
+    }
+}

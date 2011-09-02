@@ -1,0 +1,60 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+{curl 6.0, 7.0, 8.0 applet}
+{applet manifest = "../manifest.mcurl"}
+
+|| import the service package
+{import * from COM.CDYNE.WS.PowerQuote}
+|| instantiate the service class
+{def service = 
+    {DelayedStockQuote}
+}
+|| use the service
+{heading level = 3,Delayed Stock Quote Web Service}
+{value
+    def quote-display = {TextDisplay}
+    {Table columns = 2,
+        || choose symbol
+        {text Symbol},
+        {ComboBox vorigin = 70%,
+            tooltip = {text Choose a ticker symbol},
+            || some popular tech stocks
+            data-model =
+                {DefaultListModel "IBM", "MSFT", "ORCL", "GOOG"},
+            || call the service method
+            {on ValueFinished at c:ComboBox do
+                {with-busy-cursor
+                    def symbol = c.value
+                    || call the service, using test license key
+                    def license-key = "0"
+                    def quote-data = {service.get-quote symbol, license-key}
+                    {if quote-data.quote-error then
+                        || unknown symbol
+                        {quote-display.unset-value} 
+                        {popup-message
+                            {message Unknown symbol: {bold {value symbol}}}}
+                     else
+                        || display the result
+                        def quote = quote-data.last-trade-amount
+                        set quote-display.value = {String quote}
+                        || remember user selections
+                        {if {c.find symbol} < 0 then
+                            {c.append symbol}}}
+                }}},
+        || display quote
+        {text Quote},
+        quote-display
+    }}

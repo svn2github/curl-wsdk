@@ -1,0 +1,72 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class public AppView {inherits View}
+  field settings:Repository
+  {constructor public {default 
+                          settings-comment:#String = "Settings",
+                          || for batch tests: be sure to exit!
+                          show?:bool = true,
+                          ...}
+    {construct-super 
+        hstretch? = true,
+        vstretch? = true,
+        {splice ...}}
+    {if-non-null settings-comment then
+        {persistent-data settings-comment}}
+    {self.add-event-handler
+        {on WindowClose do
+            {self.save-settings}
+            {exit}}}
+    set self.settings = {get-persistent-data-repository}
+    {self.restore-settings}
+    {if show? then
+        {self.show}}
+  }
+  {method {restore-settings}:void
+    let settings:Repository = self.settings
+    let view-width:Distance = 
+        {if {settings.key-exists? "view-width"} 
+         then settings["view-width"] asa Distance
+         else 8in}
+    let view-height:Distance = 
+        {if {settings.key-exists? "view-height"} 
+         then settings["view-height"] asa Distance
+         else 6in}
+    let view-left:Distance = 
+        {if {settings.key-exists? "view-left"} 
+         then settings["view-left"] asa Distance
+         else 1in}
+    let view-top:Distance = 
+        {if {settings.key-exists? "view-top"} 
+         then settings["view-top"] asa Distance
+         else 1in}
+    set self.width = view-width
+    set self.height = view-height
+    {self.set-position view-left, view-top}
+  }
+  {method {save-settings}:void
+    let settings:Repository = self.settings
+    let bounds:GRect = {self.get-bounds}
+    set settings["view-width"] = bounds.width
+    set settings["view-height"] = bounds.height
+    let (left:Distance, top:Distance) = {self.get-position}
+    set settings["view-left"] = left
+    set settings["view-top"] = top
+    {commit-persistent-data repository = settings}
+  }
+}
+

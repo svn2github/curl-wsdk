@@ -1,0 +1,372 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from COM.CURL.WSDK.WSDL}
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+
+{define-proc public {schema-patterns-test
+                        loc:Url,
+                        alternates-loc:#Url = null
+                    }:TestSuite
+    def root = {build-xml preserve-whitespace? = false, loc}.root
+    {dwim-prefix-declarations root}
+    def alternates =
+        {if-non-null alternates-loc then
+            {build-xml
+                preserve-whitespace? = false,
+                alternates-loc}.root
+         else null}
+    
+    def examples = {root.search "ex:example[ex:typedef]"}
+
+    def kinds =
+        {{Array-of XDMPath}
+            ".//xs:choice",
+            ".//xs:enumeration",
+            "(not(*[2]) and xs:element and not(*/*))",
+            ".//xs:attribute",
+            ".//xs:complexType",
+            ".//xs:simpleType",
+            "."}
+    def names =
+        {StringArray
+            "choice",
+            "enum",
+            "element",
+            "attribute",
+            "complexType",
+            "simpleType",
+            "other"}
+    
+    def groups = {{Array-of XDMNodeSet}}
+    {for k in kinds do
+        {groups.append {XDMNodeSet}}}
+    {for tag = examples, e in examples do
+        def x = {e.clone} asa XDMElement
+        def ex = {x.search "ex:typedef"}.as-XDMElement
+        {for p key i in kinds do
+            def p? = {ex.evaluate p}.as-bool
+            {if p? then
+                {groups[i].append x}
+                {continue tag = examples}}
+        }
+        def name = {e.search "@xml:id"}.as-String
+        {output {message Uncategorized: {value e}}}
+    }
+    {for g key i in groups do
+        {output {message {value names[i]} : {value g.size}}}}
+
+    def alternate-for =
+        {proc {id:String}:#XDMElement
+            {return
+                {if-non-null alternates then
+                    def q = {format "alternate[@xml:id='%s']/*", id}
+                    def x = {alternates.search q}.as-XDMElement?
+                    x
+                 else null}}}
+
+    def suite-for =
+        {proc {examples:XDMNodeSet,
+               name:String = "XmlSchemaPatterns"
+              }:TestSuite
+            def suite = {TestSuite name}
+
+            {for ex in examples do
+                def name = {ex.search "@xml:id"}.as-String
+                def element = {ex.search "@element"}.as-String
+                def xsd = {ex.search "ex:typedef/*"}
+                def xsd-src = {StringBuf}
+                {for x in xsd do
+                    {x.to-XML out = xsd-src}}
+                def vals = {ex.search "ex:instance"}
+                {for val in vals do
+                    def vname= {val.search "@xml:id"}.as-String
+                    def req = {val.search "*"}.as-XDMElement
+                    def alternate-body =
+                        {if-non-null alternate = {alternate-for vname} then
+                            {alternate.to-XML}
+                         else null}
+                    def test = 
+                        {WSDLEchoTestCase vname,
+                            xsd-src,
+                            {wrap-message {req.to-XML}},
+                            target-namespace = "http://www.w3.org/2002/ws/databinding/examples/6/09/",
+                            accept-body-xml-source = alternate-body,
+                            arg-name = element,
+                            type-name = name}
+                    {suite.add test}
+                }}
+            {return suite}}
+
+    def all = {suite-for examples}
+    def suite = {TestSuite "XmlSchemaPatterns"}
+
+    {for g key i in groups do
+        {suite.add
+            {suite-for g, name = names[i]}}}
+
+    {return suite}
+}
+
+{define-class public WSDLEchoTestCase {inherits TestCase}
+  || spec
+  field public-get constant xsd-type-source:StringInterface
+  field public-get constant message-xml-source:StringInterface
+  field public-get constant accept-body-xml-source:#StringInterface
+  || spec
+  field public-get constant type-name:String
+  field public-get constant arg-name:String
+  field public-get constant target-namespace:String
+  || parameters
+  field public-get constant directives:WSDLPackageDirectives
+  
+  {constructor public {default
+                          name:String,
+                          xsd-type-source:StringInterface,
+                          message-xml-source:StringInterface,  
+                          type-name:String = "test",   
+                          arg-name:String = "params",
+                          target-namespace:String = "http://www.example.com/",
+                          || acceptable alternative
+                          accept-body-xml-source:#StringInterface = null,
+                          || variants
+                          literal?:bool = true,
+                          document?:bool = true,
+                          || parameters
+                          directives:WSDLPackageDirectives =
+                              {WSDLPackageDirectives.wsdk10-defaults
+                                  {string-url "undefined"},
+                                  use-bignum-types? = true}}
+    set self.xsd-type-source = xsd-type-source
+    set self.message-xml-source = message-xml-source
+    set self.type-name = type-name
+    set self.arg-name = arg-name
+    set self.target-namespace = target-namespace
+    set self.accept-body-xml-source = accept-body-xml-source
+    set self.directives = directives
+    {construct-super name}
+  } 
+  || state
+  field public-get protected-set wsdl-xml:XDMDocument = {uninitialized-value-for-type XDMDocument}
+  field public-get protected-set service-package-source:StringBuf = {StringBuf}
+  field public-get protected-set service-package:OpenPackage = {uninitialized-value-for-type OpenPackage}
+  field public-get protected-set request-value:any
+  field public-get protected-set response-value:any
+  field public-get protected-set message-xml:XDMDocument = {uninitialized-value-for-type XDMDocument}
+  field public-get protected-set round-trip-xml:XDMDocument = {uninitialized-value-for-type XDMDocument}
+  field public-get protected-set match?:bool
+  def xsd-template = |"<xs:schema
+ xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+%s
+</xs:schema>"|
+
+  || TODO: better build-xml earlier, so suite construction will fail
+
+  {method public {run}:void
+    || parameters
+    def service-name = "TestService"
+    def method-name = "echo"
+
+    || synthesize WSDL
+    def xsd-type-fragment = 
+        {build-xml preserve-whitespace? = false,
+            {format WSDLEchoTestCase.xsd-template, self.xsd-type-source}}.root
+    def xsd-types = {xsd-type-fragment.search "*"}
+    set self.wsdl-xml = 
+        {make-wsdl-template
+            method-name = method-name,
+            service-name = service-name,
+            target-namespace = self.target-namespace,
+            target-prefix = "ex",
+            type-name = self.type-name,
+            arg-name = self.arg-name,
+            include-arg-element? = false,
+            literal? = true,
+            document? = true,
+            {splice xsd-types}}
+    def wbuf = {StringBuf}
+    {with-open-streams out = wbuf do
+        {self.wsdl-xml.to-XML out = out}}
+    def wloc = {string-url wbuf}
+
+    || generate service package
+    set self.service-package-source = {StringBuf}
+    set self.service-package =
+        {make-service-package wloc, 
+            directives = {self.directives.clone-for wloc},
+            out = self.service-package-source}
+
+    || reflect service
+    def service-class = {self.service-package.lookup service-name} asa ClassType
+    def service = 
+        {with-compiler-directives allow-any-calls? = true do
+            {service-class} asa WSDLHTTPRPCPostClient}
+    def format-request = {non-null {service-class.get-method "format-request"}}
+    def parse-response = {non-null {service-class.get-method "parse-response"}}
+
+    || === extended round trip: correct XML -> Curl value -> XML -> Curl value
+
+    || simulate service
+    
+    || - correct XML
+    def message-xml-source = self.message-xml-source
+    def bytes = {ByteArray efficient-size = message-xml-source.size}
+    {encode-characters
+        {message-xml-source.to-String},
+        bytes.underlying-FastArray,
+        CharEncoding.utf8}
+    
+    || - resultant value
+    def rets = {parse-response.invoke-n service, method-name, {ByteArrayInputStream bytes}}
+    set self.request-value = (rets[0] asa Array)[0]
+    
+    || - generated XML
+    def req-rets = {format-request.invoke-n service, method-name, {Array self.request-value}}
+    def req-data = req-rets[0] asa HttpRequestData
+    def req-bytes = {req-data.request-data}
+
+    || - resultant value
+    def resp-rets = {parse-response.invoke-n service, method-name, {ByteArrayInputStream req-bytes}}
+    set self.response-value = (resp-rets[0] asa Array)[0]
+
+    || NOTE:
+    || comparing XML can give false negatives
+    || - mapping is not 1-to-1 : many valid XML representations for same value
+    || comparing values can give false positives
+    || - only shows consistent round trip (Curl -> XML -> Curl) not correct XML    
+
+    || compare values
+    def value-match? =
+        {compare-any self.request-value, self.response-value}
+    
+    || compare XML
+    || - expected
+    set self.message-xml = {build-xml message-xml-source}
+    || - actual
+    set self.round-trip-xml = {build-xml {ByteArrayInputStream req-bytes}}
+
+    def query = WSDLEchoTestCase.query-body
+    def actual = {self.round-trip-xml.search query}.as-XDMElement
+    def expected = {self.message-xml.search query}.as-XDMElement
+    def acceptable-source = self.accept-body-xml-source
+    
+    def (exact-xml-match?, exact-mismatches) =
+        {compare-xdm-node expected, actual,
+            compare-whitespace? = false,
+            compare-namespace-declarations? = false}
+
+    def (xml-match?, mismatches) =
+        {if exact-xml-match? or acceptable-source == null then
+            (exact-xml-match?, exact-mismatches)
+         else
+            def acceptable =
+                {build-xml preserve-whitespace? = false,
+                    {non-null acceptable-source}}.root
+            {compare-xdm-node acceptable, actual,
+                compare-whitespace? = false,
+                compare-namespace-declarations? = false}
+        }
+
+    || NOTE: there may be false negatives, because xml=>value is not 1-to-1
+    || - we may generate different but valid representation
+
+    def msg = {StringBuf}
+    {for m in mismatches do
+        {if not msg.empty? then
+            {msg.append '\n'}}
+        {msg.concat m.message}}
+
+    {if not xml-match? then
+        {self.dump-messages expected, actual, value-match?}
+    }
+    
+    set self.match? = xml-match?
+    
+    {if self.match? 
+     then {TestCondition.succeed}
+     else {TestCondition.fail message = {msg.to-String}}
+    }
+  }
+  def query-body =
+      {XDMPath "/e:Envelope/e:Body/*",
+            e = "http://schemas.xmlsoap.org/soap/envelope/"}
+  {method {dump-messages
+              expected:XDMElement,
+              actual:XDMElement,
+              value-match?:bool,
+              out:TextOutputStream = {get-stdout}}:void
+    {output "\n=== " & self.name & " === " & value-match?}
+    {write-as-fragment expected, out = out}
+||--    {expected.to-XML out = out}
+    {output "\n---"}
+||--    {actual.to-XML out = out}
+    {write-as-fragment actual, out = out}
+    {output "\n"}
+    {out.flush}
+  }
+}
+|| prefix declarations
+{define-proc {dwim-prefix-declarations
+                 subject:XDMElement,
+                 context:XDMNamespaceContext = xml-namespace-context
+             }:void
+    {subject.walk-children 
+        || walk descendants and self
+        include-self? = true,
+        include-descendants? = true,
+        {proc {n:XDMNode}:bool
+            {type-switch n
+             case e:XDMElement do
+                || check declared prefixes
+                {if-non-null ps = e.namespace-declarations then
+                    {for p in {ps.get-prefixes} do
+                        {if-non-null ns = {ps.get-uri p} then
+                            {if {context.get-uri p} == null 
+                             then
+                                || extend global declarations accordingly
+                                {context.declare-prefix? p, ns}}}}}}
+            || continue walking
+            {return true}}}
+}
+{define-proc {write-as-fragment
+                 node:XDMElement,
+                 out:#TextOutputStream = null
+             }:String
+    def nsd = node.namespace-declarations
+    {if-non-null nsd then
+        def fragment = {node.clone}
+        {fragment.clear-namespace-declarations}
+        set node = fragment}
+    {return
+        {XDMWriter.write-XML
+            out = out,
+            fragment? = true,
+            context = nsd,
+            node}}
+}
+{define-proc {wrap-message
+                 msg:StringInterface,
+                 namespace:String = "http://www.example.com"
+             }:String
+    {return
+        {format "
+<e:Envelope
+    xmlns:ex='%s'
+    xmlns:e='http://schemas.xmlsoap.org/soap/envelope/'>
+  <e:Body>%s</e:Body>
+</e:Envelope>",
+            namespace, msg}}
+}

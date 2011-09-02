@@ -1,0 +1,756 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{doc-next ||=== AttributeElaborationMode
+    {purpose 
+        Specifies how {docref XmlElaboration} converts attributes.}
+}
+{define-enum public AttributeElaborationMode
+    none,
+    as-attribute,
+    as-element,
+    valid-keywords,
+    all
+}
+{doc-next ||=== TagElaborationMode
+    {purpose 
+        Specifies how {docref XmlElaboration} converts element names.}
+}
+{define-enum public TagElaborationMode
+    local-name,
+    qualified-name,
+    xml-name
+}
+|| ------------------------------------------------------------
+|| elaboration controller
+|| ------------------------------------------------------------
+{doc-next ||=== XmlElaboration
+    {purpose
+        XML elaboration allows an entire XML structure 
+        to be systematically transformed into native Curl objects. 
+        A mapping is defined associating element names 
+        with elaboration expressions which produce Curl content.
+        
+        Use {docref xml-elaboration} to create an {docref XmlElaboration}.        
+    }
+    
+    {details
+        There are two ways (elaboration modes) by which {docref XDMElement} 
+        content is made available to the elaboration expression.
+
+        {italic Mapping XDM content to Curl arguments}
+    
+        Contents are mapped to arguments as follows:
+        {itemize
+            {item attributes map to keyword arguments}
+            {item children map to positional arguments}
+            {itemize
+                {item text maps to String, 
+                    ignoring {docref xml-whitespace?} strings
+                    unless {ctext preserve-whitespace?} is true}
+                {item element according to its elaboration}
+            }
+        }
+        
+        By default, the {docref-abbr XDMNode.xmlname}
+        is not supplied to the expression.
+        When {ctext call-with-name?} is true,
+        the xmlname is included in the arguments. 
+        (This defaults according to whether the first positional argument 
+        of the elaboration procedure is of type {docref XDMName}.)
+
+        {italic Direct access to XDM element}
+
+        When {ctext call-with-node?} is true,
+        the elaboration expression is passed the node directly.
+        (This defaults according to whether the elaboration procedure
+        has a single {docref XDMElement} argument.)
+        In this case, usually, it is responsible for processing the children,
+        so the children will not be elaborated and supplied as arguments.
+        
+        When {ctext elaborate-subnodes?} is true, 
+        children will always be elaborated.
+        (This is normally true, but false when {ctext call-with-node?} is specified,
+        unless the elaboration action accepts rest arguments)
+        
+        {italic Stylesheet processing}
+        
+        When a {docref XmlStyleSheet} is supplied,
+        keyword arguments will be generated in accordance
+        with the styling rules specified in the stylesheet,
+        (via {docref XmlStyleSheet.style-arguments})
+        if the elaborated type can accept them
+        (as determined by {docref XmlStyleSheet.can-be-styled?}).
+        
+        If {ctext call-with-styling?} is false,
+        all stylesheet processing will be suppressed.
+        The default is true.
+        
+        {italic elaboration context}
+        
+        Sometimes it is useful to have access to the elaboration context
+        in order to explicitly elaborate subordinate nodes.
+        When {ctext call-with-elaboration?} is true,
+        the elaboration expression is passed the current elaboration context,
+        using the {ctext elaboration} keyword argument.
+        (This defaults according to whether the elaboration action
+        accepts a keyword argument {ctext elaboration} of type {docref XmlElaboration}).
+        
+    }
+}
+{define-class public abstract XmlElaboration
+  field _stylesheet:#XmlStyleSheet
+  {getter public {stylesheet}:#XmlStyleSheet
+    {return self._stylesheet}
+  }
+  {setter public {stylesheet val:#XmlStyleSheet}:void
+    set self._stylesheet = val
+  }
+  field public constant call-with-name?:bool
+  field public constant call-with-node?:bool
+  field public constant call-with-styling?:bool
+  field public constant call-with-elaboration?:bool
+  field public constant elaborate-subnodes?:bool
+  field public constant attribute-mode:AttributeElaborationMode
+  field public constant tag-mode:TagElaborationMode
+  field public constant preserve-whitespace?:bool
+  
+  {constructor {internal 
+                   stylesheet:#XmlStyleSheet = null,
+                   tag-mode:TagElaborationMode = 
+                       TagElaborationMode.xml-name,
+                   attribute-mode:AttributeElaborationMode = 
+                       AttributeElaborationMode.all,
+                   call-with-name?:bool = false,
+                   call-with-node?:bool = false,
+                   elaborate-subnodes?:bool = not call-with-node?,
+                   call-with-styling?:bool = true,
+                   call-with-elaboration?:bool = false,
+                   preserve-whitespace?:bool = false}
+    set self.stylesheet = stylesheet
+    set self.call-with-name? = call-with-name?
+    set self.call-with-node? = call-with-node?
+    set self.elaborate-subnodes? = elaborate-subnodes?
+    set self.call-with-styling? = call-with-styling?
+    set self.call-with-elaboration? = call-with-elaboration?
+    set self.attribute-mode = attribute-mode
+    set self.tag-mode = tag-mode
+    set self.preserve-whitespace? = preserve-whitespace?
+  }
+  {factory public {import
+                      loc:Url
+                  }:XmlElaborationDispatch
+    let e:XmlElaborationDispatch =
+        {evaluate loc,
+            package = 
+                {OpenPackage 
+                    COM.CURL.WSDK.XML-DOCUMENT-MODEL,
+                    || COM.CURL.WSDK.XML-ELABORATION,
+                    {this-package}}
+        } asa XmlElaborationDispatch
+    {return e}
+  }
+  {factory public {composite 
+                      default-action:XmlElaboration = XmlElaboration.ignore,
+                      ...:XmlElaborationDispatch
+                  }:XmlElaborationDispatch
+    || empty composite
+    let table:XmlElaborationTable = 
+        {XmlElaborationTable default-action = default-action}
+    
+    || process arguments
+    {for x:XmlElaborationDispatch in ... do
+        let t:XmlElaborationTable = x.table
+        || merge actions
+        {for a key k in t do
+            set table[k] = a
+        }
+    }
+    {return {XmlElaborationDispatch table}}
+  }
+  {factory public 
+    implicit {default action:any, ...}:XmlElaboration
+    {type-switch action
+     case type:ClassType do
+        {return {XmlElaborationType type, {splice ...}}}
+     case table:XmlElaborationTable do
+        {return {XmlElaborationDispatch table, {splice ...}}} 
+     else
+        {type-switch {type-of action}
+         case p:ProcType do
+            {return {XmlElaborationFunction action, {splice ...}}}
+         else
+            {XmlElaboration.cast-exception action}
+            || never returns
+        }}
+  }
+  {method public abstract {action ...}:any
+  }
+  {method public abstract {valid-keyword? k:String}:bool
+  }
+  {let public ignore:XmlElaboration =
+      {proc {x:XDMElement}:XmlVoidPrototype
+          {return {XmlVoidPrototype}}}
+  }
+  {define-proc {cast-exception action:any}:never-returns
+    {throw 
+        {CastException action, {proc-type {...}:any}}}
+  }
+  || elaboration framework
+  {method public {lookup tag:XDMName}:XmlElaboration
+    {return self}
+  }
+  {method {arguments 
+              node:XDMElement,
+              context:XmlElaboration = self,
+              stylesheet:#XmlStyleSheet = context.stylesheet
+          }:Arguments
+    let args:Arguments = {Arguments}
+    || special arguments
+    {if self.call-with-name? then
+        {args.append
+            {switch self.tag-mode
+             case TagElaborationMode.local-name do
+                node.local-name
+             case TagElaborationMode.qualified-name do
+                node.qualified-name
+             else ||TagElaborationMode.xml-name do
+                node.xmlname}}}
+    {if self.call-with-node? then
+        {args.append node}}
+    {if self.call-with-elaboration? then
+        {args.append context, keyword = "elaboration"}}
+    || from attributes
+    {if not self.attribute-mode == AttributeElaborationMode.none then
+        {if self.elaborate-subnodes? then
+            {if-non-null atts = node.attributes then
+                {for val key att:XDMName in atts do
+                    || filtered appropriately
+                    {switch self.attribute-mode
+                     case AttributeElaborationMode.as-attribute do
+                        || create 'equivalent' attribute
+                        {self.append-argument args,
+                            {XDMAttribute att, val}}
+                     case AttributeElaborationMode.as-element do
+                        || create 'equivalent' node
+                        let n:XDMElement = 
+                            {XDMElement att, val}
+                        || elaborate the node
+                        let nx:any = 
+                            {self.elaborate n,
+                                context = context,
+                                stylesheet = stylesheet}
+                        || append corresponding argument
+                        {self.append-argument args, nx}                
+                     case AttributeElaborationMode.valid-keywords do
+                        {if {self.valid-keyword? att.local-name} then
+                            {args.append keyword = att.local-name, val}}
+                     case AttributeElaborationMode.all do
+                        {args.append keyword = att.local-name, val}
+                    }}}}}
+    || from elements
+    {if self.elaborate-subnodes? then
+        {for x in node.children do
+            {type-switch x
+             case n:XDMElement do
+                || elaborate the node
+                let x:any = 
+                    {self.elaborate n,
+                        context = context,
+                        stylesheet = stylesheet}
+                || append corresponding argument
+                {self.append-argument args, x}
+             case n:XDMText do
+                let s:String = n.content
+                {if self.preserve-whitespace? or not {xml-whitespace? s} then
+                    {args.append s}}
+             case n:XDMProcessingInstruction do
+                || nothing
+             else
+                || shouldn't happen
+                {output {message unexpected type {value x}}}
+                {args.append x}}}}
+    || from stylesheet
+    {if-non-null stylesheet then
+        {if self.call-with-styling? and self.can-be-styled? then
+            || TODO: merge subordinate stylesheets  
+            || -- from XDMProcessingInstruction, above
+            {if-non-null ps = {stylesheet.style-arguments node} then 
+                {for (x, k) in ps do
+                    {args.append keyword = k, x}}}
+        }}
+    {return args}
+  }
+  {method public {append-argument args:Arguments, x:any}:void
+    {type-switch x                             
+     case xs:ArgumentsPrototype do
+        || special: splice
+        {for (x, k) in xs.arguments do
+            {if-non-null k then
+                {args.append x, keyword = k}
+             else
+                {args.append x}}}
+     case x:KeywordPrototype do
+        || special: keyword
+        {args.append x.value,
+            keyword = x.keyword}
+     case x:VoidPrototype do
+        || special: maybe ignore
+        {if not x.void? then
+            {args.append x}}
+     else
+        || standard: use as is
+        {args.append x}}
+  }
+  {method public {elaborate 
+                     node:XDMElement,
+                     context:XmlElaboration = self,
+                     stylesheet:#XmlStyleSheet = context.stylesheet
+                 }:any
+    let tag:XDMName = node.xmlname
+    || lookup the action
+    let elaboration:XmlElaboration = 
+        {context.lookup tag}
+    let args:Arguments = 
+        {elaboration.arguments 
+            context = context,
+            stylesheet = stylesheet,
+            node}
+    || application
+    let result:any =
+        {elaboration.action {splice args}}
+    {return result}
+  }
+  {getter abstract {can-be-styled?}:bool
+  }
+  {method {type-can-be-styled? type:Type}:bool
+    {return
+        {if-non-null stylesheet = self.stylesheet then
+            {stylesheet.can-be-styled? type}
+         else false}}
+  }
+}
+{doc-next ||=== XmlElaborationType
+    {purpose 
+        Used by {docref XmlElaboration} to represent
+        an elaboration expression defined by a {ctext ClassType}.}
+}
+{define-class public XmlElaborationType {inherits XmlElaboration}
+  field type:ClassType
+  field ptype:ProcType
+  {constructor public {default  
+                          type:ClassType,
+                          call-with-node?:bool = false,
+                          call-with-name?:bool = false,
+                          elaborate-subnodes?:bool = true,
+                          call-with-styling?:bool = true,
+                          call-with-elaboration?:bool = true,
+                          ...}
+    set self.type = type
+    set self.ptype = {self.get-construction-type}
+    let _call-with-node?:bool = 
+        {if {keyword-supplied? call-with-node?} then
+            call-with-node?
+         else 
+            self.has-node-arg?}
+    {construct-super.internal
+        call-with-node? = _call-with-node?,
+        call-with-name? = 
+            {if {keyword-supplied? call-with-name?} then
+                call-with-name?
+             else
+||--                || does it create an element
+||--                {type.subtype-of? XDMElement} or
+                || check first arg
+                self.has-name-arg?
+            },
+        elaborate-subnodes? = 
+            {if {keyword-supplied? elaborate-subnodes?} then
+                elaborate-subnodes?
+             else
+                (not _call-with-node?) or
+                self.has-more-args?},
+        call-with-styling? = call-with-styling?,
+        call-with-elaboration? = 
+            {if {keyword-supplied? call-with-elaboration?} then
+                call-with-elaboration?
+             else 
+                self.has-elaboration-arg?},
+        {splice ...}}
+  }
+  {getter {can-be-styled?}:bool
+    {return {self.type-can-be-styled? self.type}}
+  }
+  {method public {action ...}:any
+    {with-compiler-directives allow-any-calls? = true do
+        {return {self.type {splice ...}}}}
+  }
+  {method public {valid-keyword? k:String}:bool
+    {return {valid-keyword? self.ptype, k}}
+  }
+  {getter {has-node-arg?}:bool
+    {return {has-node-arg? self.ptype}}
+  }
+  {getter {has-name-arg?}:bool
+    {return {has-name-arg? self.ptype}}
+  }
+  {getter {has-more-args?}:bool
+    {return {has-more-args? self.ptype}}
+  }
+  {getter {has-elaboration-arg?}:bool
+    {return {has-elaboration-arg? self.ptype}}
+  }
+  {method {get-construction-type}:ProcType
+    let t:ProcType = {proc-type {...}:any}
+    {if-non-null 
+        c:Constructor = {self.type.get-constructor "default"}
+     then 
+        set t = c.type asa ProcType
+     else
+        || TODO: {self.type.get-factory "default"}
+    }
+    {return t}
+  }
+}
+{doc-next ||=== XmlElaborationFunction
+    {purpose 
+        Used by {docref XmlElaboration} to represent
+        an elaboration expression defined by a {ctext proc}.}
+}
+{define-class public XmlElaborationFunction {inherits XmlElaboration}
+  field type:ProcType
+  field _action:any
+  {constructor public {default  
+                          action:any,
+                          call-with-node?:bool = false,
+                          call-with-name?:bool = false,
+                          elaborate-subnodes?:bool = true,
+                          call-with-styling?:bool = true,
+                          call-with-elaboration?:bool = true,
+                          ...}
+    {type-switch {type-of action}
+     case p:ProcType do
+        {if p.num-rets == 0 then
+            {XmlElaboration.cast-exception action}}
+        set self.type = p
+        set self._action = action
+        let _call-with-node?:bool = 
+            {if {keyword-supplied? call-with-node?} then
+                call-with-node?
+             else 
+                self.has-node-arg?}
+        {construct-super.internal
+            call-with-name? = 
+                {if {keyword-supplied? call-with-name?} then
+                    call-with-name?
+                 else 
+||--                    || does it create an element
+||--                    {self.return-type.subtype-of? XDMElement} or
+                    || check first arg
+                    self.has-name-arg?
+                },
+            call-with-node? = 
+                {if {keyword-supplied? call-with-node?} then
+                    call-with-node?
+                 else 
+                    self.has-node-arg?},
+            elaborate-subnodes? = 
+                {if {keyword-supplied? elaborate-subnodes?} then
+                    elaborate-subnodes?
+                 else
+                    (not _call-with-node?) or
+                    self.has-more-args?},
+            call-with-styling? = call-with-styling?,
+            call-with-elaboration? = 
+                {if {keyword-supplied? call-with-elaboration?} then
+                    call-with-elaboration?
+                 else 
+                    self.has-elaboration-arg?},
+            {splice ...}}
+     else
+        {XmlElaboration.cast-exception action}}
+  }
+  {getter {can-be-styled?}:bool
+    {return {self.type-can-be-styled? self.type}}
+  }
+  {method public {action ...}:any
+    {with-compiler-directives allow-any-calls? = true do
+        {return {self._action {splice ...}}}}
+  }
+  {method public {valid-keyword? k:String}:bool
+    {return {valid-keyword? self.type, k}}
+  }
+  {getter {has-node-arg?}:bool
+    {return {has-node-arg? self.type}}
+  }
+  {getter {has-name-arg?}:bool
+    {return {has-name-arg? self.type}}
+  }
+  {getter {has-more-args?}:bool
+    {return {has-more-args? self.type}}
+  }
+  {getter {has-elaboration-arg?}:bool
+    {return {has-elaboration-arg? self.type}}
+  }
+  {getter {return-type}:Type
+    {return {self.type.ret-type}}
+  }
+}
+|| ------------------------------------------------------------
+|| dispatch on tag
+|| ------------------------------------------------------------
+{doc-next ||=== XmlElaborationTable
+    {purpose 
+        Used by {docref XmlElaboration} to associate
+        element names with elaboration expressions.}
+}
+{define-class public XmlElaborationTable
+  {inherits {HashTable-of XDMName, XmlElaboration}}
+  field public constant default-action:XmlElaboration
+  {constructor public {default
+                          default-action:XmlElaboration = 
+                              XmlElaboration.ignore,
+                          ...}
+    set self.default-action = default-action
+    {construct-super {splice ...}}
+  }
+  {constructor public implicit 
+    {from-hashtable 
+        xs:{HashTable-of String, any},
+        default-action:XmlElaboration = 
+            XmlElaboration.ignore,
+||--        call-with-name?:bool = false,
+        namespace:String = ""}
+    set self.default-action = default-action
+    {construct-super}
+    {for x key k in xs do
+        let tag:XDMName = 
+            {XDMName namespace, k}
+        let action:XmlElaboration = 
+            {XmlElaboration x}
+        set self[tag] = action}
+  }
+}
+{doc-next ||=== XmlElaborationDispatch
+    {purpose          
+        Used by {docref XmlElaboration} to dispatch
+        to the elaboration expression corresponding
+        to an element name.}
+}
+{define-class public XmlElaborationDispatch {inherits XmlElaboration}
+  field public-get table:XmlElaborationTable
+  || ### propagate stylesheet
+  {setter public {stylesheet val:#XmlStyleSheet}:void
+    set super.stylesheet = val
+    set self.table.default-action.stylesheet = val
+    {for x in self.table do
+        set x.stylesheet = val}
+  }
+  {constructor public {default 
+                          table:XmlElaborationTable,
+                          ...}
+    set self.table = table
+    {construct-super.internal
+        call-with-name? = false,
+        call-with-node? = true,
+        {splice ...}}
+  }
+  {method public {action ...}:any
+    || TODO: what does this mean?
+    {return 
+        {self.elaborate {get-nth-argument 0, {splice ...}} asa XDMElement}}
+  }
+  {getter {can-be-styled?}:bool
+    {return false}
+  }
+  {method public {valid-keyword? k:String}:bool
+    {return false}
+  }
+  || elaboration framework
+  {method public {lookup tag:XDMName}:XmlElaboration
+    let (elaboration:XmlElaboration, exists?:bool) = 
+        {self.table.get-if-exists tag}
+    {return 
+        {if exists? then elaboration
+         else self.table.default-action}}
+  }
+}
+|| ------------------------------------------------------------
+|| generic stylesheet protocol
+|| ------------------------------------------------------------
+{doc-next ||=== XmlStyleSheet
+    {purpose 
+        Generic stylesheet protocol.}
+}
+{define-class public XmlStyleSheet
+  {doc-next ||=== XmlStyleSheet.style-arguments
+    {purpose 
+        Generate styling arguments for the specified element.}
+  }
+  {method public {style-arguments node:XDMElement}:#Arguments
+    {return null}
+  }
+  {doc-next ||=== XmlStyleSheet.can-be-styled?
+    {purpose 
+        Indicate wheteher a given type or proc-type can accept styling arguments.}
+  }
+  {method public {can-be-styled? type:Type}:bool
+    {return false}
+  }
+}
+|| ------------------------------------------------------------
+|| special elaboration results
+|| ------------------------------------------------------------
+{doc-next ||=== KeywordPrototype
+    {purpose 
+        Abstract base class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as a keyword argument.}
+}
+{define-class public abstract KeywordPrototype
+  {getter public abstract {keyword}:String}
+  {getter public abstract {value}:any}
+  {factory public implicit 
+    {from-xml-node node:XDMElement}:XmlKeywordPrototype
+    {return {XmlKeywordPrototype node}}
+  }  
+}
+{doc-next ||=== ArgumentsPrototype
+    {purpose 
+        Abstract base class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as keyword arguments.}
+}
+{define-class public abstract ArgumentsPrototype
+  {getter public abstract {arguments}:Arguments}
+}
+{doc-next ||=== VoidPrototype
+    {purpose 
+        Abstract base class used by {docref XmlElaboration} expressions
+        to represent content that should be ignored.}
+}
+{define-class public abstract VoidPrototype
+  {getter public abstract {void?}:bool}
+}
+{doc-next ||=== XmlKeywordPrototype
+    {purpose 
+        Class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as a keyword argument.}
+}
+{define-class public XmlKeywordPrototype 
+  {inherits KeywordPrototype}
+  field public-get node:XDMElement
+  {constructor public {default node:XDMElement} 
+    set self.node = node
+  }
+  {getter public {keyword}:String
+    {return self.node.local-name}
+  }
+  {getter public {value}:any
+    {return {self.node.get-text}}
+  }
+}
+{doc-next ||=== GenericKeywordPrototype
+    {purpose 
+        Class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as a keyword argument.}
+}
+{define-class public GenericKeywordPrototype 
+  {inherits KeywordPrototype}
+  field public-get _keyword:String
+  field public-get _value:any
+  {constructor public {default keyword:String, value:any}
+    set self._keyword = keyword
+    set self._value = value
+  }
+  {getter public {keyword}:String
+    {return self._keyword}
+  }
+  {getter public {value}:any
+    {return self._value}
+  }
+}
+{doc-next ||=== GenericArgumentsPrototype
+    {purpose 
+        Class used by {docref XmlElaboration} expressions
+        to represent content that should be treated as keyword arguments.}
+}
+{define-class public GenericArgumentsPrototype
+  {inherits ArgumentsPrototype}
+  field _arguments:Arguments
+  {constructor public {default ...}
+    set self._arguments = {Arguments ...}
+  }
+  {getter public {arguments}:Arguments
+    {return self._arguments} 
+  }
+}
+{doc-next ||=== XmlVoidPrototype
+    {purpose 
+        Class used by {docref XmlElaboration} expressions
+        to represent content that should be ignored.}
+}
+{define-class public XmlVoidPrototype
+  {inherits VoidPrototype}
+  field _arguments:Arguments
+  {constructor public {default ...}
+    set self._arguments = {Arguments ...}
+  }
+  {getter public {void?}:bool
+    {return true}
+  }
+}
+{define-proc {valid-keyword? p:ProcType, k:String, type:Type = XDMName}:bool
+    {for i = 0 below p.num-keyword-args do
+        {if {p.keyword-arg-name i} == k then
+            let t:Type = {p.keyword-arg-type i}
+            {if t == any then
+                {return true}}
+            {switch type
+             case XDMName do
+                || TODO: allow other "convertible" types
+                || -- StringInterface, EnumType, implicit, nullable, etc
+                || -- also ... or, at least, declared options
+                {return t == String or t == XDMName}
+             else
+                {return {type.subtype-of? t}}}
+        }}
+    {return false}
+}
+{define-proc {has-node-arg? p:ProcType}:bool
+    {return
+        (p.num-args >= 1 and
+         {type-switch {p.arg-type 0}
+          case c:ClassType do
+             {c.subtype-of? XDMElement}
+          else false})}
+}
+{define-proc {has-name-arg? p:ProcType}:bool
+    {return
+        (p.num-args >= 1 and
+         {type-switch {p.arg-type 0}
+          case c:ClassType do
+             {c.subtype-of? XDMName}
+          else false})}
+}
+{define-proc {has-elaboration-arg? p:ProcType}:bool
+    {return 
+        {valid-keyword? p, "elaboration", type = XmlElaboration}} 
+}
+{define-proc {has-more-args? p:ProcType}:bool
+    {return
+        (p.num-args > 1 or
+         p.takes-rest-args?)}
+}
+

@@ -1,0 +1,80 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0, 7.0, 8.0 applet}
+{applet manifest = "web-search/manifest.mcurl",
+    {compiler-directives careful? = true}
+}
+|| import the service package
+{import * from COM.MICROSOFT.SCHEMAS.LIVESEARCH._2008._03.SEARCH.Search}
+{import * from COM.CURL.WSDK.RECORDSET-FOR}
+
+|| instantiate the service class
+{def SERVICE = 
+    {LiveSearchService}
+}
+|| developed applications will need their own key
+|| you can use this for a few tests while
+|| you're getting your own key
+{def APPID = 
+    "7255C27169150569FD65DC4EA7B1583D7A5E8232"
+}
+|| use the service
+{define-proc {web-search 
+                 query:String,
+                 offset:uint = 0,
+                 count:uint = 10                
+             }:(RecordSet, SearchResponse)
+    def request = 
+        {SearchRequest.from-keywords 
+            query = query, 
+            appId = APPID,
+            web = {WebRequest.from-keywords count = count, offset = offset},
+            sources = {{Array-of SourceType} SourceType.web}}
+    def response = {SERVICE.search request}
+    def results = {non-null response.web.results} 
+    def rs = {{RecordSet-for WebResult}}
+    {with rs.batch-events? = true do
+        {for result in results do
+            {rs.append result}}
+        {rs.commit}}            
+    {return rs, response}
+}
+|| display results
+{try
+    def query = "Curl Web 2.0"
+    def (rs, result) = {web-search query}
+    {VBox
+        {HBox
+            {bold WSDK Search Web Service},
+            {Fill},
+            {text Results from {link href ={url "http://www.live.com"}, bing}}},
+        {RecordGrid
+            record-source = rs,  
+            width = 8in,
+            height = 3in,
+            halign = "left",
+            automatic-columns? = false,
+            {RecordGridColumn "title", width = 2in},
+            {RecordGridColumn "url", header-spec = "URL", width = 2in},
+            {RecordGridColumn "description", width = 3in}}
+    }
+ catch e:HttpException do
+    {paragraph
+        Unable to connect to {bold Web Search Service}:        
+        {pre color = "red", {value e}}
+    }
+}

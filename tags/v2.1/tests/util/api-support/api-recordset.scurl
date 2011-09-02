@@ -1,0 +1,147 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{import * from CURL.LANGUAGE.SOURCE}
+{import * from CURL.LANGUAGE.REFLECTION}
+
+{define-proc public {curl-api-recordset}:RecordSet
+    {return
+        {RecordSet 
+            {RecordFields
+                {RecordField "package", domain = String},
+                {RecordField "class", domain = String},
+                {RecordField "member", domain = String},
+                {RecordField "kind", domain = String},
+                {RecordField "type", domain = String}
+            }}}
+}
+|| dummy types used for representative ParameterizedType instances
+{define-class T}
+{define-enum ET dummy}
+
+{define-proc public {curl-api-members 
+                 in:any,
+                 check-imports?:bool = false,
+                 out:RecordSet = {curl-api-recordset},
+                 seen:Set = {Set} 
+             }:(RecordSet , Set) 
+    let package:String = ""
+    let members:{FastArray-of PackageMember} =
+        {type-switch in
+         case ms:{FastArray-of PackageMember} do 
+            set package = {non-null ms[0].package.name}
+            ms
+         case p:Package do 
+            set package = 
+                {if-non-null n = p.name then n else "[anonymous]"}
+            {p.get-members check-imports? = check-imports?} 
+         else {error {message Bogus input {type-of in}}}}
+    || common code for other types
+    let do-other:{proc-type {PackageMember}:void} =
+        {proc {x:PackageMember}:void
+            let kind:String =
+                {if {proc? {x.get-value}} then "Proc"
+                 else "Variable"}
+            let package:String = 
+                {if-non-null n = x.package.name then n else "[anonymous]"}
+            {out.append
+                {RecordData
+                    package = package,
+                    class = "-Global-",
+                    member = x.name,
+                    kind = kind,
+                    type = {String x.type}}}}
+    || common code for class members
+    let do-class:{proc-type {ClassType}:void} =
+        {proc {t:ClassType}:void
+            || class inheritance
+            {for s in t.direct-superclasses do
+                {out.append
+                    {RecordData
+                        package = package,
+                        class = t.name,
+                        member = "->",
+                        kind = "Inherits",
+                        type = s.name}}}
+            || class members
+            {for m in {t.get-members search-superclasses? = false} do  
+                {out.append
+                    {RecordData
+                        package = package,
+                        class = t.name,
+                        member = m.name,
+                        kind = {type-of m}.name,
+                        type = m.type.name}}}}
+    || process each package member
+    let n-duplicates:int = 0
+    {for x in members do
+        let package:String = 
+            {if-non-null n = x.package.name then n else "[anonymous]"}
+        let val:any = {x.get-value}
+        {if {seen.member? val} then
+            {output {message api-recordset duplicate: '{value x.name}'}}
+            {inc n-duplicates}
+            {continue}
+         else
+            {if {proc? val} 
+                or val isa ParameterizedTypeTemplate 
+                or val isa ClassType then
+                {seen.insert val}}}
+        {type-switch val
+         case t:ClassType do 
+            {if x.name != t.name then
+                || type alias
+                {do-other x}
+             else
+                {do-class t}}
+         case t:ParameterizedTypeTemplate do 
+            || attempt creation of representative type
+            let ps:Arguments = {Arguments}
+            {for p in t.positional-type-parameters do
+                {ps.append
+                    {switch p.type
+                     case EnumType do ET
+                     case NumericType do double
+                     case String do "T"
+                     else T}}}
+            {try
+                let ct:ClassType = {t.construct {splice ps}} asa ClassType
+                {do-class ct}
+             catch e:Exception do
+                || problem instantiating template
+                {output {message Could not determine members of {value t}}}
+                {do-other x}}
+         case t:EnumType do
+            || enumeration
+            {for i = 0 below t.for-loop-count do
+                {with-compiler-directives allow-any-calls? = true do
+                    {out.append
+                        {RecordData
+                            package = package,
+                            class = t.name,
+                            member = t[i].name,
+                            kind = "Enum",
+                            type = {String x.type}
+                        }}}}
+         else
+            || top level definition
+            {do-other x}
+        }}
+    {if n-duplicates > 0 then
+        {output {message Saw {value n-duplicates} duplicates in {value package}}}}
+    {return out, seen}
+}
+

@@ -1,0 +1,296 @@
+{curl 6.0, 7.0, 8.0 package}
+{package COM.CURL.WSDL.LoggingFacility,
+    {compiler-directives careful? = true}}
+
+|| This file was generated with COM.CURL.WSDK.WSDL
+|| WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/tests/test-cases/wsdl-services/WS-I/LoggingFacility.wsdl
+
+{import * from COM.CURL.WSDK.SOAP}
+{define-class public LoggingFacilityService {inherits WSDLHTTPRPCPostClient}
+
+{doc-next 
+    {details 
+        Append an entry to the system log.
+    }
+}
+  {method public {log-event document:LogEventRequestType}:void
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "log-event",
+            {{Array-of any}
+                document
+            },
+            {splice self.operations["log-event"]}
+        }
+    {return
+
+    }
+  }
+
+
+{doc-next 
+    {details 
+        Append an entry to the system log.
+    }
+}
+  {method public {define-log-event}:void
+    set self.operations["log-event"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestElement"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestType"},
+                    curl-type = LogEventRequestType,
+                    nillable? = true,
+                    marshaler-handled-element? = true
+                }
+            },
+            {{Array-of #XMLName}
+            },
+            {{Array-of SOAPObjectType}
+            },
+            null,
+            soap-action = "",
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+
+{doc-next 
+    {details 
+        Retrieve entries from the system log with the specified userId.
+    }
+}
+  {method public {get-events demo-user-id:String}:(document:{Array-of LogEntry})
+    let constant (responses:{Array-of any},
+         headers:#{Array-of any},
+         header-roles:#{Array-of #String},
+         header-must-understands:#{Array-of bool},
+         root-attributes:#{Array-of XMLAttribute}) =
+        {self.call
+            "get-events",
+            {{Array-of any}
+                demo-user-id
+            },
+            {splice self.operations["get-events"]}
+        }
+    {return
+        responses[0] asa {Array-of LogEntry}
+    }
+  }
+
+
+{doc-next 
+    {details 
+        Retrieve entries from the system log with the specified userId.
+    }
+}
+  {method public {define-get-events}:void
+    set self.operations["get-events"] = 
+        {Arguments
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "DemoUserID"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "string"},
+                    curl-type = String,
+                    nillable? = true
+                }
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseElement"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseType"},
+                    curl-type = {Array-of LogEntry},
+                    nillable? = true
+                }
+            },
+            null,
+            soap-action = "",
+            request-operation = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsRequestElement"},
+            response-operation = null,
+            rpc-style? = false,
+            write-type-attribute? = false,
+            write-encoding-attribute? = false
+    }
+  }
+
+  {method protected {define-operations}:void
+     {self.define-log-event}
+     {self.define-get-events}
+  }
+
+  {method public {register-types
+                 }:(type-mapper:SOAPTypeMapper,
+                    element-name-to-xml-type:SOAPElementNameToXMLTypeMapper,
+                    xml-type-to-curl-type:SOAPXMLTypeToCurlTypeMapper,
+                    curl-type-to-xml-type:SOAPCurlTypeToXMLTypeMapper,
+                    xml-type-to-element-name:SOAPXMLTypeToElementNameMapper
+                   )
+    let constant type-mapper:DefaultSOAPTypeMapper =
+        {DefaultSOAPTypeMapper}
+    let constant element-name-to-xml-type:DefaultSOAPElementNameToXMLTypeMapper =
+        {DefaultSOAPElementNameToXMLTypeMapper}
+    let constant xml-type-to-curl-type:DefaultSOAPXMLTypeToCurlTypeMapper =
+        {DefaultSOAPXMLTypeToCurlTypeMapper}
+    let constant curl-type-to-xml-type:DefaultSOAPCurlTypeToXMLTypeMapper =
+        {DefaultSOAPCurlTypeToXMLTypeMapper}
+    let constant xml-type-to-element-name:DefaultSOAPXMLTypeToElementNameMapper =
+        {DefaultSOAPXMLTypeToElementNameMapper}
+    {do
+        let constant soap-struct-marshaler:SOAPStructMarshaler =
+        {SOAPStructMarshaler
+            {SOAPObjectType
+                element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsFaultElement"},
+                xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsFaultType"},
+                curl-type = GetEventsFaultType,
+                nillable? = true
+            },
+            {{Array-of #XMLName}
+                {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "Reason"}
+            },
+            {{Array-of SOAPObjectType}
+                {SOAPObjectType
+                    xml-type = {XMLName SOAPTypeMapper.xml-schema-uri, "NMTOKEN"},
+                    curl-type = {XMLSimpleValue-for "NMTOKEN"}
+                }
+            },
+            {{Array-of String}
+                "reason"
+            },
+            element-name-to-xml-type = element-name-to-xml-type,
+            xml-type-to-curl-type = xml-type-to-curl-type,
+            curl-type-to-xml-type = curl-type-to-xml-type,
+            xml-type-to-element-name = xml-type-to-element-name
+        }
+        {soap-struct-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "_LogEntry"},
+                    curl-type = LogEntry,
+                    nillable? = true,
+                    marshaler-handled-element? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant doc-marshaler:SOAPXMLDocumentMarshaler =
+            {SOAPXMLDocumentMarshaler
+                {SOAPObjectType
+                    element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestElement"},
+                    xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "logEventRequestType"},
+                    curl-type = LogEventRequestType,
+                    nillable? = true,
+                    marshaler-handled-element? = true
+                },
+                data-has-root-element? = true
+            }
+        {doc-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {do
+        let constant array-marshaler:SOAPArrayMarshaler =
+            {SOAPArrayMarshaler.from-element-type-array
+                {{Array-of SOAPObjectType}
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "_LogEntry"},
+                        curl-type = LogEntry,
+                        marshaler-handled-element? = true
+                    },
+                    {SOAPObjectType
+                        element-name = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseElement"},
+                        xml-type = {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "getEventsResponseType"},
+                        curl-type = {Array-of LogEntry},
+                        nillable? = true
+                    }
+                },
+                element-names =
+                    {{Array-of #XMLName}
+                        {XMLName "http://www.ws-i.org/SampleApplications/SupplyChainManagement/2002-08/LoggingFacility.xsd", "LogEntry"}
+                    },
+                xml-type-to-curl-type = xml-type-to-curl-type,
+                curl-type-to-xml-type = curl-type-to-xml-type,
+                xml-type-to-element-name = xml-type-to-element-name
+            }
+        {array-marshaler.register
+            type-mapper = type-mapper,
+            element-name-to-xml-type-mapper = element-name-to-xml-type,
+            xml-type-to-curl-type-mapper = xml-type-to-curl-type,
+            curl-type-to-xml-type-mapper = curl-type-to-xml-type,
+            xml-type-to-element-name-mapper = xml-type-to-element-name
+        }
+    }
+    {return
+        type-mapper,
+        element-name-to-xml-type,
+        xml-type-to-curl-type,
+        curl-type-to-xml-type,
+        xml-type-to-element-name
+    }
+  }
+
+  {constructor public
+    {default
+        service-location:Url =
+            {abs-url "http://localhost:8888/ws-i/supplychain/services/LoggingFacility"},
+            ...
+    }
+    {construct-super.WSDLHTTPRPCPostClient service-location,
+        generated-using-version = "6",
+        {splice ...}
+    }
+  }
+}
+
+{define-class public open GetEventsFaultType
+
+  field public reason:{XMLSimpleValue-for "NMTOKEN"} = {uninitialized-value-for-type {XMLSimpleValue-for "NMTOKEN"}}
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      reason:{XMLSimpleValue-for "NMTOKEN"} = {required-keyword "GetEventsFaultType.reason"} asa {XMLSimpleValue-for "NMTOKEN"}
+    }
+    {if {keyword-supplied? reason} then
+        set self.reason = reason}
+  }
+
+}
+
+{let public constant LogEntry:Type = any}
+
+{let public constant LogEventRequestType:Type = any}
+

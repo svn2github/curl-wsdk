@@ -1,0 +1,154 @@
+<?xml version="1.0"?>
+
+<definitions name="SOAP-12-TestDefinitions"
+	targetNamespace="http://whitemesa.net/wsdl/soap12-test"
+	xmlns="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:enc="http://www.w3.org/2003/05/soap-encoding"
+	xmlns:tns="http://whitemesa.net/wsdl/soap12-test"
+	xmlns:types="http://example.org/ts-tests/xsd"
+	xmlns:test="http://example.org/ts-tests"
+	xmlns:iop="http://soapinterop.org/"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+	<types>
+
+		<schema xmlns="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://soapinterop.org/">
+
+			<!-- xmlp-2 getTime -->
+			<element name="time" type="time"/>
+
+			<!-- xmlp-7 echoSenderFault -->
+			<element name="echoSenderFault" />
+
+			<!-- xmlp-8 echoReceiverFault -->
+			<element name="echoReceiverFault" />
+
+			<!-- xmlp-13 thru 19 echoString doc/lit operation -->
+			<element name="echoString">
+				<complexType>
+					<sequence>
+						<element minOccurs="0" maxOccurs="1" name="inputString" type="string" />
+					</sequence>
+				</complexType>
+			</element>
+			<element name="echoStringResponse">
+				<complexType>
+					<sequence>
+ 						<element minOccurs="0" maxOccurs="1" name="return" type="string" />
+					</sequence>
+				</complexType>
+			</element>
+			<!-- for xmlp-15 unknown header block -->
+			<element name="Unknown">
+				<complexType>
+					<sequence>
+						<element minOccurs="0" maxOccurs="1" name="stringValue" type="string" />
+					</sequence>
+				</complexType>
+			</element>
+
+		</schema>
+
+	</types>
+
+	<!-- xmlp-2 getTime doc/lit operation -->
+	<message name="getTimeDocResponse">
+		<part name="time" element="iop:time"/>
+	</message>
+
+	<!-- xmlp-7 echoSenderFault doc/lit operation -->
+	<message name="echoSenderFaultRequest">
+		<part name="inElement" element="iop:echoSenderFault" />
+	</message>
+	<message name="echoSenderFaultResponse" />
+
+	<!-- xmlp-8 echoReceiverFault doc/lit operation -->
+	<message name="echoReceiverFaultRequest">
+		<part name="inElement" element="iop:echoReceiverFault" />
+	</message>
+	<message name="echoReceiverFaultResponse" />
+
+	<!-- xmlp-13 thru 19 echoString doc/lit operation -->
+	<message name="echoStringDocRequest">
+		<part name="inElement" element="iop:echoString" />
+	</message>
+	<message name="echoStringDocResponse">
+		<part name="outElement" element="iop:echoStringResponse" />
+	</message>
+
+	<!-- xmlp-15 "unknown" header block -->
+	<message name="UnknownHdrBlock">
+		<part name="Unknown" element="iop:Unknown" />
+	</message>
+
+  	<portType name="Soap12AddTestPortTypeDoc">
+		<!-- xmlp-2 getTime operation -->
+    		<operation name="getTime">
+       			<output message="tns:getTimeDocResponse" />
+    		</operation>
+		<!-- xmlp-7 echoSenderFault doc/literal operation -->
+		<operation name="echoSenderFault">
+			<input message="tns:echoSenderFaultRequest" />
+			<output message="tns:echoSenderFaultResponse" />
+		</operation>
+		<!-- xmlp-8 echoReceiverFault doc/literal operation -->
+		<operation name="echoReceiverFault">
+			<input message="tns:echoReceiverFaultRequest" />
+			<output message="tns:echoReceiverFaultResponse" />
+		</operation>
+		<!-- xmlp-13 thru xmlp-19 echoString doc/literal operation -->
+		<operation name="echoString">
+			<input message="tns:echoStringDocRequest" />
+			<output message="tns:echoStringDocResponse" />
+		</operation>
+	</portType>
+
+  	<binding name="Soap12AddTestDocBinding" type="tns:Soap12AddTestPortTypeDoc">
+    		<soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http" />
+    		<operation name="getTime">
+      			<soap12:operation style="document" />
+      			<output>
+        			<soap12:body use="literal" />
+      			</output>
+    		</operation>
+		<operation name="echoString">
+			<soap12:operation style="document" />
+			<input>
+				<soap12:header message="tns:UnknownHdrBlock" part="Unknown" use="literal" />
+				<soap12:body use="literal" />
+			</input>
+			<output>
+				<soap12:body use="literal" />
+			</output>
+		</operation>
+		<operation name="echoSenderFault">
+			<soap12:operation style="document" />
+			<input>
+				<soap12:body use="literal" />
+			</input>
+			<output>
+				<soap12:body use="literal" />
+			</output>
+		</operation>
+		<operation name="echoReceiverFault">
+			<soap12:operation style="document" />
+			<input>
+				<soap12:body use="literal" />
+			</input>
+			<output>
+				<soap12:body use="literal" />
+			</output>
+		</operation>
+	</binding>
+
+
+	<service name="WhiteMesaSoap12AddTestSvc">
+
+  		<port name="Soap12AddTestDocIntermediaryPort" binding="tns:Soap12AddTestDocBinding">
+    			<soap12:address location="http://www.whitemesa.net/soap12/add-test-doc-int"/>
+  		</port>
+
+	</service>
+
+</definitions>

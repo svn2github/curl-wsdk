@@ -1,0 +1,115 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+|| project context
+|| ====================
+{define-class WSDLProjectContext {inherits EventTarget}
+  field constant surge-lab-interface:WSDLLabInterface
+  field current-manifest-loc:#Url
+  field current-manifest-stamp:DateTime = {DateTime}
+  field current-project:#ProjectInterface
+  field service-packages:StringArray = {StringArray}
+  
+  {constructor {default surge-lab-interface:WSDLLabInterface,
+                   ...:EventHandler}
+    set self.surge-lab-interface = surge-lab-interface
+    {construct-super {splice ...}}
+  }
+  
+  {getter {manifest-loc}:#Url
+    {return
+        {if-non-null project = self.current-project then
+            project.manifest-url
+         else null}}
+  }
+  {getter {base-url}:Url
+    {return
+        {if-non-null manifest-loc = self.manifest-loc then
+            manifest-loc.parent
+         else
+            {get-working-directory-url}}}
+  }
+  {method {validate-project-info}:void
+    || check project
+||--    {output {message validate-project-info : current-project}}
+    let current-project:#ProjectInterface = {self.surge-lab-interface.current-project}
+    let project-changed?:bool = current-project != self.current-project
+||--    {dump project-changed?}
+    {if project-changed? then
+        || note project
+        set self.current-project = current-project 
+        {self.handle-event
+            {WSDLProjectChanged}}
+    }
+    || check manifest 
+    let manifest-stamp:DateTime = 
+        {if-non-null loc = self.current-manifest-loc then
+            {type-switch {loc.instantiate-File}
+             case f:LocalFile do
+                {if-non-null when-last-modified = f.when-last-modified
+                 then when-last-modified
+                 else {DateTime}}
+             else {DateTime}}
+         else {DateTime}}   
+    let manifest-stamp-changed?:bool =
+        manifest-stamp > self.current-manifest-stamp
+    let manifest-loc-changed?:bool =
+        self.manifest-loc != self.current-manifest-loc 
+    let manifest-changed?:bool  = 
+        manifest-loc-changed? or manifest-stamp-changed?        
+    || note manifest
+    set self.current-manifest-loc = self.manifest-loc
+    set self.current-manifest-stamp = manifest-stamp
+||--    {dump manifest-changed?}   
+    
+    {if manifest-changed? then
+||--        {output {message validate-project-info : service-packages}}
+        let service-packages:StringArray = {self.project-service-packages}
+        let packages-changed?:bool = not {service-packages.equal? self.service-packages}
+||--        {dump packages-changed?}
+        {if packages-changed? then
+            set self.service-packages = service-packages
+            {self.handle-event
+                {WSDLProjectPackagesChanged}}
+        }
+    }
+  }
+  {method {project-service-packages}:StringArray
+    let locs:StringArray = {StringArray}
+    {if-non-null manifest-loc = self.current-manifest-loc then          
+||--        {output {message project-service-packages : importing {value manifest-loc}}}
+        {try
+            let m:ComponentManifest =
+                {import-manifest manifest-loc,
+                    check-out-of-date? = true, 
+                    use-cache? = false}
+            {for c in m do
+                {switch c.component-type
+                 case "package" do ||""
+                    {type-switch {c.get-if-exists "wsdl"} ||""
+                     case wloc:String do
+                        {locs.append wloc}}}}
+         catch e:Exception do
+            {output {message Unable to read manifest {value manifest-loc}}}
+            {output e}}}
+    {locs.sort}
+    {return locs}
+  }
+}
+{define-class WSDLProjectContextEvent {inherits Event}}
+{define-class WSDLProjectChanged {inherits WSDLProjectContextEvent}}
+{define-class WSDLProjectPackagesChanged {inherits WSDLProjectContextEvent}}
+

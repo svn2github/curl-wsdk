@@ -1,0 +1,22 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/_Doug/OpenCurl/WSDK/trunk/code/docs/en/dguide/examples/web-search/Search.wsdl
+
+{define-class public open NewsRelatedSearch
+
+  field public title:#String
+  field public url:#String
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      title:#String = {uninitialized-value-for-type #String},
+      url:#String = {uninitialized-value-for-type #String}
+    }
+    {if {keyword-supplied? title} then
+        set self.title = title}
+    {if {keyword-supplied? url} then
+        set self.url = url}
+  }
+
+}
+

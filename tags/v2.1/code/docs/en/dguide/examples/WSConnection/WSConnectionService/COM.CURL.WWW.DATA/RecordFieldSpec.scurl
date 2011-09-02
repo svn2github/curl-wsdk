@@ -1,0 +1,38 @@
+|| This file was generated with COM.CURL.WSDK.WSDL
+||  for WSDL file: file:///c:/eclipse/workspace_oss/curl-wsdk/trunk/code/docs/en/dguide/examples/WSConnection/WSConnectionService.wsdl
+
+{define-class public open RecordFieldSpec
+
+  field public name:String = ""
+  field public domain:String = ""
+  field public caption:String = ""
+  field public index:String = ""
+  field public nullable:bool
+  field public primary_key:bool
+  {constructor public {default}
+  }
+  {constructor public 
+    {from-keywords
+      name:String = {required-keyword "RecordFieldSpec.name"} asa String,
+      domain:String = {required-keyword "RecordFieldSpec.domain"} asa String,
+      caption:String = {required-keyword "RecordFieldSpec.caption"} asa String,
+      index:String = {required-keyword "RecordFieldSpec.index"} asa String,
+      nullable:bool = {uninitialized-value-for-type bool},
+      primary_key:bool = {uninitialized-value-for-type bool}
+    }
+    {if {keyword-supplied? name} then
+        set self.name = name}
+    {if {keyword-supplied? domain} then
+        set self.domain = domain}
+    {if {keyword-supplied? caption} then
+        set self.caption = caption}
+    {if {keyword-supplied? index} then
+        set self.index = index}
+    {if {keyword-supplied? nullable} then
+        set self.nullable = nullable}
+    {if {keyword-supplied? primary_key} then
+        set self.primary_key = primary_key}
+  }
+
+}
+

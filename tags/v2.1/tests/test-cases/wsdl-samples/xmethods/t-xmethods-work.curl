@@ -1,0 +1,329 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{curl 6.0 applet}
+{applet manifest = "manifest.mcurl"}
+
+{import * from COM.CURL.WSDK.XMETHODS-SUPPORT}
+
+{import * from COM.CURL.WSDK.WSDL-TEST-SUPPORT}
+{import * from COM.CURL.WSDK.API-SUPPORT}
+{import * from CURL.RUNTIME.DEBUGGER-SUPPORT}
+
+{document-style PlainDocument}
+{set-document-properties 
+    hstretch? = true, 
+    vstretch? = true
+}
+{value
+    || state   
+    || --------------------
+    let query:String = {get-base-url}.query
+    let batch?:bool = query == "?batch"
+    let generate?:bool = true
+    || TODO: this should be selectable
+    let dir:Url = {url "services"}    
+    || locations
+    let sloc:Url = {dir.concat "services.csv"}
+    let mloc:Url = {dir.concat "methods.csv"}    
+    || model
+    || --------------------
+    let services:Services = {Services.from-file sloc, character-encoding = "utf8"}
+    let rs:RecordSet = services.recordset
+    || turn off autogenerate if most services have been generated
+    let ngen:int = 0
+    {for r in rs do
+        {if not r["error"].empty? then
+            {inc ngen}}}
+    {if not batch? and ngen > rs.size / 2 then
+        set generate? = false}
+    set services.generate? = generate?
+    || display
+    || --------------------
+    let rg:RecordGrid =
+        {RecordGrid
+            record-source = services.recordset,
+            width = {add-stretch},
+            height = {make-elastic},
+            sort = "name",
+            {on AttachEvent at rg:RecordGrid do
+                {rg.handle-event {CurrentRecordChanged}}}, 
+            automatic-columns? = false,
+            {RecordGridColumn "name",
+                width = 1.5in},
+            {RecordGridColumn "description",
+                width = 2.5in},
+            {RecordGridColumn "error",
+                width = 2in},
+            {RecordGridColumn "note",
+                width = 2in}}
+    let rg-api:RecordGrid = 
+        {RecordGrid 
+            width = {add-stretch},
+            height = {make-elastic},                
+            automatic-columns? = false,
+            {RecordGridColumn "class", width = 1.5in},
+            {RecordGridColumn "member", width = 1.5in},
+            {RecordGridColumn "kind", width = .75in},
+            {RecordGridColumn "type", width = {make-elastic}}}
+    let methods-filter:{proc-type {Record}:bool} =
+        {proc {r:Record}:bool
+            let name:String = r["member"] asa String
+            {return
+                r["kind"] == "Method"
+                and not {name.prefix? "async"}
+                and name != "register-types"}}
+    let rf:RecordForm =
+        {RecordForm
+            record-source = rg.records,
+            display-navigation-panel? = false, 
+            {VBox
+                margin = 3pt,
+                spacing = 1pt,
+                hstretch? = true,
+                {HBox
+                    spacing = 6pt,
+                    {DisplayFrame 
+                        font-weight = "bold",
+                        {bind value to "name"}},
+                    {Fill},
+                    {DisplayFrame
+                        {bind value to "filename",
+                            {format name:String as
+                                {link target = "WSDL",
+                                    href = {dir.concat name & ".wsdl"}, 
+                                    {italic WSDL}}}}},
+                    {DisplayFrame
+                        {bind enabled? to "error",
+                            {format x:String as x == "_"}},
+                        {bind value to "filename",
+                            {format name:String as
+                                let aloc:Url = {dir.concat name & ".curl"}
+                                {link href = {url "curl://edit/" & aloc.name},
+                                    {italic Curl Applet}}}}},
+                    {DisplayFrame
+                        {bind enabled? to "error",
+                            {format x:String as x == "_"}},                            
+                        {bind value to "wsdl-url",
+                            {format loc:String as
+                                {soapscope-link loc, 
+                                    label = {italic SOAPScope Test}}}}}},
+                {HBox
+                    height = .5in,
+                    {VBox width = {make-elastic},
+                        {small Description},
+                        {TextArea {bind value to "description"}}},
+                    {VBox width = {make-elastic},
+                        {small Note},
+                        {TextArea {bind value to "note"}}}},
+                {DisplayFrame
+                    {bind background to "error",
+                        {format x:String as
+                            {if x != "_" then "pink" else "transparent"}}},
+                    {bind value to "error",
+                        {format x:String as
+                            {if x == "_" then "" else x}}}},
+                {hrule height = 3px, color = "silver"},
+                {HBox 
+                    {bold API}, 
+                    {Fill},
+                    {CheckButton label = {message Methods},
+                        value = false,
+                        {on ValueFinished at c:CheckButton do  
+                            set rg-api.filter =
+                                {if c.value 
+                                 then methods-filter
+                                 else null}}}},
+                rg-api
+            }}
+    || coordination
+    || --------------------
+    || focus detail display on current record
+    {rg.add-event-handler
+        {on CurrentRecordChanged do
+            set rf.current-index = rg.current-index
+            {rf.handle-event {ValueChanged}}}}
+    || in lieu of databinding
+    {rf.add-event-handler
+        {on ValueChanged do            
+            {if-non-null r = rf.current-record then
+                let name:String = r["filename"] asa String
+                let s:Service = services[name]  
+                set rg-api.record-source =
+                    {if-non-null methods = s.methods 
+                     then methods
+                     else null}
+            }}}
+    || commands
+    || ----------
+    let running?:bool = false
+    let stop-command:CommandButton = 
+        {CommandButton 
+            label = {message Stop},
+            enabled? = false,
+            {on Action do
+                set running? = false}}
+    let run-all-command:SimpleCommand =
+        {SimpleCommand "run-all",
+            execute-proc =
+                {proc {}:void
+                    let nr:int = rg.records.size
+                    let ng:int = 0
+                    {with-busy-cursor
+                        {output {message [{DateTime}] Start {value nr}}}
+                        set stop-command.enabled? = true
+                        set running? = true
+                        {for r key i in rg.records do
+                            {if not running? then
+                                {break}}
+                            let name:String = r["filename"] asa String
+                            let s:Service = services[name]                 
+                            {s.validate-package}
+                            {if s.error == null then
+                                {inc ng}}
+                            set rg.current-index = i
+                            {dispatch-events false}}
+                        set running? = false
+                        set stop-command.enabled? = false
+                        {output {message [{DateTime}] Complete 
+                                    {value ng}/{value nr}}}}}}
+    let main-commands:HBox =
+        {HBox
+            spacing = 6pt,
+            margin = 2pt,
+            valign = 75%,
+            {title font-size = 14pt, WSDK Code Generation}, 
+            {paragraph Source 
+                {link href = {url "http://www.xmethods.com"}, 
+                target = "WSDL", font-size = 12pt,
+                www.xmethods.com}},
+            {Fill},       
+            {CommandButton 
+                label = {message Run All},
+                bound-command = run-all-command},
+            stop-command,
+            {CheckButton label = {message Generate?},
+                value = services.generate?,
+                {on ValueFinished at c:CheckButton do
+                    set services.generate? = c.value}},
+            {CommandButton 
+                label = {message Run},
+                {on Action do
+                    {with-busy-cursor
+                        {if-non-null r = rg.current-record then 
+                            let name:String = r["filename"] asa String
+                            let s:Service = services[name] 
+                            {with services.generate? = true do
+                                {s.invalidate-package}
+                                {s.validate-package}}
+                            || because its not via Record
+                            {rf.handle-event {ValueChanged}}
+                        }}}},                
+            {CommandButton 
+                label = {message Regenerate Manifest},
+                {on Action do
+                    || prepare manifest
+                    let m:ComponentManifest = {ComponentManifest}
+                    set m.direct-delegates =
+                        {{ReadOnlyArray-of ComponentManifest}
+                            {get-default-manifest}}
+                    {for r in rg.records do
+                        let wsdl-url:Url = {url r["wsdl-url"] asa String}
+                        let filename:String = r["filename"] asa String
+                        let local-wsdl:Url = {dir.concat filename & ".wsdl"}
+                        let local-scurl:Url = {local-wsdl.set-extension ".scurl"}
+                        let package-name:String = "COM.CURL.WSDL." & local-wsdl.basename
+                        {m.add 
+                            {make-package-selector package-name, 
+                                location = local-scurl}}}
+                    || write manifest
+                    let mloc:Url = {dir.concat "manifest.mcurl"}    
+                    {write-manifest m, mloc}
+                }},
+            {CommandButton 
+                label = {message Break ...},
+                {on Action do
+                    {if-non-null r = rg.current-record then
+                        let name:String = r["filename"] asa String
+                        let s:Service = services[name] 
+                        {breakpoint}}}},                
+            {CommandButton 
+                label = {message Save As ...},
+                {on Action do
+                    {if-non-null 
+                        loc = {choose-file 
+                                  title = {message Services Data},
+                                  style = FileDialogStyle.save-as,
+                                  default-location = sloc}
+                     then
+                        {with-busy-cursor
+                            {with-open-streams out = {CsvDataWriter loc} do
+                                {for r in {services.recordset.select} do
+                                    {out.write-record r}}}
+                        }}
+                    || == special case adjustments == \\
+                    || These method returns zillions of characters
+                    || which takes too long and/or exhausts resources
+                    let ms:{Array-of Record} =
+                        {services.methods.select filter = 
+                            {proc {r:Record}:bool
+                                {return
+                                    ((r["class"] == "BibleWebService" and
+                                      r["member"] == "get-bible-wordsby-key-word") 
+                                     or
+                                     (r["class"] == "BioMedDictWebSvc" and
+                                      r["member"] == "get-all")
+                                    )
+                                }}}
+                    {for m in ms do
+                        {if m["input"].empty? then
+                            set m["input"] =
+                                {stringify {error "This takes a long time"}}}}
+                    || == special case adjustments == //
+                    {if-non-null 
+                        loc = {choose-file 
+                                  title = {message Methods Data}, 
+                                  style = FileDialogStyle.save-as,
+                                  default-location = mloc}
+                     then
+                        {with-busy-cursor
+                            {with-open-streams out = {CsvDataWriter loc} do
+                                {for r in {services.methods.select} do
+                                    {out.write-record r}}}
+                        }}
+                }},
+            {link href = {url "xmethods-info.curl"}, target = "_INFO", {bold font-size = 12pt, Help}}}
+    || arrangement
+    || --------------------
+    let main:PanedWindow =
+        {PanedWindow orientation = "vertical"}
+    {main.add-pane rg}
+    {main.add-pane rf}
+    {main.set-pane-sizes {{Array-of double} 60%, 40%}}
+    || automation
+    || --------------------
+    {if batch? then
+        {run-all-command.do-command}}
+    || layout
+    || --------------------
+    {VBox
+        spacing = 3px,
+        hstretch? = true,
+        main-commands,
+        main
+    }
+}
+

@@ -1,0 +1,12 @@
+{curl 7.0, 8.0 applet}
+{applet manifest = "manifest.mcurl",
+    {compiler-directives careful? = true}
+}
+{import * from COM.CURL.WSDK.WSDL}
+
+{generate-wsdl-package 
+    {url "search.wsdl"},
+    include-async-methods? = true,
+    || NOTE: svn friendly
+    preserve-existing-files? = true
+}

@@ -1,0 +1,344 @@
+||| Copyright (C) 1998-2009, Sumisho Computer Systems Corp.  All Rights Reserved.
+|||
+||| An OpenCurl project.
+
+||| Licensed under the Apache License, Version 2.0 (the "License");
+||| you may not use this file except in compliance with the License.
+||| You may obtain a copy of the License at
+||| 
+|||     http://www.apache.org/licenses/LICENSE-2.0
+||| 
+||| Unless required by applicable law or agreed to in writing, software
+||| distributed under the License is distributed on an "AS IS" BASIS,
+||| WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+||| See the License for the specific language governing permissions and
+||| limitations under the License.
+
+{define-class package sealed WSDLCurlNamer
+  field public |#DEBUG#| constant xml-name-to-name:{HashTable-of XMLName, String} =
+    {{HashTable-of XMLName, String}}
+  field public |#DEBUG#| constant current-names:{HashTable-of String, String} =
+      {{HashTable-of String, String}}
+  field public curlify-names?:bool
+
+  field package constant packages:#{Array-of Package}
+
+  def package curl-name-start-chars:CharClass = Identifier.start-chars
+  def package curl-name-chars:CharClass = Identifier.chars
+
+  {constructor package {default
+                           curlify-names?:bool = true,
+                           packages:#{Array-of Package}}
+    set self.curlify-names? = curlify-names?
+    set self.packages = packages
+  }
+
+
+  {define-proc package {non-name-chars-to-underscore buf:StringBuf}:void
+    || turn punctuation, control chars into _,
+    {for ch key i in buf do
+        {if not {WSDLCurlNamer.curl-name-chars.member? ch} then
+            set buf[i] = '_'
+        }
+    }
+  }
+
+  || FIXME ideally we want this to use the same name system for everything
+  || of a given type, instead of the first one getting the short name,
+  || and then each duplicate getting a longer name.
+  || That would require a pre-register of each name, and then
+  || some sort of promotion thing that happens when they are gotten out
+  || for actual use.
+  {method public sealed {get-curl-name
+                            xml-name:XMLName,
+                            scope:String = "",
+                            curl-type:String = "method",
+                            curl-aux-name-info:String = ""
+                        }:String
+    || check cache
+    || --------------------
+    let constant scoped-xml-name:XMLName =
+        {if scope != "" then
+            {XMLName.unchecked xml-name.namespace,
+                scope
+                & ':' & curl-type
+                & ':'
+                & ':' & curl-aux-name-info
+                || TODO: use different delimiter, or value class
+                || - this can contain colons
+                || - for enums from some services
+                & ':' & xml-name.local-name}
+         else
+            xml-name
+        }
+    let constant (cached-curl-name:String, found?:bool) =
+        {self.xml-name-to-name.get-if-exists scoped-xml-name}
+    {if found? then
+        {return cached-curl-name}
+    }
+    
+    def curlify-names? = self.curlify-names?
+
+    let constant local-name:String = xml-name.local-name
+    let constant buf:StringBuf = {new StringBuf, local-name}
+
+    || legal-curl-identifier
+    || --------------------
+    || remove prefix bad characters
+    {for ch key i in local-name do
+        {if not {WSDLCurlNamer.curl-name-start-chars.member? ch} then
+            {buf.remove 0}
+         else
+            {break}
+        }
+    }
+    {if buf.size == 0 then
+        {wsdl-exception
+            {hlmessage
+                Unable to make name '{value local-name}' Curl identifier safe.
+            }
+        }
+    }
+    || turn punctuation and control chars into _,
+    {WSDLCurlNamer.non-name-chars-to-underscore buf}
+
+    || conventional-curl-identifier
+    || --------------------
+    {if curlify-names? then
+        || replace '_' with '-' (except at start}
+        {for c key i in buf do
+            {if i > 0 and c == '_' then
+                set buf[i] = '-'}}
+        || if method/proc, turn capitalized words into - seperated words
+        || if class, use CamelCase (aka KrazyKaps)
+        {if curl-type == "method" or
+            curl-type == "proc" or
+            curl-type == "getter" or
+            curl-type == "setter" or
+            curl-type == "field" or
+            curl-type == "enum" or
+            curl-type == "parameter"
+         then
+            let buf-offset:int = 0
+            let constant local-name:String = {buf.to-String}
+            {buf.to-lower}
+            let constant lower-name:String = {buf.to-String}
+            {for ch key i in local-name do
+                {if ch != lower-name[i] then
+                    {if i > 0 and local-name[i - 1] == lower-name[i - 1] and
+                        buf[i - 1 + buf-offset] != '-'
+                     then
+                        {buf.insert '-', i + buf-offset}
+                        set buf-offset = buf-offset + 1
+                    }
+                }
+            }
+         elseif curl-type == "class" then
+            set buf[0] = {char-upcase buf[0]}
+            || FIXME should we try to convert name-name-name to NameNameName?
+            
+         else
+            {output {hlmessage WSDLCurlNamer unrecognized curl-type: {value curl-type}}}
+        }
+     else
+        || keep value and type namespaces distinct
+        || - types start uppercase
+        || - values start lowercase
+        def ensure-case =
+            {switch curl-type
+             case "class" do char-upcase
+             else char-downcase}
+        set buf[0] = {ensure-case buf[0]}
+    }
+
+    || NOTE: anonymous types (for elements) got special prefix 
+    || -- so as to avoid possible clashes with named types
+    || -- this removes the prefix, if there is no such clash
+    {if buf[0] == '_' and
+        {char-downcase buf[1]} != buf[1]
+     then
+        let preferred-name:String = {buf.substr 1, buf.size - 1}
+        let used?:bool = {self.name-used? preferred-name, scope = scope}
+        {if not used? then
+            {buf.remove 0}}
+    }
+    || unique-curl-identifier
+    || --------------------
+    || now see if it is a conflict, and if so, 
+    || try prepending parts of the namespace
+    let curl-name:String =
+        {if local-name != buf then
+            {buf.to-String}
+         else
+            local-name
+        }    
+    || FIXME: these uniqifiers use - as a seperator, which is not ideal
+    || for class names, those should use Capitalized words instead.
+    let (used?:bool, conflict:String) = 
+        {self.name-used? curl-name, scope = scope}
+    {if used? and conflict == "reserved" then
+        set curl-name = '_' & curl-name
+        set (used?, conflict) =
+            {self.name-used? curl-name, scope = scope}
+    }
+
+    def separator =
+        {if curlify-names? then '-' else '_'}
+    {if used? then
+        let constant namespace-url:#Url =
+            {if {xml-name.namespace.prefix? "http:"} then
+                {parse-url xml-name.namespace}
+             else
+                null
+            }
+        || NOTE: using basename to avoid possible suffixes
+        let constant basename:#StringBuf =
+            {if-non-null namespace-url then
+                {if namespace-url.basename != "" then
+                    {StringBuf namespace-url.basename}
+                 elseif namespace-url.parent.basename != "" then
+                    {StringBuf namespace-url.parent.basename}
+                 else
+                    null
+                }
+             else
+                null
+            }
+        {if-non-null basename then 
+            {WSDLCurlNamer.non-name-chars-to-underscore basename}
+            set curl-name = 
+                basename & separator & curl-name
+        }
+        {if basename == null or {self.name-used? curl-name, scope = scope} then
+            let constant hostname-concat-string:StringBuf =
+                {if-non-null namespace-url then
+                    {type-switch namespace-url.stem
+                     case hsd:StemHttpDirectory do
+                        let constant h:StringBuf = {new StringBuf, hsd.host, separator}
+                        {WSDLCurlNamer.non-name-chars-to-underscore h}
+                        h
+                     else
+                        {new StringBuf}
+                    }
+                 else
+                    {new StringBuf}
+                }
+            set curl-name = hostname-concat-string & curl-name
+            let name-used?:bool = true, conflicting-curl-type:String = ""
+            set (name-used?, conflicting-curl-type) =
+                {self.name-used? curl-name, scope = scope}
+            {if name-used? then
+                || try appending the type
+                {if conflicting-curl-type != curl-type then
+                    set curl-name = curl-name & separator & curl-type
+                }
+                {if conflicting-curl-type == curl-type or
+                    {self.name-used? curl-name, scope = scope}
+                 then
+                    || else append a number until it works.
+                    let index:int = 1
+                    set curl-name = curl-name & separator
+                    {while index > 0 and
+                        {self.name-used? curl-name & index, scope = scope}
+                     do
+                        set index = index + 1
+                    }
+                    {if index <= 0 then
+                        {wsdl-exception
+                            {hlmessage
+                                Unable to make name '{value local-name}' Curl identifier safe.
+                            }
+                        }
+                    }
+                    set curl-name = curl-name & index
+                }
+            }
+        }
+    }
+    || record result
+    || --------------------
+    {self.current-names.set scope & curl-name, curl-type}
+    {self.xml-name-to-name.set scoped-xml-name, curl-name}
+    {return curl-name}
+  }
+
+  {method private {name-used? name:String, scope:String = ""}:(bool, String)
+    || check reserved words
+    {if {WSDLCurlNamer.curl-reserved-identifiers.member? name} then
+        {return true, "reserved"}}
+    let constant (curl-type:String, found?:bool) =
+        {self.current-names.get-if-exists scope & name}
+    || for global things, check them against the package list, so that
+    || we don't end up with classes with names that overlap with this
+    || code, or support code.
+    {if not found? and scope == "" then
+        {if-non-null packages = self.packages then
+            {for p in packages do
+                let constant (value:any, found?:bool) =
+                    {p.lookup name, public-only? = true}
+                {if found? then
+                    {return true, "class"}
+                }
+            }
+        }
+    }
+    {return found?, curl-type}
+  }
+  
+  let package constant curl-reserved-identifiers:{Set-of String} =
+      {{Set-of String}
+        || reserved words (from dguide)
+        "and", 
+        "asa",  
+        "construct-super", 
+        "div", 
+        "false", 
+        "isa", 
+        "let", 
+        "mod", 
+        "not", 
+        "null", 
+        "or", 
+        "rem", 
+        "set", 
+        "super", 
+        "true",
+        
+        || not actually reserved, but problematic 
+        
+        || - primitive types
+        "any",
+        "bool",
+        "char",
+        "double",
+        "float",
+        "int",
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "uint",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+
+        || - common types
+        "String",
+        "Array",
+        "DateTime",
+        "Url",
+        
+        || - control flow
+        "break",
+        "continue",
+        "do",
+        "for",
+        "if",
+        "return",
+        "unless",
+        "until",
+        "while"
+      }
+}
+
